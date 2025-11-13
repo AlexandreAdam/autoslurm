@@ -26,6 +26,7 @@ about past and future runs.
 
 - **Getting Started** – installation, configuration, and CLI basics with executable examples.
 - **Configuration & Registration** – details on machine profiles and script discovery.
+- **Typer Integration** – how to wire Typer-based CLIs so AutoSlurm can parse and schedule them.
 - **Agent Guide** – a package map and automation patterns so LLM-powered agents can reason about the codebase.
 
 ```{tableofcontents}

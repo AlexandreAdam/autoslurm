@@ -176,7 +176,30 @@ This pattern stores every variant inside a single JSON bundle. Inspect the file
 under `$AUTOSLURM/jobs/sweep-demo_<timestamp>.json` to reproduce, edit, or copy
 the workload later.
 
-### Example 2 — Remote submission with environment activation
+### Example 2 — Data preparation and training dependencies
+
+```bash
+autoslurm-schedule build-training-data \
+    --bundle prep-train \
+    --time 01:00:00 --cpus_per_task 4 --mem 32G \
+    --output_path /shared/data/train_dataset.json
+
+autoslurm-schedule train-model \
+    --append --bundle prep-train \
+    --dependencies build-training-data \
+    --time 08:00:00 --gres gpu:1 --cpus_per_task 16 --mem 64G \
+    --data_path /shared/data/train_dataset.json \
+    --epochs 100 --lr 3e-4
+
+autoslurm-submit prep-train --machine research-gpu
+```
+
+This creates a two-job bundle where `train-model` will only start after
+`build-training-data` finishes successfully. The dependency is expressed via the
+job names inside the bundle, so you can split preprocessing, training, and
+evaluation into their own stages while keeping a single submission command.
+
+### Example 3 — Remote submission with environment activation
 
 ```bash
 autoslurm-schedule inference \
@@ -192,7 +215,7 @@ If `research-gpu` is defined in `autoslurm-configuration`, the job is copied to
 the remote `$path/slurm/` directory, `sbatch` is executed over SSH, and the
 stack keeps track of the returned job ID.
 
-### Example 3 — Programmatic scheduling from Python
+### Example 4 — Programmatic scheduling from Python
 
 ```python
 from autoslurm.save_load_jobs import schedule_job
