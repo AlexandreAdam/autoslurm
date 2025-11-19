@@ -20,16 +20,12 @@ This command will allow you to configure paths and user-specific details for
 your local and remote SLURM machines. More details can be found in the
 [Configuration](configuration.md) section.
 
-### Register your application in the `pyproject.toml` file of your package
+### Registering a script (optional)
 
-```toml
-[project.scripts]
-my-script = "my_package.module:main"
-my-script-cli = "my_package.module:cli"
-```
+If you don't want to worry about filesystem paths, register your script inside your Python package so AutoSlurm can locate it by name. 
+This produces a clearer submission flow and avoids path issues, but remember to install the package into the virtual environment specified via `autoslurm-configuration`.
 
-More details can be found in the [Register a script](register_a_script.md)
-section.
+Read [Registering a script](register_script.md) for the optional workflow, which explains how SLURM submission works, how AutoSlurm activates the configured environment, and how declaring entry points keeps your job definitions portable.
 
 ## Basic Usage
 
@@ -84,7 +80,7 @@ An empty bundle can be initialized as follows
 autoslurm-initialize my-bundle
 ```
 Jobs can then be appended to this bundle using `autoslurm-schedule --append --bundle=my-bundle`.
-This is useful when you want to schedule jobs in a loop.
+This is useful when you want to schedule multiple jobs in a loop.
 
 **Warning**: In case `--append` is not used, two bundles (each with a single job) are
 created with unique timestamps. Only the last bundle created is submitted.

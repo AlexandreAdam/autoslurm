@@ -1,7 +1,8 @@
 import os
 from io import TextIOWrapper
 from datetime import datetime
-from .utils import name_slurm_script, load_config
+from .utils import name_slurm_script
+from .storage import ensure_storage_dirs, slurm_dir
 
 
 __all__ = ["create_slurm_script"]
@@ -9,10 +10,10 @@ __all__ = ["create_slurm_script"]
 
 def create_slurm_script(job: dict, date: datetime, machine_config: dict) -> str:
     """Creates a SLURM script and saves it locally"""
-    user_settings = load_config()
-    path = os.path.join(user_settings["local"]["path"], "slurm")
+    ensure_storage_dirs()
+    path = slurm_dir()
     slurm_name = name_slurm_script(job, date)
-    file_path = os.path.join(path, slurm_name)
+    file_path = path / slurm_name
     with open(file_path, "w") as f:
         write_slurm_content(f, job, machine_config)
     print(f"Saved SLURM script for job {job['name']} saved to {file_path}")
@@ -59,7 +60,8 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict) ->
     file.write("#!/bin/bash\n")
     if slurm_account:
         file.write(f"#SBATCH --account={slurm_account}\n")
-    output_dir = os.path.join(machine_config["path"], "slurm")
+    remote_storage = machine_config.get("path", "~/.autoslurm")
+    output_dir = os.path.join(remote_storage, "slurm")
     file.write(f"#SBATCH --output={os.path.join(output_dir, '%x-%j.out')}\n")
     file.write(f"#SBATCH --job-name={job['name']}\n")
 
@@ -67,9 +69,6 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict) ->
     for key, value in job["slurm"].items():
         if value is not None:
             file.write(f"#SBATCH --{key.replace('_', '-')}={value}\n")
-
-    # Make sure path is exported to environment
-    file.write(f"export AUTOSLURM=\"{machine_config['path']}\"\n")
 
     # Environment activation command
     if env_command:

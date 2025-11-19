@@ -49,7 +49,6 @@ expected_bundle_content = {
         "#SBATCH --gres=gpu:1\n",
         "#SBATCH --mem=4G\n",
         "#SBATCH --time=01:00:00\n",
-        'export AUTOSLURM="/path/to/remote"\n',
         "source /path/to/remote/venv/bin/activate\n",
         "run-job-a \\\n",
         "  --param1=value1 \\\n",
@@ -64,7 +63,6 @@ expected_bundle_content = {
         "#SBATCH --cpus-per-task=2\n",
         "#SBATCH --mem=8G\n",
         "#SBATCH --time=02:00:00\n",
-        'export AUTOSLURM="/path/to/remote"\n',
         "source /path/to/remote/venv/bin/activate\n",
         "run-job-b \\\n",
         "  --param1=value3 \\\n",
@@ -79,7 +77,6 @@ expected_bundle_content = {
         "#SBATCH --cpus-per-task=4\n",
         "#SBATCH --mem=16G\n",
         "#SBATCH --time=03:00:00\n",
-        'export AUTOSLURM="/path/to/remote"\n',
         "source /path/to/remote/venv/bin/activate\n",
         "echo 'Starting Job C'\n",
         "run-job-c \\\n",
@@ -144,12 +141,13 @@ def mock_load_config(monkeypatch, tmp_path):
     os.makedirs(tmp_path / "slurm", exist_ok=True)
 
     monkeypatch.setattr("autoslurm.save_load_jobs.load_config", lambda: mock_config)
-    monkeypatch.setattr("autoslurm.job_to_slurm.load_config", lambda: mock_config)
-    monkeypatch.setattr("autoslurm.job_dependency.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.job_runner.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.run_slurm.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.utils.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.load_config", lambda: mock_config)
+    from autoslurm.storage import ensure_storage_dirs, set_storage_root
+    set_storage_root(tmp_path)
+    ensure_storage_dirs()
 
     yield mock_config
 

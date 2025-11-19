@@ -1,49 +1,39 @@
-import os
-import subprocess
 import json
+import os
 import socket
+import subprocess
+from pathlib import Path
+from typing import Dict, Optional
+
 from ..definitions import CONFIG_FILE_PATH
-from ..utils import ssh_host_from_config
+from ..utils import load_config, ssh_host_from_config
+from ..storage import ensure_storage_dirs
 
 
-def expand_path(path):
-    """Expand environment variables, the tilde, and the current directory in a file path."""
-    return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+
+def _ensure_config_dir():
+    directory = Path(CONFIG_FILE_PATH).parent
+    directory.mkdir(parents=True, exist_ok=True)
 
 
-def setup_directories(base_path, directories, hostname=None):
-    """Create required directories at the specified base path"""
-    for directory in directories:
-        path = os.path.join(base_path, directory)
-        if hostname is not None:
-            ssh_command = ["ssh", hostname, f"mkdir -p {path}"]
-            result = subprocess.run(ssh_command, capture_output=True, text=True)
-            # Check for errors
-            if result.returncode != 0:
-                print(f"Error creating {path} directory on remote machine.")
-                print(f"Error message: {result.stderr}")
-            else:
-                print(f"Created or found existing remote directory: {path}")
-        else:
-            if not os.path.exists(path):
-                os.makedirs(path)
-                print(f"Created directory: {path}")
-            else:
-                print(f"Directory already exists: {path}")
+def _save_config(config: Dict[str, Dict]):
+    _ensure_config_dir()
+    data = {
+        "machines": config["machines"],
+        "default_machine": config["default_machine"],
+    }
+    with open(CONFIG_FILE_PATH, "w") as file:
+        json.dump(data, file, indent=4)
 
 
-def update_bashrc(base_path, hostname=None):
-    """Append AUTOSLURM environment variable to .bashrc for persistence, locally or remotely."""
-    bash_command = f'echo "export AUTOSLURM=\\"{base_path}\\"" >> ~/.bashrc'
-    if hostname is not None:
-        ssh_command = ["ssh", hostname, bash_command]
-        subprocess.run(ssh_command)
-    else:
-        os.system(bash_command)
+def _refresh_config_aliases(config: Dict[str, Dict]):
+    default = config["default_machine"]
+    config["local"] = config["machines"][default]
+    for name, machine in config["machines"].items():
+        config[name] = machine
 
 
 def check_host(hostname):
-    """Check if the SSH hostname is resolvable."""
     try:
         socket.gethostbyname(hostname)
     except socket.gaierror:
@@ -51,102 +41,230 @@ def check_host(hostname):
     return True
 
 
-def get_git_editor():
-    """Get the default editor set in Git's configuration."""
+def _is_remote(machine: Dict) -> bool:
+    return any(key in machine for key in ("hostname", "hosturl", "username"))
+
+
+def _local_machine_actions():
+    ensure_storage_dirs()
+
+
+def _remote_machine_actions(machine: Dict, name: str):
     try:
-        return subprocess.check_output(
-            ["git", "config", "--global", "core.editor"], encoding="utf-8"
-        ).strip()
-    except subprocess.CalledProcessError:
-        # Fallback to a default editor if Git's editor is not set
-        return "nano"
+        hostname = ssh_host_from_config(machine, name)
+    except AttributeError as exc:
+        print(f"Skipping {name}: {exc}")
+        return
+    if not check_host(hostname):
+        print(f"Unable to resolve hostname for {name}. Skipping setup.")
+        return
+    # Create directories on the remote machine at ~/.autoslurm
+    for directory in ("jobs", "slurm"):
+        remote_dir = os.path.join("~/.autoslurm", directory)
+        ssh_command = ["ssh", hostname, f"mkdir -p {remote_dir}"]
+        result = subprocess.run(ssh_command, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"Error creating {remote_dir} on remote machine {name}.")
+            print(f"Error message: {result.stderr}")
+        else:
+            print(f"Remote directory ensured: {remote_dir}")
 
 
-def open_editor(file_path):
-    """Open the file in Git's default text editor or a fallback editor."""
-    editor = get_git_editor()
-    subprocess.call([editor, file_path])
+def _setup_all_machines(config: Dict):
+    for name, machine in config["machines"].items():
+        print(f"\nConfiguring machine '{name}':")
+        if _is_remote(machine):
+            _remote_machine_actions(machine, name)
+        else:
+            _local_machine_actions()
+
+def _prompt_text(prompt: str, default: Optional[str] = None, required: bool = False) -> str:
+    suffix = f" [{default}]" if default else ""
+    while True:
+        value = input(f"{prompt}{suffix}: ").strip()
+        if value:
+            return value
+        if default:
+            return default
+        if required:
+            print("This field is required.")
+            continue
+        return ""
+
+
+def _prompt_yes_no(prompt: str, default: str = "n") -> bool:
+    default = default.lower()
+    choices = "Y/n" if default == "y" else "y/N"
+    while True:
+        value = input(f"{prompt} [{choices}]: ").strip().lower()
+        if not value:
+            value = default
+        if value in ("y", "yes"):
+            return True
+        if value in ("n", "no"):
+            return False
+        print("Please answer 'y' or 'n'.")
+
+
+def _prompt_machine_name(config: Dict, default: str = "machine") -> str:
+    existing = set(config["machines"].keys())
+    suggested = default
+    counter = 1
+    while suggested in existing:
+        suggested = f"{default}_{counter}"
+        counter += 1
+    while True:
+        name = _prompt_text("Machine name", default=suggested, required=True)
+        if name in existing:
+            print(f"A machine named '{name}' already exists. Choose another name.")
+            continue
+        return name
+
+
+def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
+    existing = existing or {}
+    env_command = _prompt_text(
+        "Command to activate the environment (e.g., source /path/to/venv/bin/activate)",
+        existing.get("env_command"),
+        required=True,
+    )
+    slurm_account = _prompt_text(
+        "SLURM account name",
+        existing.get("slurm_account"),
+        required=True,
+    )
+    remote_default = bool(existing.get("hostname") or existing.get("hosturl"))
+    is_remote = _prompt_yes_no("Is this a remote machine?", default="y" if remote_default else "n")
+    machine = {"env_command": env_command, "slurm_account": slurm_account}
+    if is_remote:
+        while True:
+            hostname = _prompt_text("SSH hostname (optional)", existing.get("hostname"))
+            hosturl = _prompt_text("SSH host URL (optional)", existing.get("hosturl"))
+            username = _prompt_text(
+                "SSH username",
+                existing.get("username"),
+                required=not bool(hostname or hosturl),
+            )
+            key_path = _prompt_text("SSH key path (optional)", existing.get("key_path"))
+            if not hostname and not hosturl:
+                print("Remote machines require a hostname or a combination of host URL and username.")
+                continue
+            machine["hostname"] = hostname
+            machine["hosturl"] = hosturl
+            machine["username"] = username
+            if key_path:
+                machine["key_path"] = key_path
+            break
+    else:
+        machine.pop("hostname", None)
+        machine.pop("hosturl", None)
+        machine.pop("username", None)
+        machine.pop("key_path", None)
+    return machine
+
+
+def _select_machine(config: Dict, prompt: str) -> Optional[str]:
+    machines = list(config["machines"].keys())
+    if not machines:
+        print("No machines are configured yet.")
+        return None
+    print(prompt)
+    for idx, name in enumerate(machines, start=1):
+        default_marker = " (default)" if name == config["default_machine"] else ""
+        print(f"  {idx}) {name}{default_marker}")
+    while True:
+        selection = input("Select a number: ").strip()
+        if not selection:
+            return machines[0]
+        if not selection.isdigit():
+            print("Please enter a valid number.")
+            continue
+        idx = int(selection) - 1
+        if 0 <= idx < len(machines):
+            return machines[idx]
+        print("Selection out of range.")
+
+
+def _create_machine(config: Dict):
+    name = _prompt_machine_name(config)
+    machine = _prompt_machine_details()
+    config["machines"][name] = machine
+    _refresh_config_aliases(config)
+    _save_config(config)
+    if _prompt_yes_no("Make this the default machine?", default="n"):
+        config["default_machine"] = name
+        _refresh_config_aliases(config)
+        _save_config(config)
+
+
+def _update_machine(config: Dict):
+    name = _select_machine(config, "Choose a machine to update:")
+    if not name:
+        return
+    machine = _prompt_machine_details(existing=config["machines"][name])
+    config["machines"][name] = machine
+    _refresh_config_aliases(config)
+    _save_config(config)
+
+
+def _change_default_machine(config: Dict):
+    name = _select_machine(config, "Choose a machine to become the default:")
+    if not name:
+        return
+    if name == config["default_machine"]:
+        print(f"'{name}' is already the default machine.")
+        return
+    config["default_machine"] = name
+    _refresh_config_aliases(config)
+    _save_config(config)
+
+
+def _create_default_machine():
+    print("No configuration file detected. Let's configure the default machine.")
+    config = {"machines": {}, "default_machine": "local"}
+    machine = _prompt_machine_details()
+    config["machines"]["local"] = machine
+    _refresh_config_aliases(config)
+    _save_config(config)
+    print("Default machine configured.")
+    _setup_all_machines(config)
+    return config
+
+
+def _menu_loop(config: Dict):
+    while True:
+        print("\nConfigured machines:")
+        for name in config["machines"]:
+            default_marker = " (default)" if name == config["default_machine"] else ""
+            print(f"  - {name}{default_marker}")
+        print("\nSelect an option:")
+        print("  1) Update an existing machine")
+        print("  2) Add a new machine")
+        print("  3) Change the default machine")
+        print("  4) Exit")
+        choice = input("Choice: ").strip()
+        if choice == "1":
+            _update_machine(config)
+        elif choice == "2":
+            _create_machine(config)
+        elif choice == "3":
+            _change_default_machine(config)
+        elif choice == "4":
+            print("Configuration complete.")
+            break
+        else:
+            print("Please choose a valid option (1-4).")
 
 
 def main():
-    if os.path.exists(CONFIG_FILE_PATH):
-        open_editor(CONFIG_FILE_PATH)
-    else:
-        example_config = {
-            "local": {
-                "path": "/path/to/local/autoslurm",
-                "env_command": "source /path/to/local/venv/bin/activate",
-                "slurm_account": "def-bengioy",
-            },
-            "remote_machine": {
-                "path": "/path/to/remote/autoslurm",
-                "env_command": "source /path/to/remote/venv/bin/activate",
-                "slurm_account": "rrg-account_name",
-                "hostname": "machine",
-                "hosturl": "machine.domain.com",
-                "username": "user1",
-                "key_path": "~/.ssh/id_rsa",
-            },
-        }
-        with open(CONFIG_FILE_PATH, "w") as file:
-            json.dump(example_config, file, indent=4)
-        open_editor(CONFIG_FILE_PATH)
-
-    with open(CONFIG_FILE_PATH, "r") as file:
-        config = json.load(file)
-
-    # Check if local entry is present and has a valid path
-    if "local" not in config:
-        raise ValueError(
-            "Invalid configuration. Please make sure the 'local' machine is present in the configuration file."
-        )
-    if "path" not in config["local"]:
-        raise ValueError(
-            "Invalid configuration. Please make sure the 'local' has a path specified."
-        )
-
-    # Handle machines setup
-    for machine_name, machine_config in config.items():
-        print(f"Setting up {machine_name} machine...")
-
-        if machine_name == "local":
-            setup_directories(
-                machine_config["path"], ["data", "models", "slurm", "jobs", "results"]
-            )
-            update_bashrc(machine_config["path"])
-
-        else:
-            # Check if config has a 'path' key
-            if "path" not in machine_config:
-                print(
-                    f"Error: No 'path' key found in the configuration for {machine_name}. Skipping..."
-                )
-                continue
-            # Check if machine is a remote machine
-            if any(
-                key in machine_config for key in ["hostname", "username", "hosturl"]
-            ):
-                # Check if hostname is resolvable
-                hostname = ssh_host_from_config(machine_config, machine_name)
-                if not check_host(hostname):
-                    print(
-                        f"Error: Unable to resolve hostname '{machine_config['hostname']}' for {machine_name}."
-                    )
-                    continue
-                else:
-                    # Machine is resolvable, proceed with setting up directories
-                    setup_directories(
-                        machine_config["path"],
-                        ["data", "models", "slurm", "jobs", "results"],
-                        hostname=hostname,
-                    )
-                    update_bashrc(machine_config["path"], hostname=hostname)
-            else:  # Local machine
-                if machine_config["path"] != config["local"]["path"]:
-                    print(
-                        f"Machine {machine_name} path '{machine_config['path']}' does not match the local machine path '{config['local']['path']}'. "
-                        f"Only one path is supported per machine. Skipping..."
-                    )
-                continue
-
-    print("AutoSlurm setup is complete.")
+    if not os.path.exists(CONFIG_FILE_PATH):
+        _create_default_machine()
+        return
+    try:
+        config = load_config()
+    except EnvironmentError:
+        print("Found an invalid configuration file. Creating a fresh default configuration.")
+        _create_default_machine()
+        return
+    _menu_loop(config)
+    _setup_all_machines(config)

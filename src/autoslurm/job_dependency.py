@@ -1,7 +1,7 @@
 import os
 from typing import Union
 from collections import defaultdict
-from .utils import load_config
+from .storage import ensure_storage_dirs, slurm_dir
 
 __all__ = ["dependency_graph", "update_slurm_with_dependencies"]
 
@@ -42,8 +42,8 @@ def update_slurm_with_dependencies(
         dependency_job_ids = [dependency_job_ids]
     # if not isinstance(dependency_type, list):
     # dependency_type = [dependency_type] * len(dependency_job_ids)
-    user_config = load_config()
-    file_path = os.path.join(user_config["local"]["path"], "slurm", slurm_name)
+    ensure_storage_dirs()
+    file_path = slurm_dir() / slurm_name
 
     with open(file_path, "r") as file:
         lines = file.readlines()

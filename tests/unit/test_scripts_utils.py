@@ -115,7 +115,7 @@ def test_machine_config_custom_local_parameters(args, mock_load_config):
     result = machine_config(args)
 
     expected_result = {
-        "path": "/path/to/dir",
+        "path": mock_load_config.return_value["local"]["path"],
         "env_command": "source activate env",
         "slurm_account": "account",
     }
@@ -128,7 +128,7 @@ def test_machine_config_local_machine_default(args, mock_load_config):
     args.env_command = "source activate env"
 
     result = machine_config(args)
-    assert result["path"] == args.path
+    assert result["path"] == mock_load_config.return_value["local"]["path"]
     assert result["env_command"] == args.env_command
     assert (
         result["slurm_account"] == "def-bengioy"
@@ -159,8 +159,9 @@ def test_missing_path(args, mock_load_config):
     }
     mock_load_config.return_value = mock_config
 
-    with pytest.raises(AttributeError, match="path"):
-        machine_config(args)
+    # Path is no longer required
+    result = machine_config(args)
+    assert result["env_command"] == "source activate env"
 
 
 def test_missing_env_command(args, mock_load_config):

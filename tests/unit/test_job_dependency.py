@@ -3,7 +3,9 @@ from autoslurm.job_dependency import (
     update_slurm_with_dependencies,
     dependency_graph,
 )
+from autoslurm.storage import slurm_dir, ensure_storage_dirs
 import os
+import pytest
 
 
 """
@@ -44,10 +46,17 @@ Test update_slurm_with_dependencies
 """
 
 
+@pytest.fixture(autouse=True)
+def storage_root(tmp_path, monkeypatch):
+    from autoslurm.storage import set_storage_root
+    set_storage_root(tmp_path)
+    ensure_storage_dirs()
+    yield
+
+
 # Helper function
-def create_temp_slurm_script(tmp_path, script_name, content):
-    os.mkdir(tmp_path / "slurm")
-    script_path = tmp_path / f"slurm/{script_name}"
+def create_temp_slurm_script(script_name, content):
+    script_path = slurm_dir() / script_name
     with open(script_path, "w") as f:
         f.write(content)
     return script_path
@@ -57,64 +66,48 @@ def test_update_slurm_with_existing_dependency(tmp_path):
     original_script = "#!/bin/bash\n#SBATCH --dependency=afterok:111\n"
     expected_script = "#!/bin/bash\n#SBATCH --dependency=afterok:111:123:456\n"
     script_name = "dummy_job.sh"
-    script_path = create_temp_slurm_script(tmp_path, script_name, original_script)
+    script_path = create_temp_slurm_script(script_name, original_script)
 
-    # Mock load_config to return the path of the temporary directory
-    mock_config = {"local": {"path": str(tmp_path)}}
-    with patch("autoslurm.job_dependency.load_config", return_value=mock_config):
-        update_slurm_with_dependencies(script_name, ["123", "456"])
-        with open(script_path, "r") as f:
-            content = f.read()
-        assert content == expected_script
+    update_slurm_with_dependencies(script_name, ["123", "456"])
+    with open(script_path, "r") as f:
+        content = f.read()
+    assert content == expected_script
 
 
 def test_update_slurm_script_without_dependency(tmp_path):
     original_script = "#!/bin/bash\n#SBATCH --job-name=test_job\n"
-    # Dependency directive is inserted after the shebang line
     expected_script = (
         "#!/bin/bash\n"
-        + "#SBATCH --dependency=afterok:123:456\n"
-        + "#SBATCH --job-name=test_job\n"
+        "#SBATCH --dependency=afterok:123:456\n"
+        "#SBATCH --job-name=test_job\n"
     )
     script_name = "dummy_job.sh"
-    script_path = create_temp_slurm_script(tmp_path, script_name, original_script)
+    script_path = create_temp_slurm_script(script_name, original_script)
 
-    # Mock load_config to return the path of the temporary directory
-    mock_config = {"local": {"path": str(tmp_path)}}
-    with patch("autoslurm.job_dependency.load_config", return_value=mock_config):
-        update_slurm_with_dependencies(script_name, ["123", "456"])
-
-        with open(script_path, "r") as f:
-            content = f.read()
-        assert content == expected_script
+    update_slurm_with_dependencies(script_name, ["123", "456"])
+    with open(script_path, "r") as f:
+        content = f.read()
+    assert content == expected_script
 
 
 def test_update_empty_slurm_script(tmp_path):
     script_name = "dummy_job.sh"
-    script_path = create_temp_slurm_script(tmp_path, script_name, "")
+    script_path = create_temp_slurm_script(script_name, "")
 
-    # Mock load_config to return the path of the temporary directory
-    mock_config = {"local": {"path": str(tmp_path)}}
-    with patch("autoslurm.job_dependency.load_config", return_value=mock_config):
-        update_slurm_with_dependencies(script_name, ["123", "456"])
-
-        with open(script_path, "r") as f:
-            content = f.read()
-        assert content == ""  # Expect no changes as the script is empty
+    update_slurm_with_dependencies(script_name, ["123", "456"])
+    with open(script_path, "r") as f:
+        content = f.read()
+    assert content == ""  # Expect no changes as the script is empty
 
 
 def test_update_non_standard_slurm_script(tmp_path):
     original_script = "Some random content\nAnother line\n"
     script_name = "dummy_job.sh"
-    script_path = create_temp_slurm_script(tmp_path, script_name, original_script)
+    script_path = create_temp_slurm_script(script_name, original_script)
 
-    # Mock load_config to return the path of the temporary directory
-    mock_config = {"local": {"path": str(tmp_path)}}
-    with patch("autoslurm.job_dependency.load_config", return_value=mock_config):
-        update_slurm_with_dependencies(script_name, ["123", "456"])
-
-        with open(script_path, "r") as f:
-            content = f.read()
-        assert (
-            content == original_script
-        )  # Expect no changes as the script is non-standard
+    update_slurm_with_dependencies(script_name, ["123", "456"])
+    with open(script_path, "r") as f:
+        content = f.read()
+    assert (
+        content == original_script
+    )  # Expect no changes as the script is non-standard

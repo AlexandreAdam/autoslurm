@@ -3,6 +3,7 @@ import re
 import subprocess
 from typing import Optional
 from .utils import load_config, ssh_host_from_config
+from .storage import ensure_storage_dirs, slurm_dir
 
 __all__ = ["get_job_id_from_sbatch_output", "run_slurm_remotely", "run_slurm_locally"]
 
@@ -37,7 +38,8 @@ def run_slurm_remotely(
             raise EnvironmentError(f"No configuration found for machine: {machine}")
 
     hostname = ssh_host_from_config(machine_config, machine)
-    script_path = os.path.join(machine_config["path"], "slurm", slurm_name)
+    remote_path = machine_config.get("path", "~/.autoslurm")
+    script_path = os.path.join(remote_path, "slurm", slurm_name)
     ssh_command = ["ssh", hostname, f"sbatch {script_path}"]
 
     # Run the sbatch command on the remote machine
@@ -53,8 +55,8 @@ def run_slurm_remotely(
 
 def run_slurm_locally(slurm_name):
     """Runs a SLURM script locally and captures the job ID."""
-    user_config = load_config()
-    script_path = os.path.join(user_config["local"]["path"], "slurm", slurm_name)
+    ensure_storage_dirs()
+    script_path = os.path.join(slurm_dir(), slurm_name)
 
     result = subprocess.run(["sbatch", script_path], capture_output=True, text=True)
     return get_job_id_from_sbatch_output(result.stdout)

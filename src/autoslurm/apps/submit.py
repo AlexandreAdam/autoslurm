@@ -34,11 +34,6 @@ def parse_args():
         "--key_path", required=False, help="Path to the SSH private key"
     )
     parser.add_argument(
-        "--remote_path",
-        required=False,
-        help="Path to the remote directory where scripts will be run",
-    )
-    parser.add_argument(
         "--env_command",
         required=False,
         help="Command to activate the environment on the remote machine",

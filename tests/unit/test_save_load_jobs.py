@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 import os
 import pytest
+from autoslurm.storage import jobs_dir, ensure_storage_dirs
 
 """
 Fixtures
@@ -28,16 +29,19 @@ def mock_ssh():
 @pytest.fixture
 def mock_job_script(tmp_path):
     # Create a temporary directory and a mock job script inside it
-    os.makedirs(tmp_path / "jobs", exist_ok=True)
-    job_script_path = tmp_path / "jobs/test_job.sh"
+    os.makedirs(jobs_dir(), exist_ok=True)
+    job_script_path = jobs_dir() / "test_job.sh"
     job_script_path.write_text("#!/bin/bash\n# Mock job script\n")
     return job_script_path
 
 
 @pytest.fixture
-def mock_load_config(tmp_path):
+def mock_load_config(tmp_path, monkeypatch):
+    from autoslurm.storage import set_storage_root
+    storage_root = tmp_path / "storage"
+    set_storage_root(storage_root)
+    ensure_storage_dirs()
     mock_config = {"local": {"path": tmp_path}}
-    os.makedirs(tmp_path / "jobs", exist_ok=True)
     with patch(
         "autoslurm.save_load_jobs.load_config", return_value=mock_config
     ) as mock_load_config:
@@ -60,7 +64,7 @@ def create_mock_job_file(tmp_path, job_name, data):
 
 def test_nearest_bundle_file(tmp_path, mock_load_config):
     print(tmp_path)
-    job_dir = os.path.join(tmp_path, "jobs")
+    job_dir = jobs_dir()
     os.makedirs(job_dir, exist_ok=True)
     # Create some job files with different dates
     job_files = [
@@ -103,7 +107,7 @@ def test_schedule_job_success(tmp_path, mock_load_config):
     # Set custom user_config path to tmp_path
     save_bundle(mock_jobs, bundle_name)
 
-    files = os.listdir(tmp_path / "jobs")
+    files = os.listdir(jobs_dir())
     assert len(files) == 1
     assert files[0].startswith(bundle_name)
     # Read date from file name with DATE_FORM

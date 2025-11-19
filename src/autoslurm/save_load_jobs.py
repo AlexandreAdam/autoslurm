@@ -12,6 +12,7 @@ import warnings
 import subprocess
 import json
 import os
+from .storage import ensure_storage_dirs, jobs_dir, slurm_dir
 
 __all__ = [
     "schedule_job",
@@ -72,10 +73,9 @@ def save_bundle(
                 date += timedelta(seconds=1)
         except FileNotFoundError:
             pass
+        ensure_storage_dirs()
         date = date.strftime(DATE_FORMAT)
-        file_path = os.path.join(
-            user_config["local"]["path"], "jobs", f"{name}_{date}.json"
-        )
+        file_path = jobs_dir() / f"{name}_{date}.json"
         # Make sure every job has a name
         for job_name, job in bundle.items():
             if job.get("name", None) is None:
@@ -111,7 +111,8 @@ def schedule_job(
         dict: The saved job configuration
     """
     user_config = load_config()
-    job_dir = os.path.join(user_config["local"]["path"], "jobs")
+    ensure_storage_dirs()
+    job_dir = jobs_dir()
     if "script" not in job:
         raise KeyError(
             "Job configuration must minimally contain the 'script' entry to run an application"
@@ -128,7 +129,7 @@ def schedule_job(
         try:  # Save the job in existing bundle file
             # Load the job file
             filename, date = nearest_bundle_filename(bundle_name)
-            file_path = os.path.join(job_dir, filename)
+            file_path = job_dir / filename
             with open(file_path, "r") as file:
                 bundle = json.load(file)
             # Create a unique name in case of name conflict
@@ -148,7 +149,7 @@ def schedule_job(
                 f"Did not find a file with the pattern '{bundle_name}_*' in the directory {job_dir}. "
                 f"Creating a new bundle file '{bundle_name}_{date}.json'"
             )
-            file_path = os.path.join(job_dir, f"{bundle_name}_{date}.json")
+            file_path = job_dir / f"{bundle_name}_{date}.json"
             bundle = {job_name: job}
     else:  # Create a new job file
         date = datetime.now()
@@ -160,7 +161,7 @@ def schedule_job(
         except FileNotFoundError:
             pass
         date = date.strftime(DATE_FORMAT)
-        file_path = os.path.join(job_dir, f"{bundle_name}_{date}.json")
+        file_path = job_dir / f"{bundle_name}_{date}.json"
         bundle = {job_name: job}
 
     with open(file_path, "w") as file:
@@ -178,7 +179,8 @@ def transfer_slurm_to_remote(
     Transfers a script from the local machine to a remote machine.
     """
     user_config = load_config()
-    local_script_path = os.path.join(user_config["local"]["path"], "slurm", slurm_name)
+    ensure_storage_dirs()
+    local_script_path = slurm_dir() / slurm_name
 
     if machine_name is not None:
         machine_config = user_config.get(machine_name)
@@ -188,13 +190,9 @@ def transfer_slurm_to_remote(
             )
     if machine_config is None:
         raise ValueError("Either machine_name or machine_config must be specified")
-    if machine_config.get("path", None) is None:
-        raise ValueError(
-            f"Machine {machine_config['hostname']} configuration must contain a path to the autoslurm directory"
-        )
-
+    remote_path = machine_config.get("path", "~/.autoslurm")
     # Transfer the script to the remote machine
-    remote_script_path = os.path.join(machine_config["path"], "slurm", slurm_name)
+    remote_script_path = os.path.join(remote_path, "slurm", slurm_name)
     hostname, key_path = scp_host_and_keypath_from_config(machine_config, machine_name)
     ssh_command = [
         "scp",
@@ -238,8 +236,9 @@ def load_bundle(
 
     # Load user configuration and job file path
     user_config = load_config()
+    ensure_storage_dirs()
     job_file, date = nearest_bundle_filename(name, desired_date)
-    file_path = os.path.join(user_config["local"]["path"], "jobs", job_file)
+    file_path = jobs_dir() / job_file
 
     with open(file_path, "r") as file:
         try:
@@ -265,15 +264,16 @@ def nearest_bundle_filename(
     Get the filename of a job bundle nearest in time to desired date from the jobs directory.
     """
     user_config = load_config()
-    jobs_dir = os.path.join(user_config["local"]["path"], "jobs")
+    ensure_storage_dirs()
+    directory = jobs_dir()
     files = [
         f[:-5]
-        for f in os.listdir(jobs_dir)
+        for f in os.listdir(directory)
         if f.startswith(name) and f.endswith(".json")
     ]
     if not files:
         raise FileNotFoundError(
-            f"No files found with name '{name}' in directory {jobs_dir}"
+            f"No files found with name '{name}' in directory {directory}"
         )
     dates = []
     for file in files:

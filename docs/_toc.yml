@@ -3,8 +3,9 @@ root: front_page
 chapters:
   - file: getting_started
   - file: configuration
-  - file: register_an_application
-  - file: typer_integration
+  - file: ssh_configuration
+  - file: register_script
+  - file: cli_integration
   #- part: Agent Guide
     #chapters:
       #- file: agent/index

@@ -131,10 +131,8 @@ def parse_args():
     machine_config.add_argument('--hosturl', required=False, help='The url of the machine. When provided, consider providing username and key_path also.')
     machine_config.add_argument('--username', required=False, help='Username for SSH login')
     machine_config.add_argument('--key_path', required=False, help='Path to the SSH private key.')
-    machine_config.add_argument('--remote_path', required=False, help='Path to the remote directory where scripts will be run.')
     machine_config.add_argument('--env_command', required=False, help='Command to activate the environment on the remote machine.')
     machine_config.add_argument('--slurm_account', required=False, help='SLURM account to use for job submission.')
-    machine_config.add_argument('--path', required=False, help='Path to the directory where scripts will be run.')
     # fmt: on
 
     args, unknown_args = parser.parse_known_args()

@@ -2,6 +2,7 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 from autoslurm import save_bundle, submit_jobs
+from autoslurm.storage import slurm_dir, ensure_storage_dirs, set_storage_root
 from glob import glob
 
 from tests.integration.mocks import (
@@ -18,6 +19,14 @@ from tests.integration.mocks import (
 )
 
 
+@pytest.fixture
+def storage_env(monkeypatch, tmp_path):
+    path = tmp_path / "storage"
+    set_storage_root(path)
+    ensure_storage_dirs()
+    return path
+
+
 @pytest.mark.parametrize(
     "mock_machine_config",
     [
@@ -30,16 +39,12 @@ from tests.integration.mocks import (
 @patch("subprocess.run", new_callable=setup_mock_subprocess_run)
 @patch("autoslurm.run_slurm.run_slurm_remotely")
 def test_integration_schedule_jobs(
-    mock_run_script_remotely, mock_ssh_client, mock_machine_config, mock_load_config
+    mock_run_script_remotely, mock_ssh_client, mock_machine_config, mock_load_config, storage_env
 ):
     save_bundle(mock_jobs, mock_job_name)
     submit_jobs(mock_job_name, machine_config=mock_machine_config)
 
-    user_config = mock_load_config
-    autoslurm_path = user_config["local"]["path"]
-    slurm_dir = os.path.join(autoslurm_path, "slurm")
-
-    files_created = glob(os.path.join(slurm_dir, "*.sh"))
+    files_created = glob(os.path.join(slurm_dir(), "*.sh"))
     assert len(files_created) == 3, "Expected 3 SLURM scripts to be created"
 
     for file in files_created:
