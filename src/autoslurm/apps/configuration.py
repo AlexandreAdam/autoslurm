@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import socket
@@ -137,24 +138,33 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
     is_remote = _prompt_yes_no("Is this a remote machine?", default="y" if remote_default else "n")
     machine = {"env_command": env_command, "slurm_account": slurm_account}
     if is_remote:
+        print("Choose how to describe the remote machine:")
+        print("  1) Use an SSH config alias (hostname only)")
+        print("  2) Provide host URL + username")
         while True:
-            hostname = _prompt_text("SSH hostname (optional)", existing.get("hostname"))
-            hosturl = _prompt_text("SSH host URL (optional)", existing.get("hosturl"))
-            username = _prompt_text(
-                "SSH username",
-                existing.get("username"),
-                required=not bool(hostname or hosturl),
+            connection_type = input("Connection type [1/2]: ").strip()
+            if not connection_type:
+                connection_type = "1"
+            if connection_type in {"1", "2"}:
+                break
+            print("Please enter 1 or 2.")
+        key_path = _prompt_text("SSH key path (optional)", existing.get("key_path"))
+        if connection_type == "1":
+            hostname = _prompt_text(
+                "SSH hostname alias", existing.get("hostname"), required=True
             )
-            key_path = _prompt_text("SSH key path (optional)", existing.get("key_path"))
-            if not hostname and not hosturl:
-                print("Remote machines require a hostname or a combination of host URL and username.")
-                continue
             machine["hostname"] = hostname
+        else:
+            hosturl = _prompt_text(
+                "SSH host URL", existing.get("hosturl"), required=True
+            )
+            username = _prompt_text(
+                "SSH username", existing.get("username"), required=True
+            )
             machine["hosturl"] = hosturl
             machine["username"] = username
-            if key_path:
-                machine["key_path"] = key_path
-            break
+        if key_path:
+            machine["key_path"] = key_path
     else:
         machine.pop("hostname", None)
         machine.pop("hosturl", None)
@@ -256,7 +266,24 @@ def _menu_loop(config: Dict):
             print("Please choose a valid option (1-4).")
 
 
+def display_config():
+    if not os.path.exists(CONFIG_FILE_PATH):
+        print("No configuration found.")
+        return
+    with open(CONFIG_FILE_PATH, "r") as file:
+        data = json.load(file)
+    print(json.dumps(data, indent=4))
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Configure AutoSlurm machines and view the stored config.")
+    parser.add_argument("--view", action="store_true", help="Print the current configuration file and exit.")
+    args = parser.parse_args()
+
+    if args.view:
+        display_config()
+        return
+
     if not os.path.exists(CONFIG_FILE_PATH):
         _create_default_machine()
         return

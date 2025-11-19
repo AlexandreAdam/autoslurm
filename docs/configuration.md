@@ -1,6 +1,10 @@
 # Configuration
 
-Run `autoslurm-configuration` to interactively define one or more machines and choose which one is considered the default. 
+Run `autoslurm-configuration` to interactively define one or more machines and choose which one is considered the default. You can also inspect the current configuration without entering the menu by passing `--view`.
+
+```bash
+autoslurm-configuration --view
+```
 The default machine is the one AutoSlurm uses whenever `--machine` is omitted.
 
 ```bash
@@ -22,6 +26,6 @@ export AUTOSLURM_STORAGE_ROOT=/tmp/autoslurm_storage
 autoslurm-configuration
 ```
 
-The same command also creates those directories on every remote machine under `~/.autoslurm/` (the storage root is constant unless you configure a custom `path` per machine). Re-run `autoslurm-configuration` whenever you need to refresh credentials, add more machines, or change the default profile—it will recreate or synchronize the storage directories for you.
+The same command also creates those directories on every remote machine under `~/.autoslurm/` (the storage root is constant unless you configure a custom `path` per machine). When a remote machine is added the wizard asks whether you want to reference it via an SSH config alias or by providing the host URL plus username; whichever option you choose determines the fields that must be filled. Re-run `autoslurm-configuration` whenever you need to refresh credentials, add more machines, or change the default profile—it will recreate or synchronize the storage directories for you.
 
 Refer to [SSH Configuration](ssh_configuration.md) for help preparing SSH keys, `ssh_config`, and common flags when defining remote machines.
