@@ -225,7 +225,7 @@ job = {
 }
 
 schedule_job(job, bundle_name="analytics", append=True)
-submit_jobs("analytics")  # Uses default machine config unless overridden
+submit_jobs("analytics")  # Uses default machine unless overrides are provided
 ```
 
 Use this API when another service (for example, an LLM agent) needs to stage

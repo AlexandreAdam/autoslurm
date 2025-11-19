@@ -42,6 +42,7 @@ mock_job_ids = {"JobA": "12345", "JobB": "67890", "JobC": "54321"}
 expected_bundle_content = {
     "JobA": [
         "#!/bin/bash\n",
+        "#SBATCH --account=def-bengioy\n",
         "#SBATCH --output=/path/to/remote/slurm/%x-%j.out\n",
         "#SBATCH --job-name=JobA\n",
         "#SBATCH --tasks=1\n",
@@ -57,6 +58,7 @@ expected_bundle_content = {
     "JobB": [
         "#!/bin/bash\n",
         f"#SBATCH --dependency=afterok:{mock_job_ids['JobA']}\n",
+        "#SBATCH --account=def-bengioy\n",
         "#SBATCH --output=/path/to/remote/slurm/%x-%j.out\n",
         "#SBATCH --job-name=JobB\n",
         "#SBATCH --tasks=1\n",
@@ -71,6 +73,7 @@ expected_bundle_content = {
     "JobC": [
         "#!/bin/bash\n",
         f"#SBATCH --dependency=afterok:{mock_job_ids['JobA']}:{mock_job_ids['JobB']}\n",
+        "#SBATCH --account=def-bengioy\n",
         "#SBATCH --output=/path/to/remote/slurm/%x-%j.out\n",
         "#SBATCH --job-name=JobC\n",
         "#SBATCH --tasks=1\n",
@@ -131,17 +134,19 @@ def setup_mock_subprocess_run() -> Callable:
 @pytest.fixture
 def mock_load_config(monkeypatch, tmp_path):
     mock_config = {
-        "local": {
-            "path": tmp_path,
-            "env_command": "source /path/to/env/bin/activate",
-            "slurm_account": "def-bengioy",
-        }
+        "machines": {
+            "local": {
+                "path": tmp_path,
+                "env_command": "source /path/to/env/bin/activate",
+                "slurm_account": "def-bengioy",
+            }
+        },
+        "default_machine": "local",
     }
     os.makedirs(tmp_path / "jobs", exist_ok=True)
     os.makedirs(tmp_path / "slurm", exist_ok=True)
 
     monkeypatch.setattr("autoslurm.save_load_jobs.load_config", lambda: mock_config)
-    monkeypatch.setattr("autoslurm.job_runner.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.run_slurm.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.utils.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.load_config", lambda: mock_config)

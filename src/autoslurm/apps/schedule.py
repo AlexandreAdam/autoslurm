@@ -162,5 +162,5 @@ def main():
     schedule_job(job, bundle_name=bundle, append=args.append)
 
     if args.submit:
-        config = machine_config(args)
-        submit_jobs(bundle, machine_config=config)
+        machine_name, config = machine_config(args)
+        submit_jobs(bundle, machine=machine_name, machine_overrides=config)

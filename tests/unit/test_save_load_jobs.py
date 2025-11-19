@@ -41,7 +41,7 @@ def mock_load_config(tmp_path, monkeypatch):
     storage_root = tmp_path / "storage"
     set_storage_root(storage_root)
     ensure_storage_dirs()
-    mock_config = {"local": {"path": tmp_path}}
+    mock_config = {"machines": {"local": {"path": tmp_path}}, "default_machine": "local"}
     with patch(
         "autoslurm.save_load_jobs.load_config", return_value=mock_config
     ) as mock_load_config:

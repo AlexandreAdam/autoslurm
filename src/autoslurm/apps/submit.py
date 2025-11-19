@@ -49,5 +49,5 @@ def parse_args():
 
 def main():
     args = parse_args()
-    config = machine_config(args)
-    submit_jobs(args.name, machine_config=config)
+    machine_name, config = machine_config(args)
+    submit_jobs(args.name, machine=machine_name, machine_overrides=config)

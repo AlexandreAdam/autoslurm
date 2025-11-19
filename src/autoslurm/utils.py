@@ -80,54 +80,49 @@ def load_config() -> dict:
     return _normalize_config(raw)
 
 
-def machine_config(args: Namespace) -> dict:
-    machine_config_ = {}
-    if args.machine is not None:
-        config = load_config()
-        machines = config.get("machines", {})
-        machine_entry = machines.get(args.machine)
-        if machine_entry is None:
-            machine_entry = config.get(args.machine)
-        if machine_entry is None:
-            raise EnvironmentError(
-                f"No configuration found for machine: {args.machine}"
-            )
-        machine_config_.update(machine_entry)
-    else:
+def machine_config(
+    args: Optional[Namespace] = None,
+    machine: Optional[str] = None,
+    overrides: Optional[dict] = None,
+) -> tuple[str, dict]:
+    config = load_config()
+    machines = config["machines"]
+    final_overrides = dict(overrides or {})
+    machine_name = machine
+    if args is not None:
+        machine_name = machine_name or args.machine
         if args.hosturl is not None or args.hostname is not None:
             for key in ["slurm_account", "env_command"]:
                 if getattr(args, key, None) is None:
                     raise AttributeError(
                         f"Custom machine configuration with 'hosturl' requires {key}."
                     )
-            machine_config_.update(
-                {
-                    key: getattr(args, key, None)
-                    for key in MACHINE_KEYS
-                    if getattr(args, key, None) is not None
-                }
-            )
-        else:
-            machine_config_ = load_config()["local"]
-
-    # Update the machine configuration with custom parameters for environment and slurm account
-    for key in ["env_command", "slurm_account"]:
-        v = getattr(args, key, None)
-        if v is not None:
-            machine_config_[key] = v
-
-    # Enforce required keys
-    if machine_config_.get("slurm_account", None) is None:
+            for key in MACHINE_KEYS:
+                value = getattr(args, key, None)
+                if value is not None:
+                    final_overrides[key] = value
+        over_keys = ["env_command", "slurm_account"]
+        for key in over_keys:
+            value = getattr(args, key, None)
+            if value is not None:
+                final_overrides[key] = value
+    if machine_name is None:
+        machine_name = config["default_machine"]
+    if machine_name not in machines:
+        raise EnvironmentError(
+            f"No configuration found for machine: {machine_name}"
+        )
+    machine_config_ = dict(machines.get(machine_name, {}))
+    machine_config_.update(final_overrides)
+    if machine_config_.get("slurm_account") is None:
         raise AttributeError(
             "'slurm_account' account must be provided. Rerun with --slurm_account option or rerun autoslurm-configuration to edit the configuration for the machine."
         )
-
-    if machine_config_.get("env_command", None) is None:
+    if machine_config_.get("env_command") is None:
         raise AttributeError(
             "'env_command' must be provided. Rerun with --env_command option or rerun autoslurm-configuration to edit the configuration for the machine."
         )
-
-    return machine_config_
+    return machine_name, machine_config_
 
 
 def ssh_host_from_config(

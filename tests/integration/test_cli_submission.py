@@ -35,7 +35,7 @@ def test_cli_submission(mock_load_config, slurm_emulator):
     }
 
     save_bundle({job_name: job}, job_name)
-    submit_jobs(job_name, machine_config=mock_machine_config_local)
+    submit_jobs(job_name, machine="local", machine_overrides=mock_machine_config_local)
 
     assert slurm_emulator, "No SLURM executions were recorded"
     assert any(

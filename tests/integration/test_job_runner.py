@@ -42,7 +42,7 @@ def test_integration_schedule_jobs(
     mock_run_script_remotely, mock_ssh_client, mock_machine_config, mock_load_config, storage_env
 ):
     save_bundle(mock_jobs, mock_job_name)
-    submit_jobs(mock_job_name, machine_config=mock_machine_config)
+    submit_jobs(mock_job_name, machine="local", machine_overrides=mock_machine_config)
 
     files_created = glob(os.path.join(slurm_dir(), "*.sh"))
     assert len(files_created) == 3, "Expected 3 SLURM scripts to be created"
@@ -92,7 +92,7 @@ def test_integration_schedule_jobs_with_error(
 ):
     with pytest.raises(KeyError):
         save_bundle(mock_jobs_error, mock_job_name)
-        submit_jobs(mock_job_name, machine_config=mock_machine_config)
+        submit_jobs(mock_job_name, machine="local", machine_overrides=mock_machine_config)
 
 
 def test_unregistered_python_script_executes(tmp_path, mock_load_config, slurm_emulator):
@@ -114,7 +114,7 @@ print(\"Hello from an unregistered script!\")
     }
 
     save_bundle({job_name: job}, job_name)
-    submit_jobs(job_name, machine_config=mock_machine_config_local)
+    submit_jobs(job_name, machine="local", machine_overrides=mock_machine_config_local)
 
     assert slurm_emulator, "The SLURM emulator did not record any executed scripts."
     assert any(

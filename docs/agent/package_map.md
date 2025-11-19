@@ -52,7 +52,7 @@ paths they touch, which is useful for log parsing.
 | `schedule_job(job, bundle_name=None, append=False)` | `autoslurm.save_load_jobs` | Persist a single job dict. Creates or appends to `<bundle>_YYYYMMDDhhmmss.json`. |
 | `save_bundle(bundle_dict, name, append=False)` | `autoslurm.save_load_jobs` | Persist multiple jobs at once. |
 | `load_bundle(name)` | `autoslurm.save_load_jobs` | Returns `jobs`, `dependencies`, `date` for the latest bundle. |
-| `submit_jobs(name, machine_config=None, date=None)` | `autoslurm.job_runner` | Converts bundle → SLURM scripts → `sbatch` (local or remote). |
+| `submit_jobs(name, machine=None, machine_overrides=None, date=None)` | `autoslurm.job_runner` | Converts bundle → SLURM scripts → `sbatch` (local or remote). Specify a named machine from the config (`machine`) and/or overrides for env/slurm credentials. |
 | `create_slurm_script(job, date, machine_config)` | `autoslurm.job_to_slurm` | Renders the `#!/bin/bash` file with headers, env export, pre-commands, and CLI args. |
 | `run_slurm_locally(slurm_name)` / `run_slurm_remotely(slurm_name, machine_config)` | `autoslurm.run_slurm` | Execute `sbatch` and capture the job ID. |
 | `update_slurm_with_dependencies(slurm_name, job_ids)` | `autoslurm.job_dependency` | Inject `#SBATCH --dependency=afterok:` entries after upstream jobs complete. |
