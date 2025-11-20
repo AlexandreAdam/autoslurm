@@ -4,7 +4,7 @@ Agents that need to understand what a job bundle contains should focus on these 
 
 - `03_experiment_context.md` explains `autoslurm-experiment-context` / `autoslurm.experiment_context.experiment_context(...)`, which emit (1) the saved bundle JSON, (2) the rendered SLURM scripts, and (3) the `.out` logs tied to each job. Running this tool with `--date` or passing `desired_date` lets you target a specific timestamped bundle.
 - In `04_project_map.md` the Python function is listed under “Python surface area,” and the generated scripts/logs are described near the section that covers `$AUTOSLURM/jobs`, `/slurm`, and `/out`. Use this to track where files live.
-- Reference `07_acp_actions.md` plus `acp_action.y` to find the `inspect_experiments` action, which requires `bundle` and optional `date`, and returns the same concatenated text.
+- Reference `07_acp_actions.md` plus `acp_action.json` to find the `inspect_experiments` action, which requires `bundle` and optional `date`, and returns the same concatenated text.
 - When you need remote logs that may live on another machine, rely on the agent context helper for the ACP: `execute_acp({"action":"inspect_experiments", ...})` triggers the same fetch logic that the CLI uses.
 
 Quick summary:

@@ -26,7 +26,11 @@
       "job": "Required. A dict containing at least 'script' and 'slurm'; optional 'name', 'dependencies', 'pre_commands', etc.",
       "append": "Optional boolean. When true, appends to the latest bundle instead of creating a new timestamped file."
     },
-    "context_sections": ["10_task_schedule.md", "12_task_acp_reference.md"],
+    "context_sections": [
+      "10_task_schedule.md",
+      "12_task_acp_reference.md",
+      "06_resource_rules.md"
+    ],
     "keywords": ["schedule", "plan"]
   }
   ,

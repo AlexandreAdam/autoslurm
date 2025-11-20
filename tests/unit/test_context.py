@@ -31,6 +31,12 @@ def test_schedule_context_contains_expected_sections():
     assert "Task: Inspect Experiments" not in context
 
 
+def test_schedule_context_includes_resource_rules():
+    context = agent_context(sections=["10_task_schedule.md", "06_resource_rules.md"])
+    assert "Light workloads (CPU-only" in context
+    assert "Heavy workloads (multi-hour/GPU)" in context
+
+
 def test_schedule_context_keywords_only():
     context = agent_context(sections=["10_task_schedule", "acp_reference"])
     assert "Task: Plan & Schedule Jobs" in context

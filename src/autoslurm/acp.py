@@ -11,7 +11,7 @@ from .experiment_context import experiment_context
 from .save_load_jobs import schedule_job
 from .storage import ensure_storage_dirs, jobs_dir
 
-ACTION_FILE = Path(__file__).resolve().parent / "acp_action.y"
+ACTION_FILE = Path(__file__).resolve().parent / "acp_action.json"
 
 
 def _load_action_definitions() -> Dict[str, Dict[str, Any]]:

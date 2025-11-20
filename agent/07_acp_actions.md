@@ -1,6 +1,6 @@
 # ACP Actions Reference
 
-AutoSlurm exposes a small Agent Communication Protocol (ACP) whose actions are documented in `src/autoslurm/acp_action.y`. Each payload follows the shape `{"action": "...", ...}` and returns `{"status": "...", "result": ...}`. The available actions are:
+AutoSlurm exposes a small Agent Communication Protocol (ACP) whose actions are documented in `src/autoslurm/acp_action.json`. Each payload follows the shape `{"action": "...", ...}` and returns `{"status": "...", "result": ...}`. The available actions are:
 
 1. **inspect_experiments**: returns the `autoslurm.experiment_context` snapshot (bundle JSON + scripts + `.out` logs) for a given bundle and optional date.
 2. **list_experiments**: lists the available bundle JSON files (`jobs/<bundle>_*.json`) so an agent knows which timestamps are available and which jobs they contain.
