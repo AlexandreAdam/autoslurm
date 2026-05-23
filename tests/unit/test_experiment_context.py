@@ -40,7 +40,7 @@ def test_experiment_context_includes_bundle_and_logs():
 
     context = experiment_context(bundle_name)
 
-    assert f"Bundle '{bundle_name}'" in context
+    assert f"Job or bundle '{bundle_name}'" in context
     assert "#!/bin/bash" in context
     assert "analysis completed" in context
 

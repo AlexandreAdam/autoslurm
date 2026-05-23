@@ -3,6 +3,7 @@ import json
 import os
 import socket
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -60,7 +61,7 @@ def _remote_machine_actions(machine: Dict, name: str):
         print(f"Unable to resolve hostname for {name}. Skipping setup.")
         return
     # Create directories on the remote machine at ~/.autoslurm
-    for directory in ("jobs", "slurm"):
+    for directory in ("jobs", "slurm", "out"):
         remote_dir = os.path.join("~/.autoslurm", directory)
         ssh_command = ["ssh", hostname, f"mkdir -p {remote_dir}"]
         result = subprocess.run(ssh_command, capture_output=True, text=True)
@@ -275,10 +276,15 @@ def display_config():
     print(json.dumps(data, indent=4))
 
 
-def main():
+def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(description="Configure AutoSlurm machines and view the stored config.")
     parser.add_argument("--view", action="store_true", help="Print the current configuration file and exit.")
-    args = parser.parse_args()
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv:
+        parser.print_help()
+        return
+    args = parser.parse_args(argv)
 
     if args.view:
         display_config()

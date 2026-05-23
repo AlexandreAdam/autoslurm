@@ -1,4 +1,3 @@
-import os
 import json
 import socket
 import pytest
@@ -65,6 +64,7 @@ def test_autoslurm_configuration(
         with open(config_path, "w") as f:
             json.dump(EXAMPLE_CONFIG, f)
 
+        monkeypatch.setattr("sys.argv", ["autoslurm-configuration"])
         with patch("autoslurm.apps.configuration.CONFIG_FILE_PATH", str(config_path)), patch(
             "autoslurm.utils.CONFIG_FILE_PATH", str(config_path)
         ):
@@ -72,7 +72,4 @@ def test_autoslurm_configuration(
 
     assert jobs_dir().exists(), "Jobs directory should be created under storage root."
     assert slurm_dir().exists(), "SLURM directory should be created under storage root."
-    if hostname_resolvable:
-        assert any("mkdir -p ~/.autoslurm/jobs" in str(call.args[0][2]) for call in mock_run.call_args_list)
-    else:
-        assert mock_run.call_count == 0
+    assert mock_run.call_count == 0

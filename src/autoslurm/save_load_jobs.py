@@ -20,6 +20,7 @@ __all__ = [
     "save_bundle",
     "load_bundle",
     "load_bundle_from_path",
+    "list_saved_bundles",
     "transfer_slurm_to_remote",
     "nearest_bundle_filename",
 ]
@@ -298,6 +299,51 @@ def load_bundle_from_path(
     sorted_job_names = tuple(TopologicalSorter(dependencies).static_order())[::-1]
     jobs = order_jobs(jobs, sorted_job_names)
     return jobs, dependencies, datetime.fromtimestamp(file_path.stat().st_mtime)
+
+
+def list_saved_bundles(
+    desired_date: Optional[datetime] = None,
+    bundle_name: Optional[str] = None,
+) -> list[dict]:
+    """
+    List saved bundle files ordered by proximity to a reference date.
+
+    If ``bundle_name`` is provided, only versions of that bundle are returned.
+    Otherwise every bundle under the jobs directory is included.
+    """
+    ensure_storage_dirs()
+    if desired_date is None:
+        desired_date = datetime.now()
+
+    entries: list[dict] = []
+    for filename in jobs_dir().glob("*.json"):
+        stem = filename.stem
+        if "_" not in stem:
+            continue
+        name_part, date_text = stem.rsplit("_", 1)
+        if bundle_name is not None and name_part != bundle_name:
+            continue
+        try:
+            saved_date = datetime.strptime(date_text, DATE_FORMAT)
+        except ValueError:
+            continue
+        try:
+            with open(filename, "r") as file:
+                jobs = list(json.load(file).keys())
+        except (json.JSONDecodeError, OSError):
+            jobs = []
+        entries.append(
+            {
+                "bundle": name_part,
+                "date": saved_date,
+                "path": filename,
+                "jobs": jobs,
+                "distance": abs(saved_date - desired_date),
+            }
+        )
+
+    entries.sort(key=lambda entry: (entry["distance"], entry["date"]), reverse=False)
+    return entries
 
 
 def nearest_bundle_filename(

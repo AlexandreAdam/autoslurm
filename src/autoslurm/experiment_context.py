@@ -154,7 +154,7 @@ def experiment_context(bundle_name: str, desired_date: Optional[datetime] = None
 
     parts = []
     header_lines = [
-        f"## Bundle '{bundle_name}'",
+        f"## Job or bundle '{bundle_name}'",
         f"- path: {bundle_path}",
         f"- saved: {bundle_date.isoformat()}",
         "### Jobs JSON",

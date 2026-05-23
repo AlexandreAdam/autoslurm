@@ -99,10 +99,8 @@ def parse_script_args(script, unknown_args) -> dict:
     return _parse_unknown_args(options, unknown_args)
 
 
-def parse_args():
-    # fmt: off
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Schedule a job for a SLURM cluster.')
-
     parser.add_argument('script',                        help='Name of the script to schedule.')
     parser.add_argument('--bundle', default=None,        help='Name of the job bundle (JSON file containing multiple jobs/scripts to be scheduled). '
                                                               'If not provided, the script name is used as the bundle name.')
@@ -133,15 +131,26 @@ def parse_args():
     machine_config.add_argument('--key_path', required=False, help='Path to the SSH private key.')
     machine_config.add_argument('--env_command', required=False, help='Command to activate the environment on the remote machine.')
     machine_config.add_argument('--slurm_account', required=False, help='SLURM account to use for job submission.')
-    # fmt: on
+    return parser
 
-    args, unknown_args = parser.parse_known_args()
+
+def parse_args(argv=None):
+    parser = _build_parser()
+    args, unknown_args = parser.parse_known_args(argv)
     script_args = parse_script_args(args.script, unknown_args)
     return args, script_args
 
 
-def main():
-    args, script_args = parse_args()
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv:
+        _build_parser().print_help()
+        return
+    if argv == ["--help"] or argv == ["-h"]:
+        _build_parser().print_help()
+        return
+    args, script_args = parse_args(argv)
     job = {
         "name": args.script if args.job_name is None else args.job_name,
         "script": args.script,

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from .definitions import DATE_FORMAT
 from .context import agent_context
 from .experiment_context import experiment_context
-from .save_load_jobs import schedule_job
+from .save_load_jobs import list_saved_bundles, schedule_job
 from .storage import ensure_storage_dirs, jobs_dir
 
 ACTION_FILE = Path(__file__).resolve().parent / "acp_action.json"
@@ -43,27 +43,16 @@ def _parse_date(value: Optional[str]) -> Optional[datetime]:
             )
 
 
-def list_bundles(bundle_name: str) -> List[Dict[str, Any]]:
+def list_bundles(bundle_name: str, desired_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
     ensure_storage_dirs()
     entries = []
-    for filename in sorted(jobs_dir().glob(f"{bundle_name}_*.json")):
-        try:
-            date_text = filename.stem.split("_")[-1]
-            date = datetime.strptime(date_text, DATE_FORMAT)
-        except ValueError:
-            continue
-        jobs = []
-        try:
-            with open(filename, "r") as file:
-                jobs = list(json.load(file).keys())
-        except (json.JSONDecodeError, OSError):
-            jobs = []
+    for entry in list_saved_bundles(desired_date=desired_date, bundle_name=bundle_name):
         entries.append(
             {
-                "bundle": bundle_name,
-                "date": date.isoformat(),
-                "path": str(filename),
-                "jobs": jobs,
+                "bundle": entry["bundle"],
+                "date": entry["date"].isoformat(),
+                "path": str(entry["path"]),
+                "jobs": entry["jobs"],
             }
         )
     return entries

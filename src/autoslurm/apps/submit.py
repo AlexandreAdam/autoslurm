@@ -1,10 +1,11 @@
 import argparse
+import sys
 from pathlib import Path
 from ..utils import machine_config
 from ..job_runner import submit_jobs
 
 
-def parse_args():
+def parse_args(argv=None):
     """
     Parses command line arguments.
 
@@ -51,11 +52,26 @@ def parse_args():
         help="Explicit path to a JSON bundle file to submit instead of loading from AutoSlurm storage.",
     )
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main():
-    args = parse_args()
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv:
+        parser = argparse.ArgumentParser(description="Run scripts on a SLURM cluster.")
+        parser.add_argument("name", help="Name of the job")
+        parser.add_argument("--machine", required=False, help="Machine name to run the jobs (e.g., local, remote_1)")
+        parser.add_argument("--hostname", required=False, help="Hostname of the remote machine")
+        parser.add_argument("--hosturl", required=False, help="The url of the machine")
+        parser.add_argument("--username", required=False, help="Username for SSH login")
+        parser.add_argument("--key_path", required=False, help="Path to the SSH private key")
+        parser.add_argument("--env_command", required=False, help="Command to activate the environment on the remote machine")
+        parser.add_argument("--slurm_account", required=False, help="SLURM account to use for job submission")
+        parser.add_argument("--bundle-file", required=False, type=Path, help="Explicit path to a JSON bundle file to submit instead of loading from AutoSlurm storage.")
+        parser.print_help()
+        return
+    args = parse_args(argv)
     machine_name, config = machine_config(args)
     submit_jobs(
         args.name,
