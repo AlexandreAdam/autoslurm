@@ -17,7 +17,7 @@ def create_slurm_script(job: dict, date: datetime, machine_config: dict) -> str:
     file_path = path / slurm_name
     with open(file_path, "w") as f:
         write_slurm_content(f, job, machine_config)
-    print(f"Saved SLURM script for job {job['name']} saved to {file_path}")
+    print(f"Saved SLURM script {slurm_name} locally")
     return slurm_name
 
 

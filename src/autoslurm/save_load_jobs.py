@@ -258,6 +258,7 @@ def transfer_slurm_to_remote(
     remote_script_path = os.path.join(remote_path, "slurm", slurm_name)
     _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "slurm"))
     _scp_to_remote(local_script_path, remote_script_path, machine_name, machine_config)
+    print(f"Saved SLURM script {slurm_name} remotely")
 
 
 def transfer_bundle_to_remote(

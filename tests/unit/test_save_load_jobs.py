@@ -360,7 +360,7 @@ Test transfer script to remote
 
 
 def test_transfer_script_to_remote(
-    tmp_path, mock_ssh, mock_load_config, mock_job_script
+    tmp_path, mock_ssh, mock_load_config, mock_job_script, capsys
 ):
     mock_machine_config = {
         "hostname": "testhost",
@@ -370,11 +370,13 @@ def test_transfer_script_to_remote(
     }
 
     transfer_slurm_to_remote("test_job", machine_config=mock_machine_config)
+    output = capsys.readouterr().out
     assert mock_ssh.called
     command = mock_ssh.call_args.args[0]
     assert command[0] == "scp"
     assert str(command[1]).endswith("/storage/slurm/test_job")
     assert command[2] == "testhost:/path/to/remote/slurm/test_job"
+    assert "Saved SLURM script test_job remotely" in output
 
 
 def test_transfer_script_to_remote_probes_remote_root_when_path_missing(
