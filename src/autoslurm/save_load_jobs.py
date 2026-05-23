@@ -2,7 +2,12 @@
 Utility functions to save/load bundle of jobs to/from a JSON file in the jobs directory
 """
 
-from .utils import load_config, scp_host_and_keypath_from_config
+from .utils import (
+    load_config,
+    scp_host_and_keypath_from_config,
+    remote_storage_root_from_config,
+    ssh_host_from_config,
+)
 from .definitions import DATE_FORMAT
 from .job_dependency import dependency_graph
 from typing import Optional
@@ -12,8 +17,10 @@ import warnings
 import subprocess
 import json
 import os
+import shlex
 from pathlib import Path
 from .storage import ensure_storage_dirs, jobs_dir, slurm_dir, storage_root
+from .utils import ssh_host_from_config
 
 __all__ = [
     "schedule_job",
@@ -23,8 +30,13 @@ __all__ = [
     "list_saved_bundles",
     "latest_bundle_summaries",
     "transfer_slurm_to_remote",
+    "transfer_bundle_to_remote",
     "nearest_bundle_filename",
 ]
+
+
+def _is_placeholder_file(path: Path) -> bool:
+    return path.name.startswith(".")
 
 
 def save_bundle(
@@ -185,6 +197,52 @@ def schedule_job(
     return job, file_path
 
 
+def _resolve_machine_config(
+    machine_name: Optional[str], machine_config: Optional[dict]
+) -> tuple[Optional[str], dict]:
+    if machine_name is not None:
+        user_config = load_config()
+        machine_config = user_config.get(machine_name)
+        if not machine_config:
+            raise EnvironmentError(
+                f"No configuration found for machine: {machine_name}"
+            )
+    if machine_config is None:
+        raise ValueError("Either machine_name or machine_config must be specified")
+    return machine_name, machine_config
+
+
+def _remote_root_for_machine(machine_name: Optional[str], machine_config: dict) -> str:
+    if machine_config.get("path"):
+        return machine_config["path"]
+    return remote_storage_root_from_config(machine_config, machine_name)
+
+
+def _scp_to_remote(local_path: Path, remote_path: str, machine_name: Optional[str], machine_config: dict) -> None:
+    hostname, key_path = scp_host_and_keypath_from_config(machine_config, machine_name)
+    ssh_command = ["scp"]
+    if key_path:
+        ssh_command.extend(shlex.split(key_path))
+    ssh_command.extend([str(local_path), f"{hostname}:{remote_path}"])
+    result = subprocess.run(ssh_command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise ValueError(f"Error running scp command: {result.stderr}")
+
+
+def _ensure_remote_directory(machine_name: Optional[str], machine_config: dict, remote_dir: str) -> None:
+    hostname = ssh_host_from_config(machine_config, machine_name)
+    result = subprocess.run(
+        ["ssh", *shlex.split(hostname), f"mkdir -p {shlex.quote(remote_dir)}"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip()
+        raise RuntimeError(
+            f"Unable to create remote directory '{remote_dir}' for machine '{machine_name or ''}': {message}"
+        )
+
+
 def transfer_slurm_to_remote(
     slurm_name,
     machine_name: Optional[str] = None,
@@ -193,33 +251,32 @@ def transfer_slurm_to_remote(
     """
     Transfers a script from the local machine to a remote machine.
     """
-    user_config = load_config()
     ensure_storage_dirs()
     local_script_path = slurm_dir() / slurm_name
-
-    if machine_name is not None:
-        machine_config = user_config.get(machine_name)
-        if not machine_config:
-            raise EnvironmentError(
-                f"No configuration found for machine: {machine_name}"
-            )
-    if machine_config is None:
-        raise ValueError("Either machine_name or machine_config must be specified")
-    remote_path = machine_config.get("path") or str(storage_root())
-    # Transfer the script to the remote machine
+    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
+    remote_path = _remote_root_for_machine(machine_name, machine_config)
     remote_script_path = os.path.join(remote_path, "slurm", slurm_name)
-    hostname, key_path = scp_host_and_keypath_from_config(machine_config, machine_name)
-    ssh_command = [
-        "scp",
-        key_path,
-        local_script_path,
-        f"{hostname}:{remote_script_path}",
-    ]
-    result = subprocess.run(ssh_command, capture_output=True, text=True)
+    _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "slurm"))
+    _scp_to_remote(local_script_path, remote_script_path, machine_name, machine_config)
+    print(f"Saved SLURM script {slurm_name} remotely")
 
-    # Check for errors
-    if result.returncode != 0:
-        raise ValueError(f"Error running scp command: {result.stderr}")
+
+def transfer_bundle_to_remote(
+    bundle_name: str,
+    date: datetime,
+    machine_name: Optional[str] = None,
+    machine_config: Optional[dict] = None,
+) -> None:
+    """
+    Transfers the bundle JSON file to the remote machine jobs directory.
+    """
+    ensure_storage_dirs()
+    local_bundle_path = jobs_dir() / f"{bundle_name}_{date.strftime(DATE_FORMAT)}.json"
+    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
+    remote_path = _remote_root_for_machine(machine_name, machine_config)
+    remote_bundle_path = os.path.join(remote_path, "jobs", local_bundle_path.name)
+    _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "jobs"))
+    _scp_to_remote(local_bundle_path, remote_bundle_path, machine_name, machine_config)
 
 
 def order_jobs(jobs, sorted_names):
@@ -318,6 +375,8 @@ def list_saved_bundles(
 
     entries: list[dict] = []
     for filename in jobs_dir().glob("*.json"):
+        if _is_placeholder_file(filename):
+            continue
         stem = filename.stem
         if "_" not in stem:
             continue
@@ -359,6 +418,8 @@ def latest_bundle_summaries(desired_date: Optional[datetime] = None) -> list[dic
 
     latest_by_name: dict[str, dict] = {}
     for filename in jobs_dir().glob("*.json"):
+        if _is_placeholder_file(filename):
+            continue
         stem = filename.stem
         if "_" not in stem:
             continue
@@ -402,7 +463,7 @@ def nearest_bundle_filename(
     files = [
         f[:-5]
         for f in os.listdir(directory)
-        if f.startswith(name) and f.endswith(".json")
+        if not f.startswith(".") and f.startswith(name) and f.endswith(".json")
     ]
     if not files:
         raise FileNotFoundError(
