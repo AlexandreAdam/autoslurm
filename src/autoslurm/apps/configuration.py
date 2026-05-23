@@ -7,15 +7,13 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 
-from ..definitions import CONFIG_FILE_PATH
 from ..utils import load_config, ssh_host_from_config
-from ..storage import ensure_storage_dirs, storage_root
+from ..storage import ensure_storage_dirs, storage_root, config_file_path
 
 
 
 def _ensure_config_dir():
-    directory = Path(CONFIG_FILE_PATH).parent
-    directory.mkdir(parents=True, exist_ok=True)
+    config_file_path().parent.mkdir(parents=True, exist_ok=True)
 
 
 def _save_config(config: Dict[str, Dict]):
@@ -24,7 +22,7 @@ def _save_config(config: Dict[str, Dict]):
         "machines": config["machines"],
         "default_machine": config["default_machine"],
     }
-    with open(CONFIG_FILE_PATH, "w") as file:
+    with open(config_file_path(), "w") as file:
         json.dump(data, file, indent=4)
 
 
@@ -230,6 +228,17 @@ def _change_default_machine(config: Dict):
     _save_config(config)
 
 
+def _set_default_machine_by_name(config: Dict, name: str):
+    if name not in config["machines"]:
+        raise SystemExit(f"Machine '{name}' not found in configuration.")
+    if name == config["default_machine"]:
+        print(f"'{name}' is already the default machine.")
+        return
+    config["default_machine"] = name
+    _refresh_config_aliases(config)
+    _save_config(config)
+
+
 def _create_default_machine():
     print("No configuration file detected. Let's configure the default machine.")
     config = {"machines": {}, "default_machine": "local"}
@@ -268,10 +277,11 @@ def _menu_loop(config: Dict):
 
 
 def display_config():
-    if not os.path.exists(CONFIG_FILE_PATH):
+    path = config_file_path()
+    if not os.path.exists(path):
         print("No configuration found.")
         return
-    with open(CONFIG_FILE_PATH, "r") as file:
+    with open(path, "r") as file:
         data = json.load(file)
     print(json.dumps(data, indent=4))
 
@@ -279,6 +289,10 @@ def display_config():
 def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(description="Configure AutoSlurm machines and view the stored config.")
     parser.add_argument("--view", action="store_true", help="Print the current configuration file and exit.")
+    parser.add_argument(
+        "--set-default",
+        help="Set the default machine by name and exit.",
+    )
     if argv is None:
         argv = sys.argv[1:]
     if not argv:
@@ -290,7 +304,16 @@ def main(argv: list[str] | None = None):
         display_config()
         return
 
-    if not os.path.exists(CONFIG_FILE_PATH):
+    if args.set_default:
+        if not os.path.exists(config_file_path()):
+            raise EnvironmentError(
+                f"Configuration file not found at {config_file_path()}."
+            )
+        config = load_config()
+        _set_default_machine_by_name(config, args.set_default)
+        return
+
+    if not os.path.exists(config_file_path()):
         _create_default_machine()
         return
     try:

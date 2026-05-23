@@ -1,6 +1,6 @@
 from typing import Optional
 from argparse import Namespace
-from .definitions import CONFIG_FILE_PATH, DATE_FORMAT, MACHINE_KEYS
+from .definitions import DATE_FORMAT, MACHINE_KEYS
 from datetime import datetime
 import os
 import json
@@ -14,7 +14,7 @@ def name_slurm_script(job: dict, date: datetime):
     return f"{name}_{date.strftime(DATE_FORMAT)}.sh"
 
 
-from .storage import jobs_dir, ensure_storage_dirs
+from .storage import jobs_dir, ensure_storage_dirs, config_file_path
 
 
 def update_job_info_with_id(bundle_name, date, job_name, job_id):
@@ -85,11 +85,12 @@ def load_config() -> dict:
     Raises:
     EnvironmentError: If the configuration file is not found.
     """
-    if not os.path.exists(CONFIG_FILE_PATH):
+    path = config_file_path()
+    if not path.exists():
         raise EnvironmentError(
-            f"Configuration file not found at {CONFIG_FILE_PATH}. Please use `autoslurm-configuration` to create the configurations for autoslurm."
+            f"Configuration file not found at {path}. Please use `autoslurm configuration` to create the configurations for autoslurm."
         )
-    with open(CONFIG_FILE_PATH, "r") as file:
+    with open(path, "r") as file:
         raw = json.load(file)
     return _normalize_config(raw)
 

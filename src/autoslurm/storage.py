@@ -1,7 +1,14 @@
-import os
 from pathlib import Path
 
-__all__ = ["storage_root", "jobs_dir", "slurm_dir", "out_dir", "ensure_storage_dirs", "set_storage_root"]
+__all__ = [
+    "storage_root",
+    "jobs_dir",
+    "slurm_dir",
+    "out_dir",
+    "config_file_path",
+    "ensure_storage_dirs",
+    "set_storage_root",
+]
 
 _override_root: Path | None = None
 
@@ -31,6 +38,10 @@ def slurm_dir() -> Path:
 
 def out_dir() -> Path:
     return storage_root() / "out"
+
+
+def config_file_path() -> Path:
+    return storage_root() / "config.json"
 
 
 def ensure_storage_dirs() -> None:

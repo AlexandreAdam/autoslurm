@@ -3,7 +3,7 @@ import socket
 import pytest
 from unittest.mock import patch, MagicMock
 from autoslurm.apps.configuration import main
-from autoslurm.storage import jobs_dir, slurm_dir, storage_root
+from autoslurm.storage import jobs_dir, slurm_dir, storage_root, config_file_path
 
 EXAMPLE_CONFIG = {
     "local": {
@@ -60,16 +60,50 @@ def test_autoslurm_configuration(
             mock_gethostbyname.side_effect = socket.gaierror
         mock_run.side_effect = setup_mock_subprocess_run()
 
-        config_path = tmp_path / "config.json"
+        config_path = config_file_path()
         with open(config_path, "w") as f:
             json.dump(EXAMPLE_CONFIG, f)
 
         monkeypatch.setattr("sys.argv", ["autoslurm-configuration"])
-        with patch("autoslurm.apps.configuration.CONFIG_FILE_PATH", str(config_path)), patch(
-            "autoslurm.utils.CONFIG_FILE_PATH", str(config_path)
-        ):
-            main()
+        main()
 
     assert jobs_dir().exists(), "Jobs directory should be created under storage root."
     assert slurm_dir().exists(), "SLURM directory should be created under storage root."
     assert mock_run.call_count == 0
+
+
+def test_autoslurm_configuration_set_default_machine(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    from autoslurm.storage import set_storage_root, ensure_storage_dirs
+
+    storage = tmp_path / "storage"
+    set_storage_root(storage)
+    ensure_storage_dirs()
+
+    config_path = config_file_path()
+    config = {
+        "machines": {
+            "local": {
+                "env_command": "source /path/to/local/venv/bin/activate",
+                "slurm_account": "def-bengioy",
+            },
+            "remote": {
+                "env_command": "source /path/to/remote/venv/bin/activate",
+                "slurm_account": "rrg-account_name",
+                "hostname": "machine",
+            },
+        },
+        "default_machine": "local",
+    }
+    with open(config_path, "w") as file:
+        json.dump(config, file)
+
+    monkeypatch.setattr("sys.argv", ["autoslurm-configuration"])
+    main(["--set-default", "remote"])
+    capsys.readouterr()
+
+    updated = json.loads(config_path.read_text())
+    assert updated["default_machine"] == "remote"
