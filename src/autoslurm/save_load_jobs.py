@@ -21,6 +21,7 @@ __all__ = [
     "load_bundle",
     "load_bundle_from_path",
     "list_saved_bundles",
+    "latest_bundle_summaries",
     "transfer_slurm_to_remote",
     "nearest_bundle_filename",
 ]
@@ -343,6 +344,49 @@ def list_saved_bundles(
         )
 
     entries.sort(key=lambda entry: (entry["distance"], entry["date"]), reverse=False)
+    return entries
+
+
+def latest_bundle_summaries(desired_date: Optional[datetime] = None) -> list[dict]:
+    """
+    Return the newest saved bundle for each bundle name.
+
+    The entries are sorted by proximity to ``desired_date`` (default: now).
+    """
+    ensure_storage_dirs()
+    if desired_date is None:
+        desired_date = datetime.now()
+
+    latest_by_name: dict[str, dict] = {}
+    for filename in jobs_dir().glob("*.json"):
+        stem = filename.stem
+        if "_" not in stem:
+            continue
+        bundle_name, date_text = stem.rsplit("_", 1)
+        try:
+            saved_date = datetime.strptime(date_text, DATE_FORMAT)
+        except ValueError:
+            continue
+
+        current = latest_by_name.get(bundle_name)
+        if current is not None and saved_date <= current["date"]:
+            continue
+
+        try:
+            with open(filename, "r") as file:
+                jobs = json.load(file)
+        except (json.JSONDecodeError, OSError):
+            jobs = {}
+
+        latest_by_name[bundle_name] = {
+            "bundle": bundle_name,
+            "date": saved_date,
+            "path": filename,
+            "job_count": len(jobs),
+        }
+
+    entries = list(latest_by_name.values())
+    entries.sort(key=lambda entry: (abs(entry["date"] - desired_date), entry["bundle"]))
     return entries
 
 

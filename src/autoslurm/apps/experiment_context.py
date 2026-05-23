@@ -5,8 +5,12 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from ..save_load_jobs import list_saved_bundles
-from ..experiment_context import experiment_context
+from ..experiment_context import (
+    bundle_index_context,
+    bundle_jobs_context,
+    experiment_context,
+    job_context,
+)
 
 
 DATE_FORMATS = (
@@ -94,7 +98,31 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--list",
         action="store_true",
-        help="List saved bundles instead of printing a single bundle context.",
+        help="List the latest saved bundle per name.",
+    )
+    parser.add_argument(
+        "--job",
+        help="Select a specific job inside the chosen bundle.",
+    )
+    parser.add_argument(
+        "--script",
+        action="store_true",
+        help="Include the rendered SLURM script for the selected job.",
+    )
+    parser.add_argument(
+        "--logs",
+        action="store_true",
+        help="Include output logs for the selected job.",
+    )
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="Include the SLURM status for the selected job.",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Print the full bundle context dump.",
     )
 
 
@@ -110,29 +138,46 @@ def main(argv=None) -> None:
     if argv is None:
         argv = sys.argv[1:]
     parser = _build_parser()
-    if not argv:
+    if argv in (["-h"], ["--help"]):
         parser.print_help()
+        return
+    if not argv:
+        print(bundle_index_context())
         return
     args = parser.parse_args(argv)
 
     reference_date = _resolve_reference_date(args)
 
-    if args.list:
-        entries = list_saved_bundles(
-            desired_date=reference_date, bundle_name=args.bundle
-        )
-        if not entries:
-            print("No saved bundles found.")
-            return
-        for entry in entries:
-            print(
-                f"{entry['date'].isoformat()}  {entry['bundle']}  jobs={', '.join(entry['jobs']) or '[]'}  path={entry['path']}"
+    if args.full and not args.bundle:
+        parser.error("--full requires a bundle name.")
+    if args.job and not args.bundle:
+        parser.error("--job requires a bundle name.")
+    if (args.script or args.logs or args.status) and not args.job:
+        parser.error("--script, --logs, and --status require --job.")
+
+    if args.list or not args.bundle:
+        print(bundle_index_context(reference_date))
+        return
+
+    if args.full:
+        print(experiment_context(args.bundle, reference_date))
+        return
+
+    if args.job:
+        include_status = args.status or not (args.script or args.logs)
+        print(
+            job_context(
+                args.bundle,
+                args.job,
+                reference_date,
+                include_script=args.script,
+                include_logs=args.logs,
+                include_status=include_status,
             )
+        )
         return
 
-    if not args.bundle:
-        parser.print_help()
-        return
+    if args.script or args.logs or args.status:
+        parser.error("--script, --logs, and --status require --job.")
 
-    context = experiment_context(args.bundle, reference_date)
-    print(context)
+    print(bundle_jobs_context(args.bundle, reference_date))

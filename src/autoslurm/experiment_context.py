@@ -9,12 +9,17 @@ from textwrap import dedent
 from typing import Iterable, Optional
 
 from .definitions import DATE_FORMAT
-from .save_load_jobs import nearest_bundle_filename
+from .save_load_jobs import latest_bundle_summaries, load_bundle, nearest_bundle_filename
 from .storage import jobs_dir, slurm_dir, out_dir
 from .utils import load_config, name_slurm_script, ssh_host_from_config
 
 
-__all__ = ["experiment_context"]
+__all__ = [
+    "experiment_context",
+    "bundle_index_context",
+    "bundle_jobs_context",
+    "job_context",
+]
 
 
 def _job_entries(bundle: dict) -> Iterable[tuple[str, dict]]:
@@ -29,6 +34,130 @@ def _read_text(path: Path) -> Optional[str]:
         return None
     text = path.read_text()
     return text.rstrip()
+
+
+def _job_status_text(job: dict) -> str:
+    job_id = job.get("id")
+    if job_id is None:
+        return "not_submitted"
+
+    machine_name = job.get("machine")
+    for command in (
+        ["squeue", "-h", "-j", str(job_id), "-o", "%T"],
+        ["sacct", "-n", "-X", "-j", str(job_id), "-o", "State"],
+    ):
+        result = _run_slurm_query(command, machine_name)
+        if result.returncode != 0:
+            continue
+        text = (result.stdout or result.stderr or "").strip()
+        if text:
+            return text.split()[0]
+    return "UNKNOWN"
+
+
+def _run_slurm_query(command: list[str], machine_name: Optional[str]) -> subprocess.CompletedProcess:
+    if machine_name is None:
+        return subprocess.run(command, capture_output=True, text=True)
+
+    try:
+        config = load_config()
+    except EnvironmentError:
+        return subprocess.run(command, capture_output=True, text=True)
+
+    machine_config = config["machines"].get(machine_name) or config.get(machine_name)
+    if machine_config is None:
+        return subprocess.run(command, capture_output=True, text=True)
+
+    if not machine_config.get("hostname") and not machine_config.get("hosturl"):
+        return subprocess.run(command, capture_output=True, text=True)
+
+    try:
+        hostname = ssh_host_from_config(machine_config, machine_name)
+    except AttributeError:
+        return subprocess.run(command, capture_output=True, text=True)
+
+    remote_command = " ".join(shlex.quote(part) for part in command)
+    return subprocess.run(["ssh", hostname, remote_command], capture_output=True, text=True)
+
+
+def _bundle_summary_lines(desired_date: Optional[datetime] = None) -> list[str]:
+    summaries = latest_bundle_summaries(desired_date=desired_date)
+    if not summaries:
+        return ["No saved bundles found."]
+    return [f"{entry['bundle']} {entry['date'].isoformat()}" for entry in summaries]
+
+
+def bundle_index_context(desired_date: Optional[datetime] = None) -> str:
+    return "\n".join(_bundle_summary_lines(desired_date=desired_date))
+
+
+def _load_bundle_snapshot(
+    bundle_name: str, desired_date: Optional[datetime] = None
+) -> tuple[dict, datetime, Path]:
+    job_file, bundle_date = nearest_bundle_filename(bundle_name, desired_date)
+    bundle_path = jobs_dir() / job_file
+    bundle_text = bundle_path.read_text()
+    bundle_data = json.loads(bundle_text)
+    return bundle_data, bundle_date, bundle_path
+
+
+def bundle_jobs_context(bundle_name: str, desired_date: Optional[datetime] = None) -> str:
+    jobs, _, bundle_date = load_bundle(bundle_name, desired_date)
+    lines = [f"{bundle_name} {bundle_date.isoformat()}"]
+    for job in jobs:
+        job_name = job["name"]
+        status = _job_status_text(job)
+        job_id = job.get("id")
+        job_bits = [job_name, f"status={status}"]
+        if job_id is not None:
+            job_bits.append(f"id={job_id}")
+        lines.append(" ".join(job_bits))
+    return "\n".join(lines)
+
+
+def job_context(
+    bundle_name: str,
+    job_name: str,
+    desired_date: Optional[datetime] = None,
+    include_script: bool = False,
+    include_logs: bool = False,
+    include_status: bool = True,
+) -> str:
+    jobs, _, bundle_date = load_bundle(bundle_name, desired_date)
+    job = next((dict(item) for item in jobs if item["name"] == job_name), None)
+    if job is None:
+        raise KeyError(f"Job '{job_name}' not found in bundle '{bundle_name}'.")
+
+    lines = [f"{bundle_name} {bundle_date.isoformat()}", f"{job_name}"]
+    if include_status:
+        status = _job_status_text(job)
+        job_id = job.get("id")
+        status_line = f"status={status}"
+        if job_id is not None:
+            status_line += f" id={job_id}"
+        lines.append(status_line)
+
+    if include_script:
+        slurm_name = name_slurm_script(job, bundle_date)
+        script_path = slurm_dir() / slurm_name
+        if script_path.exists():
+            lines.append("script:")
+            lines.append(_read_text(script_path) or "")
+        else:
+            lines.append(f"script missing: {slurm_name}")
+
+    if include_logs:
+        logs, error = _collect_out_logs(job_name, bundle_name, bundle_date, job.get("machine"))
+        if logs:
+            for log_path, content in logs:
+                lines.append(f"log {log_path.name}:")
+                lines.append(content)
+        elif error:
+            lines.append(f"log error: {error}")
+        else:
+            lines.append("logs: none")
+
+    return "\n".join(line for line in lines if line is not None)
 
 
 def _parse_remote_logs(text: str, job_name: str) -> list[tuple[str, str]]:
