@@ -148,6 +148,36 @@ def test_context_latest_log_without_bundle_prints_latest_saved_out_file(tmp_path
     assert output == "newest storage log"
 
 
+def test_context_latest_log_copies_to_clipboard(tmp_path, monkeypatch, capsys):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    log_path = out_dir() / "bundle_a_job-1.out"
+    log_path.write_text("clipboard log")
+
+    clipboard = {}
+
+    def fake_which(name):
+        return "/usr/bin/pbcopy" if name == "pbcopy" else None
+
+    def fake_run(cmd, *args, **kwargs):
+        if cmd[0] == "pbcopy":
+            clipboard["text"] = kwargs.get("input", "")
+            return type("Result", (), {"returncode": 0})()
+        raise AssertionError(f"Unexpected command: {cmd}")
+
+    monkeypatch.setattr("autoslurm.apps.experiment_context.shutil.which", fake_which)
+    monkeypatch.setattr("autoslurm.apps.experiment_context.subprocess.run", fake_run)
+
+    from autoslurm.apps import experiment_context as experiment_context_app
+
+    experiment_context_app.main(["--log", "--clip"])
+    output = capsys.readouterr().out.strip()
+
+    assert output == "clipboard log"
+    assert clipboard["text"] == "clipboard log"
+
+
 def test_context_latest_prints_latest_bundle_status(tmp_path, capsys):
     set_storage_root(tmp_path / "storage")
     ensure_storage_dirs()
@@ -166,3 +196,21 @@ def test_context_latest_prints_latest_bundle_status(tmp_path, capsys):
 
     assert output[0].startswith("job_b ")
     assert any(line.startswith("job_b status=") for line in output)
+
+
+def test_context_refresh_syncs_before_printing(monkeypatch, capsys):
+    from autoslurm.apps import experiment_context as experiment_context_app
+
+    seen = {"sync": 0}
+
+    def fake_sync_machine(machine_name=None):
+        seen["sync"] += 1
+        assert machine_name is None
+
+    monkeypatch.setattr(experiment_context_app, "sync_machine", fake_sync_machine)
+    monkeypatch.setattr(experiment_context_app, "bundle_index_context", lambda reference_date=None: "refreshed context")
+
+    experiment_context_app.main(["--refresh"])
+
+    assert seen["sync"] == 1
+    assert capsys.readouterr().out.strip() == "refreshed context"

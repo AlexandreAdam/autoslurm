@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
+import subprocess
 from datetime import datetime
 from typing import Optional
 
@@ -13,6 +15,7 @@ from ..experiment_context import (
     latest_log_context,
     job_context,
 )
+from ..sync import sync_machine
 
 
 DATE_FORMATS = (
@@ -90,6 +93,30 @@ def _resolve_reference_date(args: argparse.Namespace) -> Optional[datetime]:
     )
 
 
+def _copy_to_clipboard(text: str) -> None:
+    if shutil.which("pbcopy") is not None:
+        subprocess.run(["pbcopy"], input=text, text=True, check=True)
+        return
+    if shutil.which("wl-copy") is not None:
+        subprocess.run(["wl-copy"], input=text, text=True, check=True)
+        return
+    if shutil.which("xclip") is not None:
+        subprocess.run(["xclip", "-selection", "clipboard"], input=text, text=True, check=True)
+        return
+    if shutil.which("xsel") is not None:
+        subprocess.run(["xsel", "--clipboard", "--input"], input=text, text=True, check=True)
+        return
+    raise RuntimeError(
+        "No clipboard utility found. Install pbcopy, wl-copy, xclip, or xsel to use --clipboard."
+    )
+
+
+def _emit(text: str, copy_to_clipboard: bool = False) -> None:
+    print(text)
+    if copy_to_clipboard:
+        _copy_to_clipboard(text)
+
+
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "bundle",
@@ -128,6 +155,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--latest-log",
+        "--log",
         action="store_true",
         help="Print the newest .out file for the selected bundle, or the newest bundle overall if no bundle is given.",
     )
@@ -135,6 +163,17 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="Print the compact status view for the latest saved bundle.",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Sync the configured default machine before printing context.",
+    )
+    parser.add_argument(
+        "--clipboard",
+        "--clip",
+        action="store_true",
+        help="Copy the printed context to the clipboard.",
     )
 
 
@@ -175,23 +214,26 @@ def main(argv=None) -> None:
     ):
         parser.error("--latest-log cannot be combined with other context output flags.")
 
+    if args.refresh:
+        sync_machine()
+
     if args.latest:
-        print(latest_bundle_status_context(reference_date))
+        _emit(latest_bundle_status_context(reference_date), args.clipboard)
         return
     if args.latest_log:
-        print(latest_log_context(args.bundle, reference_date))
+        _emit(latest_log_context(args.bundle, reference_date), args.clipboard)
         return
     if args.list or not args.bundle:
-        print(bundle_index_context(reference_date))
+        _emit(bundle_index_context(reference_date), args.clipboard)
         return
 
     if args.full:
-        print(experiment_context(args.bundle, reference_date))
+        _emit(experiment_context(args.bundle, reference_date), args.clipboard)
         return
 
     if args.job:
         include_status = args.status or not (args.script or args.logs)
-        print(
+        _emit(
             job_context(
                 args.bundle,
                 args.job,
@@ -199,11 +241,12 @@ def main(argv=None) -> None:
                 include_script=args.script,
                 include_logs=args.logs,
                 include_status=include_status,
-            )
+            ),
+            args.clipboard,
         )
         return
 
     if args.script or args.logs or args.status:
         parser.error("--script, --logs, and --status require --job.")
 
-    print(bundle_jobs_context(args.bundle, reference_date))
+    _emit(bundle_jobs_context(args.bundle, reference_date), args.clipboard)
