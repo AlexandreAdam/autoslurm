@@ -331,7 +331,13 @@ def _fetch_remote_logs_for_job(
     commands = []
     if env_command:
         commands.append(env_command)
-    commands.append(f"cd $(eval echo {shlex.quote(remote_path)})")
+    if remote_path == "~":
+        cd_target = "$HOME"
+    elif isinstance(remote_path, str) and remote_path.startswith("~/"):
+        cd_target = "$HOME/" + shlex.quote(remote_path[2:])
+    else:
+        cd_target = shlex.quote(remote_path)
+    commands.append(f"cd {cd_target}")
     commands.append(
         f"autoslurm-experiment-context {bundle_arg} --date {shlex.quote(date_arg)}"
     )
