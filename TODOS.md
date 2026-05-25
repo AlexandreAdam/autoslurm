@@ -208,3 +208,14 @@ The new bulk submit driver is integrated behind `asl submit` for remote submissi
   - transfer phase timing
   - remote driver execution timing
   - aggregate submit throughput metrics
+
+## Naming Review (Deferred)
+
+Potential package rename candidates to revisit later:
+
+- `slurmflow`
+- `slurm-orchestrator`
+- `jobmesh`
+- `dagsubmit`
+- `bundlequeue`
+- `remotesubmit`
