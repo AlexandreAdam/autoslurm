@@ -182,3 +182,29 @@ The docs still need a dedicated page that explains:
 - why installed console scripts are the preferred experiment entry points
 - how the current experiment builders map to the workflow we used for the first successful runs
 - a refactored end-to-end CLI usage guide aligned with the new CLI surface and current scheduling/submission patterns
+
+## Bulk Submit Follow-ups (Internal)
+
+The new bulk submit driver is integrated behind `asl submit` for remote submission. Remaining internal work:
+
+- finalize failure semantics for partial submission:
+  - default mode should be `fail_fast`
+  - return partial `job_ids` for already submitted jobs
+  - do not invoke legacy fallback after partial remote submission to avoid duplicate jobs
+  - keep fallback only for startup/compatibility failures before any remote submit
+- standardize structured response contract from bulk driver:
+  - `ok`, `job_ids`, `errors`, `submitted_order`, `blocked_jobs`
+  - stable schema/version marker
+- persist richer submission metadata in bundle JSON:
+  - `submit_status` (`submitted` / `failed` / `blocked`)
+  - `submit_error` for failures
+  - `blocked_by` for dependency-blocked jobs
+- add explicit integration tests for:
+  - malformed remote JSON response
+  - partial remote success
+  - startup failure fallback to legacy driver
+  - no-fallback behavior after partial submit (once policy is enforced)
+- add timing/observability hooks:
+  - transfer phase timing
+  - remote driver execution timing
+  - aggregate submit throughput metrics

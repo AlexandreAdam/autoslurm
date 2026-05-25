@@ -1,5 +1,6 @@
 import os
 import subprocess
+import json
 from typing import Callable
 
 import pytest
@@ -129,6 +130,20 @@ def setup_mock_subprocess_run() -> Callable:
                 return mock_run_instance.return_value
             if cmd[0] == "ssh" and ("-MNf" in cmd or "-O" in cmd):
                 mock_run_instance.return_value.stdout = ""
+                mock_run_instance.return_value.returncode = 0
+                return mock_run_instance.return_value
+            if (
+                cmd[0] == "ssh"
+                and isinstance(cmd[-1], str)
+                and "python -m autoslurm.apps.bulk_submit_driver" in cmd[-1]
+            ):
+                body = {
+                    "ok": True,
+                    "job_ids": mock_job_ids,
+                    "levels": [["JobA"], ["JobB"], ["JobC"]],
+                    "round_trips": 3,
+                }
+                mock_run_instance.return_value.stdout = json.dumps(body)
                 mock_run_instance.return_value.returncode = 0
                 return mock_run_instance.return_value
         job = os.path.split(cmd[-1])[-1]

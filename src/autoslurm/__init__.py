@@ -4,6 +4,9 @@ from .job_dependency import *
 from .save_load_jobs import *
 from .run_slurm import *
 from .job_runner import *
+from .legacy_submit_driver import *
+from .bulk_submit import *
+from .bulk_submit_driver import *
 from .acp import *
 from .experiment_context import *
 from .remote_fs import *

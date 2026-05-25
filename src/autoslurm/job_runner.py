@@ -4,17 +4,23 @@ import json
 from pathlib import Path
 from .job_to_slurm import create_slurm_script
 from .job_dependency import update_slurm_with_dependencies
-from .run_slurm import run_slurm_remotely, run_slurm_locally, ssh_submission_session
+from .run_slurm import (
+    run_slurm_locally,
+    ssh_submission_session,
+    run_bulk_submit_driver_remotely,
+)
+from .legacy_submit_driver import submit_jobs_legacy_remote
 from .save_load_jobs import (
     load_bundle,
     save_bundle,
     transfer_bundle_to_remote,
-    transfer_slurm_to_remote,
+    transfer_slurms_to_remote,
 )
 from .utils import (
     machine_config as resolve_machine_config,
     update_job_info_with_id,
     update_job_metadata,
+    remote_storage_root_from_config,
 )
 
 __all__ = ["submit_jobs"]
@@ -69,26 +75,54 @@ def submit_jobs(
         slurm_name = create_slurm_script(job, date, machine_config)
         slurm_names[job["name"]] = slurm_name
 
+    is_remote = bool(machine_config.get("hostname") or machine_config.get("hosturl"))
+    if is_remote:
+        transfer_slurms_to_remote(list(slurm_names.values()), machine_config=machine_config)
+
     with ssh_submission_session(machine_config, machine) as ssh_options:
-        for job in jobs:
-            slurm_name = slurm_names[job["name"]]
-            if machine_config.get("hostname") or machine_config.get("hosturl"):
-                transfer_slurm_to_remote(slurm_name, machine_config=machine_config)
-                job_id = run_slurm_remotely(
-                    slurm_name,
+        if is_remote:
+            remote_root = machine_config.get("path") or remote_storage_root_from_config(
+                machine_config, machine
+            )
+            payload = {
+                "children_by_job": dependencies,
+                "slurm_names": slurm_names,
+                "slurm_dir": f"{remote_root.rstrip('/')}/slurm",
+            }
+            try:
+                job_ids = run_bulk_submit_driver_remotely(
+                    payload,
                     machine_config=machine_config,
                     ssh_options=ssh_options,
                 )
-                print(f"Submitted job {job['name']} with ID {job_id} at {host}")
-            else:
+            except Exception:
+                # Fallback path preserves legacy behavior if driver unavailable.
+                job_ids = submit_jobs_legacy_remote(
+                    jobs,
+                    slurm_names,
+                    machine_config,
+                    ssh_options=ssh_options,
+                )
+            for job in jobs:
+                job_name = job["name"]
+                job_id = job_ids[job_name]
+                print(f"Submitted job {job_name} with ID {job_id} at {host}")
+                job_metadata = {"machine": machine}
+                update_job_metadata(name, date, job_name, job_metadata)
+                for dependent_job_name in dependencies.get(job_name, []):
+                    update_slurm_with_dependencies(slurm_names[dependent_job_name], job_id)
+                update_job_info_with_id(name, date, job_name, job_id)
+        else:
+            for job in jobs:
+                slurm_name = slurm_names[job["name"]]
                 job_id = run_slurm_locally(slurm_name)
                 print(f"Submitted job {job['name']} with ID {job_id} locally")
 
-            job_metadata = {"machine": machine}
-            update_job_metadata(name, date, job["name"], job_metadata)
-            for dependent_job_name in dependencies.get(job["name"], []):
-                update_slurm_with_dependencies(slurm_names[dependent_job_name], job_id)
-            update_job_info_with_id(name, date, job["name"], job_id)
+                job_metadata = {"machine": machine}
+                update_job_metadata(name, date, job["name"], job_metadata)
+                for dependent_job_name in dependencies.get(job["name"], []):
+                    update_slurm_with_dependencies(slurm_names[dependent_job_name], job_id)
+                update_job_info_with_id(name, date, job["name"], job_id)
 
-    if machine_config.get("hostname") or machine_config.get("hosturl"):
+    if is_remote:
         transfer_bundle_to_remote(name, date, machine_config=machine_config)

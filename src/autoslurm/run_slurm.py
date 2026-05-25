@@ -2,11 +2,16 @@ import os
 import re
 import shlex
 import subprocess
+import json
 import tempfile
 import shutil
 from contextlib import contextmanager
 from typing import Optional
-from .utils import load_config, ssh_host_from_config, remote_storage_root_from_config
+from .utils import (
+    load_config,
+    ssh_host_from_config,
+    remote_storage_root_from_config,
+)
 from .storage import ensure_storage_dirs, slurm_dir, storage_root
 
 __all__ = [
@@ -14,6 +19,7 @@ __all__ = [
     "run_slurm_remotely",
     "run_slurm_locally",
     "ssh_submission_session",
+    "run_bulk_submit_driver_remotely",
 ]
 
 
@@ -120,3 +126,52 @@ def run_slurm_locally(slurm_name):
 
     result = subprocess.run(["sbatch", script_path], capture_output=True, text=True)
     return get_job_id_from_sbatch_output(result.stdout)
+
+
+def run_bulk_submit_driver_remotely(
+    payload: dict,
+    machine: Optional[str] = None,
+    machine_config: Optional[dict] = None,
+    ssh_options: Optional[list[str]] = None,
+) -> dict:
+    """
+    Execute the internal bulk-submit driver on a remote machine and return job ids.
+    """
+    if machine is not None:
+        machine_config = load_config().get(machine)
+        if not machine_config:
+            raise EnvironmentError(f"No configuration found for machine: {machine}")
+
+    hostname = ssh_host_from_config(machine_config, machine)
+    ssh_command = ["ssh"]
+    if ssh_options:
+        ssh_command.extend(ssh_options)
+    ssh_command.extend([*shlex.split(hostname)])
+    venv_path = machine_config.get("venv_path")
+    if not (isinstance(venv_path, str) and venv_path.strip()):
+        raise RuntimeError(
+            "Bulk remote submission requires 'venv_path' in machine configuration."
+        )
+    python_executable = f"{venv_path.rstrip('/')}/bin/python"
+    ssh_command.extend([python_executable, "-m", "autoslurm.apps.bulk_submit_driver"])
+
+    result = subprocess.run(
+        ssh_command,
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip()
+        raise RuntimeError(f"Remote bulk submit driver failed: {message}")
+    try:
+        response = json.loads(result.stdout.strip() or "{}")
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Remote bulk submit driver returned invalid JSON: {result.stdout!r}"
+        ) from exc
+    if not response.get("ok", False):
+        raise RuntimeError(response.get("error", "Remote bulk submit failed."))
+    if "job_ids" not in response:
+        raise RuntimeError("Remote bulk submit response missing 'job_ids'.")
+    return response["job_ids"]

@@ -3,9 +3,10 @@ import os
 import json
 import sys
 import pytest
+from contextlib import contextmanager
 from unittest.mock import patch, MagicMock
 from autoslurm import save_bundle, submit_jobs
-from autoslurm.storage import slurm_dir, ensure_storage_dirs, set_storage_root
+from autoslurm.storage import slurm_dir, ensure_storage_dirs, set_storage_root, jobs_dir
 from glob import glob
 
 from tests.integration.mocks import (
@@ -162,3 +163,89 @@ def test_submit_jobs_from_bundle_file(
 
     assert slurm_emulator, "The SLURM emulator did not record any executed scripts."
     assert any("/tmp/galaxies" in call["stdout"] for call in slurm_emulator)
+
+
+@patch("autoslurm.job_runner.submit_jobs_legacy_remote")
+@patch("autoslurm.job_runner.run_bulk_submit_driver_remotely")
+@patch("autoslurm.job_runner.transfer_bundle_to_remote")
+@patch("autoslurm.job_runner.transfer_slurms_to_remote")
+@patch("autoslurm.job_runner.ssh_submission_session")
+def test_submit_jobs_remote_uses_bulk_driver(
+    mock_ssh_session,
+    mock_transfer_slurms,
+    mock_transfer_bundle,
+    mock_bulk_submit,
+    mock_legacy_submit,
+    mock_load_config,
+    storage_env,
+):
+    @contextmanager
+    def _noop_session(*_args, **_kwargs):
+        yield None
+
+    mock_ssh_session.side_effect = _noop_session
+    save_bundle(mock_jobs, mock_job_name)
+    mock_bulk_submit.return_value = {"JobA": "111", "JobB": "222", "JobC": "333"}
+    mock_legacy_submit.return_value = {"JobA": "old1", "JobB": "old2", "JobC": "old3"}
+
+    remote_machine = {
+        "hostname": "remote",
+        "path": "/path/to/remote",
+        "venv_path": "/path/to/remote/venv",
+    }
+    submit_jobs(mock_job_name, machine="local", machine_overrides=remote_machine)
+
+    assert mock_transfer_slurms.called
+    assert mock_bulk_submit.called
+    assert not mock_legacy_submit.called
+
+    bundle_files = sorted(jobs_dir().glob(f"{mock_job_name}_*.json"))
+    assert bundle_files
+    with open(bundle_files[-1], "r") as f:
+        persisted = json.load(f)
+    assert persisted["JobA"]["id"] == "111"
+    assert persisted["JobB"]["id"] == "222"
+    assert persisted["JobC"]["id"] == "333"
+
+
+@patch("autoslurm.job_runner.submit_jobs_legacy_remote")
+@patch("autoslurm.job_runner.run_bulk_submit_driver_remotely")
+@patch("autoslurm.job_runner.transfer_bundle_to_remote")
+@patch("autoslurm.job_runner.transfer_slurms_to_remote")
+@patch("autoslurm.job_runner.ssh_submission_session")
+def test_submit_jobs_remote_falls_back_to_legacy_driver(
+    mock_ssh_session,
+    mock_transfer_slurms,
+    mock_transfer_bundle,
+    mock_bulk_submit,
+    mock_legacy_submit,
+    mock_load_config,
+    storage_env,
+):
+    @contextmanager
+    def _noop_session(*_args, **_kwargs):
+        yield None
+
+    mock_ssh_session.side_effect = _noop_session
+    save_bundle(mock_jobs, mock_job_name)
+    mock_bulk_submit.side_effect = RuntimeError("bulk unavailable")
+    mock_legacy_submit.return_value = {"JobA": "444", "JobB": "555", "JobC": "666"}
+
+    remote_machine = {
+        "hostname": "remote",
+        "path": "/path/to/remote",
+        "venv_path": "/path/to/remote/venv",
+    }
+    submit_jobs(mock_job_name, machine="local", machine_overrides=remote_machine)
+
+    assert mock_transfer_slurms.called
+    assert mock_bulk_submit.called
+    assert mock_legacy_submit.called
+
+    bundle_files = sorted(jobs_dir().glob(f"{mock_job_name}_*.json"))
+    assert bundle_files
+    with open(bundle_files[-1], "r") as f:
+        persisted = json.load(f)
+    assert persisted["JobA"]["id"] == "444"
+    assert persisted["JobB"]["id"] == "555"
+    assert persisted["JobC"]["id"] == "666"

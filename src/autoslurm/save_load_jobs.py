@@ -30,9 +30,12 @@ __all__ = [
     "list_saved_bundles",
     "latest_bundle_summaries",
     "transfer_slurm_to_remote",
+    "transfer_slurms_to_remote",
     "transfer_bundle_to_remote",
     "nearest_bundle_filename",
 ]
+
+_ENSURED_REMOTE_DIRS: set[tuple[str, str]] = set()
 
 
 def _is_placeholder_file(path: Path) -> bool:
@@ -230,6 +233,9 @@ def _scp_to_remote(local_path: Path, remote_path: str, machine_name: Optional[st
 
 
 def _ensure_remote_directory(machine_name: Optional[str], machine_config: dict, remote_dir: str) -> None:
+    cache_key = (ssh_host_from_config(machine_config, machine_name), remote_dir)
+    if cache_key in _ENSURED_REMOTE_DIRS:
+        return
     hostname = ssh_host_from_config(machine_config, machine_name)
     result = subprocess.run(
         ["ssh", *shlex.split(hostname), f"mkdir -p {shlex.quote(remote_dir)}"],
@@ -241,6 +247,7 @@ def _ensure_remote_directory(machine_name: Optional[str], machine_config: dict, 
         raise RuntimeError(
             f"Unable to create remote directory '{remote_dir}' for machine '{machine_name or ''}': {message}"
         )
+    _ENSURED_REMOTE_DIRS.add(cache_key)
 
 
 def transfer_slurm_to_remote(
@@ -259,6 +266,33 @@ def transfer_slurm_to_remote(
     _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "slurm"))
     _scp_to_remote(local_script_path, remote_script_path, machine_name, machine_config)
     print(f"Saved SLURM script {slurm_name} remotely")
+
+
+def transfer_slurms_to_remote(
+    slurm_names: list[str],
+    machine_name: Optional[str] = None,
+    machine_config: Optional[dict] = None,
+) -> None:
+    """
+    Transfer many SLURM scripts in one SCP call to reduce connection/setup overhead.
+    """
+    if not slurm_names:
+        return
+    ensure_storage_dirs()
+    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
+    remote_path = _remote_root_for_machine(machine_name, machine_config)
+    remote_slurm_dir = os.path.join(remote_path, "slurm")
+    _ensure_remote_directory(machine_name, machine_config, remote_slurm_dir)
+
+    hostname, key_path = scp_host_and_keypath_from_config(machine_config, machine_name)
+    scp_command = ["scp"]
+    if key_path:
+        scp_command.extend(shlex.split(key_path))
+    scp_command.extend([str(slurm_dir() / slurm_name) for slurm_name in slurm_names])
+    scp_command.append(f"{hostname}:{remote_slurm_dir}/")
+    result = subprocess.run(scp_command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise ValueError(f"Error running scp command: {result.stderr}")
 
 
 def transfer_bundle_to_remote(
