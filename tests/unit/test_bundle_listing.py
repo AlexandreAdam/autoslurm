@@ -170,7 +170,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
         },
         "default_machine": "remote",
     }
-    module = importlib.import_module("autoslurm.experiment_context")
+    module = importlib.import_module("autoslurm.status")
     monkeypatch.setattr(module, "load_config", lambda: config)
     monkeypatch.setattr("autoslurm.utils.load_config", lambda: config)
 

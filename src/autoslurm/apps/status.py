@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime
 from typing import Optional
 
-from ..experiment_context import _job_status_texts, bundle_jobs_context
+from ..status import FAILED_STATES, bundle_jobs_context, job_status_texts as _job_status_texts
 from ..save_load_jobs import latest_bundle_summaries, load_bundle
 
 
@@ -100,6 +100,7 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
             jobs, _, _ = load_bundle(bundle_name, saved_date)
             statuses = _job_status_texts(jobs)
             submitted = sum(1 for job in jobs if job.get("id") is not None)
+            running = sum(1 for job in jobs if statuses.get(job["name"], "UNKNOWN").upper() == "RUNNING")
             completed = sum(1 for job in jobs if statuses.get(job["name"], "UNKNOWN").upper() == "COMPLETED")
             pending = sum(
                 1
@@ -109,23 +110,12 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
             failed = sum(
                 1
                 for job in jobs
-                if statuses.get(job["name"], "UNKNOWN").upper()
-                in {
-                    "FAILED",
-                    "CANCELLED",
-                    "TIMEOUT",
-                    "NODE_FAIL",
-                    "OUT_OF_MEMORY",
-                    "PREEMPTED",
-                    "BOOT_FAIL",
-                    "DEADLINE",
-                    "REVOKED",
-                }
+                if statuses.get(job["name"], "UNKNOWN").upper() in FAILED_STATES
             )
             job_count = len(jobs)
         except Exception:
             job_count = int(entry.get("job_count", 0))
-            submitted = completed = pending = failed = 0
+            submitted = running = completed = pending = failed = 0
 
         rendered_rows.append(
             {
@@ -134,17 +124,31 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
                 "saved": saved_value,
                 "jobs": str(job_count),
                 "submitted": str(submitted),
+                "running": str(running),
                 "completed": str(completed),
                 "pending": str(pending),
                 "failed": str(failed),
             }
         )
 
-    headers = ["idx", "bundle", "saved", "jobs", "submitted", "completed", "pending", "failed"]
+    headers = ["idx", "bundle", "saved", "jobs", "submitted", "running", "completed", "pending", "failed"]
     widths = {key: max(len(key), max(len(row[key]) for row in rendered_rows)) for key in headers}
     lines = ["  ".join(key.center(widths[key]) for key in headers)]
     lines.extend("  ".join(row[key].ljust(widths[key]) for key in headers) for row in rendered_rows)
     return "\n".join(lines)
+
+
+def _bundle_detail_text(bundle_name: str, reference_date: Optional[datetime]) -> str:
+    text = bundle_jobs_context(bundle_name, reference_date)
+    lines = text.splitlines()
+    filtered = [
+        line
+        for line in lines
+        if line.strip() != "Use --job <number|name> to inspect a job."
+    ]
+    if filtered:
+        return "\n".join(filtered)
+    return text
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -173,7 +177,7 @@ def main(argv: list[str] | None = None) -> None:
         bundle_name = str(row["bundle"])
         bundle_date = row["date"]
         assert isinstance(bundle_date, datetime)
-        print(bundle_jobs_context(bundle_name, bundle_date))
+        print(_bundle_detail_text(bundle_name, bundle_date))
         return
 
-    print(bundle_jobs_context(args.target, reference_date))
+    print(_bundle_detail_text(args.target, reference_date))
