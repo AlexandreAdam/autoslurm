@@ -19,8 +19,8 @@ def test_root_dispatches_action_arguments(monkeypatch):
 def test_root_accepts_action_aliases(monkeypatch):
     calls = []
 
-    def fake_logs(argv=None):
-        calls.append(("logs", argv))
+    def fake_inspect(argv=None):
+        calls.append(("inspect", argv))
 
     def fake_agent(argv=None):
         calls.append(("agent", argv))
@@ -31,7 +31,7 @@ def test_root_accepts_action_aliases(monkeypatch):
     def fake_status(argv=None):
         calls.append(("status", argv))
 
-    monkeypatch.setitem(root.ACTION_HANDLERS, "logs", fake_logs)
+    monkeypatch.setitem(root.ACTION_HANDLERS, "inspect", fake_inspect)
     monkeypatch.setitem(root.ACTION_HANDLERS, "agent", fake_agent)
     monkeypatch.setitem(root.ACTION_HANDLERS, "configuration", fake_configuration)
     monkeypatch.setitem(root.ACTION_HANDLERS, "status", fake_status)
@@ -43,8 +43,8 @@ def test_root_accepts_action_aliases(monkeypatch):
     root.main(["stat", "--date", "20250101"])
 
     assert calls == [
-        ("logs", ["--date", "20250101"]),
-        ("logs", ["--latest"]),
+        ("inspect", ["--date", "20250101"]),
+        ("inspect", ["--latest"]),
         ("agent", ["--sections", "10_task_schedule.md"]),
         ("configuration", ["--summary"]),
         ("status", ["--date", "20250101"]),
@@ -59,6 +59,6 @@ def test_root_help_lists_actions(capsys):
     assert "schedule" in captured.out
     assert "submit" in captured.out
     assert "configuration" in captured.out
-    assert "logs" in captured.out
+    assert "inspect" in captured.out
     assert "status" in captured.out
     assert "agent" in captured.out

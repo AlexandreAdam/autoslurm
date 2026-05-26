@@ -8,8 +8,8 @@ from . import (
     agent_context,
     configuration,
     experiment_context,
+    inspect,
     initialize,
-    logs,
     schedule,
     status,
     submit,
@@ -24,7 +24,7 @@ ACTION_HELP = {
     "sync": "Pull remote AutoSlurm storage into the local mirror.",
     "initialize": "Create an empty bundle.",
     "status": "Show bundles with saved timestamp and job count.",
-    "logs": "Inspect bundle JSON, SLURM scripts, and logs.",
+    "inspect": "Inspect bundle jobs and output logs.",
     "agent": "Print the agent documentation context.",
 }
 
@@ -35,15 +35,16 @@ ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
     "sync": sync.main,
     "initialize": initialize.main,
     "status": status.main,
-    "logs": logs.main,
+    "inspect": inspect.main,
     "agent": agent_context.main,
 }
 
 ACTION_ALIASES = {
     "config": "configuration",
     "stat": "status",
-    "context": "logs",
-    "experiment-context": "logs",
+    "logs": "inspect",
+    "context": "inspect",
+    "experiment-context": "inspect",
     "agent-context": "agent",
 }
 
