@@ -232,6 +232,12 @@ def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch)
             "id": "22222",
             "slurm": {"time": "00:05:00"},
         },
+        "crashed": {
+            "name": "crashed",
+            "script": "run-crashed",
+            "id": "44444",
+            "slurm": {"time": "00:05:00"},
+        },
     }
     _write_bundle("experiment_20250102000000.json", bundle)
 
@@ -239,17 +245,23 @@ def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch)
     monkeypatch.setattr(
         module,
         "job_status_texts",
-        lambda jobs: {"done": "COMPLETED", "busy": "RUNNING", "killed": "CANCELLED"},
+        lambda jobs: {"done": "COMPLETED", "busy": "RUNNING", "killed": "CANCELLED", "crashed": "FAILED"},
     )
-    monkeypatch.setattr(module, "_job_remaining_times", lambda jobs, statuses: {"done": "-", "busy": "-", "killed": "-"})
+    monkeypatch.setattr(
+        module,
+        "_job_remaining_times",
+        lambda jobs, statuses: {"done": "-", "busy": "-", "killed": "-", "crashed": "-"},
+    )
 
     text = module.bundle_jobs_context("experiment")
     assert "\x1b[38;2;0;200;0mSUCCESS\x1b[0m" in text
     assert "\x1b[38;2;220;180;0mRUNNING\x1b[0m" in text
     assert "\x1b[38;2;220;0;0mCANCELLED\x1b[0m" in text
+    assert "\x1b[38;2;220;0;0mFAILED\x1b[0m" in text
     assert any(line.startswith("\x1b[38;2;220;180;0m") and "busy" in line for line in text.splitlines())
     assert any(line.startswith("\x1b[38;2;0;200;0m") and "done" in line for line in text.splitlines())
     assert any(line.startswith("\x1b[38;2;220;0;0m") and "killed" in line for line in text.splitlines())
+    assert any(line.startswith("\x1b[38;2;220;0;0m") and "crashed" in line for line in text.splitlines())
 
 
 def test_context_job_script_view_is_compact(tmp_path, capsys):

@@ -209,6 +209,16 @@ The new bulk submit driver is integrated behind `asl submit` for remote submissi
   - remote driver execution timing
   - aggregate submit throughput metrics
 
+## Multi-Machine Bundles (Deferred)
+
+Future design item (do not implement yet):
+
+- explore support for submitting a single bundle across multiple machines
+- evaluate status UX updates to make this operable at a glance:
+  - add a `machine` column in status outputs
+  - clarify per-job vs per-bundle machine routing in summaries and detail views
+- review how cancel/inspect/clean should behave when one bundle spans machines
+
 ## Naming Review (Deferred)
 
 Potential package rename candidates to revisit later:

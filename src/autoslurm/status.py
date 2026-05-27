@@ -22,6 +22,17 @@ FAILED_STATES = {
     "DEADLINE",
     "REVOKED",
 }
+CANCELLABLE_STATES = {
+    "PENDING",
+    "RUNNING",
+    "CONFIGURING",
+    "COMPLETING",
+    "STAGE_OUT",
+    "RESIZING",
+    "REQUEUED",
+    "SUSPENDED",
+    "SIGNALING",
+}
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 ANSI_RESET = "\033[0m"
@@ -31,7 +42,7 @@ ANSI_RED = "\033[38;2;220;0;0m"
 ANSI_YELLOW = "\033[38;2;220;180;0m"
 
 
-def _display_state(state: str) -> str:
+def display_state(state: str) -> str:
     if state.upper() == "COMPLETED":
         return "SUCCESS"
     return state
@@ -43,9 +54,13 @@ def _colorize_state_text(state_text: str) -> str:
         return f"{ANSI_GREEN}{state_text}{ANSI_RESET}"
     if upper == "RUNNING":
         return f"{ANSI_YELLOW}{state_text}{ANSI_RESET}"
-    if upper == "CANCELLED":
+    if upper == "CANCELLED" or upper in FAILED_STATES:
         return f"{ANSI_RED}{state_text}{ANSI_RESET}"
     return state_text
+
+
+def is_cancellable_state(state: str) -> bool:
+    return (state or "UNKNOWN").upper() in CANCELLABLE_STATES
 
 
 def _visible_len(text: str) -> int:
@@ -289,7 +304,7 @@ def _bundle_summary_lines(desired_date: Optional[datetime] = None) -> list[str]:
                 "jobs": str(job_count),
                 "submitted": "-",
                 "running": "-",
-                "completed": "-",
+                "success": "-",
                 "pending": "-",
                 "failed": "-",
             }
@@ -299,13 +314,13 @@ def _bundle_summary_lines(desired_date: Optional[datetime] = None) -> list[str]:
         statuses = job_status_texts(jobs)
         submitted = sum(1 for job in jobs if job.get("id") is not None)
         running = 0
-        completed = 0
+        success = 0
         pending = 0
         failed = 0
         for job in jobs:
             state = statuses.get(job["name"], "UNKNOWN").upper()
             if state == "COMPLETED":
-                completed += 1
+                success += 1
             elif state == "RUNNING":
                 running += 1
             elif state in {"PENDING", "CONFIGURING"}:
@@ -319,13 +334,13 @@ def _bundle_summary_lines(desired_date: Optional[datetime] = None) -> list[str]:
             "jobs": str(len(jobs)),
             "submitted": str(submitted),
             "running": str(running),
-            "completed": str(completed),
+            "success": str(success),
             "pending": str(pending),
             "failed": str(failed),
         }
         rows.append(row)
 
-    headers = ["bundle", "saved", "jobs", "submitted", "running", "completed", "pending", "failed"]
+    headers = ["bundle", "saved", "jobs", "submitted", "running", "success", "pending", "failed"]
     widths = {key: max(len(key), max(len(row[key]) for row in rows)) for key in headers}
     header = "  ".join(key.center(widths[key]) for key in headers)
     lines = [header]
@@ -338,102 +353,25 @@ def bundle_index_context(desired_date: Optional[datetime] = None) -> str:
     return "\n".join(_bundle_summary_lines(desired_date=desired_date))
 
 
-def bundle_jobs_context(bundle_name: str, desired_date: Optional[datetime] = None) -> str:
-    def _requested_time(job: dict) -> str:
-        slurm = job.get("slurm") or {}
-        value = slurm.get("time")
-        return str(value) if value else "-"
+def bundle_jobs_context(
+    bundle_name: str,
+    desired_date: Optional[datetime] = None,
+    *,
+    name_contains: Optional[str] = None,
+    name_regex: Optional[str] = None,
+    ignore_case: bool = False,
+    status_predicate=None,
+) -> str:
+    from .status_views import bundle_jobs_context as _bundle_jobs_context
 
-    def _requested_gpus(job: dict) -> str:
-        slurm = job.get("slurm") or {}
-        gres = slurm.get("gres")
-        if not gres:
-            return "0"
-        text = str(gres)
-        match = re.search(r"gpu(?::[^:,]+)?:(\d+)", text)
-        if match:
-            return match.group(1)
-        if "gpu" in text.lower():
-            return "1"
-        return "0"
-
-    def _dependencies_text(job: dict) -> str:
-        deps = job.get("dependencies")
-        if not deps:
-            return "-"
-        if isinstance(deps, (list, tuple)):
-            return ",".join(str(dep) for dep in deps)
-        return str(deps)
-
-    jobs, _, bundle_date = load_bundle(bundle_name, desired_date)
-    statuses = job_status_texts(jobs)
-    remaining = _job_remaining_times(jobs, statuses)
-    lines = [f"{bundle_name} {bundle_date.isoformat()}"]
-    lines.append("Use --job <number|name> to inspect a job.")
-    rows: list[tuple[str, str, str, str, str, str, str, str, str]] = []
-    for index, job in enumerate(jobs, start=1):
-        job_name = job["name"]
-        raw_status = statuses.get(job_name)
-        if raw_status is None:
-            raw_status = job_status_text(job)
-        status_key = raw_status.upper()
-        status = _colorize_state_text(_display_state(raw_status))
-        job_id = job.get("id")
-        rows.append(
-            (
-                str(index),
-                str(job_id) if job_id is not None else "-",
-                job_name,
-                _requested_time(job),
-                _requested_gpus(job),
-                _dependencies_text(job),
-                remaining.get(job_name, "-"),
-                status,
-                status_key,
-            )
-        )
-
-    idx_width = max(len("idx"), max(len(row[0]) for row in rows))
-    id_width = max(len("id"), max(len(row[1]) for row in rows))
-    name_width = max(len("name"), max(len(row[2]) for row in rows))
-    time_width = max(len("time"), max(len(row[3]) for row in rows))
-    gpus_width = max(len("gpus"), max(len(row[4]) for row in rows))
-    deps_width = max(len("dependencies"), max(len(row[5]) for row in rows))
-    remaining_width = max(len("remaining"), max(len(row[6]) for row in rows))
-    status_width = max(len("status"), max(_visible_len(row[7]) for row in rows))
-    lines.append(
-        f"{'idx'.center(idx_width)}  "
-        f"{'id'.center(id_width)}  "
-        f"{'name'.center(name_width)}  "
-        f"{'time'.center(time_width)}  "
-        f"{'gpus'.center(gpus_width)}  "
-        f"{'dependencies'.center(deps_width)}  "
-        f"{'remaining'.center(remaining_width)}  "
-        f"{'status'.center(status_width)}"
+    return _bundle_jobs_context(
+        bundle_name,
+        desired_date,
+        name_contains=name_contains,
+        name_regex=name_regex,
+        ignore_case=ignore_case,
+        status_predicate=status_predicate,
     )
-    for index_text, job_id, job_name, time_text, gpus_text, deps_text, remaining_text, status, status_key in rows:
-        deps_rendered = deps_text.center(deps_width) if deps_text == "-" else deps_text.ljust(deps_width)
-        remaining_rendered = (
-            remaining_text.center(remaining_width) if remaining_text == "-" else remaining_text.ljust(remaining_width)
-        )
-        row_text = (
-            f"{index_text.ljust(idx_width)}  "
-            f"{job_id.ljust(id_width)}  "
-            f"{job_name.ljust(name_width)}  "
-            f"{time_text.ljust(time_width)}  "
-            f"{gpus_text.ljust(gpus_width)}  "
-            f"{deps_rendered}  "
-            f"{remaining_rendered}  "
-            f"{_center_visible(status, status_width)}"
-        )
-        if status_key == "RUNNING":
-            row_text = f"{ANSI_YELLOW}{row_text}{ANSI_RESET}"
-        elif status_key == "COMPLETED":
-            row_text = f"{ANSI_GREEN}{row_text}{ANSI_RESET}"
-        elif status_key == "CANCELLED":
-            row_text = f"{ANSI_RED}{row_text}{ANSI_RESET}"
-        lines.append(row_text)
-    return "\n".join(lines)
 
 
 def latest_bundle_status_context(desired_date: Optional[datetime] = None) -> str:

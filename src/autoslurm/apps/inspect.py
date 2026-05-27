@@ -10,7 +10,7 @@ from typing import Optional
 
 from ..experiment_context import job_context, latest_log_context
 from ..save_load_jobs import bundle_snapshots, latest_bundle_summaries, load_bundle
-from ..status import bundle_jobs_context
+from ..status_views import bundle_jobs_context
 from ..storage import out_dir
 from ..sync import sync_machine
 

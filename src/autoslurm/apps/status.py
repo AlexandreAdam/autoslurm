@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import re
 from datetime import datetime
 from typing import Optional
 
-from ..status import FAILED_STATES, bundle_jobs_context, job_status_texts as _job_status_texts
+from ..status import FAILED_STATES, job_status_texts as _job_status_texts
+from ..status_views import bundle_jobs_context
 from ..save_load_jobs import bundle_snapshots, load_bundle
 
 ANSI_RESET = "\033[0m"
 ANSI_GREEN = "\033[38;2;0;200;0m"
 ANSI_RED = "\033[38;2;220;0;0m"
+ANSI_YELLOW = "\033[38;2;220;180;0m"
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
 DATE_FORMATS = (
@@ -105,7 +109,7 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
             statuses = _job_status_texts(jobs)
             submitted = sum(1 for job in jobs if job.get("id") is not None)
             running = sum(1 for job in jobs if statuses.get(job["name"], "UNKNOWN").upper() == "RUNNING")
-            completed = sum(1 for job in jobs if statuses.get(job["name"], "UNKNOWN").upper() == "COMPLETED")
+            success = sum(1 for job in jobs if statuses.get(job["name"], "UNKNOWN").upper() == "COMPLETED")
             pending = sum(
                 1
                 for job in jobs
@@ -125,7 +129,7 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
             bundle_status = "running" if queue_like > 0 else ("completed" if submitted > 0 else "ready_to_go")
         except Exception:
             job_count = int(entry.get("job_count", 0))
-            submitted = running = completed = pending = failed = 0
+            submitted = running = success = pending = failed = 0
             bundle_status = "broken" if str(entry.get("state", "")).lower() == "broken" else "ready_to_go"
 
         rendered_rows.append(
@@ -135,6 +139,8 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
                 "status": (
                     f"{ANSI_GREEN}{bundle_status}{ANSI_RESET}"
                     if bundle_status == "completed"
+                    else f"{ANSI_YELLOW}{bundle_status}{ANSI_RESET}"
+                    if bundle_status == "running"
                     else f"{ANSI_RED}{bundle_status}{ANSI_RESET}"
                     if bundle_status == "broken"
                     else bundle_status
@@ -143,16 +149,27 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
                 "jobs": str(job_count),
                 "submitted": str(submitted),
                 "running": str(running),
-                "completed": str(completed),
+                "success": str(success),
                 "pending": str(pending),
                 "failed": str(failed),
             }
         )
 
-    headers = ["idx", "bundle", "status", "saved", "jobs", "submitted", "running", "completed", "pending", "failed"]
-    widths = {key: max(len(key), max(len(row[key]) for row in rendered_rows)) for key in headers}
+    headers = ["idx", "bundle", "status", "saved", "jobs", "submitted", "running", "success", "pending", "failed"]
+
+    def _visible_len(text: str) -> int:
+        return len(ANSI_ESCAPE_RE.sub("", text))
+
+    def _ljust_visible(text: str, width: int) -> str:
+        return text + (" " * max(0, width - _visible_len(text)))
+
+    widths = {key: len(key) for key in headers}
+    for row in rendered_rows:
+        for key in headers:
+            widths[key] = max(widths[key], _visible_len(row[key]))
+
     lines = ["  ".join(key.center(widths[key]) for key in headers)]
-    lines.extend("  ".join(row[key].ljust(widths[key]) for key in headers) for row in rendered_rows)
+    lines.extend("  ".join(_ljust_visible(row[key], widths[key]) for key in headers) for row in rendered_rows)
     return "\n".join(lines)
 
 

@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Optional
 
 from ..save_load_jobs import bundle_snapshots, load_bundle, load_bundle_from_path
-from ..status import job_status_texts
+from ..status import is_cancellable_state, job_status_texts
+from ..status_views import bundle_job_rows, bundle_jobs_context
 from ..utils import load_config, ssh_host_from_config
 
 DATE_FORMATS = (
@@ -18,19 +19,6 @@ DATE_FORMATS = (
     "%Y%m%d%H%M%S",
     "%Y%m%d",
 )
-
-ACTIVE_STATES = {
-    "PENDING",
-    "RUNNING",
-    "CONFIGURING",
-    "COMPLETING",
-    "STAGE_OUT",
-    "RESIZING",
-    "REQUEUED",
-    "SUSPENDED",
-    "SIGNALING",
-}
-
 
 def _parse_date(value: Optional[str]) -> Optional[datetime]:
     if value is None:
@@ -67,7 +55,7 @@ def _resolve_bundle_name(target: str, reference_date: Optional[datetime]) -> tup
 def _state_matches(status: str, status_filter: str) -> bool:
     state = (status or "UNKNOWN").upper()
     if status_filter == "all":
-        return state in ACTIVE_STATES
+        return is_cancellable_state(state)
     if status_filter == "submitted":
         return state not in {"NOT_SUBMITTED"}
     if status_filter == "pending":
@@ -75,14 +63,6 @@ def _state_matches(status: str, status_filter: str) -> bool:
     if status_filter == "running":
         return state == "RUNNING"
     return False
-
-
-def _render_table(rows: list[dict[str, str]]) -> str:
-    headers = ["idx", "id", "name", "machine", "status"]
-    widths = {key: max(len(key), max(len(row[key]) for row in rows)) for key in headers}
-    lines = ["  ".join(key.center(widths[key]) for key in headers)]
-    lines.extend("  ".join(row[key].ljust(widths[key]) for key in headers) for row in rows)
-    return "\n".join(lines)
 
 
 def _cancel_local(job_ids: list[str]) -> None:
@@ -176,84 +156,84 @@ def main(argv: list[str] | None = None) -> None:
     if args.name_contains and args.name_regex:
         parser.error("Use only one of --name-contains or --name-regex.")
 
+    status_predicate = lambda state: _state_matches(state, args.status_filter)
+
     if args.bundle_file is not None:
         jobs, _, bundle_date = load_bundle_from_path(args.bundle_file)
-        bundle_label = str(args.bundle_file)
+        status_text = None
+        statuses = job_status_texts(jobs)
+        raw_rows: list[dict] = []
+        name_regex_obj = None
+        if args.name_regex:
+            flags = re.IGNORECASE if args.ignore_case else 0
+            try:
+                name_regex_obj = re.compile(args.name_regex, flags=flags)
+            except re.error as exc:
+                raise SystemExit(f"Invalid --name-regex pattern: {exc}") from exc
+        for job in jobs:
+            name = str(job["name"])
+            if args.name_contains:
+                haystack = name.lower() if args.ignore_case else name
+                needle = args.name_contains.lower() if args.ignore_case else args.name_contains
+                if needle not in haystack:
+                    continue
+            if name_regex_obj and not name_regex_obj.search(name):
+                continue
+            state = statuses.get(job["name"], "UNKNOWN")
+            if not status_predicate(state):
+                continue
+            raw_rows.append(
+                {
+                    "job_id_raw": None if job.get("id") is None else str(job.get("id")),
+                    "machine_name": job.get("machine"),
+                }
+            )
     else:
         reference_date = _parse_date(args.date)
         bundle_name, bundle_date = _resolve_bundle_name(args.target, reference_date)
-        jobs, _, _ = load_bundle(bundle_name, bundle_date)
-        bundle_label = f"{bundle_name} {bundle_date.isoformat()}"
-
-    statuses = job_status_texts(jobs)
-    name_regex = None
-    if args.name_regex:
-        flags = re.IGNORECASE if args.ignore_case else 0
-        try:
-            name_regex = re.compile(args.name_regex, flags=flags)
-        except re.error as exc:
-            raise SystemExit(f"Invalid --name-regex pattern: {exc}") from exc
-    candidates: list[dict] = []
-    for job in jobs:
-        job_id = job.get("id")
-        if job_id is None:
-            continue
-        job_name = str(job["name"])
-        if args.name_contains:
-            haystack = job_name.lower() if args.ignore_case else job_name
-            needle = args.name_contains.lower() if args.ignore_case else args.name_contains
-            if needle not in haystack:
-                continue
-        if name_regex and not name_regex.search(job_name):
-            continue
-        status = statuses.get(job["name"], "UNKNOWN")
-        if not _state_matches(status, args.status_filter):
-            continue
-        candidates.append(
-            {
-                "id": str(job_id),
-                "name": job_name,
-                "machine": str(job.get("machine") or "local"),
-                "status": str(status),
-                "machine_name": job.get("machine"),
-            }
+        status_text = bundle_jobs_context(
+            bundle_name,
+            bundle_date,
+            name_contains=args.name_contains,
+            name_regex=args.name_regex,
+            ignore_case=args.ignore_case,
+            status_predicate=status_predicate,
+        )
+        _, raw_rows = bundle_job_rows(
+            bundle_name,
+            bundle_date,
+            name_contains=args.name_contains,
+            name_regex=args.name_regex,
+            ignore_case=args.ignore_case,
+            status_predicate=status_predicate,
         )
 
-    print(f"Bundle: {bundle_label}")
-    print(f"Status filter: {args.status_filter}")
-    if args.name_contains:
-        print(f"Name contains: {args.name_contains!r} (ignore_case={bool(args.ignore_case)})")
-    if args.name_regex:
-        print(f"Name regex: {args.name_regex!r} (ignore_case={bool(args.ignore_case)})")
+    if status_text:
+        print(status_text)
+    candidates = [
+        {"id": row["job_id_raw"], "machine_name": row["machine_name"]}
+        for row in raw_rows
+        if row.get("job_id_raw") is not None
+    ]
     if not candidates:
         print("No matching jobs to cancel.")
         return
 
-    rows = [
-        {
-            "idx": str(i),
-            "id": item["id"],
-            "name": item["name"],
-            "machine": item["machine"],
-            "status": item["status"],
-        }
-        for i, item in enumerate(candidates, start=1)
-    ]
-    print(_render_table(rows))
-
     if not args.yes:
-        print("\nPreview only. Re-run with --yes to cancel exactly these job IDs.")
+        print("Preview only. Re-run with --yes to cancel these jobs.")
         return
 
     by_machine: dict[Optional[str], list[str]] = {}
     for item in candidates:
-        by_machine.setdefault(item["machine_name"], []).append(item["id"])
+        by_machine.setdefault(item["machine_name"], []).append(str(item["id"]))
 
-    config = load_config()
+    config = None
     for machine_name, job_ids in by_machine.items():
         if machine_name is None:
             _cancel_local(job_ids)
             continue
+        if config is None:
+            config = load_config()
         machine_cfg = config["machines"].get(machine_name) or config.get(machine_name)
         if machine_cfg is None:
             raise RuntimeError(f"Machine '{machine_name}' not found in config.")
