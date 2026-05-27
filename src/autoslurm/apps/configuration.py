@@ -21,6 +21,7 @@ def _save_config(config: Dict[str, Dict]):
     data = {
         "machines": config["machines"],
         "default_machine": config["default_machine"],
+        "bundle_filter_mode": str(config.get("bundle_filter_mode", "active")).strip().lower(),
     }
     with open(config_file_path(), "w") as file:
         json.dump(data, file, indent=4)

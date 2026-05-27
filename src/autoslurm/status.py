@@ -22,6 +22,45 @@ FAILED_STATES = {
     "DEADLINE",
     "REVOKED",
 }
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+ANSI_RESET = "\033[0m"
+# Use 24-bit color escapes to avoid terminal theme remapping of base ANSI palette.
+ANSI_GREEN = "\033[38;2;0;200;0m"
+ANSI_RED = "\033[38;2;220;0;0m"
+ANSI_YELLOW = "\033[38;2;220;180;0m"
+
+
+def _display_state(state: str) -> str:
+    if state.upper() == "COMPLETED":
+        return "SUCCESS"
+    return state
+
+
+def _colorize_state_text(state_text: str) -> str:
+    upper = state_text.upper()
+    if upper == "SUCCESS":
+        return f"{ANSI_GREEN}{state_text}{ANSI_RESET}"
+    if upper == "RUNNING":
+        return f"{ANSI_YELLOW}{state_text}{ANSI_RESET}"
+    if upper == "CANCELLED":
+        return f"{ANSI_RED}{state_text}{ANSI_RESET}"
+    return state_text
+
+
+def _visible_len(text: str) -> int:
+    return len(ANSI_ESCAPE_RE.sub("", text))
+
+
+def _ljust_visible(text: str, width: int) -> str:
+    return text + (" " * max(0, width - _visible_len(text)))
+
+
+def _center_visible(text: str, width: int) -> str:
+    pad = max(0, width - _visible_len(text))
+    left = pad // 2
+    right = pad - left
+    return (" " * left) + text + (" " * right)
 
 
 def _parse_status_lines(text: str) -> dict[str, str]:
@@ -331,12 +370,14 @@ def bundle_jobs_context(bundle_name: str, desired_date: Optional[datetime] = Non
     remaining = _job_remaining_times(jobs, statuses)
     lines = [f"{bundle_name} {bundle_date.isoformat()}"]
     lines.append("Use --job <number|name> to inspect a job.")
-    rows: list[tuple[str, str, str, str, str, str, str, str]] = []
+    rows: list[tuple[str, str, str, str, str, str, str, str, str]] = []
     for index, job in enumerate(jobs, start=1):
         job_name = job["name"]
-        status = statuses.get(job_name)
-        if status is None:
-            status = job_status_text(job)
+        raw_status = statuses.get(job_name)
+        if raw_status is None:
+            raw_status = job_status_text(job)
+        status_key = raw_status.upper()
+        status = _colorize_state_text(_display_state(raw_status))
         job_id = job.get("id")
         rows.append(
             (
@@ -348,6 +389,7 @@ def bundle_jobs_context(bundle_name: str, desired_date: Optional[datetime] = Non
                 _dependencies_text(job),
                 remaining.get(job_name, "-"),
                 status,
+                status_key,
             )
         )
 
@@ -358,7 +400,7 @@ def bundle_jobs_context(bundle_name: str, desired_date: Optional[datetime] = Non
     gpus_width = max(len("gpus"), max(len(row[4]) for row in rows))
     deps_width = max(len("dependencies"), max(len(row[5]) for row in rows))
     remaining_width = max(len("remaining"), max(len(row[6]) for row in rows))
-    status_width = max(len("status"), max(len(row[7]) for row in rows))
+    status_width = max(len("status"), max(_visible_len(row[7]) for row in rows))
     lines.append(
         f"{'idx'.center(idx_width)}  "
         f"{'id'.center(id_width)}  "
@@ -369,18 +411,28 @@ def bundle_jobs_context(bundle_name: str, desired_date: Optional[datetime] = Non
         f"{'remaining'.center(remaining_width)}  "
         f"{'status'.center(status_width)}"
     )
-    for index_text, job_id, job_name, time_text, gpus_text, deps_text, remaining_text, status in rows:
+    for index_text, job_id, job_name, time_text, gpus_text, deps_text, remaining_text, status, status_key in rows:
         deps_rendered = deps_text.center(deps_width) if deps_text == "-" else deps_text.ljust(deps_width)
-        lines.append(
+        remaining_rendered = (
+            remaining_text.center(remaining_width) if remaining_text == "-" else remaining_text.ljust(remaining_width)
+        )
+        row_text = (
             f"{index_text.ljust(idx_width)}  "
             f"{job_id.ljust(id_width)}  "
             f"{job_name.ljust(name_width)}  "
             f"{time_text.ljust(time_width)}  "
             f"{gpus_text.ljust(gpus_width)}  "
             f"{deps_rendered}  "
-            f"{remaining_text.ljust(remaining_width)}  "
-            f"{status.ljust(status_width)}"
+            f"{remaining_rendered}  "
+            f"{_center_visible(status, status_width)}"
         )
+        if status_key == "RUNNING":
+            row_text = f"{ANSI_YELLOW}{row_text}{ANSI_RESET}"
+        elif status_key == "COMPLETED":
+            row_text = f"{ANSI_GREEN}{row_text}{ANSI_RESET}"
+        elif status_key == "CANCELLED":
+            row_text = f"{ANSI_RED}{row_text}{ANSI_RESET}"
+        lines.append(row_text)
     return "\n".join(lines)
 
 

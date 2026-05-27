@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..experiment_context import job_context, latest_log_context
-from ..save_load_jobs import latest_bundle_summaries, load_bundle
+from ..save_load_jobs import bundle_snapshots, latest_bundle_summaries, load_bundle
 from ..status import bundle_jobs_context
 from ..storage import out_dir
 from ..sync import sync_machine
@@ -103,7 +103,7 @@ def _resolve_job_selector(bundle_name: str, selector: str, reference_date: Optio
 def _resolve_bundle_target(
     bundle_arg: Optional[str], latest: bool, reference_date: Optional[datetime]
 ) -> str:
-    rows = list(latest_bundle_summaries(reference_date))
+    rows = list(bundle_snapshots(reference_date))
     rows.sort(key=lambda entry: entry["date"], reverse=True)
 
     if latest:
@@ -143,7 +143,7 @@ def _list_job_log_files(bundle_name: str, job_selector: str, reference_date: Opt
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Inspect job output logs.")
-    parser.add_argument("bundle", nargs="?", help="Bundle name to inspect.")
+    parser.add_argument("bundle", nargs="*", help="Bundle name/index to inspect. Supports ranges like 1-3.")
     parser.add_argument("--latest", "-l", action="store_true", help="Use the latest saved bundle.")
     parser.add_argument("--job", help="Select a job by index or name.")
     parser.add_argument("--script", action="store_true", help="Print the rendered SLURM script for --job.")
@@ -180,6 +180,8 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--list-files requires --job.")
     if parsed.script and not parsed.job:
         parser.error("--script requires --job.")
+    if len(parsed.bundle) > 1 and any((parsed.job, parsed.script, parsed.list_files, parsed.log, parsed.tail is not None)):
+        parser.error("Multi-bundle selection only supports status-style output (no --job/--script/--log/--tail/--list-files).")
 
     reference_date = _build_reference_date(
         parsed.date,
@@ -194,8 +196,36 @@ def main(argv: list[str] | None = None) -> None:
     if parsed.refresh:
         sync_machine()
 
+    rows = list(bundle_snapshots(reference_date))
+    rows.sort(key=lambda entry: entry["date"], reverse=True)
     try:
-        bundle_name = _resolve_bundle_target(parsed.bundle, parsed.latest, reference_date)
+        if parsed.latest:
+            if not rows:
+                raise LookupError("No saved bundles found.")
+            targets: list[tuple[str, Optional[datetime]]] = [(str(rows[0]["bundle"]), rows[0]["date"])]
+        else:
+            targets = []
+            for token in parsed.bundle:
+                if token.isdigit():
+                    index = int(token)
+                    if index < 1 or index > len(rows):
+                        raise KeyError(f"Bundle index '{token}' is out of range.")
+                    row = rows[index - 1]
+                    targets.append((str(row["bundle"]), row["date"]))
+                    continue
+                if "-" in token:
+                    left, right = token.split("-", 1)
+                    if left.isdigit() and right.isdigit():
+                        start, end = int(left), int(right)
+                        if start > end:
+                            raise KeyError(f"Invalid range '{token}': start must be <= end.")
+                        for index in range(start, end + 1):
+                            if index < 1 or index > len(rows):
+                                raise KeyError(f"Bundle index '{index}' from range '{token}' is out of range.")
+                            row = rows[index - 1]
+                            targets.append((str(row["bundle"]), row["date"]))
+                        continue
+                targets.append((token, reference_date))
     except LookupError as exc:
         _emit(str(exc), parsed.clipboard)
         return
@@ -203,15 +233,17 @@ def main(argv: list[str] | None = None) -> None:
         parser.error(str(exc))
 
     if parsed.list_files:
-        _emit(_list_job_log_files(bundle_name, parsed.job, reference_date), parsed.clipboard)
+        bundle_name, bundle_date = targets[0]
+        _emit(_list_job_log_files(bundle_name, parsed.job, bundle_date), parsed.clipboard)
         return
 
     if parsed.script:
+        bundle_name, bundle_date = targets[0]
         _emit(
             job_context(
                 bundle_name,
                 parsed.job,
-                reference_date,
+                bundle_date,
                 include_script=True,
                 include_logs=False,
                 include_status=False,
@@ -222,11 +254,16 @@ def main(argv: list[str] | None = None) -> None:
 
     wants_log_output = parsed.log or parsed.job is not None or parsed.tail is not None
     if not wants_log_output:
-        status_text = bundle_jobs_context(bundle_name, reference_date)
-        _emit(_strip_status_instruction(status_text), parsed.clipboard)
+        sections: list[str] = []
+        for bundle_name, bundle_date in targets:
+            status_text = bundle_jobs_context(bundle_name, bundle_date)
+            sections.append(f"Bundle: {bundle_name}")
+            sections.append(_strip_status_instruction(status_text))
+        _emit("\n\n".join(sections), parsed.clipboard)
         return
 
-    content = latest_log_context(bundle_name, reference_date, parsed.job)
+    bundle_name, bundle_date = targets[0]
+    content = latest_log_context(bundle_name, bundle_date, parsed.job)
     if parsed.tail is not None:
         content = _tail_text(content, parsed.tail)
     _emit(content, parsed.clipboard)

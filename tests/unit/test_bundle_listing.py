@@ -25,6 +25,7 @@ def mock_load_config(monkeypatch, tmp_path):
             }
         },
         "default_machine": "local",
+        "bundle_filter_mode": "all",
     }
     monkeypatch.setattr("autoslurm.save_load_jobs.load_config", lambda: config)
     monkeypatch.setattr("autoslurm.utils.load_config", lambda: config)
@@ -206,6 +207,49 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
     assert "RUNNING" in output
     assert "status" in output
     assert "PENDING" in output
+
+
+def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle = {
+        "done": {
+            "name": "done",
+            "script": "run-done",
+            "id": "11111",
+            "slurm": {"time": "00:05:00"},
+        },
+        "busy": {
+            "name": "busy",
+            "script": "run-busy",
+            "id": "33333",
+            "slurm": {"time": "00:05:00"},
+        },
+        "killed": {
+            "name": "killed",
+            "script": "run-killed",
+            "id": "22222",
+            "slurm": {"time": "00:05:00"},
+        },
+    }
+    _write_bundle("experiment_20250102000000.json", bundle)
+
+    module = importlib.import_module("autoslurm.status")
+    monkeypatch.setattr(
+        module,
+        "job_status_texts",
+        lambda jobs: {"done": "COMPLETED", "busy": "RUNNING", "killed": "CANCELLED"},
+    )
+    monkeypatch.setattr(module, "_job_remaining_times", lambda jobs, statuses: {"done": "-", "busy": "-", "killed": "-"})
+
+    text = module.bundle_jobs_context("experiment")
+    assert "\x1b[38;2;0;200;0mSUCCESS\x1b[0m" in text
+    assert "\x1b[38;2;220;180;0mRUNNING\x1b[0m" in text
+    assert "\x1b[38;2;220;0;0mCANCELLED\x1b[0m" in text
+    assert any(line.startswith("\x1b[38;2;220;180;0m") and "busy" in line for line in text.splitlines())
+    assert any(line.startswith("\x1b[38;2;0;200;0m") and "done" in line for line in text.splitlines())
+    assert any(line.startswith("\x1b[38;2;220;0;0m") and "killed" in line for line in text.splitlines())
 
 
 def test_context_job_script_view_is_compact(tmp_path, capsys):

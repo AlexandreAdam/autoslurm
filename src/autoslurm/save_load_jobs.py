@@ -4,6 +4,7 @@ Utility functions to save/load bundle of jobs to/from a JSON file in the jobs di
 
 from .utils import (
     load_config,
+    save_config,
     scp_host_and_keypath_from_config,
     remote_storage_root_from_config,
     ssh_host_from_config,
@@ -12,6 +13,7 @@ from .definitions import DATE_FORMAT
 from .job_dependency import dependency_graph
 from typing import Optional
 from graphlib import TopologicalSorter
+from graphlib import CycleError
 from datetime import datetime, timedelta
 import warnings
 import subprocess
@@ -29,6 +31,12 @@ __all__ = [
     "load_bundle_from_path",
     "list_saved_bundles",
     "latest_bundle_summaries",
+    "bundle_snapshots",
+    "get_bundle_filter_mode",
+    "set_bundle_filter_mode",
+    "stale_bundle_snapshots",
+    "inactive_bundle_snapshots",
+    "bundle_snapshot_state",
     "transfer_slurm_to_remote",
     "transfer_slurms_to_remote",
     "transfer_bundle_to_remote",
@@ -38,8 +46,202 @@ __all__ = [
 _ENSURED_REMOTE_DIRS: set[tuple[str, str]] = set()
 
 
+def get_bundle_filter_mode() -> str:
+    """
+    Return global bundle visibility filter mode ('active' or 'all').
+    """
+    try:
+        cfg = load_config()
+    except Exception:
+        return "active"
+    mode = str(cfg.get("bundle_filter_mode", "active")).strip().lower()
+    return mode if mode in {"active", "all"} else "active"
+
+
+def set_bundle_filter_mode(mode: str) -> str:
+    """
+    Persist global bundle visibility filter mode.
+    """
+    normalized = str(mode).strip().lower()
+    if normalized not in {"active", "all"}:
+        raise ValueError("mode must be 'active' or 'all'")
+    cfg = load_config()
+    cfg["bundle_filter_mode"] = normalized
+    save_config(cfg)
+    return normalized
+
+
+def _submitted_job_count(jobs_obj) -> int:
+    if not isinstance(jobs_obj, dict):
+        return 0
+    return sum(1 for job in jobs_obj.values() if isinstance(job, dict) and job.get("id") is not None)
+
+
+def _analyze_bundle_file(filename: Path) -> dict:
+    """
+    Classify a saved bundle snapshot as active/ready_to_go/broken.
+    """
+    stem = filename.stem
+    bundle_name, date_text = stem.rsplit("_", 1)
+    saved_date = datetime.strptime(date_text, DATE_FORMAT)
+    try:
+        with open(filename, "r") as file:
+            payload = json.load(file)
+    except (json.JSONDecodeError, OSError):
+        return {
+            "bundle": bundle_name,
+            "date": saved_date,
+            "path": filename,
+            "job_count": 0,
+            "submitted_count": 0,
+            "state": "broken",
+        }
+
+    if not isinstance(payload, dict):
+        return {
+            "bundle": bundle_name,
+            "date": saved_date,
+            "path": filename,
+            "job_count": 0,
+            "submitted_count": 0,
+            "state": "broken",
+        }
+
+    if any(not isinstance(job, dict) for job in payload.values()):
+        return {
+            "bundle": bundle_name,
+            "date": saved_date,
+            "path": filename,
+            "job_count": len(payload),
+            "submitted_count": 0,
+            "state": "broken",
+        }
+
+    for job_name, job in payload.items():
+        dependencies = job.get("dependencies")
+        if dependencies is None:
+            continue
+        if not isinstance(dependencies, (list, tuple)):
+            return {
+                "bundle": bundle_name,
+                "date": saved_date,
+                "path": filename,
+                "job_count": len(payload),
+                "submitted_count": 0,
+                "state": "broken",
+            }
+        for dep in dependencies:
+            if not isinstance(dep, str) or dep not in payload:
+                return {
+                    "bundle": bundle_name,
+                    "date": saved_date,
+                    "path": filename,
+                    "job_count": len(payload),
+                    "submitted_count": 0,
+                    "state": "broken",
+                }
+
+    try:
+        dependencies = dependency_graph(payload)
+        tuple(TopologicalSorter(dependencies).static_order())
+    except (CycleError, ValueError, TypeError):
+        return {
+            "bundle": bundle_name,
+            "date": saved_date,
+            "path": filename,
+            "job_count": len(payload),
+            "submitted_count": 0,
+            "state": "broken",
+        }
+
+    submitted_count = _submitted_job_count(payload)
+    return {
+        "bundle": bundle_name,
+        "date": saved_date,
+        "path": filename,
+        "job_count": len(payload),
+        "submitted_count": submitted_count,
+        "state": "active" if submitted_count > 0 else "ready_to_go",
+    }
+
+
+def bundle_snapshot_state(bundle_path: str | Path) -> dict:
+    """
+    Return analyzed snapshot metadata for an explicit bundle file path.
+    """
+    path = Path(bundle_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Bundle file not found: {path}")
+    stem = path.stem
+    if "_" not in stem:
+        raise ValueError(
+            f"Bundle filename must include a timestamp suffix '_{DATE_FORMAT}'. Got: {path.name}"
+        )
+    _, date_text = stem.rsplit("_", 1)
+    datetime.strptime(date_text, DATE_FORMAT)
+    return _analyze_bundle_file(path)
+
+
 def _is_placeholder_file(path: Path) -> bool:
     return path.name.startswith(".")
+
+
+def _all_snapshot_entries() -> list[dict]:
+    ensure_storage_dirs()
+    entries: list[dict] = []
+    for filename in jobs_dir().glob("*.json"):
+        if _is_placeholder_file(filename):
+            continue
+        stem = filename.stem
+        if "_" not in stem:
+            continue
+        _, date_text = stem.rsplit("_", 1)
+        try:
+            datetime.strptime(date_text, DATE_FORMAT)
+        except ValueError:
+            continue
+        entries.append(_analyze_bundle_file(filename))
+    entries.sort(key=lambda entry: entry["date"], reverse=True)
+    return entries
+
+
+def _active_visible_snapshots(entries: list[dict]) -> list[dict]:
+    """
+    Policy for the `active` filter:
+    - keep all submitted snapshots (`state=active`)
+    - if no submitted snapshot exists for a bundle name:
+      keep only the latest `ready_to_go` if present, else latest `broken`
+    """
+    by_bundle: dict[str, list[dict]] = {}
+    for entry in entries:
+        by_bundle.setdefault(str(entry["bundle"]), []).append(entry)
+    selected: list[dict] = []
+    for _, group in by_bundle.items():
+        group = sorted(group, key=lambda entry: entry["date"], reverse=True)
+        active_group = [entry for entry in group if entry.get("state") == "active"]
+        if active_group:
+            selected.extend(active_group)
+            continue
+        ready_group = [entry for entry in group if entry.get("state") == "ready_to_go"]
+        if ready_group:
+            selected.append(ready_group[0])
+            continue
+        broken_group = [entry for entry in group if entry.get("state") == "broken"]
+        if broken_group:
+            selected.append(broken_group[0])
+    selected.sort(key=lambda entry: entry["date"], reverse=True)
+    return selected
+
+
+def _stale_snapshots(entries: list[dict]) -> list[dict]:
+    """
+    Stale snapshots are entries not selected by the active-visibility policy.
+    """
+    visible = _active_visible_snapshots(entries)
+    visible_paths = {str(entry["path"]) for entry in visible}
+    stale = [entry for entry in entries if str(entry["path"]) not in visible_paths]
+    stale.sort(key=lambda entry: entry["date"], reverse=True)
+    return stale
 
 
 def save_bundle(
@@ -446,43 +648,49 @@ def latest_bundle_summaries(desired_date: Optional[datetime] = None) -> list[dic
 
     The entries are sorted by proximity to ``desired_date`` (default: now).
     """
-    ensure_storage_dirs()
     if desired_date is None:
         desired_date = datetime.now()
-
+    all_entries = _all_snapshot_entries()
+    mode = get_bundle_filter_mode()
+    entries_for_mode = _active_visible_snapshots(all_entries) if mode == "active" else all_entries
     latest_by_name: dict[str, dict] = {}
-    for filename in jobs_dir().glob("*.json"):
-        if _is_placeholder_file(filename):
-            continue
-        stem = filename.stem
-        if "_" not in stem:
-            continue
-        bundle_name, date_text = stem.rsplit("_", 1)
-        try:
-            saved_date = datetime.strptime(date_text, DATE_FORMAT)
-        except ValueError:
-            continue
-
+    for entry in entries_for_mode:
+        bundle_name = str(entry["bundle"])
         current = latest_by_name.get(bundle_name)
-        if current is not None and saved_date <= current["date"]:
-            continue
-
-        try:
-            with open(filename, "r") as file:
-                jobs = json.load(file)
-        except (json.JSONDecodeError, OSError):
-            jobs = {}
-
-        latest_by_name[bundle_name] = {
-            "bundle": bundle_name,
-            "date": saved_date,
-            "path": filename,
-            "job_count": len(jobs),
-        }
+        if current is None or entry["date"] > current["date"]:
+            latest_by_name[bundle_name] = entry
 
     entries = list(latest_by_name.values())
     entries.sort(key=lambda entry: (abs(entry["date"] - desired_date), entry["bundle"]))
     return entries
+
+
+def bundle_snapshots(desired_date: Optional[datetime] = None) -> list[dict]:
+    """
+    Return every saved bundle snapshot (including duplicate bundle names).
+
+    Entries are sorted by saved timestamp descending (latest first), which is
+    the canonical order used by index-based CLI selectors.
+    """
+    all_entries = _all_snapshot_entries()
+    mode = get_bundle_filter_mode()
+    if mode == "active":
+        return _active_visible_snapshots(all_entries)
+    return all_entries
+
+
+def stale_bundle_snapshots() -> list[dict]:
+    """
+    Return bundle snapshots that are ready to submit (valid graph, no submitted job id).
+    """
+    return _stale_snapshots(_all_snapshot_entries())
+
+
+def inactive_bundle_snapshots() -> list[dict]:
+    """
+    Return bundle snapshots that are not currently running/completed (ready_to_go or broken).
+    """
+    return _stale_snapshots(_all_snapshot_entries())
 
 
 def nearest_bundle_filename(

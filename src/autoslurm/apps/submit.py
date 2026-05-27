@@ -2,7 +2,12 @@ import argparse
 import sys
 from pathlib import Path
 from ..utils import machine_config
-from ..save_load_jobs import latest_bundle_summaries
+from ..save_load_jobs import (
+    bundle_snapshot_state,
+    bundle_snapshots,
+    latest_bundle_summaries,
+    list_saved_bundles,
+)
 from ..job_runner import submit_jobs
 
 
@@ -62,6 +67,12 @@ def parse_args(argv=None):
         action="store_true",
         help="Submit the latest scheduled bundle from AutoSlurm storage.",
     )
+    parser.add_argument(
+        "--index",
+        type=int,
+        required=False,
+        help="Submit a specific saved bundle snapshot by index (from `autoslurm status`).",
+    )
 
     return parser.parse_args(argv)
 
@@ -87,16 +98,59 @@ def main(argv=None):
     args = parse_args(argv)
     if args.latest and args.bundle_file is not None:
         raise SystemExit("--latest cannot be combined with --bundle-file.")
+    if args.index is not None and args.bundle_file is not None:
+        raise SystemExit("--index cannot be combined with --bundle-file.")
+    if args.latest and args.index is not None:
+        raise SystemExit("--latest cannot be combined with --index.")
     if args.latest and args.name is not None:
         raise SystemExit("--latest does not take a bundle name.")
+    if args.index is not None and args.name is not None:
+        raise SystemExit("--index does not take a bundle name.")
     if not args.latest and args.name is None:
-        raise SystemExit("Submit requires a bundle name unless --latest is used.")
+        if args.index is None and args.bundle_file is None:
+            raise SystemExit("Submit requires a bundle name unless --latest or --index is used.")
+
+    if args.name is None and args.bundle_file is not None:
+        stem = args.bundle_file.stem
+        if "_" in stem:
+            args.name = stem.rsplit("_", 1)[0]
+        else:
+            raise SystemExit("Unable to infer bundle name from --bundle-file. Provide an explicit bundle name.")
 
     if args.latest:
         summaries = latest_bundle_summaries()
         if not summaries:
             raise SystemExit("No saved bundles found.")
-        args.name = max(summaries, key=lambda entry: entry["date"])["bundle"]
+        latest = max(summaries, key=lambda entry: entry["date"])
+        args.name = latest["bundle"]
+        latest_path = latest.get("path")
+        if latest_path is not None:
+            args.bundle_file = Path(latest_path)
+    elif args.index is not None:
+        rows = bundle_snapshots()
+        if not rows:
+            raise SystemExit("No saved bundles found.")
+        if args.index < 1 or args.index > len(rows):
+            raise SystemExit(f"Bundle index '{args.index}' is out of range.")
+        selected = rows[args.index - 1]
+        args.name = selected["bundle"]
+        args.bundle_file = Path(selected["path"])
+
+    if args.bundle_file is None:
+        candidates = list_saved_bundles(bundle_name=args.name)
+        if not candidates:
+            raise SystemExit(f"No saved bundle found for '{args.name}'.")
+        args.bundle_file = Path(candidates[0]["path"])
+
+    try:
+        snapshot = bundle_snapshot_state(args.bundle_file)
+    except Exception as exc:
+        raise SystemExit(f"Unable to validate bundle file '{args.bundle_file}': {exc}") from exc
+    if str(snapshot.get("state", "")).lower() == "broken":
+        raise SystemExit(
+            "Refusing to submit broken bundle: dependency graph or bundle structure is invalid. "
+            "Inspect with `autoslurm status` or `autoslurm inspect` and rebuild the bundle."
+        )
 
     machine_name, config = machine_config(args)
     submit_jobs(

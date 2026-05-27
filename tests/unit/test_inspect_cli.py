@@ -20,6 +20,7 @@ def test_inspect_bundle_defaults_to_status_view(monkeypatch, capsys):
     inspect_app.main(["bundle_a"])
     output = capsys.readouterr().out
 
+    assert "Bundle: bundle_a" in output
     assert "bundle_a 2025-01-01T00:00:00" in output
     assert "Use --job <number|name>" not in output
     assert "idx id name status" in output
@@ -37,7 +38,7 @@ def test_inspect_job_prints_latest_job_log(monkeypatch, capsys):
 def test_inspect_latest_defaults_to_latest_bundle_status(monkeypatch, capsys):
     monkeypatch.setattr(
         inspect_app,
-        "latest_bundle_summaries",
+        "bundle_snapshots",
         lambda desired_date=None: [{"bundle": "latest_bundle", "date": datetime(2025, 1, 1, 0, 0, 0)}],
     )
     monkeypatch.setattr(inspect_app, "bundle_jobs_context", lambda bundle, date=None: f"{bundle}\nidx id name status")
@@ -45,13 +46,13 @@ def test_inspect_latest_defaults_to_latest_bundle_status(monkeypatch, capsys):
     inspect_app.main(["--latest"])
     output = capsys.readouterr().out.strip()
 
-    assert output.startswith("latest_bundle")
+    assert output.startswith("Bundle: latest_bundle")
 
 
 def test_inspect_bundle_index_uses_latest_first(monkeypatch, capsys):
     monkeypatch.setattr(
         inspect_app,
-        "latest_bundle_summaries",
+        "bundle_snapshots",
         lambda desired_date=None: [
             {"bundle": "older", "date": datetime(2025, 1, 1, 0, 0, 0)},
             {"bundle": "newer", "date": datetime(2025, 1, 2, 0, 0, 0)},
@@ -62,7 +63,27 @@ def test_inspect_bundle_index_uses_latest_first(monkeypatch, capsys):
     inspect_app.main(["1"])
     output = capsys.readouterr().out.strip()
 
-    assert output.startswith("newer")
+    assert output.startswith("Bundle: newer")
+
+
+def test_inspect_supports_multiple_indices_and_range_for_status_view(monkeypatch, capsys):
+    monkeypatch.setattr(
+        inspect_app,
+        "bundle_snapshots",
+        lambda desired_date=None: [
+            {"bundle": "older", "date": datetime(2025, 1, 1, 0, 0, 0)},
+            {"bundle": "newer", "date": datetime(2025, 1, 2, 0, 0, 0)},
+            {"bundle": "latest", "date": datetime(2025, 1, 3, 0, 0, 0)},
+        ],
+    )
+    monkeypatch.setattr(inspect_app, "bundle_jobs_context", lambda bundle, date=None: f"{bundle}\nidx id name status")
+
+    inspect_app.main(["2", "1-2"])
+    output = capsys.readouterr().out
+
+    assert "Bundle: newer" in output
+    assert "Bundle: latest" in output
+    assert output.find("Bundle: newer") < output.find("Bundle: latest")
 
 
 def test_inspect_script_prints_job_script(monkeypatch, capsys):

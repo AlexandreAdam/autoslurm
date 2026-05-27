@@ -10,6 +10,7 @@ import subprocess
 
 __all__ = [
     "load_config",
+    "save_config",
     "machine_config",
     "remote_storage_root_from_config",
     "activation_command_from_config",
@@ -87,10 +88,30 @@ def _normalize_config(raw: dict) -> dict:
         raise EnvironmentError(
             f"Default machine '{default_machine}' not found in the configuration file."
         )
-    normalized = {"machines": machines, "default_machine": default_machine}
+    bundle_filter_mode = str(raw.get("bundle_filter_mode", "active")).strip().lower()
+    if bundle_filter_mode not in {"active", "all"}:
+        bundle_filter_mode = "active"
+    normalized = {
+        "machines": machines,
+        "default_machine": default_machine,
+        "bundle_filter_mode": bundle_filter_mode,
+    }
     normalized["local"] = machines[default_machine]
     normalized.update(machines)
     return normalized
+
+
+def save_config(config: dict) -> None:
+    """Persist normalized config fields back to autoslurm config JSON."""
+    path = config_file_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "machines": config["machines"],
+        "default_machine": config["default_machine"],
+        "bundle_filter_mode": str(config.get("bundle_filter_mode", "active")).strip().lower(),
+    }
+    with open(path, "w") as file:
+        json.dump(data, file, indent=4)
 
 
 def load_config() -> dict:

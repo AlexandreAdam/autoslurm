@@ -5,7 +5,11 @@ from datetime import datetime
 from typing import Optional
 
 from ..status import FAILED_STATES, bundle_jobs_context, job_status_texts as _job_status_texts
-from ..save_load_jobs import latest_bundle_summaries, load_bundle
+from ..save_load_jobs import bundle_snapshots, load_bundle
+
+ANSI_RESET = "\033[0m"
+ANSI_GREEN = "\033[38;2;0;200;0m"
+ANSI_RED = "\033[38;2;220;0;0m"
 
 
 DATE_FORMATS = (
@@ -63,8 +67,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "target",
-        nargs="?",
-        help="Optional bundle index (1-based, latest first) or bundle name to inspect.",
+        nargs="*",
+        help="Optional bundle indices/names to inspect. Supports ranges like 1-3.",
     )
     parser.add_argument(
         "--date",
@@ -80,7 +84,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _status_rows(reference_date: Optional[datetime]) -> list[dict[str, object]]:
-    rows = list(latest_bundle_summaries(reference_date))
+    rows = list(bundle_snapshots(reference_date))
     rows.sort(key=lambda entry: entry["date"], reverse=True)
     return rows
 
@@ -113,14 +117,28 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
                 if statuses.get(job["name"], "UNKNOWN").upper() in FAILED_STATES
             )
             job_count = len(jobs)
+            queue_like = sum(
+                1
+                for job in jobs
+                if statuses.get(job["name"], "UNKNOWN").upper() in {"RUNNING", "PENDING", "CONFIGURING"}
+            )
+            bundle_status = "running" if queue_like > 0 else ("completed" if submitted > 0 else "ready_to_go")
         except Exception:
             job_count = int(entry.get("job_count", 0))
             submitted = running = completed = pending = failed = 0
+            bundle_status = "broken" if str(entry.get("state", "")).lower() == "broken" else "ready_to_go"
 
         rendered_rows.append(
             {
                 "idx": str(index),
                 "bundle": bundle_name,
+                "status": (
+                    f"{ANSI_GREEN}{bundle_status}{ANSI_RESET}"
+                    if bundle_status == "completed"
+                    else f"{ANSI_RED}{bundle_status}{ANSI_RESET}"
+                    if bundle_status == "broken"
+                    else bundle_status
+                ),
                 "saved": saved_value,
                 "jobs": str(job_count),
                 "submitted": str(submitted),
@@ -131,7 +149,7 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
             }
         )
 
-    headers = ["idx", "bundle", "saved", "jobs", "submitted", "running", "completed", "pending", "failed"]
+    headers = ["idx", "bundle", "status", "saved", "jobs", "submitted", "running", "completed", "pending", "failed"]
     widths = {key: max(len(key), max(len(row[key]) for row in rendered_rows)) for key in headers}
     lines = ["  ".join(key.center(widths[key]) for key in headers)]
     lines.extend("  ".join(row[key].ljust(widths[key]) for key in headers) for row in rendered_rows)
@@ -151,6 +169,39 @@ def _bundle_detail_text(bundle_name: str, reference_date: Optional[datetime]) ->
     return text
 
 
+def _resolve_targets(
+    tokens: list[str], rows: list[dict[str, object]], parser: argparse.ArgumentParser
+) -> list[tuple[str, Optional[datetime]]]:
+    if not tokens:
+        return []
+    if len(tokens) == 1 and not any(ch in tokens[0] for ch in ("-", ",")) and not tokens[0].isdigit():
+        return [(tokens[0], None)]
+
+    resolved: list[tuple[str, Optional[datetime]]] = []
+    for token in tokens:
+        if token.isdigit():
+            index = int(token)
+            if index < 1 or index > len(rows):
+                parser.error(f"Bundle index '{token}' is out of range.")
+            row = rows[index - 1]
+            resolved.append((str(row["bundle"]), row["date"]))
+            continue
+        if "-" in token:
+            left, right = token.split("-", 1)
+            if left.isdigit() and right.isdigit():
+                start, end = int(left), int(right)
+                if start > end:
+                    parser.error(f"Invalid range '{token}': start must be <= end.")
+                for index in range(start, end + 1):
+                    if index < 1 or index > len(rows):
+                        parser.error(f"Bundle index '{index}' from range '{token}' is out of range.")
+                    row = rows[index - 1]
+                    resolved.append((str(row["bundle"]), row["date"]))
+                continue
+        resolved.append((token, None))
+    return resolved
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -165,19 +216,14 @@ def main(argv: list[str] | None = None) -> None:
     )
     rows = _status_rows(reference_date)
 
-    if args.target is None:
+    if not args.target:
         print(_status_summary_text(rows))
         return
 
-    if args.target.isdigit():
-        selected = int(args.target)
-        if selected < 1 or selected > len(rows):
-            parser.error(f"Bundle index '{args.target}' is out of range.")
-        row = rows[selected - 1]
-        bundle_name = str(row["bundle"])
-        bundle_date = row["date"]
-        assert isinstance(bundle_date, datetime)
-        print(_bundle_detail_text(bundle_name, bundle_date))
-        return
-
-    print(_bundle_detail_text(args.target, reference_date))
+    targets = _resolve_targets(args.target, rows, parser)
+    sections: list[str] = []
+    for bundle_name, bundle_date in targets:
+        detail_date = reference_date if bundle_date is None else bundle_date
+        sections.append(f"Bundle: {bundle_name}")
+        sections.append(_bundle_detail_text(bundle_name, detail_date))
+    print("\n\n".join(sections))
