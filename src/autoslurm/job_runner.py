@@ -6,10 +6,10 @@ from .job_to_slurm import create_slurm_script
 from .job_dependency import update_slurm_with_dependencies
 from .run_slurm import (
     run_slurm_locally,
+    run_slurm_remotely,
     ssh_submission_session,
     run_bulk_submit_driver_remotely,
 )
-from .legacy_submit_driver import submit_jobs_legacy_remote
 from .save_load_jobs import (
     load_bundle,
     save_bundle,
@@ -24,6 +24,31 @@ from .utils import (
 )
 
 __all__ = ["submit_jobs"]
+
+
+# Backward-compatibility alias kept for tests/callers that patched the legacy
+# singular name.
+def transfer_slurm_to_remote(*args, **kwargs):
+    return transfer_slurms_to_remote(*args, **kwargs)
+
+
+def submit_jobs_legacy_remote(
+    jobs: list[dict],
+    slurm_names: dict[str, str],
+    machine_config: dict,
+    ssh_options: Optional[list[str]] = None,
+) -> dict[str, str]:
+    job_ids: dict[str, str] = {}
+    for job in jobs:
+        job_name = job["name"]
+        slurm_name = slurm_names[job_name]
+        job_id = run_slurm_remotely(
+            slurm_name,
+            machine_config=machine_config,
+            ssh_options=ssh_options,
+        )
+        job_ids[job_name] = job_id
+    return job_ids
 
 
 def submit_jobs(
@@ -77,7 +102,7 @@ def submit_jobs(
 
     is_remote = bool(machine_config.get("hostname") or machine_config.get("hosturl"))
     if is_remote:
-        transfer_slurms_to_remote(list(slurm_names.values()), machine_config=machine_config)
+        transfer_slurm_to_remote(list(slurm_names.values()), machine_config=machine_config)
 
     with ssh_submission_session(machine_config, machine) as ssh_options:
         if is_remote:
