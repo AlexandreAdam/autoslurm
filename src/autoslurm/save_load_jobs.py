@@ -36,6 +36,7 @@ __all__ = [
     "set_bundle_filter_mode",
     "stale_bundle_snapshots",
     "inactive_bundle_snapshots",
+    "all_bundle_snapshots",
     "bundle_snapshot_state",
     "transfer_slurm_to_remote",
     "transfer_slurms_to_remote",
@@ -44,6 +45,7 @@ __all__ = [
 ]
 
 _ENSURED_REMOTE_DIRS: set[tuple[str, str]] = set()
+SNAPSHOT_KIND_KEY = "_autoslurm_snapshot_kind"
 
 
 def get_bundle_filter_mode() -> str:
@@ -75,6 +77,36 @@ def _submitted_job_count(jobs_obj) -> int:
     if not isinstance(jobs_obj, dict):
         return 0
     return sum(1 for job in jobs_obj.values() if isinstance(job, dict) and job.get("id") is not None)
+
+
+def _snapshot_kind_from_payload(payload: dict) -> str:
+    explicit: set[str] = set()
+    for job in payload.values():
+        if not isinstance(job, dict):
+            continue
+        value = str(job.get(SNAPSHOT_KIND_KEY, "")).strip().lower()
+        if value in {"draft", "submission"}:
+            explicit.add(value)
+    if "submission" in explicit:
+        return "submission"
+    if "draft" in explicit:
+        return "draft"
+    # Backward-compatibility for legacy snapshots created before kind stamping.
+    submitted_count = _submitted_job_count(payload)
+    return "submission" if submitted_count > 0 else "draft"
+
+
+def _ensure_snapshot_kind(payload: dict, *, kind: str) -> dict:
+    if kind not in {"draft", "submission"}:
+        raise ValueError("kind must be 'draft' or 'submission'")
+    if not isinstance(payload, dict):
+        return payload
+    for job in payload.values():
+        if isinstance(job, dict):
+            value = str(job.get(SNAPSHOT_KIND_KEY, "")).strip().lower()
+            if value not in {"draft", "submission"}:
+                job[SNAPSHOT_KIND_KEY] = kind
+    return payload
 
 
 def _analyze_bundle_file(filename: Path) -> dict:
@@ -155,13 +187,15 @@ def _analyze_bundle_file(filename: Path) -> dict:
         }
 
     submitted_count = _submitted_job_count(payload)
+    snapshot_kind = _snapshot_kind_from_payload(payload)
     return {
         "bundle": bundle_name,
         "date": saved_date,
         "path": filename,
         "job_count": len(payload),
         "submitted_count": submitted_count,
-        "state": "active" if submitted_count > 0 else "ready_to_go",
+        "state": "active" if (snapshot_kind == "submission" and submitted_count > 0) else "ready_to_go",
+        "snapshot_kind": snapshot_kind,
     }
 
 
@@ -205,12 +239,20 @@ def _all_snapshot_entries() -> list[dict]:
     return entries
 
 
+def all_bundle_snapshots() -> list[dict]:
+    """
+    Return all saved bundle snapshots regardless of global filter mode.
+    """
+    return _all_snapshot_entries()
+
+
 def _active_visible_snapshots(entries: list[dict]) -> list[dict]:
     """
     Policy for the `active` filter:
     - keep all submitted snapshots (`state=active`)
-    - if no submitted snapshot exists for a bundle name:
-      keep only the latest `ready_to_go` if present, else latest `broken`
+    - keep latest `ready_to_go` only if it is the latest snapshot overall
+      for that bundle name
+    - if no submitted snapshots and latest is `broken`, keep latest broken
     """
     by_bundle: dict[str, list[dict]] = {}
     for entry in entries:
@@ -218,17 +260,15 @@ def _active_visible_snapshots(entries: list[dict]) -> list[dict]:
     selected: list[dict] = []
     for _, group in by_bundle.items():
         group = sorted(group, key=lambda entry: entry["date"], reverse=True)
+        latest = group[0]
         active_group = [entry for entry in group if entry.get("state") == "active"]
         if active_group:
             selected.extend(active_group)
+        if latest.get("state") == "ready_to_go":
+            selected.append(latest)
             continue
-        ready_group = [entry for entry in group if entry.get("state") == "ready_to_go"]
-        if ready_group:
-            selected.append(ready_group[0])
-            continue
-        broken_group = [entry for entry in group if entry.get("state") == "broken"]
-        if broken_group:
-            selected.append(broken_group[0])
+        if not active_group and latest.get("state") == "broken":
+            selected.append(latest)
     selected.sort(key=lambda entry: entry["date"], reverse=True)
     return selected
 
@@ -275,6 +315,7 @@ def save_bundle(
             )
 
     if append:
+        bundle = _ensure_snapshot_kind(bundle, kind="draft")
         for job_name, job in bundle.items():
             if "name" not in job:
                 job["name"] = job_name
@@ -301,6 +342,7 @@ def save_bundle(
         for job_name, job in bundle.items():
             if job.get("name", None) is None:
                 job["name"] = job_name
+        bundle = _ensure_snapshot_kind(bundle, kind="draft")
         with open(file_path, "w") as file:
             json.dump(bundle, file, indent=4)
     print(f"Saved bundle {name} to {file_path}")
@@ -372,6 +414,9 @@ def schedule_job(
                     i += 1
                     job_name = f"{job_name[:-4]}_{i:03d}"
             job["name"] = job_name  # Update name of the job
+            value = str(job.get(SNAPSHOT_KIND_KEY, "")).strip().lower()
+            if value not in {"draft", "submission"}:
+                job[SNAPSHOT_KIND_KEY] = "draft"
             bundle[job_name] = job  # Save it in bundle
         except (
             FileNotFoundError
@@ -394,6 +439,9 @@ def schedule_job(
             pass
         date = date.strftime(DATE_FORMAT)
         file_path = job_dir / f"{bundle_name}_{date}.json"
+        value = str(job.get(SNAPSHOT_KIND_KEY, "")).strip().lower()
+        if value not in {"draft", "submission"}:
+            job[SNAPSHOT_KIND_KEY] = "draft"
         bundle = {job_name: job}
 
     with open(file_path, "w") as file:
@@ -716,9 +764,12 @@ def nearest_bundle_filename(
         try:
             dates.append(datetime.strptime(file.split("_")[-1], DATE_FORMAT))
         except ValueError:
-            print(
-                f"Could not parse date from file {file}. Name of file expected to have the format 'name_{DATE_FORMAT}.json' this file will not be considered."
-            )
+            continue
+    if not dates:
+        raise FileNotFoundError(
+            f"No timestamped bundle files found for '{name}' in directory {directory}. "
+            f"Expected files like '{name}_{DATE_FORMAT}.json'."
+        )
     if desired_date is None:
         desired_date = datetime.now()
     nearest_date = min(dates, key=lambda x: abs(x - desired_date))

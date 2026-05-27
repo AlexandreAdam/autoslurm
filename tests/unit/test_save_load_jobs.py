@@ -102,6 +102,17 @@ def test_nearest_bundle_file(tmp_path, mock_load_config):
         nearest_bundle_filename("job3")
 
 
+def test_nearest_bundle_ignores_non_timestamp_file(tmp_path, mock_load_config, capsys):
+    job_dir = jobs_dir()
+    os.makedirs(job_dir, exist_ok=True)
+    (job_dir / "production_run_recovery.json").write_text("{}")
+    (job_dir / "production_run_recovery_20260527111508.json").write_text("{}")
+
+    filename, _ = nearest_bundle_filename("production_run_recovery")
+    assert filename == "production_run_recovery_20260527111508.json"
+    assert "Could not parse date from file" not in capsys.readouterr().out
+
+
 def test_schedule_job_success(tmp_path, mock_load_config):
     bundle_name = "test_job"
     mock_jobs = {"Job1": {"script": "run-job-1"}, "Job2": {"script": "run-job-2"}}

@@ -15,6 +15,7 @@ from .save_load_jobs import (
     save_bundle,
     transfer_bundle_to_remote,
     transfer_slurms_to_remote,
+    SNAPSHOT_KIND_KEY,
 )
 from .utils import (
     machine_config as resolve_machine_config,
@@ -85,8 +86,16 @@ def submit_jobs(
     else:
         with open(bundle_path, "r") as file:
             bundle = json.load(file)
+        if isinstance(bundle, dict):
+            for job in bundle.values():
+                if isinstance(job, dict):
+                    job[SNAPSHOT_KIND_KEY] = "submission"
         save_bundle(bundle, name)
         jobs, dependencies, date = load_bundle(name)
+
+    # Mark the persisted snapshot as a submission artifact.
+    for job in jobs:
+        update_job_metadata(name, date, job["name"], {SNAPSHOT_KIND_KEY: "submission"})
     slurm_names = {}
     for job in jobs:
         if job.get("script", None) is None:
