@@ -19,6 +19,7 @@ import warnings
 import subprocess
 import json
 import os
+import re
 import shlex
 from pathlib import Path
 from .storage import ensure_storage_dirs, jobs_dir, slurm_dir, storage_root
@@ -750,28 +751,25 @@ def nearest_bundle_filename(
     user_config = load_config()
     ensure_storage_dirs()
     directory = jobs_dir()
-    files = [
-        f[:-5]
-        for f in os.listdir(directory)
-        if not f.startswith(".") and f.startswith(name) and f.endswith(".json")
-    ]
-    if not files:
+    timestamp_re = re.compile(rf"^{re.escape(name)}_(\d{{14}})\.json$")
+    matches: list[tuple[str, datetime]] = []
+    for filename in os.listdir(directory):
+        if filename.startswith(".") or not filename.endswith(".json"):
+            continue
+        m = timestamp_re.match(filename)
+        if m is None:
+            continue
+        try:
+            dt = datetime.strptime(m.group(1), DATE_FORMAT)
+        except ValueError:
+            continue
+        matches.append((filename[:-5], dt))
+    if not matches:
         raise FileNotFoundError(
             f"No files found with name '{name}' in directory {directory}"
         )
-    dates = []
-    for file in files:
-        try:
-            dates.append(datetime.strptime(file.split("_")[-1], DATE_FORMAT))
-        except ValueError:
-            continue
-    if not dates:
-        raise FileNotFoundError(
-            f"No timestamped bundle files found for '{name}' in directory {directory}. "
-            f"Expected files like '{name}_{DATE_FORMAT}.json'."
-        )
     if desired_date is None:
         desired_date = datetime.now()
-    nearest_date = min(dates, key=lambda x: abs(x - desired_date))
-    file_name = f"{name}_{nearest_date.strftime(DATE_FORMAT)}.json"
+    nearest_name, nearest_date = min(matches, key=lambda item: abs(item[1] - desired_date))
+    file_name = f"{nearest_name}.json"
     return file_name, nearest_date
