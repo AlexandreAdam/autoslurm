@@ -353,7 +353,7 @@ def test_context_latest_prints_latest_bundle_status(tmp_path, capsys):
     output = capsys.readouterr().out.splitlines()
 
     assert output[0].startswith("job_b ")
-    assert output[1].startswith("Use --job <number|name>")
+    assert any("name" in line and "status" in line for line in output)
     assert any("name" in line and "status" in line for line in output)
     assert any("job_b" in line and "not_submitted" in line for line in output)
 

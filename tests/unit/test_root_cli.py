@@ -66,6 +66,7 @@ def test_root_help_lists_actions(capsys):
     assert "submit" in captured.out
     assert "configuration" in captured.out
     assert "inspect" in captured.out
+    assert "logs" in captured.out
     assert "status" in captured.out
     assert "scan" in captured.out
     assert "agent" in captured.out

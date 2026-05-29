@@ -203,7 +203,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
     assert seen["ssh"] == 2
     assert "analysis" in output
     assert "cleanup" in output
-    assert "remaining" in output
+    assert "time remaining" in output
     assert "RUNNING" in output
     assert "status" in output
     assert "PENDING" in output
@@ -322,13 +322,81 @@ def test_context_list_includes_resources_and_dependencies_topological_order(tmp_
     experiment_context.main(["experiment", "--list"])
     lines = capsys.readouterr().out.splitlines()
 
-    assert any("time" in line and "gpus" in line and "dependencies" in line for line in lines)
+    assert any("time remaining" in line and "gpus" in line and "dependencies" in line for line in lines)
     train_row = next(line for line in lines if " train " in f" {line} ")
     eval_row = next(line for line in lines if " eval " in f" {line} ")
-    assert "02:00:00" in train_row
+    assert " - " in f" {train_row} "
     assert "2" in train_row
     assert "-" in train_row
     assert "00:30:00" in eval_row
     assert "0" in eval_row
     assert "train" in eval_row
     assert lines.index(train_row) < lines.index(eval_row)
+
+
+def test_context_list_shows_array_progress_for_array_jobs(tmp_path, monkeypatch, capsys):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle = {
+        "array_train": {
+            "name": "array_train",
+            "script": "run-array",
+            "id": "777",
+            "slurm": {"time": "01:00:00"},
+        }
+    }
+    _write_bundle("experiment_20250102000000.json", bundle)
+
+    def fake_run(cmd, *args, **kwargs):
+        class Result:
+            returncode = 0
+            stdout = "777|RUNNING\n777_1|COMPLETED\n777_2|FAILED\n777_3|COMPLETED\n"
+            stderr = ""
+
+        return Result()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    experiment_context.main(["experiment", "--list"])
+    output = capsys.readouterr().out
+
+    assert "array" in output
+    assert "2/3" in output
+
+
+def test_context_list_uses_declared_array_size_when_task_rows_missing(tmp_path, monkeypatch, capsys):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle = {
+        "array_pending": {
+            "name": "array_pending",
+            "script": "run-array-pending",
+            "id": "900",
+            "slurm": {"time": "01:00:00", "array": "1-4"},
+        },
+        "array_done": {
+            "name": "array_done",
+            "script": "run-array-done",
+            "id": "901",
+            "slurm": {"time": "01:00:00", "array": "1-4"},
+        },
+    }
+    _write_bundle("experiment_20250102000000.json", bundle)
+
+    def fake_run(cmd, *args, **kwargs):
+        class Result:
+            returncode = 0
+            stdout = "900|PENDING\n901|COMPLETED\n"
+            stderr = ""
+
+        return Result()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    experiment_context.main(["experiment", "--list"])
+    output = capsys.readouterr().out
+
+    assert "0/4" in output
+    assert "4/4" in output

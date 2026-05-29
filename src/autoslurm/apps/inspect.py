@@ -141,13 +141,49 @@ def _list_job_log_files(bundle_name: str, job_selector: str, reference_date: Opt
     return "\n".join(str(path) for path in files)
 
 
+def _list_array_task_log_files(
+    bundle_name: str, job_selector: str, array_task: str, reference_date: Optional[datetime]
+) -> str:
+    jobs, _, _ = load_bundle(bundle_name, reference_date)
+    if job_selector.isdigit():
+        index = int(job_selector)
+        if index < 1 or index > len(jobs):
+            raise KeyError(f"Job index '{job_selector}' is out of range.")
+        job = jobs[index - 1]
+    else:
+        match = next((item for item in jobs if item["name"] == job_selector), None)
+        if match is None:
+            raise KeyError(f"Job '{job_selector}' not found.")
+        job = match
+
+    job_name = str(job["name"])
+    job_id = job.get("id")
+    if job_id is None:
+        return f"Job '{job_name}' has no submitted id, cannot select array task '{array_task}'."
+    needle = f"-{job_id}_{array_task}.out"
+    files = sorted(
+        (path for path in out_dir().glob(f"{job_name}-*.out") if path.name.endswith(needle)),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    if not files:
+        return (
+            f"No local log files found for job '{job_name}' array task '{array_task}'. "
+            f"Try `asl sync` or `asl logs --refresh`."
+        )
+    return "\n".join(str(path) for path in files)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Inspect job output logs.")
     parser.add_argument("bundle", nargs="*", help="Bundle name/index to inspect. Supports ranges like 1-3.")
     parser.add_argument("--latest", "-l", action="store_true", help="Use the latest saved bundle.")
     parser.add_argument("--job", help="Select a job by index or name.")
+    parser.add_argument("--array-task", help="Select a specific array task index for --job logs (e.g., 3).")
     parser.add_argument("--script", action="store_true", help="Print the rendered SLURM script for --job.")
+    parser.add_argument("--status", action="store_true", help="Print SLURM status for --job.")
     parser.add_argument("--log", action="store_true", help="Print latest .out content (bundle or selected job).")
+    parser.add_argument("--logs", dest="log", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--tail", type=int, help="Print only the last N lines of the selected log output.")
     parser.add_argument("--list-files", action="store_true", help="List local .out files for the selected job.")
     parser.add_argument("--refresh", action="store_true", help="Sync the configured default machine before reading logs.")
@@ -178,8 +214,12 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--tail must be a positive integer.")
     if parsed.list_files and not parsed.job:
         parser.error("--list-files requires --job.")
+    if parsed.array_task is not None and not parsed.job:
+        parser.error("--array-task requires --job.")
     if parsed.script and not parsed.job:
         parser.error("--script requires --job.")
+    if parsed.status and not parsed.job:
+        parser.error("--status requires --job.")
     if len(parsed.bundle) > 1 and any((parsed.job, parsed.script, parsed.list_files, parsed.log, parsed.tail is not None)):
         parser.error("Multi-bundle selection only supports status-style output (no --job/--script/--log/--tail/--list-files).")
 
@@ -234,7 +274,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if parsed.list_files:
         bundle_name, bundle_date = targets[0]
-        _emit(_list_job_log_files(bundle_name, parsed.job, bundle_date), parsed.clipboard)
+        if parsed.array_task is not None:
+            _emit(_list_array_task_log_files(bundle_name, parsed.job, parsed.array_task, bundle_date), parsed.clipboard)
+        else:
+            _emit(_list_job_log_files(bundle_name, parsed.job, bundle_date), parsed.clipboard)
         return
 
     if parsed.script:
@@ -252,6 +295,21 @@ def main(argv: list[str] | None = None) -> None:
         )
         return
 
+    if parsed.status:
+        bundle_name, bundle_date = targets[0]
+        _emit(
+            job_context(
+                bundle_name,
+                parsed.job,
+                bundle_date,
+                include_script=False,
+                include_logs=False,
+                include_status=True,
+            ),
+            parsed.clipboard,
+        )
+        return
+
     wants_log_output = parsed.log or parsed.job is not None or parsed.tail is not None
     if not wants_log_output:
         sections: list[str] = []
@@ -263,7 +321,7 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     bundle_name, bundle_date = targets[0]
-    content = latest_log_context(bundle_name, bundle_date, parsed.job)
+    content = latest_log_context(bundle_name, bundle_date, parsed.job, parsed.array_task)
     if parsed.tail is not None:
         content = _tail_text(content, parsed.tail)
     _emit(content, parsed.clipboard)

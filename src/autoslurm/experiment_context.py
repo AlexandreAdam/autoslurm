@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shlex
 import subprocess
 from datetime import datetime
@@ -255,6 +256,7 @@ def _latest_out_log_for_job(
     bundle_name: str,
     job_name: str,
     desired_date: Optional[datetime] = None,
+    array_task: Optional[str] = None,
 ) -> tuple[Optional[str], Optional[str]]:
     jobs, _, bundle_date = load_bundle(bundle_name, desired_date)
     try:
@@ -268,6 +270,20 @@ def _latest_out_log_for_job(
         if error is not None:
             return None, error
         return None, None
+
+    if array_task is not None:
+        job_id = job.get("id")
+        if job_id is None:
+            return None, f"Job '{job_name}' has no submitted id, cannot resolve array task '{array_task}'."
+        pattern = re.compile(rf"-{re.escape(str(job_id))}_{re.escape(str(array_task))}\.out$")
+        matching_logs = [entry for entry in logs if pattern.search(entry[0].name)]
+        if not matching_logs:
+            return None, f"No log file matched array task '{array_task}' for job '{job_name}'."
+        selected = max(
+            matching_logs,
+            key=lambda item: item[0].stat().st_mtime if item[0].exists() else 0.0,
+        )
+        return selected[1], None
 
     latest_log = max(
         logs,
@@ -299,6 +315,7 @@ def latest_log_context(
     bundle_name: Optional[str] = None,
     desired_date: Optional[datetime] = None,
     job_name: Optional[str] = None,
+    array_task: Optional[str] = None,
 ) -> str:
     if bundle_name is None:
         content, error = _latest_out_log_in_storage()
@@ -309,7 +326,12 @@ def latest_log_context(
         return "No logs found. Try `asl sync` or `asl logs --refresh`."
 
     if job_name is not None:
-        content, error = _latest_out_log_for_job(bundle_name, job_name, desired_date)
+        content, error = _latest_out_log_for_job(
+            bundle_name,
+            job_name,
+            desired_date,
+            array_task=array_task,
+        )
     else:
         content, error = _latest_out_log_for_bundle(bundle_name, desired_date)
     if content is not None:

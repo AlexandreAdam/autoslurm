@@ -13,6 +13,7 @@ from . import (
     filter as filter_app,
     inspect,
     initialize,
+    logs,
     scan,
     schedule,
     status,
@@ -33,6 +34,7 @@ ACTION_HELP = {
     "status": "Show bundles with saved timestamp and job count.",
     "scan": "Scan and list your own package apps.",
     "inspect": "Inspect bundle jobs and output logs.",
+    "logs": "Inspect bundles and job logs.",
     "agent": "Print the agent documentation context.",
 }
 
@@ -48,6 +50,7 @@ ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
     "status": status.main,
     "scan": scan.main,
     "inspect": inspect.main,
+    "logs": logs.main,
     "agent": agent_context.main,
 }
 
@@ -55,7 +58,6 @@ ACTION_ALIASES = {
     "config": "configuration",
     "stat": "status",
     "kill": "cancel",
-    "logs": "inspect",
     "context": "inspect",
     "experiment-context": "inspect",
     "agent-context": "agent",

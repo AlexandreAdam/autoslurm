@@ -8,6 +8,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Optional
 
+from .array_status import array_progress_for_job_id, declared_array_size, status_for_job_id
 from .save_load_jobs import latest_bundle_summaries, load_bundle
 from .utils import load_config, ssh_host_from_config
 
@@ -229,8 +230,9 @@ def job_status_text(job: dict) -> str:
     job_id = job.get("id")
     if job_id is None:
         return "not_submitted"
-    statuses = _fetch_statuses_for_job_ids([str(job_id)], job.get("machine"))
-    return statuses.get(str(job_id), "UNKNOWN")
+    job_id_text = str(job_id)
+    statuses = _fetch_statuses_for_job_ids([job_id_text], job.get("machine"))
+    return status_for_job_id(job_id_text, statuses)
 
 
 def job_status_texts(jobs: list[dict]) -> dict[str, str]:
@@ -247,8 +249,52 @@ def job_status_texts(jobs: list[dict]) -> dict[str, str]:
             if job_id is None:
                 statuses[job["name"]] = "not_submitted"
             else:
-                statuses[job["name"]] = machine_statuses.get(str(job_id), "UNKNOWN")
+                job_id_text = str(job_id)
+                statuses[job["name"]] = status_for_job_id(job_id_text, machine_statuses)
     return statuses
+
+
+def job_status_details(jobs: list[dict]) -> dict[str, dict[str, object]]:
+    details: dict[str, dict[str, object]] = {}
+    by_machine: dict[Optional[str], list[dict]] = defaultdict(list)
+    for job in jobs:
+        by_machine[job.get("machine")].append(job)
+
+    for machine_name, machine_jobs in by_machine.items():
+        job_ids = [str(job["id"]) for job in machine_jobs if job.get("id") is not None]
+        machine_statuses = _fetch_statuses_for_job_ids(job_ids, machine_name)
+        for job in machine_jobs:
+            job_name = str(job["name"])
+            job_id = job.get("id")
+            if job_id is None:
+                declared_total = declared_array_size((job.get("slurm") or {}).get("array"))
+                details[job_name] = {
+                    "status": "not_submitted",
+                    "is_array": declared_total is not None,
+                    "array_completed": 0,
+                    "array_total": 0 if declared_total is None else declared_total,
+                }
+                continue
+            job_id_text = str(job_id)
+            resolved_status = status_for_job_id(job_id_text, machine_statuses)
+            is_array, array_completed, array_total = array_progress_for_job_id(job_id_text, machine_statuses)
+            declared_total = declared_array_size((job.get("slurm") or {}).get("array"))
+            if declared_total is not None:
+                is_array = True
+                array_total = declared_total
+                if resolved_status.upper() == "COMPLETED":
+                    array_completed = declared_total
+                elif resolved_status.upper() in {"PENDING", "NOT_SUBMITTED"}:
+                    array_completed = 0
+                else:
+                    array_completed = min(array_completed, declared_total)
+            details[job_name] = {
+                "status": resolved_status,
+                "is_array": is_array,
+                "array_completed": array_completed,
+                "array_total": array_total,
+            }
+    return details
 
 
 def _job_remaining_times(jobs: list[dict], statuses: dict[str, str]) -> dict[str, str]:

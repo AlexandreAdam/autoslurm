@@ -147,15 +147,14 @@ def _status_summary_text(rows: list[dict[str, object]]) -> str:
                 ),
                 "saved": saved_value,
                 "jobs": str(job_count),
-                "submitted": str(submitted),
+                "pending": str(pending),
                 "running": str(running),
                 "success": str(success),
-                "pending": str(pending),
                 "failed": str(failed),
             }
         )
 
-    headers = ["idx", "bundle", "status", "saved", "jobs", "submitted", "running", "success", "pending", "failed"]
+    headers = ["idx", "bundle", "status", "saved", "jobs", "pending", "running", "success", "failed"]
 
     def _visible_len(text: str) -> int:
         return len(ANSI_ESCAPE_RE.sub("", text))
