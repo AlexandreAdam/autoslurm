@@ -251,8 +251,8 @@ def _active_visible_snapshots(entries: list[dict]) -> list[dict]:
     """
     Policy for the `active` filter:
     - keep all submitted snapshots (`state=active`)
-    - keep latest `ready_to_go` only if it is the latest snapshot overall
-      for that bundle name
+    - keep the latest `ready_to_go` snapshot if it is the latest snapshot
+      overall for that bundle name, even if older submitted snapshots exist
     - if no submitted snapshots and latest is `broken`, keep latest broken
     """
     by_bundle: dict[str, list[dict]] = {}
@@ -265,7 +265,6 @@ def _active_visible_snapshots(entries: list[dict]) -> list[dict]:
         active_group = [entry for entry in group if entry.get("state") == "active"]
         if active_group:
             selected.extend(active_group)
-            continue
         if latest.get("state") == "ready_to_go":
             selected.append(latest)
             continue

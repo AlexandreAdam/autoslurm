@@ -4,6 +4,7 @@ from pathlib import Path
 from ..utils import machine_config
 from ..save_load_jobs import (
     bundle_snapshot_state,
+    all_bundle_snapshots,
     bundle_snapshots,
     latest_bundle_summaries,
     list_saved_bundles,
@@ -118,10 +119,14 @@ def main(argv=None):
             raise SystemExit("Unable to infer bundle name from --bundle-file. Provide an explicit bundle name.")
 
     if args.latest:
-        summaries = latest_bundle_summaries()
-        if not summaries:
-            raise SystemExit("No saved bundles found.")
-        latest = max(summaries, key=lambda entry: entry["date"])
+        drafts = [entry for entry in all_bundle_snapshots() if str(entry.get("state", "")).lower() == "ready_to_go"]
+        if drafts:
+            latest = max(drafts, key=lambda entry: entry["date"])
+        else:
+            summaries = latest_bundle_summaries()
+            if not summaries:
+                raise SystemExit("No saved bundles found.")
+            latest = max(summaries, key=lambda entry: entry["date"])
         args.name = latest["bundle"]
         latest_path = latest.get("path")
         if latest_path is not None:
@@ -137,10 +142,20 @@ def main(argv=None):
         args.bundle_file = Path(selected["path"])
 
     if args.bundle_file is None:
-        candidates = list_saved_bundles(bundle_name=args.name)
-        if not candidates:
-            raise SystemExit(f"No saved bundle found for '{args.name}'.")
-        args.bundle_file = Path(candidates[0]["path"])
+        draft_candidates = [
+            entry
+            for entry in all_bundle_snapshots()
+            if str(entry.get("bundle", "")) == str(args.name)
+            and str(entry.get("state", "")).lower() == "ready_to_go"
+        ]
+        if draft_candidates:
+            selected = max(draft_candidates, key=lambda entry: entry["date"])
+            args.bundle_file = Path(selected["path"])
+        else:
+            candidates = list_saved_bundles(bundle_name=args.name)
+            if not candidates:
+                raise SystemExit(f"No saved bundle found for '{args.name}'.")
+            args.bundle_file = Path(candidates[0]["path"])
 
     try:
         snapshot = bundle_snapshot_state(args.bundle_file)

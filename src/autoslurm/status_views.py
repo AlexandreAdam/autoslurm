@@ -289,6 +289,44 @@ def bundle_job_rows_from_jobs(
                         display_index += 1
                     continue
 
+                if declared_total is not None:
+                    requested_time = _requested_time(job)
+                    for task_index in range(1, declared_total + 1):
+                        task_id = f"{job_id_text}_{task_index}"
+                        task_status = machine_statuses.get(task_id, resolved_status)
+                        status_key = task_status.upper()
+                        if status_predicate and not status_predicate(status_key):
+                            continue
+                        if status_key in {"PENDING", "NOT_SUBMITTED"}:
+                            time_remaining = requested_time
+                        elif status_key == "RUNNING":
+                            if raw_time_left is not None:
+                                time_remaining = raw_time_left.get(task_id, machine_remaining.get(job_name, "-"))
+                            else:
+                                time_remaining = machine_remaining.get(job_name, "-")
+                        elif status_key in TERMINAL_STATES:
+                            time_remaining = "-"
+                        else:
+                            time_remaining = "-"
+                        rows.append(
+                            {
+                                "index": str(display_index),
+                                "job_id": task_id,
+                                "job_id_raw": task_id,
+                                "name": job_name,
+                                "gpus": _requested_gpus(job),
+                                "dependencies": _dependencies_text(job),
+                                "time_remaining": time_remaining,
+                                "raw_status": task_status,
+                                "status_key": status_key,
+                                "status": _colorize_state_text(status_core.display_state(task_status)),
+                                "machine_name": job.get("machine"),
+                                "machine": str(job.get("machine") or "local"),
+                            }
+                        )
+                        display_index += 1
+                    continue
+
             requested_time = _requested_time(job)
             raw_status = resolved_status
             status_key = raw_status.upper()

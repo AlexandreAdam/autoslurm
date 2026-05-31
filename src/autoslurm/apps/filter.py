@@ -30,5 +30,5 @@ def main(argv: list[str] | None = None) -> None:
         mode = set_bundle_filter_mode(args.mode)
     print(f"Current bundle filter: {mode}")
     print("Available filters:")
-    print("- active: show running/completed submission history; if no submitted history exists for a bundle name, show only the latest ready_to_go (or latest broken if no ready_to_go exists).")
+    print("- active: show running/completed submission history; also show the latest ready_to_go snapshot when it is the newest snapshot for a bundle name (or latest broken if no ready_to_go exists).")
     print("- all: show every saved bundle snapshot with no filtering.")

@@ -10,7 +10,7 @@ from typing import Optional
 
 from ..experiment_context import job_context, latest_log_context
 from ..save_load_jobs import bundle_snapshots, latest_bundle_summaries, load_bundle
-from ..status_views import bundle_jobs_context
+from ..status_views import bundle_job_rows_from_jobs, bundle_jobs_context
 from ..storage import out_dir
 from ..sync import sync_machine
 
@@ -170,8 +170,81 @@ def _list_array_task_log_files(
         return (
             f"No local log files found for job '{job_name}' array task '{array_task}'. "
             f"Try `asl sync` or `asl logs --refresh`."
-        )
+    )
     return "\n".join(str(path) for path in files)
+
+
+def _parse_array_task_filter(
+    tokens: Optional[list[str]], parser: argparse.ArgumentParser
+) -> Optional[set[int]]:
+    if tokens is None:
+        return None
+    if not tokens:
+        return None
+
+    selected: set[int] = set()
+    for token in tokens:
+        if token.isdigit():
+            selected.add(int(token))
+            continue
+        if "-" in token:
+            left, right = token.split("-", 1)
+            if left.isdigit() and right.isdigit():
+                start = int(left)
+                end = int(right)
+                if start > end:
+                    parser.error(f"Invalid array range '{token}': start must be <= end.")
+                selected.update(range(start, end + 1))
+                continue
+        parser.error(
+            f"Invalid array selector '{token}'. Use integer indices or ranges like 1-3."
+        )
+    return selected
+
+
+def _resolve_job_row(
+    jobs: list[dict],
+    bundle_name: str,
+    bundle_date: datetime,
+    selector: str,
+    *,
+    show_array_tasks: bool,
+    array_tasks: Optional[set[int]],
+) -> tuple[dict, Optional[str]]:
+    if show_array_tasks:
+        _, rows = bundle_job_rows_from_jobs(
+            jobs,
+            bundle_date,
+            show_array_tasks=True,
+            array_tasks=array_tasks,
+        )
+        if selector.isdigit():
+            index = int(selector)
+            if index < 1 or index > len(rows):
+                raise KeyError(f"Job index '{selector}' is out of range.")
+            row = rows[index - 1]
+        else:
+            row = next((item for item in rows if item["name"] == selector), None)
+            if row is None:
+                raise KeyError(f"Job '{selector}' not found.")
+        job = next((item for item in jobs if item["name"] == row["name"]), None)
+        if job is None:
+            raise KeyError(f"Job '{selector}' not found.")
+        job_id_raw = row.get("job_id_raw")
+        array_task = None
+        if isinstance(job_id_raw, str) and "_" in job_id_raw:
+            array_task = job_id_raw.rsplit("_", 1)[1]
+        return job, array_task
+
+    if selector.isdigit():
+        index = int(selector)
+        if 1 <= index <= len(jobs):
+            return jobs[index - 1], None
+        raise KeyError(f"Job index '{selector}' is out of range.")
+    job = next((item for item in jobs if item["name"] == selector), None)
+    if job is None:
+        raise KeyError(f"Job '{selector}' not found.")
+    return job, None
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -181,9 +254,14 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--job", help="Select a job by index or name.")
     parser.add_argument(
         "--array",
+        nargs="*",
+        metavar="TASK",
+        help="Expand array jobs into per-task rows, optionally filtering by task indices or ranges.",
+    )
+    parser.add_argument(
         "--array-task",
         dest="array_task",
-        help="Select a specific array task index for --job logs (e.g., 3).",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument("--script", action="store_true", help="Print the rendered SLURM script for --job.")
     parser.add_argument("--status", action="store_true", help="Print SLURM status for --job.")
@@ -219,6 +297,7 @@ def main(argv: list[str] | None = None) -> None:
         parser.error("--tail must be a positive integer.")
     if parsed.list_files and not parsed.job:
         parser.error("--list-files requires --job.")
+    array_tasks = _parse_array_task_filter(parsed.array, parser)
     if parsed.array_task is not None and not parsed.job:
         parser.error("--array-task requires --job.")
     if parsed.script and not parsed.job:
@@ -279,7 +358,27 @@ def main(argv: list[str] | None = None) -> None:
 
     if parsed.list_files:
         bundle_name, bundle_date = targets[0]
-        if parsed.array_task is not None:
+        if parsed.array is not None:
+            jobs, _, _ = load_bundle(bundle_name, bundle_date)
+            if parsed.job is None:
+                _emit(bundle_jobs_context(bundle_name, bundle_date, show_array_tasks=True, array_tasks=array_tasks), parsed.clipboard)
+            else:
+                selected_job, selected_array_task = _resolve_job_row(
+                    jobs,
+                    bundle_name,
+                    bundle_date,
+                    parsed.job,
+                    show_array_tasks=True,
+                    array_tasks=array_tasks,
+                )
+                if selected_array_task is not None:
+                    _emit(
+                        _list_array_task_log_files(bundle_name, selected_job["name"], selected_array_task, bundle_date),
+                        parsed.clipboard,
+                    )
+                else:
+                    _emit(_list_job_log_files(bundle_name, selected_job["name"], bundle_date), parsed.clipboard)
+        elif parsed.array_task is not None:
             _emit(_list_array_task_log_files(bundle_name, parsed.job, parsed.array_task, bundle_date), parsed.clipboard)
         else:
             _emit(_list_job_log_files(bundle_name, parsed.job, bundle_date), parsed.clipboard)
@@ -319,14 +418,57 @@ def main(argv: list[str] | None = None) -> None:
     if not wants_log_output:
         sections: list[str] = []
         for bundle_name, bundle_date in targets:
-            status_text = bundle_jobs_context(bundle_name, bundle_date)
+            if parsed.array is not None:
+                status_text = bundle_jobs_context(
+                    bundle_name,
+                    bundle_date,
+                    show_array_tasks=True,
+                    array_tasks=array_tasks,
+                )
+            else:
+                status_text = bundle_jobs_context(bundle_name, bundle_date)
             sections.append(f"Bundle: {bundle_name}")
             sections.append(_strip_status_instruction(status_text))
         _emit("\n\n".join(sections), parsed.clipboard)
         return
 
     bundle_name, bundle_date = targets[0]
-    content = latest_log_context(bundle_name, bundle_date, parsed.job, parsed.array_task)
+    if parsed.job is not None:
+        if parsed.array is not None:
+            jobs, _, _ = load_bundle(bundle_name, bundle_date)
+            selected_job, selected_array_task = _resolve_job_row(
+                jobs,
+                bundle_name,
+                bundle_date,
+                parsed.job,
+                show_array_tasks=True,
+                array_tasks=array_tasks,
+            )
+            if parsed.script or parsed.status:
+                content = job_context(
+                    bundle_name,
+                    selected_job["name"],
+                    bundle_date,
+                    include_script=parsed.script,
+                    include_logs=False,
+                    include_status=parsed.status,
+                )
+            else:
+                content = latest_log_context(bundle_name, bundle_date, selected_job["name"])
+        else:
+            if parsed.script or parsed.status:
+                content = job_context(
+                    bundle_name,
+                    parsed.job,
+                    bundle_date,
+                    include_script=parsed.script,
+                    include_logs=False,
+                    include_status=parsed.status,
+                )
+            else:
+                content = latest_log_context(bundle_name, bundle_date, parsed.job, parsed.array_task)
+    else:
+        content = latest_log_context(bundle_name, bundle_date, parsed.job, parsed.array_task)
     if parsed.tail is not None:
         content = _tail_text(content, parsed.tail)
     _emit(content, parsed.clipboard)

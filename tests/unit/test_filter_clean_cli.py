@@ -167,6 +167,35 @@ def test_active_prefers_latest_ready_to_go_over_broken_for_same_bundle(tmp_path,
     assert remaining == ["recovery_20250102000000.json"]
 
 
+def test_active_includes_newer_ready_to_go_even_when_submitted_history_exists(tmp_path, capsys):
+    root = tmp_path / "storage"
+    set_storage_root(root)
+    ensure_storage_dirs()
+    _write_config(root)
+
+    _write_bundle(
+        "recovery_20250101000000.json",
+        {
+            "job_a": {
+                "name": "job_a",
+                "script": "run-a",
+                "id": "123",
+                "_autoslurm_snapshot_kind": "submission",
+            }
+        },
+    )
+    _write_bundle(
+        "recovery_20250102000000.json",
+        {"job_a": {"name": "job_a", "script": "run-a", "id": None, "_autoslurm_snapshot_kind": "draft"}},
+    )
+
+    rows = bundle_snapshots()
+    assert len(rows) == 2
+    assert [row["date"].strftime("%Y%m%d%H%M%S") for row in rows] == ["20250102000000", "20250101000000"]
+    assert rows[0]["state"] == "ready_to_go"
+    assert rows[1]["state"] == "active"
+
+
 def test_active_prefers_ready_draft_over_ready_submission_artifact(tmp_path, capsys):
     root = tmp_path / "storage"
     set_storage_root(root)

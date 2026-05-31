@@ -50,6 +50,74 @@ def test_submit_latest_uses_most_recent_saved_bundle(tmp_path, monkeypatch):
     assert captured["bundle_path"] is not None
 
 
+def test_submit_latest_prefers_most_recent_ready_to_go_snapshot(tmp_path, monkeypatch):
+    storage_root = tmp_path / "storage"
+    set_storage_root(storage_root)
+    ensure_storage_dirs()
+
+    submitted_path = jobs_dir() / "bundle_new_20250102000000.json"
+    draft_path = jobs_dir() / "bundle_new_20250103000000.json"
+    _write_bundle(
+        submitted_path.name,
+        {"job_new": {"name": "job_new", "script": "run-new", "id": "123", "_autoslurm_snapshot_kind": "submission"}},
+    )
+    _write_bundle(
+        draft_path.name,
+        {"job_new": {"name": "job_new", "script": "run-new", "id": None, "_autoslurm_snapshot_kind": "draft"}},
+    )
+
+    captured = {}
+
+    def fake_machine_config(args=None, machine=None, overrides=None):
+        return "local", {"env_command": "source env", "slurm_account": "acc"}
+
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+        captured["name"] = name
+        captured["bundle_path"] = bundle_path
+
+    monkeypatch.setattr(submit, "machine_config", fake_machine_config)
+    monkeypatch.setattr(submit, "submit_jobs", fake_submit_jobs)
+
+    submit.main(["--latest"])
+
+    assert captured["name"] == "bundle_new"
+    assert captured["bundle_path"] == draft_path
+
+
+def test_submit_named_bundle_prefers_most_recent_ready_to_go_snapshot(tmp_path, monkeypatch):
+    storage_root = tmp_path / "storage"
+    set_storage_root(storage_root)
+    ensure_storage_dirs()
+
+    submitted_path = jobs_dir() / "bundle_new_20250102000000.json"
+    draft_path = jobs_dir() / "bundle_new_20250103000000.json"
+    _write_bundle(
+        submitted_path.name,
+        {"job_new": {"name": "job_new", "script": "run-new", "id": "123", "_autoslurm_snapshot_kind": "submission"}},
+    )
+    _write_bundle(
+        draft_path.name,
+        {"job_new": {"name": "job_new", "script": "run-new", "id": None, "_autoslurm_snapshot_kind": "draft"}},
+    )
+
+    captured = {}
+
+    def fake_machine_config(args=None, machine=None, overrides=None):
+        return "local", {"env_command": "source env", "slurm_account": "acc"}
+
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+        captured["name"] = name
+        captured["bundle_path"] = bundle_path
+
+    monkeypatch.setattr(submit, "machine_config", fake_machine_config)
+    monkeypatch.setattr(submit, "submit_jobs", fake_submit_jobs)
+
+    submit.main(["bundle_new"])
+
+    assert captured["name"] == "bundle_new"
+    assert captured["bundle_path"] == draft_path
+
+
 def test_submit_latest_rejects_bundle_name(tmp_path, monkeypatch):
     storage_root = tmp_path / "storage"
     set_storage_root(storage_root)

@@ -317,6 +317,43 @@ def test_bundle_jobs_context_expands_array_tasks_when_requested(tmp_path, monkey
     assert "PENDING" in text
 
 
+def test_bundle_jobs_context_synthesizes_array_tasks_when_task_rows_missing(tmp_path, monkeypatch):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle = {
+        "array_train": {
+            "name": "array_train",
+            "script": "run-array",
+            "id": "777",
+            "slurm": {"time": "01:00:00", "array": "1-3"},
+        }
+    }
+    _write_bundle("experiment_20250102000000.json", bundle)
+
+    def fake_run(cmd, *args, **kwargs):
+        class Result:
+            returncode = 0
+
+            if "-o" in cmd and "%i|%L" in cmd:
+                stdout = "777|00:12:34\n"
+            else:
+                stdout = "777|RUNNING\n"
+            stderr = ""
+
+        return Result()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    module = importlib.import_module("autoslurm.status_views")
+    text = module.bundle_jobs_context("experiment", show_array_tasks=True)
+
+    assert "777_1" in text
+    assert "777_2" in text
+    assert "777_3" in text
+    assert "array" not in text.splitlines()[1].lower()
+
+
 def test_context_job_script_view_is_compact(tmp_path, capsys):
     set_storage_root(tmp_path / "storage")
     ensure_storage_dirs()
