@@ -200,7 +200,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
     experiment_context.main(["experiment", "--list"])
     output = capsys.readouterr().out
 
-    assert seen["ssh"] == 2
+    assert seen["ssh"] == 1
     assert "analysis" in output
     assert "cleanup" in output
     assert "time remaining" in output
@@ -241,18 +241,26 @@ def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch)
     }
     _write_bundle("experiment_20250102000000.json", bundle)
 
-    module = importlib.import_module("autoslurm.status")
-    monkeypatch.setattr(
-        module,
-        "job_status_texts",
-        lambda jobs: {"done": "COMPLETED", "busy": "RUNNING", "killed": "CANCELLED", "crashed": "FAILED"},
-    )
-    monkeypatch.setattr(
-        module,
-        "_job_remaining_times",
-        lambda jobs, statuses: {"done": "-", "busy": "-", "killed": "-", "crashed": "-"},
-    )
+    def fake_run(cmd, *args, **kwargs):
+        class Result:
+            returncode = 0
 
+            if "-o" in cmd and "%i|%L" in cmd:
+                stdout = "33333|00:10:00\n"
+            else:
+                stdout = (
+                    "11111|COMPLETED\n"
+                    "33333|RUNNING\n"
+                    "22222|CANCELLED\n"
+                    "44444|FAILED\n"
+                )
+            stderr = ""
+
+        return Result()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    module = importlib.import_module("autoslurm.status")
     text = module.bundle_jobs_context("experiment")
     assert "\x1b[38;2;0;200;0mSUCCESS\x1b[0m" in text
     assert "\x1b[38;2;220;180;0mRUNNING\x1b[0m" in text
@@ -262,6 +270,51 @@ def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch)
     assert any(line.startswith("\x1b[38;2;0;200;0m") and "done" in line for line in text.splitlines())
     assert any(line.startswith("\x1b[38;2;220;0;0m") and "killed" in line for line in text.splitlines())
     assert any(line.startswith("\x1b[38;2;220;0;0m") and "crashed" in line for line in text.splitlines())
+
+
+def test_bundle_jobs_context_expands_array_tasks_when_requested(tmp_path, monkeypatch):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle = {
+        "array_train": {
+            "name": "array_train",
+            "script": "run-array",
+            "id": "777",
+            "slurm": {"time": "01:00:00", "array": "1-4"},
+        },
+        "eval": {
+            "name": "eval",
+            "script": "run-eval",
+            "id": "888",
+            "slurm": {"time": "00:30:00"},
+        },
+    }
+    _write_bundle("experiment_20250102000000.json", bundle)
+
+    def fake_run(cmd, *args, **kwargs):
+        class Result:
+            returncode = 0
+
+            if "-o" in cmd and "%i|%L" in cmd:
+                stdout = "777_2|00:12:34\n"
+            else:
+                stdout = "777|RUNNING\n777_1|COMPLETED\n777_2|RUNNING\n777_3|PENDING\n777_4|COMPLETED\n888|PENDING\n"
+            stderr = ""
+
+        return Result()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    module = importlib.import_module("autoslurm.status_views")
+    text = module.bundle_jobs_context("experiment", show_array_tasks=True, array_tasks={2, 3})
+
+    assert "array" not in text.splitlines()[1].lower()
+    assert "777_2" in text
+    assert "777_3" in text
+    assert "777_1" not in text
+    assert "RUNNING" in text
+    assert "PENDING" in text
 
 
 def test_context_job_script_view_is_compact(tmp_path, capsys):
@@ -400,3 +453,34 @@ def test_context_list_uses_declared_array_size_when_task_rows_missing(tmp_path, 
 
     assert "0/4" in output
     assert "4/4" in output
+
+
+def test_context_list_shows_partial_array_progress_from_declared_size(tmp_path, monkeypatch, capsys):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle = {
+        "array_partial": {
+            "name": "array_partial",
+            "script": "run-array-partial",
+            "id": "902",
+            "slurm": {"time": "01:00:00", "array": "1-4"},
+        }
+    }
+    _write_bundle("experiment_20250102000000.json", bundle)
+
+    def fake_run(cmd, *args, **kwargs):
+        class Result:
+            returncode = 0
+            stdout = "902|RUNNING\n902_1|COMPLETED\n902_2|COMPLETED\n"
+            stderr = ""
+
+        return Result()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    experiment_context.main(["experiment", "--list"])
+    output = capsys.readouterr().out
+
+    assert "2/4" in output
+    assert "RUNNING" in output

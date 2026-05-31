@@ -179,7 +179,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("bundle", nargs="*", help="Bundle name/index to inspect. Supports ranges like 1-3.")
     parser.add_argument("--latest", "-l", action="store_true", help="Use the latest saved bundle.")
     parser.add_argument("--job", help="Select a job by index or name.")
-    parser.add_argument("--array-task", help="Select a specific array task index for --job logs (e.g., 3).")
+    parser.add_argument(
+        "--array",
+        "--array-task",
+        dest="array_task",
+        help="Select a specific array task index for --job logs (e.g., 3).",
+    )
     parser.add_argument("--script", action="store_true", help="Print the rendered SLURM script for --job.")
     parser.add_argument("--status", action="store_true", help="Print SLURM status for --job.")
     parser.add_argument("--log", action="store_true", help="Print latest .out content (bundle or selected job).")

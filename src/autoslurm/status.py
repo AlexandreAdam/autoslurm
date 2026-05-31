@@ -8,7 +8,12 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Optional
 
-from .array_status import array_progress_for_job_id, declared_array_size, status_for_job_id
+from .array_status import (
+    RUNNING_LIKE_STATES,
+    array_progress_for_job_id,
+    declared_array_size,
+    status_for_job_id,
+)
 from .save_load_jobs import latest_bundle_summaries, load_bundle
 from .utils import load_config, ssh_host_from_config
 
@@ -47,6 +52,27 @@ def display_state(state: str) -> str:
     if state.upper() == "COMPLETED":
         return "SUCCESS"
     return state
+
+
+def infer_bundle_status(
+    statuses: list[str],
+    submitted_count: int,
+    *,
+    broken: bool = False,
+) -> str:
+    if broken:
+        return "broken"
+
+    upper_states = [state.upper() for state in statuses]
+    if any(state in {"RUNNING", "PENDING", "CONFIGURING"} for state in upper_states):
+        return "running"
+    if any(state == "CANCELLED" for state in upper_states):
+        return "cancelled"
+    if any(state in FAILED_STATES and state != "CANCELLED" for state in upper_states):
+        return "failed"
+    if submitted_count > 0:
+        return "completed"
+    return "ready_to_go"
 
 
 def _colorize_state_text(state_text: str) -> str:
@@ -209,6 +235,40 @@ def _fetch_time_left_remotely(
     return _parse_job_field_lines(result.stdout or result.stderr or "")
 
 
+def _fetch_statuses_and_time_left_remotely(
+    job_ids: list[str], machine_name: str, machine_config: dict
+) -> tuple[dict[str, str], dict[str, str]]:
+    if not job_ids:
+        return {}, {}
+    query = ",".join(job_ids)
+    try:
+        hostname = ssh_host_from_config(machine_config, machine_name)
+    except AttributeError:
+        return {}, {}
+    remote_script = "\n".join(
+        [
+            f"squeue -h -j {shlex.quote(query)} -o '%i|%T' 2>/dev/null || true",
+            "printf '__AUTOSLURM_SPLIT__\\n'",
+            f"sacct -n -X -P -j {shlex.quote(query)} -o JobIDRaw,State 2>/dev/null || true",
+            "printf '__AUTOSLURM_SPLIT__\\n'",
+            f"squeue -h -j {shlex.quote(query)} -o '%i|%L' 2>/dev/null || true",
+        ]
+    )
+    result = subprocess.run(
+        ["ssh", *shlex.split(hostname), f"bash -lc {shlex.quote(remote_script)}"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return {}, {}
+    stdout = result.stdout or result.stderr or ""
+    status_text, _, rest = stdout.partition("__AUTOSLURM_SPLIT__")
+    sacct_text, _, time_left_text = rest.partition("__AUTOSLURM_SPLIT__")
+    statuses = _parse_status_lines(status_text)
+    statuses.update(_parse_status_lines(sacct_text))
+    return statuses, _parse_job_field_lines(time_left_text)
+
+
 def _fetch_time_left_for_job_ids(
     job_ids: list[str], machine_name: Optional[str]
 ) -> dict[str, str]:
@@ -226,13 +286,31 @@ def _fetch_time_left_for_job_ids(
     return _fetch_time_left_remotely(job_ids, machine_name, machine_config)
 
 
+def _fetch_statuses_and_time_left_for_job_ids(
+    job_ids: list[str], machine_name: Optional[str]
+) -> tuple[dict[str, str], dict[str, str]]:
+    if not job_ids:
+        return {}, {}
+    if machine_name is None:
+        return _fetch_statuses_locally(job_ids), _fetch_time_left_locally(job_ids)
+    try:
+        config = load_config()
+    except EnvironmentError:
+        return {}, {}
+    machine_config = config["machines"].get(machine_name) or config.get(machine_name)
+    if machine_config is None:
+        return {}, {}
+    return _fetch_statuses_and_time_left_remotely(job_ids, machine_name, machine_config)
+
+
 def job_status_text(job: dict) -> str:
     job_id = job.get("id")
     if job_id is None:
         return "not_submitted"
     job_id_text = str(job_id)
     statuses = _fetch_statuses_for_job_ids([job_id_text], job.get("machine"))
-    return status_for_job_id(job_id_text, statuses)
+    declared_total = declared_array_size((job.get("slurm") or {}).get("array"))
+    return status_for_job_id(job_id_text, statuses, declared_total=declared_total)
 
 
 def job_status_texts(jobs: list[dict]) -> dict[str, str]:
@@ -250,7 +328,12 @@ def job_status_texts(jobs: list[dict]) -> dict[str, str]:
                 statuses[job["name"]] = "not_submitted"
             else:
                 job_id_text = str(job_id)
-                statuses[job["name"]] = status_for_job_id(job_id_text, machine_statuses)
+                declared_total = declared_array_size((job.get("slurm") or {}).get("array"))
+                statuses[job["name"]] = status_for_job_id(
+                    job_id_text,
+                    machine_statuses,
+                    declared_total=declared_total,
+                )
     return statuses
 
 
@@ -276,9 +359,17 @@ def job_status_details(jobs: list[dict]) -> dict[str, dict[str, object]]:
                 }
                 continue
             job_id_text = str(job_id)
-            resolved_status = status_for_job_id(job_id_text, machine_statuses)
-            is_array, array_completed, array_total = array_progress_for_job_id(job_id_text, machine_statuses)
             declared_total = declared_array_size((job.get("slurm") or {}).get("array"))
+            resolved_status = status_for_job_id(
+                job_id_text,
+                machine_statuses,
+                declared_total=declared_total,
+            )
+            is_array, array_completed, array_total = array_progress_for_job_id(
+                job_id_text,
+                machine_statuses,
+                declared_total=declared_total,
+            )
             if declared_total is not None:
                 is_array = True
                 array_total = declared_total

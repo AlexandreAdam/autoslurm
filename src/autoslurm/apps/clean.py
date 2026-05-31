@@ -29,13 +29,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--scope",
-        choices=("inactive", "failed", "unsubmitted", "all"),
+        choices=("inactive", "failed", "unsubmitted", "cancelled", "all"),
         default="inactive",
         help=(
             "When no target is provided: "
             "'inactive' cleans stale snapshots (default), "
             "'failed' cleans snapshots where all submitted jobs are terminal failures, "
             "'unsubmitted' cleans snapshots with zero submitted jobs, "
+            "'cancelled' cleans snapshots where all submitted jobs are cancelled, "
             "'all' combines both."
         ),
     )
@@ -95,6 +96,19 @@ def main(argv: list[str] | None = None) -> None:
     else:
         inactive = inactive_bundle_snapshots()
         unsubmitted = [entry for entry in all_bundle_snapshots() if int(entry.get("submitted_count", 0)) == 0]
+        cancelled: list[dict] = []
+        for entry in all_bundle_snapshots():
+            try:
+                jobs, _, _ = load_bundle_from_path(entry["path"])
+            except Exception:
+                continue
+            submitted = [job for job in jobs if job.get("id") is not None]
+            if not submitted:
+                continue
+            statuses = job_status_texts(jobs)
+            submitted_states = [statuses.get(str(job["name"]), "UNKNOWN").upper() for job in submitted]
+            if submitted_states and all(state == "CANCELLED" for state in submitted_states):
+                cancelled.append(entry)
         failed: list[dict] = []
         if args.scope in {"failed", "all"}:
             for entry in all_bundle_snapshots():
@@ -107,17 +121,21 @@ def main(argv: list[str] | None = None) -> None:
                     continue
                 statuses = job_status_texts(jobs)
                 submitted_states = [statuses.get(str(job["name"]), "UNKNOWN").upper() for job in submitted]
-                if submitted_states and all(state in FAILED_STATES for state in submitted_states):
+                if submitted_states and all(state in FAILED_STATES and state != "CANCELLED" for state in submitted_states):
                     failed.append(entry)
         if args.scope == "inactive":
             selected = inactive
         elif args.scope == "unsubmitted":
             selected = unsubmitted
+        elif args.scope == "cancelled":
+            selected = cancelled
         elif args.scope == "failed":
             selected = failed
         else:
             by_path = {str(item["path"]): item for item in inactive}
             for item in unsubmitted:
+                by_path.setdefault(str(item["path"]), item)
+            for item in cancelled:
                 by_path.setdefault(str(item["path"]), item)
             for item in failed:
                 by_path.setdefault(str(item["path"]), item)
@@ -144,7 +162,8 @@ def main(argv: list[str] | None = None) -> None:
     print("- inactive: stale snapshots hidden by active policy.")
     print("- failed: snapshots where all submitted jobs are terminal failures.")
     print("- unsubmitted: snapshots with zero submitted jobs.")
-    print("- all: union of inactive, failed, and unsubmitted.")
+    print("- cancelled: snapshots where all submitted jobs are cancelled.")
+    print("- all: union of inactive, failed, unsubmitted, and cancelled.")
     if not args.yes:
         print("\nPreview only. Re-run with --yes to delete these bundle files.")
         return

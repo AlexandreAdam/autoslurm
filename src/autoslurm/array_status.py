@@ -29,7 +29,11 @@ PENDING_LIKE_STATES = {
 }
 
 
-def status_for_job_id(job_id: str, raw_statuses: dict[str, str]) -> str:
+def status_for_job_id(
+    job_id: str,
+    raw_statuses: dict[str, str],
+    declared_total: int | None = None,
+) -> str:
     """
     Resolve a coherent status for a job id.
 
@@ -43,29 +47,42 @@ def status_for_job_id(job_id: str, raw_statuses: dict[str, str]) -> str:
         return exact or "UNKNOWN"
 
     task_upper = [state.upper() for state in task_states]
-    if any(state == "CANCELLED" or state in FAILED_STATES for state in task_upper):
+    if any(state == "CANCELLED" for state in task_upper):
+        return "CANCELLED"
+    if any(state in FAILED_STATES for state in task_upper):
         return "FAILED"
-    if all(state == "COMPLETED" for state in task_upper):
+    total = declared_total if declared_total is not None else len(task_upper)
+    completed = sum(1 for state in task_upper if state == "COMPLETED")
+    if total > 0 and completed >= total and all(state == "COMPLETED" for state in task_upper):
         return "COMPLETED"
     if any(state == "RUNNING" for state in task_upper):
         return "RUNNING"
     if any(state in RUNNING_LIKE_STATES for state in task_upper):
+        return "RUNNING"
+    if declared_total is not None and 0 < completed < total:
+        if exact and exact.upper() in PENDING_LIKE_STATES:
+            return "PENDING"
         return "RUNNING"
     if any(state in PENDING_LIKE_STATES for state in task_upper):
         return "PENDING"
     return exact or "UNKNOWN"
 
 
-def array_progress_for_job_id(job_id: str, raw_statuses: dict[str, str]) -> tuple[bool, int, int]:
+def array_progress_for_job_id(
+    job_id: str,
+    raw_statuses: dict[str, str],
+    declared_total: int | None = None,
+) -> tuple[bool, int, int]:
     """
     Return (is_array, n_completed, n_array) for a job id based on task entries.
     """
     task_prefix = f"{job_id}_"
     task_states = [state for key, state in raw_statuses.items() if key.startswith(task_prefix)]
-    if not task_states:
+    if not task_states and declared_total is None:
         return False, 0, 0
     completed = sum(1 for state in task_states if state.upper() == "COMPLETED")
-    return True, completed, len(task_states)
+    total = declared_total if declared_total is not None else len(task_states)
+    return True, completed, total
 
 
 def declared_array_size(array_spec: str | None) -> int | None:

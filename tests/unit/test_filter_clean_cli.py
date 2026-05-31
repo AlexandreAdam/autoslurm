@@ -60,7 +60,7 @@ def test_filter_switch_controls_snapshot_visibility(tmp_path, capsys):
     assert len(active_rows_again) == 1
 
 
-def test_clean_removes_only_stale_snapshots(tmp_path, capsys):
+def test_clean_removes_only_stale_snapshots(tmp_path, capsys, monkeypatch):
     root = tmp_path / "storage"
     set_storage_root(root)
     ensure_storage_dirs()
@@ -90,6 +90,8 @@ def test_clean_removes_only_stale_snapshots(tmp_path, capsys):
             "job_b": {"name": "job_b", "script": "run-b", "id": "999", "_autoslurm_snapshot_kind": "submission"},
         },
     )
+
+    monkeypatch.setattr(clean_app, "job_status_texts", lambda jobs: {"job_b": "COMPLETED"})
 
     clean_app.main([])
     preview = capsys.readouterr().out
@@ -186,6 +188,41 @@ def test_active_prefers_ready_draft_over_ready_submission_artifact(tmp_path, cap
     assert rows[0]["date"].strftime("%Y%m%d%H%M%S") == "20250102000000"
 
 
+def test_cancelled_snapshots_are_visible_and_cleanable(tmp_path, capsys, monkeypatch):
+    root = tmp_path / "storage"
+    set_storage_root(root)
+    ensure_storage_dirs()
+    _write_config(root)
+
+    cancelled = jobs_dir() / "recovery_20250103000000.json"
+    _write_bundle(
+        cancelled.name,
+        {
+            "job_a": {
+                "name": "job_a",
+                "script": "run-a",
+                "id": "123",
+                "_autoslurm_snapshot_kind": "submission",
+            },
+        },
+    )
+
+    monkeypatch.setattr(
+        clean_app,
+        "job_status_texts",
+        lambda jobs: {"job_a": "CANCELLED"},
+    )
+
+    rows = bundle_snapshots()
+    assert len(rows) == 1
+    assert rows[0]["state"] == "active"
+
+    clean_app.main(["--scope", "cancelled"])
+    out = capsys.readouterr().out
+    assert "cancelled" in out
+    assert str(cancelled) in out
+
+
 def test_filter_prints_current_mode_and_available_modes(tmp_path, capsys):
     root = tmp_path / "storage"
     set_storage_root(root)
@@ -223,7 +260,7 @@ def test_clean_scope_failed_targets_fully_failed_submissions(tmp_path, capsys, m
     assert ok_path.exists()
 
 
-def test_clean_scope_unsubmitted_targets_zero_submission_snapshots(tmp_path, capsys):
+def test_clean_scope_unsubmitted_targets_zero_submission_snapshots(tmp_path, capsys, monkeypatch):
     root = tmp_path / "storage"
     set_storage_root(root)
     ensure_storage_dirs()
@@ -238,6 +275,8 @@ def test_clean_scope_unsubmitted_targets_zero_submission_snapshots(tmp_path, cap
         submitted.name,
         {"job": {"name": "job", "script": "run", "id": "42", "_autoslurm_snapshot_kind": "submission"}},
     )
+
+    monkeypatch.setattr(clean_app, "job_status_texts", lambda jobs: {"job": "COMPLETED"})
 
     clean_app.main(["--scope", "unsubmitted", "--yes"])
     out = capsys.readouterr().out

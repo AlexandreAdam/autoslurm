@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import re
 import shlex
 import subprocess
 from datetime import datetime
@@ -9,8 +8,12 @@ from pathlib import Path
 from typing import Optional
 
 from ..save_load_jobs import bundle_snapshots, load_bundle, load_bundle_from_path
-from ..status import is_cancellable_state, job_status_texts
-from ..status_views import bundle_job_rows, bundle_jobs_context
+from ..status import is_cancellable_state
+from ..status_views import (
+    bundle_job_rows,
+    bundle_job_rows_from_jobs,
+    bundle_jobs_context_from_rows,
+)
 from ..utils import load_config, ssh_host_from_config
 
 DATE_FORMATS = (
@@ -160,38 +163,20 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.bundle_file is not None:
         jobs, _, bundle_date = load_bundle_from_path(args.bundle_file)
-        status_text = None
-        statuses = job_status_texts(jobs)
-        raw_rows: list[dict] = []
-        name_regex_obj = None
-        if args.name_regex:
-            flags = re.IGNORECASE if args.ignore_case else 0
-            try:
-                name_regex_obj = re.compile(args.name_regex, flags=flags)
-            except re.error as exc:
-                raise SystemExit(f"Invalid --name-regex pattern: {exc}") from exc
-        for job in jobs:
-            name = str(job["name"])
-            if args.name_contains:
-                haystack = name.lower() if args.ignore_case else name
-                needle = args.name_contains.lower() if args.ignore_case else args.name_contains
-                if needle not in haystack:
-                    continue
-            if name_regex_obj and not name_regex_obj.search(name):
-                continue
-            state = statuses.get(job["name"], "UNKNOWN")
-            if not status_predicate(state):
-                continue
-            raw_rows.append(
-                {
-                    "job_id_raw": None if job.get("id") is None else str(job.get("id")),
-                    "machine_name": job.get("machine"),
-                }
-            )
+        bundle_name = args.bundle_file.stem.rsplit("_", 1)[0]
+        _, raw_rows = bundle_job_rows_from_jobs(
+            jobs,
+            bundle_date,
+            name_contains=args.name_contains,
+            name_regex=args.name_regex,
+            ignore_case=args.ignore_case,
+            status_predicate=status_predicate,
+        )
+        status_text = bundle_jobs_context_from_rows(bundle_name, bundle_date, raw_rows)
     else:
         reference_date = _parse_date(args.date)
         bundle_name, bundle_date = _resolve_bundle_name(args.target, reference_date)
-        status_text = bundle_jobs_context(
+        bundle_date, raw_rows = bundle_job_rows(
             bundle_name,
             bundle_date,
             name_contains=args.name_contains,
@@ -199,14 +184,7 @@ def main(argv: list[str] | None = None) -> None:
             ignore_case=args.ignore_case,
             status_predicate=status_predicate,
         )
-        _, raw_rows = bundle_job_rows(
-            bundle_name,
-            bundle_date,
-            name_contains=args.name_contains,
-            name_regex=args.name_regex,
-            ignore_case=args.ignore_case,
-            status_predicate=status_predicate,
-        )
+        status_text = bundle_jobs_context_from_rows(bundle_name, bundle_date, raw_rows)
 
     if status_text:
         print(status_text)

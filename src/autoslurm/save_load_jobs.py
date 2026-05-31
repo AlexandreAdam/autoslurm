@@ -265,6 +265,7 @@ def _active_visible_snapshots(entries: list[dict]) -> list[dict]:
         active_group = [entry for entry in group if entry.get("state") == "active"]
         if active_group:
             selected.extend(active_group)
+            continue
         if latest.get("state") == "ready_to_go":
             selected.append(latest)
             continue

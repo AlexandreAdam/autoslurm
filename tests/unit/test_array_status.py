@@ -26,6 +26,15 @@ def test_status_for_job_id_array_failure_wins():
     assert status_for_job_id("123", raw) == "FAILED"
 
 
+def test_status_for_job_id_array_cancelled_wins_over_completion():
+    raw = {
+        "123_1": "COMPLETED",
+        "123_2": "CANCELLED",
+        "123_3": "PENDING",
+    }
+    assert status_for_job_id("123", raw) == "CANCELLED"
+
+
 def test_status_for_job_id_array_running_when_active_tasks_exist():
     raw = {
         "123_1": "COMPLETED",
@@ -41,6 +50,15 @@ def test_status_for_job_id_array_pending_when_only_pending():
         "123_2": "PENDING",
     }
     assert status_for_job_id("123", raw) == "PENDING"
+
+
+def test_status_for_job_id_array_partial_completion_uses_declared_total():
+    raw = {
+        "123": "RUNNING",
+        "123_1": "COMPLETED",
+        "123_2": "COMPLETED",
+    }
+    assert status_for_job_id("123", raw, declared_total=4) == "RUNNING"
 
 
 def test_declared_array_size_parses_common_specs():

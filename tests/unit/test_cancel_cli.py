@@ -11,7 +11,16 @@ def test_cancel_formats_completed_as_success(monkeypatch, capsys):
         {"name": "job_done", "id": "123", "machine": None},
     ]
     monkeypatch.setattr(cancel_app, "load_bundle_from_path", lambda path: (jobs, {}, None))
-    monkeypatch.setattr(cancel_app, "job_status_texts", lambda jobs: {"job_done": "COMPLETED"})
+    monkeypatch.setattr(
+        cancel_app,
+        "bundle_job_rows_from_jobs",
+        lambda *args, **kwargs: (datetime(2025, 1, 1, 0, 0, 0), [{"job_id_raw": "123", "machine_name": None}]),
+    )
+    monkeypatch.setattr(
+        cancel_app,
+        "bundle_jobs_context_from_rows",
+        lambda *args, **kwargs: "status-view",
+    )
 
     seen = {"ids": None}
     monkeypatch.setattr(cancel_app, "_cancel_local", lambda ids: seen.__setitem__("ids", ids))
@@ -31,8 +40,23 @@ def test_cancel_all_filter_uses_cancellable_states(monkeypatch, capsys):
     monkeypatch.setattr(cancel_app, "load_bundle_from_path", lambda path: (jobs, {}, None))
     monkeypatch.setattr(
         cancel_app,
-        "job_status_texts",
-        lambda jobs: {"job_done": "COMPLETED", "job_running": "RUNNING"},
+        "bundle_job_rows_from_jobs",
+        lambda *args, **kwargs: (
+            datetime(2025, 1, 1, 0, 0, 0),
+            [
+                row
+                for row, state in (
+                    ({"job_id_raw": "123", "machine_name": None}, "COMPLETED"),
+                    ({"job_id_raw": "124", "machine_name": None}, "RUNNING"),
+                )
+                if kwargs["status_predicate"](state)
+            ],
+        ),
+    )
+    monkeypatch.setattr(
+        cancel_app,
+        "bundle_jobs_context_from_rows",
+        lambda *args, **kwargs: "status-view",
     )
 
     seen = {"ids": None}
@@ -54,13 +78,16 @@ def test_cancel_bundle_target_prints_shared_status_context(monkeypatch, capsys):
         lambda desired_date=None: [{"bundle": "recovery", "date": saved_date}],
     )
     monkeypatch.setattr(cancel_app, "load_bundle", lambda name, date=None: (jobs, {}, saved_date))
-    monkeypatch.setattr(cancel_app, "bundle_jobs_context", lambda *args, **kwargs: "SHARED_STATUS_VIEW")
+    monkeypatch.setattr(
+        cancel_app,
+        "bundle_jobs_context_from_rows",
+        lambda *args, **kwargs: "SHARED_STATUS_VIEW",
+    )
     monkeypatch.setattr(
         cancel_app,
         "bundle_job_rows",
         lambda *args, **kwargs: (saved_date, [{"job_id_raw": "124", "machine_name": None}]),
     )
-    monkeypatch.setattr(cancel_app, "job_status_texts", lambda jobs: {"job_running": "RUNNING"})
 
     cancel_app.main(["1"])
     out = capsys.readouterr().out

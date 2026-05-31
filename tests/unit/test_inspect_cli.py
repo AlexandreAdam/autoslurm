@@ -146,6 +146,19 @@ def test_inspect_array_task_passed_to_log_lookup(monkeypatch, capsys):
     assert output == "log:bundle_a:2:3"
 
 
+def test_inspect_array_alias_passed_to_log_lookup(monkeypatch, capsys):
+    monkeypatch.setattr(
+        inspect_app,
+        "latest_log_context",
+        lambda bundle, date=None, job_name=None, array_task=None: f"log:{bundle}:{job_name}:{array_task}",
+    )
+
+    inspect_app.main(["bundle_a", "--job", "2", "--array", "4", "--log"])
+    output = capsys.readouterr().out.strip()
+
+    assert output == "log:bundle_a:2:4"
+
+
 def test_inspect_requires_bundle_or_latest(capsys):
     inspect_app.main([])
     assert "usage:" in capsys.readouterr().out
