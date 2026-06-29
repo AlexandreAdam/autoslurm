@@ -222,7 +222,7 @@ def test_inspect_array_mode_job_index_resolves_to_job_log(monkeypatch, capsys):
     inspect_app.main(["bundle_a", "--job", "1", "--array", "--log"])
     output = capsys.readouterr().out.strip()
 
-    assert output == "log:bundle_a:job_a:None"
+    assert output == "log:bundle_a:job_a:3"
 
 
 def test_inspect_array_mode_job_index_defaults_to_job_log(monkeypatch, capsys):
@@ -280,7 +280,7 @@ def test_inspect_array_mode_job_index_defaults_to_job_log(monkeypatch, capsys):
     inspect_app.main(["bundle_a", "--job", "1", "--array"])
     output = capsys.readouterr().out.strip()
 
-    assert output == "log:bundle_a:job_a:None"
+    assert output == "log:bundle_a:job_a:2"
 
 
 def test_inspect_requires_bundle_or_latest(capsys):

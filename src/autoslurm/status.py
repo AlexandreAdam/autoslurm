@@ -10,7 +10,9 @@ from typing import Optional
 
 from .array_status import (
     RUNNING_LIKE_STATES,
+    _array_task_index,
     array_progress_for_job_id,
+    declared_array_indices,
     declared_array_size,
     status_for_job_id,
 )
@@ -116,6 +118,8 @@ def _parse_status_lines(text: str) -> dict[str, str]:
         state = state.strip()
         if not job_id or not state:
             continue
+        if re.search(r"\.(?:batch|extern)$", job_id):
+            continue
         statuses[job_id] = state.split()[0]
     return statuses
 
@@ -142,7 +146,7 @@ def _fetch_statuses_locally(job_ids: list[str]) -> dict[str, str]:
     statuses: dict[str, str] = {}
     commands = (
         ["squeue", "-h", "-j", query, "-o", "%i|%T"],
-        ["sacct", "-n", "-X", "-P", "-j", query, "-o", "JobIDRaw,State"],
+        ["sacct", "-n", "-P", "-j", query, "-o", "JobID,State"],
     )
     for command in commands:
         result = subprocess.run(command, capture_output=True, text=True)
@@ -166,7 +170,7 @@ def _fetch_statuses_remotely(
         [
             f"squeue -h -j {shlex.quote(query)} -o '%i|%T' 2>/dev/null || true",
             "printf '__AUTOSLURM_SPLIT__\\n'",
-            f"sacct -n -X -P -j {shlex.quote(query)} -o JobIDRaw,State 2>/dev/null || true",
+            f"sacct -n -P -j {shlex.quote(query)} -o JobID,State 2>/dev/null || true",
         ]
     )
     result = subprocess.run(
@@ -249,7 +253,7 @@ def _fetch_statuses_and_time_left_remotely(
         [
             f"squeue -h -j {shlex.quote(query)} -o '%i|%T' 2>/dev/null || true",
             "printf '__AUTOSLURM_SPLIT__\\n'",
-            f"sacct -n -X -P -j {shlex.quote(query)} -o JobIDRaw,State 2>/dev/null || true",
+            f"sacct -n -P -j {shlex.quote(query)} -o JobID,State 2>/dev/null || true",
             "printf '__AUTOSLURM_SPLIT__\\n'",
             f"squeue -h -j {shlex.quote(query)} -o '%i|%L' 2>/dev/null || true",
         ]

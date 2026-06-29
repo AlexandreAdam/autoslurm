@@ -41,3 +41,19 @@ def test_combined_remote_fetch_uses_sacct_for_completed_jobs(monkeypatch):
     assert seen["ssh"] == 1
     assert statuses["123"] == "COMPLETED"
     assert time_left["123"] == "00:10:00"
+
+
+def test_parse_status_lines_keeps_array_jobid_and_ignores_steps():
+    parsed = status._parse_status_lines(
+        "\n".join(
+            [
+                "123_0|COMPLETED",
+                "123_0.batch|COMPLETED",
+                "123_0.extern|COMPLETED",
+                "123_1|FAILED",
+                "123_1.batch|FAILED",
+            ]
+        )
+    )
+
+    assert parsed == {"123_0": "COMPLETED", "123_1": "FAILED"}

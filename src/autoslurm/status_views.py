@@ -230,16 +230,15 @@ def bundle_job_rows_from_jobs(
                 continue
 
             if show_array_tasks and (is_array or declared_total is not None):
-                task_prefix = f"{job_id_text}_"
                 task_entries = [
                     (task_id, task_status)
                     for task_id, task_status in machine_statuses.items()
-                    if task_id.startswith(task_prefix)
+                    if status_core._array_task_index(job_id_text, task_id) is not None
                 ]
                 task_entries.sort(
                     key=lambda item: (
-                        int(item[0][len(task_prefix) :])
-                        if item[0][len(task_prefix) :].isdigit()
+                        status_core._array_task_index(job_id_text, item[0])
+                        if status_core._array_task_index(job_id_text, item[0]) is not None
                         else 10**9,
                         item[0],
                     )
@@ -248,8 +247,7 @@ def bundle_job_rows_from_jobs(
                     task_entries = [
                         item
                         for item in task_entries
-                        if item[0][len(task_prefix) :].isdigit()
-                        and int(item[0][len(task_prefix) :]) in array_tasks
+                        if status_core._array_task_index(job_id_text, item[0]) in array_tasks
                     ]
                 if task_entries:
                     requested_time = _requested_time(job)
@@ -289,9 +287,18 @@ def bundle_job_rows_from_jobs(
                         display_index += 1
                     continue
 
-                if declared_total is not None:
+                if (
+                    declared_total is not None
+                    and resolved_status.upper() not in status_core.FAILED_STATES
+                    and resolved_status.upper() != "CANCELLED"
+                ):
                     requested_time = _requested_time(job)
-                    for task_index in range(1, declared_total + 1):
+                    declared_indices = status_core.declared_array_indices((job.get("slurm") or {}).get("array"))
+                    if declared_indices is None:
+                        declared_indices = list(range(1, declared_total + 1))
+                    if array_tasks is not None:
+                        declared_indices = [index for index in declared_indices if index in array_tasks]
+                    for task_index in declared_indices:
                         task_id = f"{job_id_text}_{task_index}"
                         task_status = machine_statuses.get(task_id, resolved_status)
                         status_key = task_status.upper()

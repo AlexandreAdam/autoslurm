@@ -155,6 +155,84 @@ def test_status_array_filter_is_forwarded_to_bundle_detail(monkeypatch, capsys):
     assert captured["kwargs"]["array_tasks"] == {2, 3}
 
 
+def test_status_array_detail_uses_declared_zero_based_indices(monkeypatch, capsys):
+    monkeypatch.setattr(
+        status,
+        "bundle_snapshots",
+        lambda desired_date=None: [
+            {"bundle": "array_bundle", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
+        ],
+    )
+    monkeypatch.setattr(
+        status,
+        "load_bundle",
+        lambda bundle_name, desired_date=None: (
+            [
+                {
+                    "name": "array_job",
+                    "id": "123",
+                    "machine": "remote",
+                    "slurm": {"array": "0-2"},
+                }
+            ],
+            {},
+            desired_date,
+        ),
+    )
+    monkeypatch.setattr(
+        status,
+        "_fetch_statuses_and_time_left_for_job_ids",
+        lambda job_ids, machine_name: ({"123": "PENDING"}, {}),
+    )
+
+    status.main(["1", "--array"])
+    output = re.sub(r"\x1b\[[0-9;]*m", "", capsys.readouterr().out)
+
+    assert "123_0" in output
+    assert "123_1" in output
+    assert "123_2" in output
+    assert "123_3" not in output
+
+
+def test_status_array_detail_keeps_parent_row_when_failed_tasks_are_unknown(monkeypatch, capsys):
+    monkeypatch.setattr(
+        status,
+        "bundle_snapshots",
+        lambda desired_date=None: [
+            {"bundle": "array_bundle", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
+        ],
+    )
+    monkeypatch.setattr(
+        status,
+        "load_bundle",
+        lambda bundle_name, desired_date=None: (
+            [
+                {
+                    "name": "array_job",
+                    "id": "123",
+                    "machine": "remote",
+                    "slurm": {"array": "0-2"},
+                }
+            ],
+            {},
+            desired_date,
+        ),
+    )
+    monkeypatch.setattr(
+        status,
+        "_fetch_statuses_and_time_left_for_job_ids",
+        lambda job_ids, machine_name: ({"123": "FAILED"}, {}),
+    )
+
+    status.main(["1", "--array"])
+    output = re.sub(r"\x1b\[[0-9;]*m", "", capsys.readouterr().out)
+
+    assert "123 " in output
+    assert "123_0" not in output
+    assert "123_1" not in output
+    assert "123_2" not in output
+
+
 def test_status_summary_includes_bundle_status(monkeypatch, capsys):
     monkeypatch.setattr(
         status,
@@ -337,6 +415,50 @@ def test_status_summary_counts_array_task_states(monkeypatch, capsys):
     assert row_fields[6] == "0"
     assert row_fields[7] == "1"
     assert row_fields[8] == "1"
+    assert row_fields[9] == "1"
+
+
+def test_status_summary_does_not_count_parent_array_failure_as_every_task(monkeypatch, capsys):
+    monkeypatch.setattr(
+        status,
+        "bundle_snapshots",
+        lambda desired_date=None: [
+            {"bundle": "array_bundle", "date": datetime(2025, 1, 7, 0, 0, 0), "job_count": 1, "state": "active"},
+        ],
+    )
+    monkeypatch.setattr(
+        status,
+        "load_bundle",
+        lambda bundle_name, desired_date=None: (
+            [
+                {
+                    "name": "array_job",
+                    "id": "123",
+                    "machine": "remote",
+                    "slurm": {"array": "0-19"},
+                }
+            ],
+            {},
+            desired_date,
+        ),
+    )
+    monkeypatch.setattr(
+        status,
+        "_fetch_statuses_and_time_left_for_job_ids",
+        lambda job_ids, machine_name: ({"123": "FAILED"}, {}),
+    )
+
+    status.main([])
+    output = capsys.readouterr().out
+    lines = [line for line in output.splitlines() if line.strip()]
+    header = re.sub(r"\x1b\[[0-9;]*m", "", lines[0])
+    row = re.sub(r"\x1b\[[0-9;]*m", "", next(line for line in lines if "array_bundle" in line))
+    header_fields = re.split(r"\s{2,}", header.strip())
+    row_fields = re.split(r"\s{2,}", row.strip())
+
+    assert header_fields[5] == "array"
+    assert header_fields[9] == "failed"
+    assert row_fields[5] == "20"
     assert row_fields[9] == "1"
 
 

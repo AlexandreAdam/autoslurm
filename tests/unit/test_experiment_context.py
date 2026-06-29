@@ -2,8 +2,14 @@ import os
 import importlib
 import json
 import pytest
+from datetime import datetime
 
-from autoslurm.experiment_context import experiment_context
+from autoslurm.experiment_context import (
+    _array_task_log_job_ids,
+    experiment_context,
+    latest_log_context,
+)
+from autoslurm.definitions import DATE_FORMAT
 from autoslurm.save_load_jobs import nearest_bundle_filename, save_bundle
 from autoslurm.storage import ensure_storage_dirs, jobs_dir, out_dir, set_storage_root, slurm_dir
 from autoslurm.utils import name_slurm_script
@@ -293,6 +299,98 @@ def test_context_log_reports_missing_logs_with_hint(tmp_path, capsys):
 
     assert "No logs found for bundle 'empty_bundle'" in output
     assert "Try `asl sync` or `asl logs --refresh`." in output
+
+
+def test_latest_log_filters_submitted_job_logs_by_saved_slurm_id(tmp_path):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle_name = "versioned_bundle"
+    saved_date = datetime(2025, 1, 1, 0, 0, 0)
+    (jobs_dir() / f"{bundle_name}_{saved_date.strftime(DATE_FORMAT)}.json").write_text(
+        json.dumps(
+            {
+                "analysis": {
+                    "name": "analysis",
+                    "id": "123",
+                    "script": "python train.py",
+                    "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
+                }
+            }
+        )
+    )
+
+    selected_log = out_dir() / "analysis-123.out"
+    wrong_version_log = out_dir() / "analysis-999.out"
+    selected_log.write_text("selected snapshot log")
+    wrong_version_log.write_text("wrong snapshot log")
+    os.utime(selected_log, (1_700_000_000, 1_700_000_000))
+    os.utime(wrong_version_log, (1_700_000_100, 1_700_000_100))
+
+    assert latest_log_context(bundle_name, saved_date, "analysis") == "selected snapshot log"
+
+
+def test_latest_log_accepts_array_task_log_for_saved_slurm_id(tmp_path):
+    set_storage_root(tmp_path / "storage")
+    ensure_storage_dirs()
+
+    bundle_name = "array_versioned_bundle"
+    saved_date = datetime(2025, 1, 1, 0, 0, 0)
+    (jobs_dir() / f"{bundle_name}_{saved_date.strftime(DATE_FORMAT)}.json").write_text(
+        json.dumps(
+            {
+                "analysis": {
+                    "name": "analysis",
+                    "id": "123",
+                    "script": "python train.py",
+                    "slurm": {"array": "0-1", "time": "00:05:00"},
+                }
+            }
+        )
+    )
+
+    array_log = out_dir() / "analysis-123_1.out"
+    dot_array_log = out_dir() / "analysis-123.2.out"
+    wrong_version_log = out_dir() / "analysis-999_1.out"
+    array_log.write_text("underscore array log")
+    dot_array_log.write_text("dot array log")
+    wrong_version_log.write_text("wrong array log")
+    os.utime(array_log, (1_700_000_000, 1_700_000_000))
+    os.utime(dot_array_log, (1_700_000_050, 1_700_000_050))
+    os.utime(wrong_version_log, (1_700_000_100, 1_700_000_100))
+
+    assert latest_log_context(bundle_name, saved_date, "analysis") == "dot array log"
+    assert latest_log_context(bundle_name, saved_date, "analysis", array_task="1") == "underscore array log"
+
+
+def test_array_task_log_ids_include_slurm_raw_job_id(monkeypatch):
+    module = importlib.import_module("autoslurm.experiment_context")
+
+    class Result:
+        returncode = 0
+        stdout = "\n".join(
+            [
+                "123_0|999",
+                "123_0.batch|999.batch",
+                "123_1|1000",
+            ]
+        )
+        stderr = ""
+
+    monkeypatch.setattr(module.subprocess, "run", lambda *args, **kwargs: Result())
+
+    assert _array_task_log_job_ids("123", "1", None) == ["123_1", "123.1", "1000"]
+
+
+def test_array_task_log_ids_falls_back_without_sacct(monkeypatch):
+    module = importlib.import_module("autoslurm.experiment_context")
+
+    def missing_sacct(*args, **kwargs):
+        raise FileNotFoundError("sacct")
+
+    monkeypatch.setattr(module.subprocess, "run", missing_sacct)
+
+    assert _array_task_log_job_ids("123", "1", None) == ["123_1", "123.1"]
 
 
 def test_context_log_copies_to_clipboard(tmp_path, monkeypatch, capsys):

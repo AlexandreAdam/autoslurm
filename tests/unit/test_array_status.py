@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from autoslurm.array_status import declared_array_size, status_for_job_id
+from autoslurm.array_status import declared_array_indices, declared_array_size, status_for_job_id
 
 
 def test_status_for_job_id_keeps_non_array_behavior():
@@ -15,6 +15,15 @@ def test_status_for_job_id_array_all_completed():
         "123_2": "COMPLETED",
     }
     assert status_for_job_id("123", raw) == "COMPLETED"
+
+
+def test_status_for_job_id_array_accepts_dot_task_ids():
+    raw = {
+        "123": "FAILED",
+        "123.0": "COMPLETED",
+        "123.1": "COMPLETED",
+    }
+    assert status_for_job_id("123", raw, declared_total=2) == "COMPLETED"
 
 
 def test_status_for_job_id_array_failure_wins():
@@ -66,6 +75,12 @@ def test_declared_array_size_parses_common_specs():
     assert declared_array_size("1-10%6") == 10
     assert declared_array_size("1-10:2") == 5
     assert declared_array_size("1,3,5-9") == 7
+
+
+def test_declared_array_indices_parses_zero_based_specs():
+    assert declared_array_indices("0-3") == [0, 1, 2, 3]
+    assert declared_array_indices("1-5:2") == [1, 3, 5]
+    assert declared_array_indices("0,3,5-7") == [0, 3, 5, 6, 7]
 
 
 def test_declared_array_size_returns_none_for_invalid_specs():

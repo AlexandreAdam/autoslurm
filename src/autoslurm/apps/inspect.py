@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -8,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from ..experiment_context import job_context, latest_log_context
+from ..experiment_context import _array_task_log_job_ids, job_context, latest_log_context
 from ..save_load_jobs import bundle_snapshots, latest_bundle_summaries, load_bundle
 from ..status_views import bundle_job_rows_from_jobs, bundle_jobs_context
 from ..storage import out_dir
@@ -134,11 +135,34 @@ def _tail_text(text: str, lines: int) -> str:
 
 
 def _list_job_log_files(bundle_name: str, job_selector: str, reference_date: Optional[datetime]) -> str:
-    job_name = _resolve_job_selector(bundle_name, job_selector, reference_date)
-    files = sorted(out_dir().glob(f"{job_name}-*.out"), key=lambda path: path.stat().st_mtime, reverse=True)
+    jobs, _, _ = load_bundle(bundle_name, reference_date)
+    if job_selector.isdigit():
+        index = int(job_selector)
+        if index < 1 or index > len(jobs):
+            raise KeyError(f"Job index '{job_selector}' is out of range.")
+        job = jobs[index - 1]
+    else:
+        job = next((item for item in jobs if item["name"] == job_selector), None)
+        if job is None:
+            raise KeyError(f"Job '{job_selector}' not found.")
+    job_name = str(job["name"])
+    job_id = job.get("id")
+    files = sorted(
+        (
+            path
+            for path in out_dir().glob(f"{job_name}-*.out")
+            if job_id is None or _log_path_matches_job_id(path, str(job_id))
+        ),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
     if not files:
         return f"No local log files found for job '{job_name}'. Try `asl sync` or `asl logs --refresh`."
     return "\n".join(str(path) for path in files)
+
+
+def _log_path_matches_job_id(path: Path, job_id: str) -> bool:
+    return re.search(rf"-{re.escape(job_id)}(?:[_.]\d+)?$", path.stem) is not None
 
 
 def _list_array_task_log_files(
@@ -160,9 +184,13 @@ def _list_array_task_log_files(
     job_id = job.get("id")
     if job_id is None:
         return f"Job '{job_name}' has no submitted id, cannot select array task '{array_task}'."
-    needle = f"-{job_id}_{array_task}.out"
+    log_job_ids = _array_task_log_job_ids(job_id, array_task, job.get("machine"))
     files = sorted(
-        (path for path in out_dir().glob(f"{job_name}-*.out") if path.name.endswith(needle)),
+        (
+            path
+            for path in out_dir().glob(f"{job_name}-*.out")
+            if any(_log_path_matches_job_id(path, log_job_id) for log_job_id in log_job_ids)
+        ),
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
@@ -232,8 +260,10 @@ def _resolve_job_row(
             raise KeyError(f"Job '{selector}' not found.")
         job_id_raw = row.get("job_id_raw")
         array_task = None
-        if isinstance(job_id_raw, str) and "_" in job_id_raw:
-            array_task = job_id_raw.rsplit("_", 1)[1]
+        if isinstance(job_id_raw, str):
+            match = re.search(r"[_.](\d+)$", job_id_raw)
+            if match is not None:
+                array_task = match.group(1)
         return job, array_task
 
     if selector.isdigit():
@@ -454,7 +484,12 @@ def main(argv: list[str] | None = None) -> None:
                     include_status=parsed.status,
                 )
             else:
-                content = latest_log_context(bundle_name, bundle_date, selected_job["name"])
+                content = latest_log_context(
+                    bundle_name,
+                    bundle_date,
+                    selected_job["name"],
+                    selected_array_task,
+                )
         else:
             if parsed.script or parsed.status:
                 content = job_context(

@@ -8,6 +8,7 @@ from typing import Optional
 
 from ..status import (
     FAILED_STATES,
+    _array_task_index,
     _fetch_statuses_and_time_left_for_job_ids,
     declared_array_size,
     infer_bundle_status,
@@ -231,8 +232,11 @@ def _summary_job_metrics(
         return array_total, 0, 0, 0, 0, 0
 
     job_id_text = str(job_id)
-    task_prefix = f"{job_id_text}_"
-    task_states = [state.upper() for key, state in machine_statuses.items() if key.startswith(task_prefix)]
+    task_states = [
+        state.upper()
+        for key, state in machine_statuses.items()
+        if _array_task_index(job_id_text, key) is not None
+    ]
     if task_states:
         running = sum(
             1
@@ -258,7 +262,7 @@ def _summary_job_metrics(
         if upper == "CANCELLED":
             return array_total, 0, 0, 0, 0, array_total
         if upper in FAILED_STATES:
-            return array_total, 0, 0, 0, declared_total, 0
+            return array_total, 0, 0, 0, 1, 0
         return array_total, 0, 0, 0, 0, 0
     if upper == "RUNNING":
         return array_total, 1, 0, 0, 0, 0

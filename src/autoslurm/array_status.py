@@ -41,8 +41,9 @@ def status_for_job_id(
     Non-array jobs keep exact previous behavior.
     """
     exact = raw_statuses.get(job_id)
-    task_prefix = f"{job_id}_"
-    task_states = [state for key, state in raw_statuses.items() if key.startswith(task_prefix)]
+    task_states = [
+        state for key, state in raw_statuses.items() if _array_task_index(job_id, key) is not None
+    ]
     if not task_states:
         return exact or "UNKNOWN"
 
@@ -76,8 +77,9 @@ def array_progress_for_job_id(
     """
     Return (is_array, n_completed, n_array) for a job id based on task entries.
     """
-    task_prefix = f"{job_id}_"
-    task_states = [state for key, state in raw_statuses.items() if key.startswith(task_prefix)]
+    task_states = [
+        state for key, state in raw_statuses.items() if _array_task_index(job_id, key) is not None
+    ]
     if not task_states and declared_total is None:
         return False, 0, 0
     completed = sum(1 for state in task_states if state.upper() == "COMPLETED")
@@ -125,3 +127,48 @@ def declared_array_size(array_spec: str | None) -> int | None:
         return None
 
     return total if total > 0 else None
+
+
+def declared_array_indices(array_spec: str | None) -> list[int] | None:
+    """
+    Parse a Slurm --array spec and return the concrete task indices.
+    Supports the same forms as declared_array_size.
+    """
+    if array_spec is None:
+        return None
+    text = str(array_spec).strip()
+    if not text:
+        return None
+    text = text.split("%", 1)[0].strip()
+    if not text:
+        return None
+
+    indices: list[int] = []
+    for chunk in text.split(","):
+        part = chunk.strip()
+        if not part:
+            return None
+
+        match = re.fullmatch(r"(-?\d+)-(-?\d+)(?::(\d+))?", part)
+        if match:
+            start = int(match.group(1))
+            end = int(match.group(2))
+            step = int(match.group(3) or "1")
+            if step <= 0 or end < start:
+                return None
+            indices.extend(range(start, end + 1, step))
+            continue
+
+        if re.fullmatch(r"-?\d+", part):
+            indices.append(int(part))
+            continue
+        return None
+
+    return indices if indices else None
+
+
+def _array_task_index(job_id: str, raw_job_id: str) -> int | None:
+    match = re.fullmatch(rf"{re.escape(job_id)}[_.](\d+)", str(raw_job_id))
+    if match is None:
+        return None
+    return int(match.group(1))

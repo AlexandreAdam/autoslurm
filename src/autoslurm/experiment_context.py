@@ -94,7 +94,13 @@ def job_context(
             lines.append(f"script missing: {slurm_name}")
 
     if include_logs:
-        logs, error = _collect_out_logs(job_name, bundle_name, bundle_date, job.get("machine"))
+        logs, error = _collect_out_logs(
+            job["name"],
+            bundle_name,
+            bundle_date,
+            job.get("machine"),
+            job.get("id"),
+        )
         if logs:
             for log_path, content in logs:
                 lines.append(f"log {log_path.name}:")
@@ -204,9 +210,12 @@ def _collect_out_logs(
     bundle_name: str,
     bundle_date: datetime,
     job_machine: Optional[str],
+    job_id: Optional[object] = None,
 ) -> tuple[list[tuple[Path, str]], Optional[str]]:
     logs = []
     for log_path in sorted(out_dir().glob(f"{job_name}-*.out")):
+        if job_id is not None and not _log_path_matches_job_id(log_path, str(job_id)):
+            continue
         content = _read_text(log_path)
         if content is None:
             continue
@@ -221,6 +230,102 @@ def _collect_out_logs(
     return fetched_logs, error
 
 
+def _collect_out_logs_for_job_ids(
+    job_name: str,
+    bundle_name: str,
+    bundle_date: datetime,
+    job_machine: Optional[str],
+    job_ids: list[str],
+) -> tuple[list[tuple[Path, str]], Optional[str]]:
+    logs = []
+    for log_path in sorted(out_dir().glob(f"{job_name}-*.out")):
+        if not any(_log_path_matches_job_id(log_path, job_id) for job_id in job_ids):
+            continue
+        content = _read_text(log_path)
+        if content is None:
+            continue
+        logs.append((log_path, content))
+    if logs:
+        return logs, None
+    if job_machine is None:
+        return [], None
+    fetched_logs, error = _fetch_remote_logs_for_job(
+        bundle_name, bundle_date, job_name, job_machine
+    )
+    filtered_logs = [
+        (path, content)
+        for path, content in fetched_logs
+        if any(_log_path_matches_job_id(path, job_id) for job_id in job_ids)
+    ]
+    return filtered_logs, error
+
+
+def _log_path_matches_job_id(log_path: Path, job_id: str) -> bool:
+    # Slurm array logs can include task ids as either 123_7 or 123.7.
+    return re.search(rf"-{re.escape(job_id)}(?:[_.]\d+)?$", log_path.stem) is not None
+
+
+def _array_task_log_job_ids(
+    job_id: object,
+    array_task: str,
+    machine_name: Optional[str],
+) -> list[str]:
+    job_id_text = str(job_id)
+    task_text = str(array_task)
+    ids = [f"{job_id_text}_{task_text}", f"{job_id_text}.{task_text}"]
+    raw_id = _fetch_array_task_raw_job_id(job_id_text, task_text, machine_name)
+    if raw_id is not None and raw_id not in ids:
+        ids.append(raw_id)
+    return ids
+
+
+def _fetch_array_task_raw_job_id(
+    job_id: str,
+    array_task: str,
+    machine_name: Optional[str],
+) -> Optional[str]:
+    command = ["sacct", "-n", "-P", "-j", job_id, "-o", "JobID,JobIDRaw"]
+    if machine_name is None:
+        try:
+            result = subprocess.run(command, capture_output=True, text=True)
+        except OSError:
+            return None
+    else:
+        try:
+            config = load_config()
+            machine_config = config["machines"].get(machine_name) or config.get(machine_name)
+            if machine_config is None:
+                return None
+            hostname = ssh_host_from_config(machine_config, machine_name)
+        except (AttributeError, EnvironmentError):
+            return None
+        remote_command = " ".join(shlex.quote(part) for part in command)
+        try:
+            result = subprocess.run(
+                ["ssh", *shlex.split(hostname), f"bash -lc {shlex.quote(remote_command)}"],
+                capture_output=True,
+                text=True,
+            )
+        except OSError:
+            return None
+    if result.returncode != 0:
+        return None
+
+    logical_ids = {f"{job_id}_{array_task}", f"{job_id}.{array_task}"}
+    for line in (result.stdout or result.stderr or "").splitlines():
+        parts = line.strip().split("|")
+        if len(parts) < 2:
+            continue
+        logical_id, raw_id = parts[0].strip(), parts[1].strip()
+        if "." in logical_id:
+            suffix = logical_id.rsplit(".", 1)[1]
+            if suffix in {"batch", "extern"}:
+                continue
+        if logical_id in logical_ids and raw_id:
+            return raw_id
+    return None
+
+
 def _latest_out_log_for_bundle(
     bundle_name: str, desired_date: Optional[datetime] = None
 ) -> tuple[Optional[str], Optional[str]]:
@@ -231,7 +336,11 @@ def _latest_out_log_for_bundle(
     for job in jobs:
         job_name = job["name"]
         logs, error = _collect_out_logs(
-            job_name, bundle_name, bundle_date, job.get("machine")
+            job_name,
+            bundle_name,
+            bundle_date,
+            job.get("machine"),
+            job.get("id"),
         )
         if error:
             errors.append(error)
@@ -265,25 +374,40 @@ def _latest_out_log_for_job(
         return None, f"{exc}. Try `asl sync` or `asl logs --refresh`."
 
     job_name = job["name"]
-    logs, error = _collect_out_logs(job_name, bundle_name, bundle_date, job.get("machine"))
-    if not logs:
-        if error is not None:
-            return None, error
-        return None, None
 
     if array_task is not None:
         job_id = job.get("id")
         if job_id is None:
             return None, f"Job '{job_name}' has no submitted id, cannot resolve array task '{array_task}'."
-        pattern = re.compile(rf"-{re.escape(str(job_id))}_{re.escape(str(array_task))}\.out$")
-        matching_logs = [entry for entry in logs if pattern.search(entry[0].name)]
-        if not matching_logs:
+        log_job_ids = _array_task_log_job_ids(job_id, array_task, job.get("machine"))
+        logs, error = _collect_out_logs_for_job_ids(
+            job_name,
+            bundle_name,
+            bundle_date,
+            job.get("machine"),
+            log_job_ids,
+        )
+        if not logs:
+            if error is not None:
+                return None, error
             return None, f"No log file matched array task '{array_task}' for job '{job_name}'."
         selected = max(
-            matching_logs,
+            logs,
             key=lambda item: item[0].stat().st_mtime if item[0].exists() else 0.0,
         )
         return selected[1], None
+
+    logs, error = _collect_out_logs(
+        job_name,
+        bundle_name,
+        bundle_date,
+        job.get("machine"),
+        job.get("id"),
+    )
+    if not logs:
+        if error is not None:
+            return None, error
+        return None, None
 
     latest_log = max(
         logs,
@@ -394,7 +518,11 @@ def experiment_context(bundle_name: str, desired_date: Optional[datetime] = None
             )
 
         logs, error = _collect_out_logs(
-            job_name, bundle_name, bundle_date, job.get("machine")
+            job_name,
+            bundle_name,
+            bundle_date,
+            job.get("machine"),
+            job.get("id"),
         )
         if logs:
             for log_path, content in logs:
