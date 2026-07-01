@@ -48,6 +48,7 @@ ANSI_RESET = "\033[0m"
 ANSI_GREEN = "\033[38;2;0;200;0m"
 ANSI_RED = "\033[38;2;220;0;0m"
 ANSI_YELLOW = "\033[38;2;220;180;0m"
+SACCT_QUERY_START_DATE = "2000-01-01"
 
 
 def display_state(state: str) -> str:
@@ -72,6 +73,8 @@ def infer_bundle_status(
         return "cancelled"
     if any(state in FAILED_STATES and state != "CANCELLED" for state in upper_states):
         return "failed"
+    if any(state == "UNKNOWN" for state in upper_states):
+        return "unknown"
     if submitted_count > 0:
         return "completed"
     return "ready_to_go"
@@ -146,7 +149,7 @@ def _fetch_statuses_locally(job_ids: list[str]) -> dict[str, str]:
     statuses: dict[str, str] = {}
     commands = (
         ["squeue", "-h", "-j", query, "-o", "%i|%T"],
-        ["sacct", "-n", "-P", "-j", query, "-o", "JobID,State"],
+        ["sacct", "-n", "-P", "-S", SACCT_QUERY_START_DATE, "-j", query, "-o", "JobID,State"],
     )
     for command in commands:
         result = subprocess.run(command, capture_output=True, text=True)
@@ -170,7 +173,7 @@ def _fetch_statuses_remotely(
         [
             f"squeue -h -j {shlex.quote(query)} -o '%i|%T' 2>/dev/null || true",
             "printf '__AUTOSLURM_SPLIT__\\n'",
-            f"sacct -n -P -j {shlex.quote(query)} -o JobID,State 2>/dev/null || true",
+            f"sacct -n -P -S {shlex.quote(SACCT_QUERY_START_DATE)} -j {shlex.quote(query)} -o JobID,State 2>/dev/null || true",
         ]
     )
     result = subprocess.run(
@@ -253,7 +256,7 @@ def _fetch_statuses_and_time_left_remotely(
         [
             f"squeue -h -j {shlex.quote(query)} -o '%i|%T' 2>/dev/null || true",
             "printf '__AUTOSLURM_SPLIT__\\n'",
-            f"sacct -n -P -j {shlex.quote(query)} -o JobID,State 2>/dev/null || true",
+            f"sacct -n -P -S {shlex.quote(SACCT_QUERY_START_DATE)} -j {shlex.quote(query)} -o JobID,State 2>/dev/null || true",
             "printf '__AUTOSLURM_SPLIT__\\n'",
             f"squeue -h -j {shlex.quote(query)} -o '%i|%L' 2>/dev/null || true",
         ]
