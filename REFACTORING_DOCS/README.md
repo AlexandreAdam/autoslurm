@@ -18,6 +18,7 @@ The goals of this track are:
 - [Current State](current-state.md): inventory of the current interface and behavior
 - [Function Map](function-map.md): flat inventory of package functions and entrypoints
 - [Legacy Maps](legacy_maps/README.md): command-by-command dependency charts for the current implementation
+- [Strategy](STRATEGY.md): meta-strategy for redesigning the package
 - [Target Architecture](target-architecture.md): proposed internal model and data flow
 - [Legacy Policy](legacy-policy.md): rules for preserving old code during migration
 
