@@ -1,96 +1,65 @@
-# Refactor Strategy
+# AutoSlurm MVP strategy
 
-This document records the meta-strategy for redesigning AutoSlurm into a more
-modular, maintainable backend.
+Improve the working implementation through small usable releases. [PLAN.md](../PLAN.md)
+owns the active order and boundaries; the earlier broad architecture remains a
+longer-term direction rather than a first-release prerequisite.
 
-The intent is not to preserve the current architecture. The intent is to
-preserve useful behavior while replacing the architecture with something easier
-to understand, test, and extend.
+## Priorities
 
-## Strategy Summary
+1. Protect daily jobs with a pinned stable installation and isolated development.
+2. Centralize existing machine, relative-path and bundle-selection rules.
+3. Stop unsafe retries and preserve known accepted jobs on partial failure.
+4. Share one task/status/log view between agents and terminal commands.
+5. Add scientific conveniences and complete packaging/documentation later.
 
-1. Freeze the current behavior as a reference point, not as a design target.
-2. Define a small set of canonical data objects before rewriting modules.
-3. Rebuild one vertical slice at a time behind narrow interfaces.
-4. Write new tests against behavior and contracts, not old implementation
-   details.
-5. Keep legacy code only as a comparison target until each slice is replaced.
+A single source of truth is one active policy implementation. Use small shared
+helpers and the current bundle shapes first. Do not begin with a database,
+complete schema migration, broad module move or generic execution framework.
 
-## Design Priorities
+## Incremental method
 
-- Keep core logic pure where possible.
-- Separate state, policy, transport, and presentation.
-- Make external dependencies replaceable.
-- Centralize assumptions instead of duplicating them across CLI entrypoints.
-- Prefer small explicit modules over large shared hubs.
+Use the interaction map as a coverage checklist. Settle only the contracts needed
+by the current MVP; add focused regressions and the matching small agent recipe.
+A full product specification or documentation site does not block early fixes.
+Keep mechanical extraction separate from logic changes and preserve existing
+useful tests. Prefer completing a narrow working path over migrating every
+entry point at once, but do not leave contradictory policy copies active in the
+path being released.
 
-## Core Architectural Split
+Every promoted release needs a useful demonstrated outcome, a stated limitation,
+and a rollback path. Measure repeated external commands on exercised workflows;
+reduce duplicate queries/discovery before adding caches or promising speedups.
+Do not confuse shorter code or more modules with a more reliable product.
 
-The new architecture should separate these responsibilities:
+## Daily use and breaking changes
 
-- bundle state and snapshot persistence
-- sync-driven local indexing
-- submission transport
-- status resolution
-- log resolution
-- cleaning and snapshot policy
-- CLI parsing and rendering
+Stable code/environments/roots continue owning their jobs. Development uses
+separate workstation and cluster code, helper, config, tracking and test outputs.
+Main can continue evolving in development without changing a pinned production
+installation. Promote tested revisions for new work, retain the previous lane
+for old work, and never mutate a queued job's referenced environment.
 
-If a function needs to know about storage, transport, naming, status policy, and
-CLI formatting at the same time, it is too broad and should be split.
+Breaking changes are allowed at release boundaries. Keep production data intact;
+provide an explicit later import path where needed, rather than preserving every
+private API and intermediate format. Git history and the retained stable install
+are the default legacy reference; avoid maintaining two active engines.
 
-## Rebuild Method
+## Safety scope
 
-The package should be reimplemented as vertical slices:
+MVP2 records known/partial outcomes and stops on uncertainty. It does not promise
+automatic scheduler adoption, DAG resume or exactly-once execution. Those need
+more design and remain L1 work. Scientific retries/reducer compatibility are L2.
+Compute jobs use prepared environments without Git/network installation work.
 
-1. bundle/storage model
-2. sync and local index
-3. status resolution
-4. log resolution
-5. submit path
-6. clean/filter surfaces
+Relative application paths have explicit bases. AutoSlurm owns selected-machine
+roots and working-directory context; resolving a path does not transfer its
+inputs. Every run uses one machine. Automatic deployment and multi-machine
+routing stay outside scope.
 
-Each slice should be complete enough to run and test independently before
-moving to the next slice.
+## Documentation and release scope
 
-## Testing Approach
-
-Use tests that validate the public behavior of the system:
-
-- command-level contract tests
-- service-level orchestration tests
-- pure unit tests for parsing and indexing
-- a small number of integration tests for real Slurm/SSH behavior
-
-The tests should describe the new system, not the old helper structure.
-
-## Legacy Policy
-
-- Keep old code available while the new slice is being built.
-- Do not let new code depend on old assumptions.
-- Translate old formats at the boundary if needed.
-- Move replaced code into legacy locations once the new path is validated.
-
-## External Dependency Boundary
-
-The backend should isolate tools like:
-
-- `ssh`
-- `sbatch`
-- `squeue`
-- `sacct`
-- `rsync`
-- `scp`
-
-These should be behind small adapter interfaces so they can be mocked, swapped,
-or replaced without disturbing the core logic.
-
-## Success Criteria
-
-- The package can work from a local cache after sync where possible.
-- Array-job handling is consistent across status, logs, and clean.
-- Submission, inspection, and synchronization are decoupled from one another.
-- New tests cover the intended behavior without inheriting old assumptions.
-- The codebase becomes easier to extend without reintroducing cross-cutting
-  coupling.
-
+Accurate integration and operate/diagnose recipes ship with each MVP; a short
+human map and example ship with trustworthy inspection. Keep development
+installation usable and use a narrow built-artifact smoke check before promotion.
+Complete published human docs, installed agent-resource coverage, full provenance,
+broad compatibility matrices and public package release are later layers.

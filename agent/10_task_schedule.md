@@ -1,5 +1,8 @@
 # Task: Plan & Schedule Jobs
 
+Start with `00_operating_rules.md`. Identify the installation/lane and machine
+before scheduling; planned resolver or recovery features are not current APIs.
+
 To plan a new workload, gather the relevant CLI usage, resource guidance, and ACP action:
 
 - `04_project_map.md` and `05_cli_reference.md` describe `autoslurm-schedule`, the `--bundle`, `--append`, `--dependencies`, and SLURM resource flags. The Python API `autoslurm.schedule_job` takes the same fields plus `script_args`, `pre_commands`, and `slurm` directives.

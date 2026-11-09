@@ -1,5 +1,8 @@
 # Task: Inspect Experiments
 
+Start with `00_operating_rules.md`. Establish which installation and machine
+own the selected run; distinguish missing observations from failed computation.
+
 Agents that need to understand what a job bundle contains should focus on these sources:
 
 - `03_experiment_context.md` explains `autoslurm-experiment-context` / `autoslurm.experiment_context.experiment_context(...)`, which emit (1) the saved bundle JSON, (2) the rendered SLURM scripts, and (3) the `.out` logs tied to each job. Running this tool with `--date` or passing `desired_date` lets you target a specific timestamped bundle.

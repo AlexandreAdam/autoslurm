@@ -1,5 +1,8 @@
 # Task: ACP Reference
 
+Read `00_operating_rules.md` before issuing operational requests. Use only
+actions supported by the selected installation and preserve exact run evidence.
+
 For any tool that speaks ACP, rely on this distilled reference:
 
 | Action | Purpose | Required Parameters |

@@ -1,9 +1,14 @@
 # Task: Submit & Monitor
 
+First read `00_operating_rules.md` for installation identity, stable/development
+ownership, durable handoff references and handling uncertain submissions.
+
 When it’s time to execute scheduled jobs and watch their logs, these references help:
 
 - `04_project_map.md` and `03_experiment_context.md` note the submission flow: `autoslurm-submit <bundle>` invokes `submit_jobs`, which renders scripts, transfers them if remote, calls `sbatch`, and updates the bundle with job IDs.
-- Track dependencies using `autoslurm.job_dependency.update_slurm_with_dependencies` (discussed in the project map) so downstream jobs wait for upstream IDs before sbatch.
+- Declare dependencies through the selected installation's supported scheduling
+  interface. Clients should not edit generated scripts or call private
+  dependency-edit helpers to construct submissions.
 - After submission, `inspect_experiments` (ACP) or rerunning `autoslurm-experiment-context` returns the `.out` logs that the scheduler writes under `$AUTOSLURM/out` (and the remote fetch logic brings remote logs back into that directory).
 - `07_acp_actions.md` plus `acp_action.json` explain `list_experiments` (enumerate bundle files), so you can detect the latest bundle of a given name before submitting or monitoring.
 - The agent context summary (`gather_context`) is handy for reminding the agent which directories exist and which helper to call for submission.
