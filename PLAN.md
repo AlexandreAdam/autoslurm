@@ -10,11 +10,12 @@ This file is the source of truth for active scope, task order and progress.
 ## Status
 
 - **Current milestone:** MVP0, protect daily use and establish a small baseline.
-- **Stage:** local installation and baseline verified: 195 unit tests and four
-  mocked submission smoke cases pass. The base Conda install imports this
-  checkout directly; stable/development isolation is not yet established.
-- **Next task:** MVP0.2, isolate local development code, environment and state
-  before changing runtime behavior. Retain the working revision separately.
+- **Stage:** local code/environment/state isolation established. The original
+  checkout is pinned at the baseline for base Conda; development uses a separate
+  checkout and environment. All 237 offline tests pass, including root isolation
+  and mocked helper failures. No cluster installation or promotion performed.
+- **Next task:** MVP0.3, publish the small development/client contract and its
+  reference smoke fixtures. MVP0 is not yet closed.
 - **Last updated:** 2026-11-09.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -100,11 +101,11 @@ share mutable tracking directories, helper installations, or test output paths.
 | Stable | Pinned working revision in its own checkout and environment on workstation and cluster | Existing production roots and live jobs; routine terminal/agent work |
 | Development | Separate checkout/environment and matched remote helper; implementation can continue on main | Explicit isolated local and remote roots, tiny test jobs and a distinct result namespace |
 
-During MVP0, identify actual installation and storage locations before changing
-anything. The current root override is only process-local; add a supported
-explicit root selector with a focused test before relying on isolation. The
-exact selector name is an implementation choice, not a command advertised here.
-Do not move the existing production root or change its default implicitly.
+Local isolation is established in MVP0.2; actual paths and commands are in the
+installation register. Development uses `AUTOSLURM_STORAGE_ROOT` for independent
+configuration/state; explicit remote `storage_root` selects and verifies a helper
+root through mocks. The original checkout stays at its baseline revision and
+retains its existing default root. No remote installation has been created.
 
 ### Promotion and rollback
 
@@ -148,7 +149,7 @@ supporting designs distinguish early delivery from later product work.
   and tests have been inspected for side effects. No existing installation or
   production root changes. Cluster inventory is deferred under local-only scope;
   recording a revision is not freezing the editable installation (MVP0.2).
-- [ ] **MVP0.2 Make development isolation explicit.** *Done when:* the chosen root
+- [x] **MVP0.2 Make development isolation explicit.** *Done when:* the chosen root
   selector is supported by local and remote development code; fake-command tests
   prove config, job, script, log and result writes stay in the selected lane;
   discovery resolves the intended helper/root. A mismatched/unknown helper root
@@ -316,6 +317,8 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-09 | Deliver small reliability/agent MVPs before a complete package; allow intentional breaking releases | Improve the working software quickly instead of gating benefits on the full roadmap |
 | 2026-11-09 | Establish the shared working rules before creating installations or changing runtime behavior | Keep daily use and application agents operational while identifying the actual stable/development setup |
 | 2026-11-09 | Work locally and mock Slurm/remote interactions; defer cluster discovery and live checks | Explicit user instruction; base Conda installation supplies local installation evidence |
+| 2026-11-09 | Retain the original checkout at detached baseline HEAD; implement in `.development/checkout` with a separate environment/state | Protect base Conda imports without reinstalling its package or moving its tracking root |
+| 2026-11-09 | Use `AUTOSLURM_STORAGE_ROOT` locally and explicit remote machine `storage_root`, with helper support/root verification | Keep configuration, scripts, observations and default results in the chosen installation; reject invalid/mismatched selections |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -329,6 +332,8 @@ or migration decision has already been accepted.
 | 2026-11-09 | MVP0.0 Layer the plan into usable MVPs and defer product completion | Documentation/traceability checks; commit reference: `git log --grep '^MVP0.0:'` once committed |
 | 2026-11-09 | MVP0.0a Working agreement, unverified installation register and initial agent operating guide | Documentation/link checks and read-only agent-context smoke check; files remain uncommitted pending baseline identification |
 | 2026-11-09 | MVP0.1 Local installation inventory and executable baseline | Source reference `33bcbd34fb167fca67aa64739a013073c64167b1`; 195 unit tests and four mocked three-job submission cases pass in a disposable offline environment; accounting-probe mock gap recorded in MVP0 design. Source/tests and base installation unchanged; no stable pin, cluster access or promotion; documentation remains uncommitted |
+| 2026-11-09 | Initial planning/baseline documents saved | `efff9b6` on the development branch; pre-existing README and Gaia requirements edits excluded |
+| 2026-11-09 | MVP0.2 Local isolation and explicit storage selection | 237 full offline tests pass, including 17 new root/isolation cases; editable development install and fresh-process discovery verified. Stable source remains unchanged at detached baseline HEAD. Task commit: `git log --grep '^MVP0.2:'` on `codex/mvp0-isolation`; no push, promotion or remote operations |
 
 ## How we work
 

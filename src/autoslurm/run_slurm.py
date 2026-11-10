@@ -12,7 +12,7 @@ from .utils import (
     ssh_host_from_config,
     remote_storage_root_from_config,
 )
-from .storage import ensure_storage_dirs, slurm_dir, storage_root
+from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 __all__ = [
     "get_job_id_from_sbatch_output",
@@ -56,14 +56,14 @@ def run_slurm_remotely(
             raise EnvironmentError(f"No configuration found for machine: {machine}")
 
     hostname = ssh_host_from_config(machine_config, machine)
-    remote_path = machine_config.get("path") or remote_storage_root_from_config(
+    remote_path = remote_storage_root_from_config(
         machine_config, machine
     )
     script_path = os.path.join(remote_path, "slurm", slurm_name)
     ssh_command = ["ssh"]
     if ssh_options:
         ssh_command.extend(ssh_options)
-    ssh_command.extend([*shlex.split(hostname), f"sbatch {script_path}"])
+    ssh_command.extend([*shlex.split(hostname), f"sbatch {shlex.quote(script_path)}"])
 
     # Run the sbatch command on the remote machine
     result = subprocess.run(ssh_command, capture_output=True, text=True)
@@ -153,7 +153,16 @@ def run_bulk_submit_driver_remotely(
             "Bulk remote submission requires 'venv_path' in machine configuration."
         )
     python_executable = f"{venv_path.rstrip('/')}/bin/python"
-    ssh_command.extend([python_executable, "-m", "autoslurm.apps.bulk_submit_driver"])
+    if "storage_root" in machine_config:
+        remote_root = remote_storage_root_from_config(machine_config, machine)
+        if payload.get("slurm_dir") != f"{remote_root.rstrip('/')}/slurm":
+            raise ValueError("Bulk payload script directory does not match the selected storage root.")
+        ssh_command.append(shlex.join([
+            "env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={remote_root}",
+            python_executable, "-m", "autoslurm.apps.bulk_submit_driver",
+        ]))
+    else:
+        ssh_command.extend([python_executable, "-m", "autoslurm.apps.bulk_submit_driver"])
 
     result = subprocess.run(
         ssh_command,

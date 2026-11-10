@@ -18,8 +18,9 @@ the new planning files; an editable production install may import it directly.
 Slurm tests. Do not contact a cluster, discover remote installations, submit live
 jobs or install remote helpers. Test remote behavior with fake commands. This
 scope supersedes live-check suggestions elsewhere in the design documents until
-the user authorizes cluster work. The current base Conda installation is editable
-from this checkout; see the installation register before changing source.
+the user authorizes cluster work. Base Conda imports the original checkout,
+pinned at the baseline. Code changes belong in the separate development checkout
+listed in the installation register; never edit the stable source in place.
 
 ## Sources of truth
 
@@ -44,6 +45,12 @@ They do not advertise implemented capabilities or expand the current task.
 - Keep one Git repository. A second checkout is not a new project or a second
   independent codebase. Development may use main; production runs a pinned
   revision outside that moving checkout.
+- The current local setup retains `/Users/aadam/Projects/autoslurm` at detached
+  baseline HEAD and develops on `codex/mvp0-isolation` in its
+  `.development/checkout` worktree. `.development/venv` and `.development/state`
+  belong only to development. Use the local wrappers recorded in the register;
+  do not switch the stable checkout to a moving branch or merge code there as
+  part of an ordinary development commit.
 - Branch names, directory names and environment activation alone do not prove
   isolation. Verify import locations and resolved local/remote roots before
   development writes, package installs or cluster checks.
@@ -106,9 +113,10 @@ required to complete a small reliability MVP.
   `latest` value or terminal row number after the session ends.
 - Preserve known outcomes when a request partly fails. A lost connection may
   leave a remote helper running; no blind submit fallback or resubmission.
-- Document only implemented operations and known limits. In particular, the
-  refactor has not yet delivered a root selector, durable incremental receipts,
-  unified status/log model, or automatic recovery merely because they are planned.
+- Document only implemented operations and known limits. MVP0.2 implements an
+  explicit root selector in development; the stable baseline does not have it.
+  Durable incremental receipts, unified status/logs and automatic recovery remain
+  planned. A passing mock helper check is not evidence about a real installation.
 - Update the small integration/operate/diagnose recipe in the same task as a
   changed public behavior. Include the source of evidence, unknown state and a
   supported next step. Human examples use the same supported operations.

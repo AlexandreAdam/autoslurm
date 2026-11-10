@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 # AutoSlurm runtime configuration
+.development/
 config.json
 src/config.json
 jobs/*

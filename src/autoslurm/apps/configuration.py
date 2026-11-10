@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 
-from ..utils import activation_command_from_config, load_config, ssh_host_from_config
+from ..utils import activation_command_from_config, load_config, ssh_host_from_config, remote_storage_root_from_config
 from ..storage import config_file_path
 
 
@@ -84,6 +84,13 @@ def _validate_machine(machine: Dict, name: str) -> bool:
         output = result.stdout.strip()
         if output:
             print(output)
+        if "storage_root" in machine:
+            try:
+                root = remote_storage_root_from_config(machine, name)
+            except (RuntimeError, ValueError) as exc:
+                print(f"[{name}] Storage root check: failed: {exc}")
+                return False
+            print(f"[{name}] Storage root check: passed: {root}")
         return True
 
     validation_command = _validation_shell_command(machine)
@@ -173,6 +180,8 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
     if results_root:
         machine["results_root"] = results_root
     if is_remote:
+        if "storage_root" in existing:
+            machine["storage_root"] = existing["storage_root"]
         print("Remote connection mode:")
         print("  1) SSH config alias (machine.hostname)")
         print("  2) Explicit host URL + username")

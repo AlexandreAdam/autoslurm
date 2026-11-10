@@ -6,6 +6,7 @@ import os
 import json
 import shlex
 import subprocess
+from pathlib import PurePosixPath
 
 
 __all__ = [
@@ -34,6 +35,7 @@ def name_slurm_script(job: dict, date: datetime):
 
 
 from .storage import jobs_dir, ensure_storage_dirs, config_file_path
+from .storage import STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 
 def update_job_info_with_id(bundle_name, date, job_name, job_id):
@@ -126,7 +128,7 @@ def load_config() -> dict:
     """
     path = config_file_path()
     legacy_path = path.parent / "src" / path.name
-    if not path.exists() and legacy_path.exists():
+    if STORAGE_ROOT_ENVIRONMENT_VARIABLE not in os.environ and not path.exists() and legacy_path.exists():
         path = legacy_path
     if not path.exists():
         raise EnvironmentError(
@@ -236,13 +238,35 @@ def scp_host_and_keypath_from_config(
 def remote_storage_root_from_config(
     machine_config: dict, machine_name: Optional[str] = None
 ) -> str:
+    """Resolve legacy storage or verify an explicitly selected helper root.
+
+    `storage_root` selects isolated remote state. It must be absolute, and the
+    selected environment must support the selector and report the same root.
+    Legacy `path` remains supported only when no explicit selector is present.
+    """
+    explicit = "storage_root" in machine_config
+    if explicit:
+        requested = machine_config["storage_root"]
+        if not isinstance(requested, str) or not requested.strip() or not PurePosixPath(requested).is_absolute():
+            raise ValueError("Machine storage_root must be a nonempty absolute POSIX path.")
+        requested = str(PurePosixPath(requested))
+    elif machine_config.get("path"):
+        return str(machine_config["path"])
     hostname = ssh_host_from_config(machine_config, machine_name)
     env_command = activation_command_from_config(machine_config)
     python_probe = "from autoslurm.storage import storage_root; print(storage_root())"
+    python_command = f"python -c {shlex.quote(python_probe)}"
+    if explicit:
+        # Importing the new constant rejects helpers that ignore the selector.
+        python_probe = "from autoslurm.storage import STORAGE_ROOT_ENVIRONMENT_VARIABLE, storage_root; print(storage_root())"
+        python_command = shlex.join([
+            "env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={requested}",
+            "python", "-c", python_probe,
+        ])
     command_parts = []
     if env_command:
         command_parts.append(env_command)
-    command_parts.append(f"python -c {shlex.quote(python_probe)}")
+    command_parts.append(python_command)
     remote_command = " && ".join(command_parts)
     result = subprocess.run(
         ["ssh", *shlex.split(hostname), f"bash -lc {shlex.quote(remote_command)}"],
@@ -255,8 +279,12 @@ def remote_storage_root_from_config(
             f"Unable to determine remote storage root for machine '{machine_name or ''}': {message}"
         )
     remote_root = result.stdout.strip()
-    if not remote_root:
+    if not remote_root or not PurePosixPath(remote_root).is_absolute():
         raise RuntimeError(
-            f"Unable to determine remote storage root for machine '{machine_name or ''}': empty response"
+            f"Unable to determine remote storage root for machine '{machine_name or ''}': expected an absolute path"
+        )
+    if explicit and remote_root != requested:
+        raise RuntimeError(
+            f"Remote storage root mismatch: requested {requested!r}, helper reported {remote_root!r}."
         )
     return remote_root

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 __all__ = [
@@ -8,19 +9,33 @@ __all__ = [
     "config_file_path",
     "ensure_storage_dirs",
     "set_storage_root",
+    "STORAGE_ROOT_ENVIRONMENT_VARIABLE",
 ]
 
+STORAGE_ROOT_ENVIRONMENT_VARIABLE = "AUTOSLURM_STORAGE_ROOT"
 _override_root: Path | None = None
 
 
-def set_storage_root(path: Path):
+def _absolute_root(path: str | Path) -> Path:
+    if not str(path).strip():
+        raise ValueError("AutoSlurm storage root must be a nonempty absolute path.")
+    root = Path(path).expanduser()
+    if not root.is_absolute():
+        raise ValueError("AutoSlurm storage root must be an absolute path.")
+    return root.resolve()
+
+
+def set_storage_root(path: str | Path | None):
+    """Override this process's root; None restores environment/default discovery."""
     global _override_root
-    _override_root = path
+    _override_root = None if path is None else _absolute_root(path)
 
 
 def _root() -> Path:
     if _override_root is not None:
         return _override_root
+    if STORAGE_ROOT_ENVIRONMENT_VARIABLE in os.environ:
+        return _absolute_root(os.environ[STORAGE_ROOT_ENVIRONMENT_VARIABLE])
     return Path(__file__).resolve().parent.parent.parent
 
 

@@ -42,8 +42,32 @@ Keep scientific computation independent of submission glue. Prefer an installed
 command, explicit validated parameters, relative input/output paths, resource
 and worker limits, distinct task outputs, and meaningful nonzero failures.
 AutoSlurm owns the selected machine's path mapping. Verify current path support
-before a production submission; the shared resolver is still planned, and no
-new root-selector command or arbitrary configuration rewriting is promised here.
+before a production submission; the full shared application-path resolver is
+still planned. Arbitrary configuration rewriting is not supported.
+
+## Development storage selection (MVP0.2)
+
+This feature exists in the development installation; it does not change the
+pinned stable installation. Set `AUTOSLURM_STORAGE_ROOT` to an absolute path in
+the environment of every development CLI/Python process. It selects
+`config.json`, `jobs/`, `slurm/`, `out/` and the default `results/` subtree.
+An empty/relative value fails rather than falling back to another installation.
+The Python `set_storage_root(path)` override takes precedence for that process
+only; `set_storage_root(None)` restores environment/default discovery.
+
+For remote development, machine configuration uses an absolute POSIX
+`storage_root` alongside its separate `venv_path`. AutoSlurm verifies selector
+support and the exact reported root before submission; transfers, helper
+execution and sync use the same selection. Explicit `storage_root` takes
+precedence over legacy `path`; missing support, probe errors or a mismatched root
+stop the operation. Remote checks are mocked under the current project scope.
+
+Storage selection does not install software, copy application inputs or rewrite
+explicit application output paths. Keep declared `results_root`, custom Slurm
+outputs and application-owned paths separate from stable outputs. Existing
+submission fallback/uncertainty limitations remain until MVP2; never retry an
+uncertain submission automatically. The exact local setup is in
+`REFACTORING_DOCS/installation-register.md` in the development repository.
 
 Use prepared cluster software. Compute jobs do not install packages or update
 Git checkouts. Scientific validation, checkpoint meaning and compatibility of

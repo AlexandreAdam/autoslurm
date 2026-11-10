@@ -7,7 +7,7 @@ from typing import Optional
 
 from .storage import storage_root
 from .utils import (
-    activation_command_from_config,
+    remote_storage_root_from_config,
     machine_config as resolve_machine_config,
     scp_host_and_keypath_from_config,
     ssh_host_from_config,
@@ -26,29 +26,7 @@ def _remote_ssh_command(machine: dict, machine_name: str, remote_command: str) -
 
 
 def _remote_storage_root(machine: dict, machine_name: str) -> str:
-    python_probe = "from autoslurm.storage import storage_root; print(storage_root())"
-    env_command = activation_command_from_config(machine)
-    command_parts = []
-    if env_command:
-        command_parts.append(env_command)
-    command_parts.append(f"python -c {shlex.quote(python_probe)}")
-    remote_command = " && ".join(command_parts)
-    result = subprocess.run(
-        _remote_ssh_command(machine, machine_name, f"bash -lc {shlex.quote(remote_command)}"),
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        message = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(
-            f"Unable to determine remote storage root for machine '{machine_name}': {message}"
-        )
-    remote_root = result.stdout.strip()
-    if not remote_root:
-        raise RuntimeError(
-            f"Unable to determine remote storage root for machine '{machine_name}': empty response"
-        )
-    return remote_root
+    return remote_storage_root_from_config(machine, machine_name)
 
 
 def _rsync_command(remote_source: str, local_target: Path, key_path: str = "") -> list[str]:

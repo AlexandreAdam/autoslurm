@@ -12,6 +12,7 @@ MACHINE_KEYS = [
     "username",
     "key_path",
     "results_root",
+    "storage_root",
     "venv_path",
     "env_command",
     "slurm_account",

@@ -76,6 +76,9 @@ def submit_jobs(
     machine, machine_config = resolve_machine_config(
         args=None, machine=machine, overrides=machine_overrides
     )
+    # Verify an isolated remote helper before scripts, transfers or submissions.
+    if "storage_root" in machine_config and (machine_config.get("hostname") or machine_config.get("hosturl")):
+        remote_storage_root_from_config(machine_config, machine)
     if "hostname" not in machine_config and "hosturl" not in machine_config:
         host = "localhost"
     else:
@@ -115,9 +118,7 @@ def submit_jobs(
 
     with ssh_submission_session(machine_config, machine) as ssh_options:
         if is_remote:
-            remote_root = machine_config.get("path") or remote_storage_root_from_config(
-                machine_config, machine
-            )
+            remote_root = remote_storage_root_from_config(machine_config, machine)
             payload = {
                 "children_by_job": dependencies,
                 "slurm_names": slurm_names,

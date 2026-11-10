@@ -330,7 +330,11 @@ def test_latest_log_filters_submitted_job_logs_by_saved_slurm_id(tmp_path):
     assert latest_log_context(bundle_name, saved_date, "analysis") == "selected snapshot log"
 
 
-def test_latest_log_accepts_array_task_log_for_saved_slurm_id(tmp_path):
+def test_latest_log_accepts_array_task_log_for_saved_slurm_id(tmp_path, monkeypatch):
+    def missing_sacct(*args, **kwargs):
+        raise FileNotFoundError("Mock Slurm accounting unavailable")
+
+    monkeypatch.setattr("subprocess.run", missing_sacct)
     set_storage_root(tmp_path / "storage")
     ensure_storage_dirs()
 

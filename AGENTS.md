@@ -29,6 +29,10 @@ operate from the workstation; compute nodes use already-prepared environments.
 - Current refactor scope is local only: mock Slurm and transport commands. No
   cluster discovery, SSH, live jobs or remote installs. See WORKFLOW.md for the
   dated scope and installation register for the editable base Conda install.
+- Write application code only in the development worktree listed in the register
+  (`.development/checkout` under the original repository). The original checkout
+  is the pinned stable source used by base Conda. Use development Python/CLI
+  wrappers for tests and operations; do not advance or edit stable source.
 - Work on one planned task at a time. Split oversized tasks first.
 - A request to plan or review does not start implementation of later tasks.
 - Update the checkbox, Done log, Status, and affected design document alongside

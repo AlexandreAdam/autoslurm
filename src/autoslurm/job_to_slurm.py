@@ -1,9 +1,10 @@
 import os
+import shlex
 from io import TextIOWrapper
 from datetime import datetime
 from pathlib import PurePosixPath
 from .utils import name_slurm_script
-from .storage import ensure_storage_dirs, slurm_dir, storage_root
+from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .utils import activation_command_from_config, remote_storage_root_from_config
 
 
@@ -22,7 +23,7 @@ def create_slurm_script(job: dict, date: datetime, machine_config: dict) -> str:
     return slurm_name
 
 
-def _format_script_args(job_args: dict) -> list[str]:
+def _format_script_args(job_args: dict, path_args=()) -> list[str]:
     normalized = []
     positional = job_args.get("__positionals__", [])
     for key, value in job_args.items():
@@ -41,7 +42,8 @@ def _format_script_args(job_args: dict) -> list[str]:
                 continue
             normalized.append(f"  --{flag} {' '.join(map(str, value))}")
             continue
-        normalized.append(f"  --{flag}={value}")
+        argument = shlex.quote(str(value)) if key in path_args else value
+        normalized.append(f"  --{flag}={argument}")
     normalized.extend(f"  {pos}" for pos in positional)
     return normalized
 
@@ -87,14 +89,16 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict) ->
     file.write("#!/bin/bash\n")
     if slurm_account:
         file.write(f"#SBATCH --account={slurm_account}\n")
-    if machine_config.get("path"):
-        remote_storage = machine_config.get("path")
-    elif machine_config.get("hostname") or machine_config.get("hosturl"):
+    if machine_config.get("hostname") or machine_config.get("hosturl"):
         remote_storage = remote_storage_root_from_config(machine_config)
+    elif STORAGE_ROOT_ENVIRONMENT_VARIABLE in os.environ:
+        remote_storage = str(storage_root())
+    elif machine_config.get("path"):
+        remote_storage = machine_config.get("path")
     else:
         remote_storage = str(storage_root())
     output_dir = os.path.join(remote_storage, "out")
-    file.write(f"#SBATCH --output={os.path.join(output_dir, '%x-%j.out')}\n")
+    file.write(f"#SBATCH --output={shlex.quote(os.path.join(output_dir, '%x-%j.out'))}\n")
     file.write(f"#SBATCH --job-name={job['name']}\n")
 
     # SLURM directives
@@ -114,7 +118,7 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict) ->
         remote_storage,
         path_args=job.get("path_args"),
     )
-    lines = _format_script_args(normalized_job_args)
+    lines = _format_script_args(normalized_job_args, set(job.get("path_args") or []) | {"output_dir"})
     if lines:
         file.write(f"{job['script']} \\\n")
         _write_script_args(file, lines)

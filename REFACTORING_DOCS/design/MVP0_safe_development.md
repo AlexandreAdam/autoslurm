@@ -5,7 +5,7 @@
 **Active**, opened 2026-11-09. The working rules are established in
 [WORKFLOW.md](../../WORKFLOW.md); installation/root implementation details below
 remain proposed until verified and settled in their task. The rules-only step
-MVP0.0a and local baseline MVP0.1 are complete; remaining setup tasks are MVP0.2-MVP0.3 in
+MVP0.0a, local baseline MVP0.1 and isolation MVP0.2 are complete; MVP0.3 remains in
 [PLAN.md](../../PLAN.md). The preceding M0 design is superseded; its detailed
 full-product decisions are not prerequisites for starting an MVP.
 
@@ -14,14 +14,14 @@ full-product decisions are not prerequisites for starting an MVP.
 | ID | Problem | Small response |
 |---|---|---|
 | P1 | Daily jobs need the current package while development may break APIs/formats | Pin stable code/environments; develop separately and promote tested increments |
-| P2 | Storage defaults to the source-style package root; an override is currently process-local | Add one explicit supported development root selector; preserve the current stable root |
+| P2 | Storage defaults to the source-style package root; original override was process-local | Add one explicit supported development root selector; preserve the stable default |
 | P3 | Workstation and remote helper can discover different storage or versions | Record both lanes' code/helper/root identities and reject ambiguous development configuration |
 | P4 | A broad baseline/rewrite could delay the first useful fix | Record fast tests and one small existing workflow; add focused regressions per MVP |
 | P5 | Agents need accurate guidance before the full documentation redesign | Ship one short supported integration/operation recipe with exact selection and uncertainty limits |
 
 Actual installation evidence belongs in
 [the installation register](../installation-register.md). The local editable
-installation is verified; stable/development isolation remains open. Initial operating guidance exists in
+installation and separate local development lane are verified. Initial operating guidance exists in
 [agent/00_operating_rules.md](../../agent/00_operating_rules.md); MVP0.3 remains
 open until it is grounded in the verified setup and smoke fixtures.
 
@@ -37,7 +37,13 @@ Real cluster compatibility remains unverified until a later authorized check.
 
 ### D1 Two isolated release lanes
 
-**Proposed.** A stable pinned checkout/environment continues managing existing
+**Implemented locally in MVP0.2.** The original checkout is retained at detached
+baseline HEAD, with its existing base Conda environment and tracking root.
+Development is a Git worktree on `codex/mvp0-isolation` under `.development/checkout`,
+with separate `.development/venv` and `.development/state` locations. Exact paths
+and import evidence are in the installation register. No stable package reinstall,
+root move or new-run promotion was performed. Remote deployment remains proposed:
+a stable pinned checkout/environment continues managing existing
 production jobs. A separate development checkout/environment uses distinct local
 and remote config/job/script/log roots plus a separate test result namespace.
 The application environment referenced by queued jobs is not upgraded in place.
@@ -48,10 +54,33 @@ points there. This task does not create a new deployment service.
 
 ### D2 One root selector before development writes
 
-**Proposed.** Add the smallest explicit root override usable by CLI processes and
-the remote helper. Define its precedence relative to current behavior; preserve
-the stable installation's existing defaults. Missing or inconsistent development
-roots fail clearly rather than falling back into production.
+**Implemented in development in MVP0.2.** Root discovery has this precedence:
+
+1. Process-local `set_storage_root(path)` override.
+2. `AUTOSLURM_STORAGE_ROOT` environment variable.
+3. Existing package-root default, unchanged when no selector is supplied.
+
+Explicit roots must be nonempty absolute paths; local `~` expansion and physical
+path resolution occur through storage discovery. `set_storage_root(None)`
+clears only the process override. An environment-selected root never loads the
+old `src/config.json` fallback. Both local wrappers set the same environment
+selector; new processes do not need to rediscover it from the current directory.
+
+For remote development, machine `storage_root` selects an absolute POSIX root
+and takes precedence over legacy `path`. One shared resolver serves script
+preparation, transfer, submission, sync and default results. It probes the
+configured environment with the selector, requires helper selector support and
+an exact root response, and rejects errors/mismatches before submission. Bulk
+execution receives the same selector; both caller and helper reject a payload
+script directory outside the selected root. This is a root compatibility check,
+not full package/protocol version negotiation. Only mocks were exercised.
+
+With a local environment selector, generated log paths use the selected local
+root rather than a legacy machine `path`. Default relative results follow it;
+declared path arguments and generated output directives quote roots with spaces.
+Explicit application output paths, custom Slurm output directives and configured
+`results_root` remain operator-owned destinations, not rewritten or sandboxed.
+Keep them separate in development. General application path policy remains MVP1.
 
 *Check:* temporary-root tests cover configuration, bundles, scripts and logs;
 the remote probe/submit/transfer paths agree on the selected root. Use a distinct
@@ -92,11 +121,8 @@ submission recovery, full offline state, or scientific retry support yet.
 
 ## Open questions
 
-- How should we retain the local baseline separately from development? Base
-  Conda currently imports this moving checkout directly. Settle paths and verify
-  imports while creating local isolation in MVP0.2. Remote inventory is deferred.
-- Which root-selection mechanism fits existing configuration and remote probes?
-  Settle while implementing MVP0.2, with one precedence rule and a focused test.
+- Remote inventory, real helper deployment and real cluster validation are
+  deferred by local-only scope; no configured remote development lane is implied.
 - Which tiny installed application command should become the reference client?
   The existing three-job fixture supplies the first mocked submission baseline;
   no scientific application or live job has been run.
@@ -164,6 +190,36 @@ The temporary runner, console reports, JUnit XML and guard reports are under
 not a persistent development environment or a required repository path. This
 section preserves their results when temporary files are cleaned up.
 
+## Local isolation validation (MVP0.2)
+
+Development was installed editable into its own virtual environment entirely
+offline, using cached build/test wheels. An invocation outside either checkout
+confirmed its interpreter/import/state paths; base Conda independently confirmed
+the stable import/root. The original checkout was detached at baseline HEAD
+without changing application code, environment, configuration or tracking files.
+The `.development/` directory is ignored. Working documentation is mirrored in
+the original checkout for discoverability; implementation lives only in development.
+
+The full offline suite passed **237 tests in 2.17 s**. Added cases cover root
+precedence/reset and invalid selections, absent selected config, two fresh
+processes sharing configuration/bundles/scripts/logs/results from another current
+directory, and an executed local fixture preserving a path with spaces. Mocked
+remote cases verify common roots across submit/transfers/sync/result lookup,
+rejection of unsupported or mismatched helpers before submission, payload-root
+validation and preservation of selection through configuration edits.
+
+Default test fixtures now reject unexpected process creation and Python network
+access with test failures; a few explicitly marked fixtures may execute reviewed
+local Python/Bash programs. Slurm, SSH and transfer commands remain mocked.
+Storage overrides/environment are restored per test. The baseline's unmocked
+`sacct` probe now has an explicit unavailable-accounting mock.
+
+Test report: `.development/test-runs/full-2.xml` under the original checkout.
+Reproduce with the development Python wrapper and `-m pytest -q tests` from the
+development checkout. Neither real cluster compatibility nor scientific validity,
+wheel-resource packaging, automatic deployment or uncertain-submission recovery
+was established. MVP0.3's reference-client recipe remains open.
+
 ## Forward constraints
 
 - **MVP1:** reuse the current bundle shape; centralize existing path/machine/
@@ -182,3 +238,4 @@ section preserves their results when temporary files are cleaned up.
 | 2026-11-09 | User requested short usable increments, priority on paths/shared core rules/reliability/agents, intentional breaking changes and a way to keep daily use working |
 | 2026-11-09 | At the user's request, established working rules before setup: shared procedure, unverified installation register, agent operating entry guide and explicit commit-versus-promotion boundary; no runtime setup performed |
 | 2026-11-09 | User required local work with mocked Slurm and installed the editable package in base Conda. Verified the local baseline: 195 unit tests and four mocked dependency-submission cases pass; recorded the accounting-mock gap and retained isolation as the next task |
+| 2026-11-09 | MVP0.2 implemented local code/environment/state separation and explicit storage selection with mocked helper checks. Full offline suite: 237 passed. Stable source pinned at detached baseline HEAD; no cluster access or promotion |

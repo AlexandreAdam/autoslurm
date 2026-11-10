@@ -1,5 +1,6 @@
 from pathlib import Path
 import sys
+import pytest
 
 from autoslurm import save_bundle, submit_jobs
 from autoslurm.apps.schedule import parse_script_args
@@ -10,6 +11,7 @@ from tests.integration.mocks import (
 )
 
 
+@pytest.mark.local_processes
 def test_cli_submission(mock_load_config, slurm_emulator):
     script_path = (
         Path(__file__).resolve().parent.parent / "scripts" / "example_python_script.py"

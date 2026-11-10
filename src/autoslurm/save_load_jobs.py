@@ -467,8 +467,6 @@ def _resolve_machine_config(
 
 
 def _remote_root_for_machine(machine_name: Optional[str], machine_config: dict) -> str:
-    if machine_config.get("path"):
-        return machine_config["path"]
     return remote_storage_root_from_config(machine_config, machine_name)
 
 

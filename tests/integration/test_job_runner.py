@@ -99,6 +99,7 @@ def test_integration_schedule_jobs_with_error(
         submit_jobs(mock_job_name, machine="local", machine_overrides=mock_machine_config)
 
 
+@pytest.mark.local_processes
 def test_unregistered_python_script_executes(tmp_path, mock_load_config, slurm_emulator):
     script_source = """#!/usr/bin/env python3
 print(\"Hello from an unregistered script!\")
@@ -126,6 +127,7 @@ print(\"Hello from an unregistered script!\")
     )
 
 
+@pytest.mark.local_processes
 def test_submit_jobs_from_bundle_file(
     tmp_path, mock_load_config, slurm_emulator, storage_env
 ):

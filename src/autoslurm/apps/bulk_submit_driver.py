@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from ..bulk_submit_driver import BulkSubmitPayload, submit_payload
+from ..storage import slurm_dir, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -32,6 +34,8 @@ def main(argv: list[str] | None = None) -> None:
     try:
         payload_text = _read_payload_text(args.payload_file)
         payload_data = json.loads(payload_text)
+        if STORAGE_ROOT_ENVIRONMENT_VARIABLE in os.environ and Path(payload_data["slurm_dir"]) != slurm_dir():
+            raise ValueError("Bulk payload script directory does not match the selected storage root.")
         payload = BulkSubmitPayload(
             children_by_job=payload_data["children_by_job"],
             slurm_names=payload_data["slurm_names"],
@@ -51,4 +55,3 @@ def main(argv: list[str] | None = None) -> None:
     except Exception as exc:  # pragma: no cover - exercised in tests
         print(json.dumps({"ok": False, "error": str(exc)}))
         raise SystemExit(1)
-
