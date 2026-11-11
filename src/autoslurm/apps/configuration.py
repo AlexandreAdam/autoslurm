@@ -173,6 +173,8 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
     remote_default = bool(existing.get("hostname") or existing.get("hosturl"))
     is_remote = _prompt_yes_no("Is this a remote machine?", default="y" if remote_default else "n")
     machine = {"venv_path": venv_path, "slurm_account": slurm_account}
+    if "project_root" in existing:
+        machine["project_root"] = existing["project_root"]
     results_root = _prompt_text(
         "Results root (optional absolute directory used to resolve relative output_dir values in job args)",
         existing.get("results_root"),
@@ -368,14 +370,15 @@ def display_config_summary():
         print("No configuration file found.")
         return
     config = load_config()
-    print("machine type default slurm_account venv_path results_root")
+    print("machine type default slurm_account venv_path results_root project_root")
     for name, machine in config["machines"].items():
         machine_type = "remote" if _is_remote(machine) else "local"
         slurm_account = machine.get("slurm_account", "")
         default_marker = "yes" if name == config["default_machine"] else "no"
         venv_path = machine.get("venv_path", "")
         results_root = machine.get("results_root", "")
-        print(f"{name} {machine_type} {default_marker} {slurm_account} {venv_path} {results_root}")
+        project_root = machine.get("project_root", "")
+        print(f"{name} {machine_type} {default_marker} {slurm_account} {venv_path} {results_root} {project_root}")
 
 
 def main(argv: list[str] | None = None):

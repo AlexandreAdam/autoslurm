@@ -9,13 +9,13 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP0 complete locally; MVP1 is next.
+- **Current milestone:** MVP1, predictable paths and shared rules; complete locally.
 - **Stage:** stable code remains pinned; development has isolated code,
   environment/state, a tested client recipe and single/array reference workloads.
-  Full offline suite: 245 passed. No cluster installation or promotion performed.
-- **Next task:** MVP1.0, detail the bounded shared path/selection implementation
-  using the reference client. Application working-directory/input bases remain
-  unresolved; the broader MVP1 implementation has not started.
+  Full offline suite: 270 passed. Shared paths, preview/preflight and producing-run
+  artifact lookup are verified. No cluster installation or promotion performed.
+- **Next task:** detail MVP2's bounded submission-safety increment: remove unsafe
+  fallback, retain accepted IDs and report partial/uncertain outcomes.
 - **Last updated:** 2026-11-11.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -169,10 +169,26 @@ not a requirement to finalize every future interaction before coding.
 
 ## MVP1 Predictable paths and shared rules
 
-- [ ] **MVP1.0 Detail the path increment.** Use the reference client's current
+- [x] **MVP1.0 Detail the path increment.** Use the reference client's current
   input/results bases to settle project-root/working-directory behavior and split
   the implementation below into small tasks. Preserve the established local-only
   scope, selected storage roots and stable installation.
+- [x] **MVP1.1 Centralize execution paths.** One context resolves the selected
+  profile/storage once per operation. `project_root` anchors relative
+  `working_directory` and declared `input_args`; results-relative `path_args`
+  and `output_dir` retain their existing base. Preview and preflight share this
+  policy, validate roots/required inputs and leave declarations unchanged.
+- [x] **MVP1.2 Connect execution and saved-run lookup.** Script preparation,
+  transfers/helper execution and path lookup consume the context; save logical
+  and resolved execution locations. Share exact/nearest bundle loading and basic
+  job naming; do not rebuild status/array identity or implement MVP2 recovery.
+- [x] **MVP1.3 Verify the scientific workflow and publish the contract.** The
+  same relative definition works under two separate profiles from an unrelated
+  current directory. Preview/rendered/executed/artifact paths agree; missing
+  roots/inputs fail before submission; recorded roots survive profile changes.
+  Update human/agent examples, run offline checks and close with a local tag.
+
+Design: [MVP1 paths and selection](REFACTORING_DOCS/design/MVP1_paths_and_selection.md).
 
 **Outcome:** clients stop embedding absolute machine paths and all active paths
 through the selected workflow use the same machine config, resolver and bundle
@@ -326,6 +342,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-09 | Use `AUTOSLURM_STORAGE_ROOT` locally and explicit remote machine `storage_root`, with helper support/root verification | Keep configuration, scripts, observations and default results in the chosen installation; reject invalid/mismatched selections |
 | 2026-11-11 | Publish a current client recipe in task-specific agent context; validate with an independent installed application | Teach scientific software boundaries, actual relative-path bases, exact selection and evidence handoff before broader refactoring |
 | 2026-11-11 | Pull a narrow exact-file submission fix forward from MVP1 | The reference test showed an imported definition could reload a neighboring draft; return the saved path and load it directly, retaining timestamp identity independently of mtime |
+| 2026-11-11 | Implement one execution context with project-relative inputs/cwd, results-relative outputs and saved producing roots | Same relative science definition works from unrelated directories under two profiles; remote submission resolves storage once and batches required-input checks; no input staging or broader recovery engine |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -342,6 +359,7 @@ or migration decision has already been accepted.
 | 2026-11-09 | Initial planning/baseline documents saved | `efff9b6` on the development branch; pre-existing README and Gaia requirements edits excluded |
 | 2026-11-10 | MVP0.2 Local isolation and explicit storage selection | 238 full offline tests pass, including 18 new root/isolation cases; editable development install and fresh-process discovery verified. Stable source remains unchanged at detached baseline HEAD. Task commit: `git log --grep '^MVP0.2:'` on `codex/mvp0-isolation`; no push, promotion or remote operations |
 | 2026-11-11 | MVP0.3 Current client recipe and scientific reference workloads | 245 full offline tests pass; 13 focused client/context checks pass after final failure-case/documentation updates. Installed standalone application produces matching single/reduced summaries. Expected timestamp-collision warnings exercised by competing-draft tests. Task commit: `git log --grep '^MVP0.3:'`; local milestone tag `mvp0` at closure, without promotion |
+| 2026-11-11 | MVP1.0–MVP1.3 Shared paths, selection, saved execution and scientific integration | 270 full offline tests pass in 2.27 s; five expected timestamp-collision warnings. Two-profile array/reducer runs, nested cwd/space handling, activation failure, invalid/missing inputs before submission, one remote root probe plus batched preflight, and saved local/remote artifacts without current-profile discovery verified. Report: `.development/test-runs/mvp1-final.xml`. Guides/schema and examples updated. Task commit: `git log --grep '^MVP1.3:'`; local tag `mvp1` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 
 ## How we work
 

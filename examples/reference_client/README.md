@@ -31,6 +31,7 @@ From the development checkout:
 
 ```sh
 ../python -m pytest -q tests/integration/test_reference_client.py
+../python -m pytest -q tests/integration/test_execution_paths.py
 ```
 
 Tests create a temporary console launcher equivalent to the installed entry
@@ -46,9 +47,19 @@ Slurm scheduling behavior.
 
 Tests introduce a newer competing draft: explicit selection must keep the chosen
 historical definition. They also verify nonzero exits for missing inputs and
-incomplete reduction. Input `data/measurements.json` is relative to this application
-directory; `output_dir` and declared `parts_dir` use AutoSlurm's results root.
-AutoSlurm does not yet establish the application directory or copy inputs.
+incomplete reduction. Input `data/measurements.json` is declared in `input_args`
+and resolved under the profile's absolute `project_root`; `output_dir` and
+declared `parts_dir` use its `results_root` (default: selected storage's `results/`).
+AutoSlurm establishes `project_root` as the working directory by default, or a
+job's relative `working_directory`. It validates required inputs without copying
+them. Machine roots and prepared environment locations are infrastructure
+configuration; bundle definitions keep application paths relative.
+
+The path tests run the array/reducer under two distinct profiles from an unrelated
+directory, including paths with spaces and activation that changes directory.
+They compare preview, execution and saved paths, check failures before submission,
+and recover artifacts using saved roots after a profile edit. Mocked remote
+tests check one root probe and one batched input check, including missing inputs.
 
 Read the [current client recipe](../../agent/01_client_workflow.md) for exact
 selection, installation ownership, operations and failure handling. This example

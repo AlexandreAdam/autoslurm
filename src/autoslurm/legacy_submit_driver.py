@@ -12,6 +12,7 @@ def submit_jobs_legacy_remote(
     slurm_names: dict[str, str],
     machine_config: dict,
     ssh_options: Optional[list[str]] = None,
+    *, context=None,
 ) -> dict[str, str]:
     """
     Legacy fallback path: submit one remote sbatch per job.
@@ -24,7 +25,7 @@ def submit_jobs_legacy_remote(
             slurm_name,
             machine_config=machine_config,
             ssh_options=ssh_options,
+            **({"context": context} if context is not None else {}),
         )
         job_ids[job_name] = job_id
     return job_ids
-

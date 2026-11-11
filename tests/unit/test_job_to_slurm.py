@@ -178,6 +178,7 @@ def test_write_slurm_resolves_relative_output_dir_with_results_root():
 
 
 def test_write_slurm_resolves_relative_output_dir_with_default_results_root():
+    from autoslurm.storage import storage_root
     job = {
         "name": "relative_output_dir_default_root_job",
         "slurm": {},
@@ -194,7 +195,7 @@ def test_write_slurm_resolves_relative_output_dir_with_default_results_root():
     write_slurm_content(file, job, machine_config)
     content = file.getvalue()
     assert (
-        "--output-dir=/remote/autoslurm/results/substructure_lens/results/run_002"
+        f"--output-dir={storage_root()}/results/substructure_lens/results/run_002"
         in content
     )
 

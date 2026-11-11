@@ -20,6 +20,19 @@ shell scripts and provides the following features:
 
 You can find the full documentation [here](https://autoslurm.readthedocs.io/en/latest/).
 
+For the local development refactor, start with the
+[current client workflow](agent/01_client_workflow.md) and
+[scientific example](examples/reference_client/README.md). MVP1 gives inputs a
+project root, outputs a results root, and jobs a predictable working directory.
+The same relative workload can run under different machine profiles without
+changing the application. Preview checks paths before submission; saved execution
+locations let an agent find a run's results after a profile changes.
+
+Scientific software owns computation, input/output validation and task reduction.
+AutoSlurm owns machine mapping, submission and tracking; agents use its public
+interface and detailed operating guide. The pinned stable installation keeps its
+existing behavior while development is tested locally with mocked Slurm.
+
 ## Installation
 
 ### Install the `autoslurm` package
@@ -38,7 +51,7 @@ autoslurm-configuration
 
 This command will configure the user-specific details required to connect to
 remote SLURM machines and activate virtual environments.
-More details can be found in the [AutoSlurm Configuration](#AutoSlurm-Configuration) section.
+More details can be found in the [AutoSlurm Configuration](#configure-autoslurm-for-your-environment) section.
 
 ### Register your application in the `pyproject.toml` file of your package
 
@@ -48,7 +61,7 @@ my-script = "my_package.module:main"
 my-script-cli = "my_package.module:cli"
 ```
 
-More details can be found in the [Register a script](#Register-a-script)
+More details can be found in the [Register a script](#register-your-application-in-the-pyprojecttoml-file-of-your-package)
 section.
 
 ## Basic Usage
@@ -85,7 +98,7 @@ autoslurm-submit my-script --machine=machine
 ```
 
 This command submits `my-script` on the `machine` name specified in your
-configuration (see [AutoSlurm Configuration](#AutoSlurm-Configuration)). You can also
+configuration (see [AutoSlurm Configuration](#configure-autoslurm-for-your-environment)). You can also
 schedule and submit a job at the same time to skip a step.
 
 ```bash

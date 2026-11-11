@@ -41,9 +41,12 @@ capabilities. This page establishes operating rules during the MVP transition.
 Keep scientific computation independent of submission glue. Prefer an installed
 command, explicit validated parameters, relative input/output paths, resource
 and worker limits, distinct task outputs, and meaningful nonzero failures.
-AutoSlurm owns the selected machine's path mapping. Verify current path support
-before a production submission; the full shared application-path resolver is
-still planned. Arbitrary configuration rewriting is not supported.
+AutoSlurm owns the selected machine's path mapping. Development MVP1 supports
+profile `project_root`, relative `working_directory` and declared `input_args`,
+with shared preview/execution resolution and recorded artifact roots. Read
+`01_client_workflow.md` for the supported bases and preflight contract. The pinned
+stable installation retains its previous behavior. Arbitrary configuration
+rewriting and input staging are not supported.
 
 ## Development storage selection (MVP0.2)
 

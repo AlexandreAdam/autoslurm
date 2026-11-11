@@ -2,11 +2,14 @@ from typing import Optional
 from datetime import datetime
 import json
 from pathlib import Path
+from io import StringIO
 from .job_to_slurm import create_slurm_script
+from .job_to_slurm import write_slurm_content
+from .execution import resolve_execution_context, EXECUTION_METADATA_KEY
+from .legacy_submit_driver import submit_jobs_legacy_remote
 from .job_dependency import update_slurm_with_dependencies
 from .run_slurm import (
     run_slurm_locally,
-    run_slurm_remotely,
     ssh_submission_session,
     run_bulk_submit_driver_remotely,
 )
@@ -25,7 +28,7 @@ from .utils import (
     remote_storage_root_from_config,
 )
 
-__all__ = ["submit_jobs"]
+__all__ = ["submit_jobs", "preview_bundle"]
 
 
 # Backward-compatibility alias kept for tests/callers that patched the legacy
@@ -34,23 +37,18 @@ def transfer_slurm_to_remote(*args, **kwargs):
     return transfer_slurms_to_remote(*args, **kwargs)
 
 
-def submit_jobs_legacy_remote(
-    jobs: list[dict],
-    slurm_names: dict[str, str],
-    machine_config: dict,
-    ssh_options: Optional[list[str]] = None,
-) -> dict[str, str]:
-    job_ids: dict[str, str] = {}
+def preview_bundle(bundle_path, *, machine=None, machine_overrides=None):
+    """Validate and render an exact definition without scripts or scheduler effects."""
+    machine, config = resolve_machine_config(args=None, machine=machine, overrides=machine_overrides)
+    context = resolve_execution_context(machine, config, root_resolver=remote_storage_root_from_config)
+    jobs, _, _ = load_bundle_from_path(bundle_path)
+    context.validate_jobs(jobs)
+    rendered = {}
     for job in jobs:
-        job_name = job["name"]
-        slurm_name = slurm_names[job_name]
-        job_id = run_slurm_remotely(
-            slurm_name,
-            machine_config=machine_config,
-            ssh_options=ssh_options,
-        )
-        job_ids[job_name] = job_id
-    return job_ids
+        output = StringIO()
+        write_slurm_content(output, job, config, context=context)
+        rendered[job["name"]] = {**context.resolve_job(job), "script": output.getvalue()}
+    return {"machine": machine, "bundle_path": str(Path(bundle_path).resolve()), "jobs": rendered}
 
 
 def submit_jobs(
@@ -59,6 +57,7 @@ def submit_jobs(
     machine_overrides: Optional[dict] = None,
     date: Optional[datetime] = None,
     bundle_path: Optional[str | Path] = None,
+    *, context=None,
 ):
     """
     Run a job with SLURM either locally or on a remote machine. This is the main function of the scheduler module.
@@ -68,26 +67,33 @@ def submit_jobs(
         - name (str): The name of the job bundle to be scheduled.
         - machine (Optional[str]): Name of the configured machine to use (defaults to the configured default).
         - machine_overrides (Optional[dict]): Overrides applied on top of the selected machine configuration.
-        - date (Optional[datetime]): The date and time to schedule the job. If not provided, the current date and time will be used.
+        - date (Optional[datetime]): Select the nearest saved definition timestamp when bundle_path is absent.
+        - bundle_path (Optional[str | Path]): Exact saved definition to import into a new submission snapshot.
 
     Raises:
         - EnvironmentError: If no configuration is found for the specified machine.
 
     """
-    machine, machine_config = resolve_machine_config(
-        args=None, machine=machine, overrides=machine_overrides
-    )
-    # Verify an isolated remote helper before scripts, transfers or submissions.
-    if "storage_root" in machine_config and (machine_config.get("hostname") or machine_config.get("hosturl")):
-        remote_storage_root_from_config(machine_config, machine)
+    if context is None:
+        machine, machine_config = resolve_machine_config(args=None, machine=machine, overrides=machine_overrides)
+        context = resolve_execution_context(machine, machine_config, root_resolver=remote_storage_root_from_config)
+    else:
+        if machine is not None and machine != context.machine_name:
+            raise ValueError("Selected machine conflicts with the supplied execution context.")
+        if machine_overrides is not None and machine_overrides != context.config:
+            raise ValueError("Machine overrides conflict with the supplied execution context.")
+        machine, machine_config = context.machine_name, context.config
     if "hostname" not in machine_config and "hosturl" not in machine_config:
         host = "localhost"
     else:
         host = machine_config.get("hostname", machine_config.get("hosturl"))
 
     if bundle_path is None:
-        jobs, dependencies, date = load_bundle(name)
+        jobs, dependencies, date = load_bundle(name, date)
+        context.validate_jobs(jobs)
     else:
+        jobs, _, _ = load_bundle_from_path(bundle_path)
+        context.validate_jobs(jobs)
         with open(bundle_path, "r") as file:
             bundle = json.load(file)
         if isinstance(bundle, dict):
@@ -99,7 +105,10 @@ def submit_jobs(
 
     # Mark the persisted snapshot as a submission artifact.
     for job in jobs:
-        update_job_metadata(name, date, job["name"], {SNAPSHOT_KIND_KEY: "submission"})
+        update_job_metadata(name, date, job["name"], {
+            SNAPSHOT_KIND_KEY: "submission", "machine": machine,
+            EXECUTION_METADATA_KEY: context.resolve_job(job),
+        })
     slurm_names = {}
     for job in jobs:
         if job.get("script", None) is None:
@@ -110,16 +119,16 @@ def submit_jobs(
             raise ValueError(
                 "'name' entry is missing from one of the jobs in the configuration file {job_name}"
             )
-        slurm_name = create_slurm_script(job, date, machine_config)
+        slurm_name = create_slurm_script(job, date, machine_config, context=context)
         slurm_names[job["name"]] = slurm_name
 
-    is_remote = bool(machine_config.get("hostname") or machine_config.get("hosturl"))
+    is_remote = context.is_remote
     if is_remote:
-        transfer_slurm_to_remote(list(slurm_names.values()), machine_config=machine_config)
+        transfer_slurm_to_remote(list(slurm_names.values()), machine_config=machine_config, context=context)
 
     with ssh_submission_session(machine_config, machine) as ssh_options:
         if is_remote:
-            remote_root = remote_storage_root_from_config(machine_config, machine)
+            remote_root = context.storage_root
             payload = {
                 "children_by_job": dependencies,
                 "slurm_names": slurm_names,
@@ -130,6 +139,7 @@ def submit_jobs(
                     payload,
                     machine_config=machine_config,
                     ssh_options=ssh_options,
+                    context=context,
                 )
             except Exception:
                 # Fallback path preserves legacy behavior if driver unavailable.
@@ -138,6 +148,7 @@ def submit_jobs(
                     slurm_names,
                     machine_config,
                     ssh_options=ssh_options,
+                    context=context,
                 )
             for job in jobs:
                 job_name = job["name"]
@@ -161,4 +172,4 @@ def submit_jobs(
                 update_job_info_with_id(name, date, job["name"], job_id)
 
     if is_remote:
-        transfer_bundle_to_remote(name, date, machine_config=machine_config)
+        transfer_bundle_to_remote(name, date, machine_config=machine_config, context=context)

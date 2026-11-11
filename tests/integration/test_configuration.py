@@ -128,7 +128,7 @@ def test_autoslurm_configuration_summary(
     main(["--summary"])
     output = capsys.readouterr().out.strip().splitlines()
 
-    assert output[0] == "machine type default slurm_account venv_path results_root"
+    assert output[0] == "machine type default slurm_account venv_path results_root project_root"
     assert any("local local yes def-bengioy" in line for line in output[1:])
     assert any("remote remote no rrg-account_name" in line for line in output[1:])
 

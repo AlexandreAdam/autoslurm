@@ -37,6 +37,7 @@ def run_slurm_remotely(
     machine: Optional[str] = None,
     machine_config: Optional[dict] = None,
     ssh_options: Optional[list[str]] = None,
+    *, context=None,
 ):
     """
     Runs a SLURM script on a remote machine via SSH and captures the job ID.
@@ -50,13 +51,15 @@ def run_slurm_remotely(
         str: The job ID assigned by SLURM.
 
     """
-    if machine is not None:
+    if context is not None:
+        machine_config = context.config
+    if machine is not None and context is None:
         machine_config = load_config().get(machine)
         if not machine_config:
             raise EnvironmentError(f"No configuration found for machine: {machine}")
 
     hostname = ssh_host_from_config(machine_config, machine)
-    remote_path = remote_storage_root_from_config(
+    remote_path = context.storage_root if context else remote_storage_root_from_config(
         machine_config, machine
     )
     script_path = os.path.join(remote_path, "slurm", slurm_name)
@@ -133,11 +136,14 @@ def run_bulk_submit_driver_remotely(
     machine: Optional[str] = None,
     machine_config: Optional[dict] = None,
     ssh_options: Optional[list[str]] = None,
+    *, context=None,
 ) -> dict:
     """
     Execute the internal bulk-submit driver on a remote machine and return job ids.
     """
-    if machine is not None:
+    if context is not None:
+        machine_config = context.config
+    if machine is not None and context is None:
         machine_config = load_config().get(machine)
         if not machine_config:
             raise EnvironmentError(f"No configuration found for machine: {machine}")
@@ -154,7 +160,7 @@ def run_bulk_submit_driver_remotely(
         )
     python_executable = f"{venv_path.rstrip('/')}/bin/python"
     if "storage_root" in machine_config:
-        remote_root = remote_storage_root_from_config(machine_config, machine)
+        remote_root = context.storage_root if context else remote_storage_root_from_config(machine_config, machine)
         if payload.get("slurm_dir") != f"{remote_root.rstrip('/')}/slurm":
             raise ValueError("Bulk payload script directory does not match the selected storage root.")
         ssh_command.append(shlex.join([

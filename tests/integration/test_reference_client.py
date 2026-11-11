@@ -30,7 +30,7 @@ def science_client(tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", str(commands) + os.pathsep + os.environ["PATH"])
     monkeypatch.setenv("PYTHONDONTWRITEBYTECODE", "1")
     monkeypatch.chdir(EXAMPLE)
-    save_config({"machines": {"mock": {"slurm_account": "mock", "env_command": "true"}}, "default_machine": "mock"})
+    save_config({"machines": {"mock": {"slurm_account": "mock", "env_command": "true", "project_root": str(EXAMPLE)}}, "default_machine": "mock"})
 
 
 @pytest.mark.local_processes

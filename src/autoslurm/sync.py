@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from .storage import storage_root
+from .execution import resolve_execution_context, is_remote_machine
 from .utils import (
     remote_storage_root_from_config,
     machine_config as resolve_machine_config,
@@ -16,17 +17,9 @@ from .utils import (
 SYNC_DIRECTORIES = ("jobs", "slurm", "out")
 
 
-def _is_remote(machine: dict) -> bool:
-    return any(key in machine for key in ("hostname", "hosturl", "username"))
-
-
 def _remote_ssh_command(machine: dict, machine_name: str, remote_command: str) -> list[str]:
     hostname = ssh_host_from_config(machine, machine_name)
     return ["ssh", *shlex.split(hostname), remote_command]
-
-
-def _remote_storage_root(machine: dict, machine_name: str) -> str:
-    return remote_storage_root_from_config(machine, machine_name)
 
 
 def _rsync_command(remote_source: str, local_target: Path, key_path: str = "") -> list[str]:
@@ -57,11 +50,12 @@ def _remote_dir_exists(machine: dict, machine_name: str, remote_path: str) -> bo
 def sync_machine(machine_name: Optional[str] = None) -> None:
     resolved_name, machine = resolve_machine_config(machine=machine_name)
 
-    if not _is_remote(machine):
+    if not is_remote_machine(machine):
         print(f"Machine '{resolved_name}' is local; nothing to sync.")
         return
 
-    remote_root = _remote_storage_root(machine, resolved_name)
+    context = resolve_execution_context(resolved_name, machine, root_resolver=remote_storage_root_from_config)
+    remote_root = context.storage_root
     remote_target, key_path = scp_host_and_keypath_from_config(machine, resolved_name)
     local_root = storage_root()
 

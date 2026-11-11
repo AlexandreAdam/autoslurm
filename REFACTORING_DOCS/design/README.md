@@ -7,6 +7,7 @@ validation approach.
 | Milestone | Document | Status |
 |---|---|---|
 | MVP0 Safe development and a small baseline | [MVP0_safe_development.md](MVP0_safe_development.md) | Complete locally; no promotion |
+| MVP1 Paths and selection | [MVP1_paths_and_selection.md](MVP1_paths_and_selection.md) | Complete locally; no promotion |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |
 
 Coverage references include the [interaction map](../interaction-map.md),

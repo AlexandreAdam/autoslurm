@@ -130,10 +130,14 @@ def test_configuration_editor_preserves_selected_remote_root(monkeypatch):
     from autoslurm.apps import configuration
 
     cfg = machine()
+    cfg["project_root"] = "/remote/science-project"
+    cfg["results_root"] = "/remote/science-results"
     monkeypatch.setattr(configuration, "_prompt_text", lambda prompt, default=None, required=False: default or "")
     monkeypatch.setattr(configuration, "_prompt_yes_no", lambda *args, **kwargs: True)
     monkeypatch.setattr("builtins.input", lambda *args: "1")
-    assert configuration._prompt_machine_details(cfg)["storage_root"] == cfg["storage_root"]
+    edited = configuration._prompt_machine_details(cfg)
+    for key in ("storage_root", "project_root", "results_root"):
+        assert edited[key] == cfg[key]
 
 
 def test_configuration_validation_reports_mismatched_root(monkeypatch, capsys):

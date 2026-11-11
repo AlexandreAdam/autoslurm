@@ -7,19 +7,40 @@
       "input_file": "data/measurements.json",
       "output_dir": "reference-array/parts"
     },
-    "slurm": {"array": "0-3", "tasks": 1, "cpus_per_task": 1, "mem": "64M", "time": "00:01:00"}
+    "slurm": {
+      "array": "0-3",
+      "tasks": 1,
+      "cpus_per_task": 1,
+      "mem": "64M",
+      "time": "00:01:00"
+    },
+    "input_args": [
+      "input_file"
+    ]
   },
   "reduce": {
     "name": "reduce",
     "script": "science-demo",
-    "dependencies": ["shards"],
+    "dependencies": [
+      "shards"
+    ],
     "script_args": {
       "mode": "reduce",
       "input_file": "data/measurements.json",
       "parts_dir": "reference-array/parts",
       "output_dir": "reference-array/summary"
     },
-    "path_args": ["parts_dir"],
-    "slurm": {"tasks": 1, "cpus_per_task": 1, "mem": "64M", "time": "00:01:00"}
+    "path_args": [
+      "parts_dir"
+    ],
+    "slurm": {
+      "tasks": 1,
+      "cpus_per_task": 1,
+      "mem": "64M",
+      "time": "00:01:00"
+    },
+    "input_args": [
+      "input_file"
+    ]
   }
 }

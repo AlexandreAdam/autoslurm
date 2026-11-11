@@ -2,13 +2,8 @@ import argparse
 import sys
 from pathlib import Path
 from ..utils import machine_config
-from ..save_load_jobs import (
-    bundle_snapshot_state,
-    all_bundle_snapshots,
-    bundle_snapshots,
-    latest_bundle_summaries,
-    list_saved_bundles,
-)
+from ..save_load_jobs import bundle_snapshot_state, select_bundle_snapshot
+from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs
 
 
@@ -111,51 +106,11 @@ def main(argv=None):
         if args.index is None and args.bundle_file is None:
             raise SystemExit("Submit requires a bundle name unless --latest or --index is used.")
 
-    if args.name is None and args.bundle_file is not None:
-        stem = args.bundle_file.stem
-        if "_" in stem:
-            args.name = stem.rsplit("_", 1)[0]
-        else:
-            raise SystemExit("Unable to infer bundle name from --bundle-file. Provide an explicit bundle name.")
-
-    if args.latest:
-        drafts = [entry for entry in all_bundle_snapshots() if str(entry.get("state", "")).lower() == "ready_to_go"]
-        if drafts:
-            latest = max(drafts, key=lambda entry: entry["date"])
-        else:
-            summaries = latest_bundle_summaries()
-            if not summaries:
-                raise SystemExit("No saved bundles found.")
-            latest = max(summaries, key=lambda entry: entry["date"])
-        args.name = latest["bundle"]
-        latest_path = latest.get("path")
-        if latest_path is not None:
-            args.bundle_file = Path(latest_path)
-    elif args.index is not None:
-        rows = bundle_snapshots()
-        if not rows:
-            raise SystemExit("No saved bundles found.")
-        if args.index < 1 or args.index > len(rows):
-            raise SystemExit(f"Bundle index '{args.index}' is out of range.")
-        selected = rows[args.index - 1]
-        args.name = selected["bundle"]
-        args.bundle_file = Path(selected["path"])
-
-    if args.bundle_file is None:
-        draft_candidates = [
-            entry
-            for entry in all_bundle_snapshots()
-            if str(entry.get("bundle", "")) == str(args.name)
-            and str(entry.get("state", "")).lower() == "ready_to_go"
-        ]
-        if draft_candidates:
-            selected = max(draft_candidates, key=lambda entry: entry["date"])
-            args.bundle_file = Path(selected["path"])
-        else:
-            candidates = list_saved_bundles(bundle_name=args.name)
-            if not candidates:
-                raise SystemExit(f"No saved bundle found for '{args.name}'.")
-            args.bundle_file = Path(candidates[0]["path"])
+    try:
+        selected = select_bundle_snapshot(args.name, bundle_path=args.bundle_file, latest=args.latest, index=args.index)
+    except (ValueError, FileNotFoundError) as exc:
+        raise SystemExit(str(exc)) from exc
+    args.name, args.bundle_file = selected["bundle"], Path(selected["path"])
 
     try:
         snapshot = bundle_snapshot_state(args.bundle_file)
@@ -173,4 +128,5 @@ def main(argv=None):
         machine=machine_name,
         machine_overrides=config,
         bundle_path=args.bundle_file,
+        context=resolve_execution_context(machine_name, config),
     )

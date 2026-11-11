@@ -10,6 +10,7 @@ from .utils import (
     ssh_host_from_config,
 )
 from .definitions import DATE_FORMAT
+from .execution import resolve_execution_context
 from .job_dependency import dependency_graph
 from typing import Optional
 from graphlib import TopologicalSorter
@@ -43,6 +44,7 @@ __all__ = [
     "transfer_slurms_to_remote",
     "transfer_bundle_to_remote",
     "nearest_bundle_filename",
+    "select_bundle_snapshot",
 ]
 
 _ENSURED_REMOTE_DIRS: set[tuple[str, str]] = set()
@@ -110,13 +112,25 @@ def _ensure_snapshot_kind(payload: dict, *, kind: str) -> dict:
     return payload
 
 
+def _snapshot_date(path, *, fallback_to_mtime=False):
+    path = Path(path)
+    try:
+        if re.fullmatch(r".+_\d{14}", path.stem) is None:
+            raise ValueError(f"Not a versioned AutoSlurm snapshot: {path.name}")
+        return datetime.strptime(path.stem.rsplit("_", 1)[-1], DATE_FORMAT)
+    except ValueError:
+        if not fallback_to_mtime:
+            raise
+        return datetime.fromtimestamp(path.stat().st_mtime)
+
+
 def _analyze_bundle_file(filename: Path) -> dict:
     """
     Classify a saved bundle snapshot as active/ready_to_go/broken.
     """
     stem = filename.stem
     bundle_name, date_text = stem.rsplit("_", 1)
-    saved_date = datetime.strptime(date_text, DATE_FORMAT)
+    saved_date = _snapshot_date(filename)
     try:
         with open(filename, "r") as file:
             payload = json.load(file)
@@ -213,7 +227,7 @@ def bundle_snapshot_state(bundle_path: str | Path) -> dict:
             f"Bundle filename must include a timestamp suffix '_{DATE_FORMAT}'. Got: {path.name}"
         )
     _, date_text = stem.rsplit("_", 1)
-    datetime.strptime(date_text, DATE_FORMAT)
+    _snapshot_date(path)
     return _analyze_bundle_file(path)
 
 
@@ -232,7 +246,7 @@ def _all_snapshot_entries() -> list[dict]:
             continue
         _, date_text = stem.rsplit("_", 1)
         try:
-            datetime.strptime(date_text, DATE_FORMAT)
+            _snapshot_date(filename)
         except ValueError:
             continue
         entries.append(_analyze_bundle_file(filename))
@@ -321,11 +335,9 @@ def save_bundle(
     if append:
         bundle = _ensure_snapshot_kind(bundle, kind="draft")
         for job_name, job in bundle.items():
-            if "name" not in job:
-                job["name"] = job_name
+            job["name"] = _effective_job_name(job, job_name)
             _, file_path = schedule_job(job, name, append=True)
     else:
-        user_config = load_config()
         # Make sure a file with the same date does not exists, otherwise add 1 second to timestamp
         try:
             date = datetime.now()
@@ -344,8 +356,7 @@ def save_bundle(
         file_path = jobs_dir() / f"{name}_{date}.json"
         # Make sure every job has a name
         for job_name, job in bundle.items():
-            if job.get("name", None) is None:
-                job["name"] = job_name
+            job["name"] = _effective_job_name(job, job_name)
         bundle = _ensure_snapshot_kind(bundle, kind="draft")
         with open(file_path, "w") as file:
             json.dump(bundle, file, indent=4)
@@ -378,7 +389,6 @@ def schedule_job(
     Returns:
         dict: The saved job configuration
     """
-    user_config = load_config()
     ensure_storage_dirs()
     job_dir = jobs_dir()
     if "script" not in job:
@@ -470,8 +480,11 @@ def _resolve_machine_config(
     return machine_name, machine_config
 
 
-def _remote_root_for_machine(machine_name: Optional[str], machine_config: dict) -> str:
-    return remote_storage_root_from_config(machine_config, machine_name)
+def _transfer_context(machine_name, machine_config, context):
+    if context is not None:
+        return context
+    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
+    return resolve_execution_context(machine_name, machine_config, root_resolver=remote_storage_root_from_config)
 
 
 def _scp_to_remote(local_path: Path, remote_path: str, machine_name: Optional[str], machine_config: dict) -> None:
@@ -507,14 +520,16 @@ def transfer_slurm_to_remote(
     slurm_name,
     machine_name: Optional[str] = None,
     machine_config: Optional[dict] = None,
+    *, context=None,
 ) -> None:
     """
     Transfers a script from the local machine to a remote machine.
     """
     ensure_storage_dirs()
     local_script_path = slurm_dir() / slurm_name
-    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
-    remote_path = _remote_root_for_machine(machine_name, machine_config)
+    context = _transfer_context(machine_name, machine_config, context)
+    machine_name, machine_config = context.machine_name, context.config
+    remote_path = context.storage_root
     remote_script_path = os.path.join(remote_path, "slurm", slurm_name)
     _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "slurm"))
     _scp_to_remote(local_script_path, remote_script_path, machine_name, machine_config)
@@ -525,6 +540,7 @@ def transfer_slurms_to_remote(
     slurm_names: list[str],
     machine_name: Optional[str] = None,
     machine_config: Optional[dict] = None,
+    *, context=None,
 ) -> None:
     """
     Transfer many SLURM scripts in one SCP call to reduce connection/setup overhead.
@@ -532,10 +548,12 @@ def transfer_slurms_to_remote(
     if not slurm_names:
         return
     ensure_storage_dirs()
-    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
-    remote_path = _remote_root_for_machine(machine_name, machine_config)
+    context = _transfer_context(machine_name, machine_config, context)
+    machine_name, machine_config = context.machine_name, context.config
+    remote_path = context.storage_root
     remote_slurm_dir = os.path.join(remote_path, "slurm")
     _ensure_remote_directory(machine_name, machine_config, remote_slurm_dir)
+    _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "out"))
 
     hostname, key_path = scp_host_and_keypath_from_config(machine_config, machine_name)
     scp_command = ["scp"]
@@ -553,14 +571,16 @@ def transfer_bundle_to_remote(
     date: datetime,
     machine_name: Optional[str] = None,
     machine_config: Optional[dict] = None,
+    *, context=None,
 ) -> None:
     """
     Transfers the bundle JSON file to the remote machine jobs directory.
     """
     ensure_storage_dirs()
     local_bundle_path = jobs_dir() / f"{bundle_name}_{date.strftime(DATE_FORMAT)}.json"
-    machine_name, machine_config = _resolve_machine_config(machine_name, machine_config)
-    remote_path = _remote_root_for_machine(machine_name, machine_config)
+    context = _transfer_context(machine_name, machine_config, context)
+    machine_name, machine_config = context.machine_name, context.config
+    remote_path = context.storage_root
     remote_bundle_path = os.path.join(remote_path, "jobs", local_bundle_path.name)
     _ensure_remote_directory(machine_name, machine_config, os.path.join(remote_path, "jobs"))
     _scp_to_remote(local_bundle_path, remote_bundle_path, machine_name, machine_config)
@@ -570,10 +590,18 @@ def order_jobs(jobs, sorted_names):
     jobs_list = []
     for name in sorted_names:
         job = jobs[name]
-        if job.get("name") is None:
-            job["name"] = name
+        job["name"] = _effective_job_name(job, name)
         jobs_list.append(job)
     return jobs_list
+
+
+def _effective_job_name(job, definition_key):
+    name = job.get("name")
+    if name is None:
+        return definition_key
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("Job names must be nonempty strings.")
+    return name
 
 
 def load_bundle(
@@ -595,27 +623,8 @@ def load_bundle(
     JSONDecodeError: If the job file is not a valid JSON file.
     """
 
-    # Load user configuration and job file path
-    user_config = load_config()
-    ensure_storage_dirs()
-    job_file, date = nearest_bundle_filename(name, desired_date)
-    file_path = jobs_dir() / job_file
-
-    with open(file_path, "r") as file:
-        try:
-            jobs = json.load(file)
-        except json.JSONDecodeError:
-            raise OSError(
-                f"Error decoding the job file {name}.json (located in jobs folder). Make sure it is a valid JSON file."
-            )
-
-    dependencies = dependency_graph(jobs)
-
-    # Depth-first search topological sorting of a graph (raises error if a cycle is detected)
-    sorted_job_names = tuple(TopologicalSorter(dependencies).static_order())[::-1]
-    jobs = order_jobs(jobs, sorted_job_names)
-
-    return jobs, dependencies, date
+    job_file, _ = nearest_bundle_filename(name, desired_date)
+    return load_bundle_from_path(jobs_dir() / job_file)
 
 
 def load_bundle_from_path(
@@ -630,7 +639,6 @@ def load_bundle_from_path(
     Saved snapshot dates come from the filename; unversioned external files
     use modification time as a fallback.
     """
-    ensure_storage_dirs()
     file_path = Path(bundle_path)
     if not file_path.is_file():
         raise FileNotFoundError(f"Bundle file not found: {file_path}")
@@ -647,10 +655,7 @@ def load_bundle_from_path(
     sorted_job_names = tuple(TopologicalSorter(dependencies).static_order())[::-1]
     jobs = order_jobs(jobs, sorted_job_names)
     # AutoSlurm snapshot identity comes from its filename, not mutable mtime.
-    try:
-        saved_date = datetime.strptime(file_path.stem.rsplit("_", 1)[-1], DATE_FORMAT)
-    except ValueError:
-        saved_date = datetime.fromtimestamp(file_path.stat().st_mtime)
+    saved_date = _snapshot_date(file_path, fallback_to_mtime=True)
     return jobs, dependencies, saved_date
 
 
@@ -664,41 +669,33 @@ def list_saved_bundles(
     If ``bundle_name`` is provided, only versions of that bundle are returned.
     Otherwise every bundle under the jobs directory is included.
     """
-    ensure_storage_dirs()
-    if desired_date is None:
-        desired_date = datetime.now()
+    entries = _snapshot_paths(bundle_name, desired_date)
+    for entry in entries:
+        try:
+            with open(entry["path"], "r") as file:
+                entry["jobs"] = list(json.load(file).keys())
+        except (json.JSONDecodeError, OSError, AttributeError):
+            entry["jobs"] = []
+    return entries
 
-    entries: list[dict] = []
-    for filename in jobs_dir().glob("*.json"):
-        if _is_placeholder_file(filename):
-            continue
-        stem = filename.stem
-        if "_" not in stem:
-            continue
-        name_part, date_text = stem.rsplit("_", 1)
-        if bundle_name is not None and name_part != bundle_name:
+
+def _snapshot_paths(bundle_name=None, desired_date=None):
+    """Filename-only candidates keep exact/nearest selection free of payload reads."""
+    desired_date = desired_date or datetime.now()
+    ensure_storage_dirs()
+    entries = []
+    for path in jobs_dir().glob("*.json"):
+        if _is_placeholder_file(path):
             continue
         try:
-            saved_date = datetime.strptime(date_text, DATE_FORMAT)
+            saved_date = _snapshot_date(path)
         except ValueError:
             continue
-        try:
-            with open(filename, "r") as file:
-                jobs = list(json.load(file).keys())
-        except (json.JSONDecodeError, OSError):
-            jobs = []
-        entries.append(
-            {
-                "bundle": name_part,
-                "date": saved_date,
-                "path": filename,
-                "jobs": jobs,
-                "distance": abs(saved_date - desired_date),
-            }
-        )
-
-    entries.sort(key=lambda entry: (entry["distance"], entry["date"]), reverse=False)
-    return entries
+        name = path.stem.rsplit("_", 1)[0]
+        if bundle_name is not None and name != bundle_name:
+            continue
+        entries.append({"bundle": name, "date": saved_date, "path": path, "distance": abs(saved_date - desired_date)})
+    return sorted(entries, key=lambda entry: (entry["distance"], entry["date"]))
 
 
 def latest_bundle_summaries(desired_date: Optional[datetime] = None) -> list[dict]:
@@ -758,28 +755,37 @@ def nearest_bundle_filename(
     """
     Get the filename of a job bundle nearest in time to desired date from the jobs directory.
     """
-    user_config = load_config()
-    ensure_storage_dirs()
-    directory = jobs_dir()
-    timestamp_re = re.compile(rf"^{re.escape(name)}_(\d{{14}})\.json$")
-    matches: list[tuple[str, datetime]] = []
-    for filename in os.listdir(directory):
-        if filename.startswith(".") or not filename.endswith(".json"):
-            continue
-        m = timestamp_re.match(filename)
-        if m is None:
-            continue
-        try:
-            dt = datetime.strptime(m.group(1), DATE_FORMAT)
-        except ValueError:
-            continue
-        matches.append((filename[:-5], dt))
-    if not matches:
-        raise FileNotFoundError(
-            f"No files found with name '{name}' in directory {directory}"
-        )
-    if desired_date is None:
-        desired_date = datetime.now()
-    nearest_name, nearest_date = min(matches, key=lambda item: abs(item[1] - desired_date))
-    file_name = f"{nearest_name}.json"
-    return file_name, nearest_date
+    selected = select_bundle_snapshot(name, desired_date=desired_date, prefer_draft=False)
+    return selected["path"].name, selected["date"]
+
+
+def select_bundle_snapshot(name=None, *, bundle_path=None, latest=False, index=None, desired_date=None, prefer_draft=True):
+    """One selection policy for explicit paths, UI indices, draft/latest and nearest dates."""
+    if sum([bundle_path is not None, bool(latest), index is not None]) > 1:
+        raise ValueError("Select only one of bundle_path, latest or index.")
+    if (latest or index is not None) and name is not None:
+        raise ValueError("latest/index selectors do not take a bundle name.")
+    if bundle_path is not None:
+        path = Path(bundle_path)
+        if not path.is_file():
+            raise FileNotFoundError(f"Bundle file not found: {path}")
+        if name is None:
+            if "_" not in path.stem:
+                raise ValueError("Unable to infer bundle name; provide an explicit name.")
+            name = path.stem.rsplit("_", 1)[0]
+        return {"bundle": name, "path": path, "date": _snapshot_date(path, fallback_to_mtime=True)}
+    if index is not None:
+        rows = bundle_snapshots(desired_date)
+        if not 1 <= index <= len(rows):
+            raise ValueError(f"Bundle index {index!r} is out of range.")
+        return rows[index - 1]
+    if name is None and not latest:
+        raise ValueError("Select a bundle name, explicit path, latest or index.")
+    if prefer_draft and desired_date is None:
+        drafts = [row for row in all_bundle_snapshots() if row.get("state") == "ready_to_go" and (name is None or row["bundle"] == name)]
+        if drafts:
+            return max(drafts, key=lambda row: row["date"])
+    candidates = latest_bundle_summaries(desired_date) if latest else _snapshot_paths(name, desired_date)
+    if not candidates:
+        raise FileNotFoundError(f"No files found with name {name!r} in directory {jobs_dir()}")
+    return max(candidates, key=lambda row: row["date"]) if latest else candidates[0]

@@ -8,6 +8,8 @@
         "script": {"type": "string"},
         "script_args": {"type": "object"},
         "path_args": {"type": "array", "items": {"type": "string"}},
+        "input_args": {"type": "array", "items": {"type": "string"}},
+        "working_directory": {"type": "string"},
         "dependencies": {
           "type": "array",
           "items": {"type": "string"}

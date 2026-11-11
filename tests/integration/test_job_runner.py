@@ -59,6 +59,8 @@ def test_integration_schedule_jobs(
         for i, (line, expected_line) in enumerate(
             zip(script_content, expected_content_lines)
         ):
+            if mock_machine_config is mock_machine_config_local:
+                expected_line = expected_line.replace("/path/to/remote/out/", str(storage_env / "out") + "/")
             assert (
                 line == expected_line
             ), f"Mismatch for job {job_name} script at line {i}"

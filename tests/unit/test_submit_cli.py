@@ -6,6 +6,7 @@ from datetime import datetime
 import pytest
 
 from autoslurm.apps import submit
+from autoslurm import save_load_jobs as bundles
 from autoslurm.storage import ensure_storage_dirs, jobs_dir, set_storage_root
 
 
@@ -26,7 +27,7 @@ def test_submit_latest_uses_most_recent_saved_bundle(tmp_path, monkeypatch):
     def fake_machine_config(args=None, machine=None, overrides=None):
         return "local", {"env_command": "source env", "slurm_account": "acc"}
 
-    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None, context=None):
         captured["name"] = name
         captured["machine"] = machine
         captured["machine_overrides"] = machine_overrides
@@ -35,7 +36,7 @@ def test_submit_latest_uses_most_recent_saved_bundle(tmp_path, monkeypatch):
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
     monkeypatch.setattr(submit, "submit_jobs", fake_submit_jobs)
     monkeypatch.setattr(
-        submit,
+        bundles,
         "latest_bundle_summaries",
         lambda desired_date=None: [
             {"bundle": "bundle_old", "date": datetime(2025, 1, 1, 0, 0, 0)},
@@ -71,7 +72,7 @@ def test_submit_latest_prefers_most_recent_ready_to_go_snapshot(tmp_path, monkey
     def fake_machine_config(args=None, machine=None, overrides=None):
         return "local", {"env_command": "source env", "slurm_account": "acc"}
 
-    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None, context=None):
         captured["name"] = name
         captured["bundle_path"] = bundle_path
 
@@ -105,7 +106,7 @@ def test_submit_named_bundle_prefers_most_recent_ready_to_go_snapshot(tmp_path, 
     def fake_machine_config(args=None, machine=None, overrides=None):
         return "local", {"env_command": "source env", "slurm_account": "acc"}
 
-    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None, context=None):
         captured["name"] = name
         captured["bundle_path"] = bundle_path
 
@@ -149,7 +150,7 @@ def test_submit_index_uses_snapshot_path_even_with_duplicate_bundle_name(tmp_pat
     def fake_machine_config(args=None, machine=None, overrides=None):
         return "local", {"env_command": "source env", "slurm_account": "acc"}
 
-    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None, context=None):
         captured["name"] = name
         captured["machine"] = machine
         captured["bundle_path"] = bundle_path
@@ -157,7 +158,7 @@ def test_submit_index_uses_snapshot_path_even_with_duplicate_bundle_name(tmp_pat
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
     monkeypatch.setattr(submit, "submit_jobs", fake_submit_jobs)
     monkeypatch.setattr(
-        submit,
+        bundles,
         "bundle_snapshots",
         lambda desired_date=None: [
             {"bundle": "recovery", "date": datetime(2025, 1, 2, 0, 0, 0), "path": new_path},
@@ -184,7 +185,7 @@ def test_submit_refuses_broken_bundle_from_index(tmp_path, monkeypatch):
     )
 
     monkeypatch.setattr(
-        submit,
+        bundles,
         "bundle_snapshots",
         lambda desired_date=None: [
             {"bundle": "recovery", "date": datetime(2025, 1, 3, 0, 0, 0), "path": broken_path},
@@ -196,7 +197,7 @@ def test_submit_refuses_broken_bundle_from_index(tmp_path, monkeypatch):
     def fake_machine_config(args=None, machine=None, overrides=None):
         return "local", {"env_command": "source env", "slurm_account": "acc"}
 
-    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None, context=None):
         called["submit"] = True
 
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
@@ -222,7 +223,7 @@ def test_submit_refuses_broken_bundle_from_name(tmp_path, monkeypatch):
     def fake_machine_config(args=None, machine=None, overrides=None):
         return "local", {"env_command": "source env", "slurm_account": "acc"}
 
-    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None):
+    def fake_submit_jobs(name, machine=None, machine_overrides=None, bundle_path=None, context=None):
         called["submit"] = True
 
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
