@@ -12,6 +12,7 @@ from .run_slurm import (
 )
 from .save_load_jobs import (
     load_bundle,
+    load_bundle_from_path,
     save_bundle,
     transfer_bundle_to_remote,
     transfer_slurms_to_remote,
@@ -93,8 +94,8 @@ def submit_jobs(
             for job in bundle.values():
                 if isinstance(job, dict):
                     job[SNAPSHOT_KIND_KEY] = "submission"
-        save_bundle(bundle, name)
-        jobs, dependencies, date = load_bundle(name)
+        submission_path = save_bundle(bundle, name)
+        jobs, dependencies, date = load_bundle_from_path(submission_path)
 
     # Mark the persisted snapshot as a submission artifact.
     for job in jobs:

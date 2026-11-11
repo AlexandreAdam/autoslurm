@@ -1,0 +1,12 @@
+{
+  "sample": {
+    "name": "sample",
+    "script": "science-demo",
+    "script_args": {
+      "mode": "single",
+      "input_file": "data/measurements.json",
+      "output_dir": "reference-single"
+    },
+    "slurm": {"tasks": 1, "cpus_per_task": 1, "mem": "64M", "time": "00:01:00"}
+  }
+}

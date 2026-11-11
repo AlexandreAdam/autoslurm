@@ -7,6 +7,7 @@
         "name": {"type": "string"},
         "script": {"type": "string"},
         "script_args": {"type": "object"},
+        "path_args": {"type": "array", "items": {"type": "string"}},
         "dependencies": {
           "type": "array",
           "items": {"type": "string"}

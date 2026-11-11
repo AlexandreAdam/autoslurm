@@ -289,7 +289,7 @@ def save_bundle(
     bundle: dict,
     name: str,
     append: bool = False,
-) -> None:
+) -> Path:
     """
     Save job bundle configuration to a JSON file.
 
@@ -302,6 +302,9 @@ def save_bundle(
         - If append=False, a new job file is created.
         - If append=True, the jobs are saved to the last modified bundle with pattern 'name_*'. If no bundle file exists, a new one is created.
         - If job does not have key 'name', one is provided based on the key in the bundle.
+
+    Returns:
+        Path: The exact saved snapshot, suitable for explicit loading/submission.
     """
     if not isinstance(bundle, dict):
         raise TypeError("bundle must be a dictionary")
@@ -347,6 +350,7 @@ def save_bundle(
         with open(file_path, "w") as file:
             json.dump(bundle, file, indent=4)
     print(f"Saved bundle {name} to {file_path}")
+    return file_path
 
 
 def schedule_job(
@@ -622,6 +626,9 @@ def load_bundle_from_path(
 
     This is the path-based counterpart to :func:`load_bundle`, which looks up
     bundles by name under the AutoSlurm storage root.
+
+    Saved snapshot dates come from the filename; unversioned external files
+    use modification time as a fallback.
     """
     ensure_storage_dirs()
     file_path = Path(bundle_path)
@@ -639,7 +646,12 @@ def load_bundle_from_path(
     dependencies = dependency_graph(jobs)
     sorted_job_names = tuple(TopologicalSorter(dependencies).static_order())[::-1]
     jobs = order_jobs(jobs, sorted_job_names)
-    return jobs, dependencies, datetime.fromtimestamp(file_path.stat().st_mtime)
+    # AutoSlurm snapshot identity comes from its filename, not mutable mtime.
+    try:
+        saved_date = datetime.strptime(file_path.stem.rsplit("_", 1)[-1], DATE_FORMAT)
+    except ValueError:
+        saved_date = datetime.fromtimestamp(file_path.stat().st_mtime)
+    return jobs, dependencies, saved_date
 
 
 def list_saved_bundles(

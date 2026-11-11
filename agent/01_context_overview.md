@@ -3,6 +3,8 @@ This folder contains curated guidance for agent use:
 - Start with `00_operating_rules.md`: identify the installation that owns the
   run, record exact job evidence, and distinguish current behavior from planned
   MVP capabilities. It applies before any scheduling or cluster side effect.
+- Then read `01_client_workflow.md` for the current client recipe, path bases,
+  exact selection and handoff limits. It takes precedence over older examples.
 - `04_project_map.md` describes how the Python API + CLI interact with job definitions.
 - `schema.json` captures the JSON format of bundles for validation/reference.
 - `agent/examples/` holds reusable shell scripts illustrating common submission patterns.

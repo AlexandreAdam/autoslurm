@@ -9,14 +9,14 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP0, protect daily use and establish a small baseline.
-- **Stage:** local code/environment/state isolation established. The original
-  checkout is pinned at the baseline for base Conda; development uses a separate
-  checkout and environment. All 238 offline tests pass, including root isolation
-  and mocked helper failures. No cluster installation or promotion performed.
-- **Next task:** MVP0.3, publish the small development/client contract and its
-  reference smoke fixtures. MVP0 is not yet closed.
-- **Last updated:** 2026-11-10.
+- **Current milestone:** MVP0 complete locally; MVP1 is next.
+- **Stage:** stable code remains pinned; development has isolated code,
+  environment/state, a tested client recipe and single/array reference workloads.
+  Full offline suite: 245 passed. No cluster installation or promotion performed.
+- **Next task:** MVP1.0, detail the bounded shared path/selection implementation
+  using the reference client. Application working-directory/input bases remain
+  unresolved; the broader MVP1 implementation has not started.
+- **Last updated:** 2026-11-11.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
   and [baseline results](REFACTORING_DOCS/design/MVP0_safe_development.md#local-baseline-mvp01).
@@ -157,7 +157,7 @@ supporting designs distinguish early delivery from later product work.
   and verify a separate local development checkout/environment. Make the default
   test fixtures explicitly offline, including the unmocked accounting probe found
   in MVP0.1. All remote checks use mocks; no cluster setup is required here.
-- [ ] **MVP0.3 Publish the small development contract.** *Done when:* an accurate
+- [x] **MVP0.3 Publish the small development contract.** *Done when:* an accurate
   short agent recipe identifies the lane, supported operations, relative path
   convention, how to select an exact saved bundle, and unsafe actions to avoid.
   Use one local smoke client and one small dependency/array fixture; add other
@@ -168,6 +168,11 @@ A review need settle only choices blocking this increment. The
 not a requirement to finalize every future interaction before coding.
 
 ## MVP1 Predictable paths and shared rules
+
+- [ ] **MVP1.0 Detail the path increment.** Use the reference client's current
+  input/results bases to settle project-root/working-directory behavior and split
+  the implementation below into small tasks. Preserve the established local-only
+  scope, selected storage roots and stable installation.
 
 **Outcome:** clients stop embedding absolute machine paths and all active paths
 through the selected workflow use the same machine config, resolver and bundle
@@ -319,6 +324,8 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-09 | Work locally and mock Slurm/remote interactions; defer cluster discovery and live checks | Explicit user instruction; base Conda installation supplies local installation evidence |
 | 2026-11-09 | Retain the original checkout at detached baseline HEAD; implement in `.development/checkout` with a separate environment/state | Protect base Conda imports without reinstalling its package or moving its tracking root |
 | 2026-11-09 | Use `AUTOSLURM_STORAGE_ROOT` locally and explicit remote machine `storage_root`, with helper support/root verification | Keep configuration, scripts, observations and default results in the chosen installation; reject invalid/mismatched selections |
+| 2026-11-11 | Publish a current client recipe in task-specific agent context; validate with an independent installed application | Teach scientific software boundaries, actual relative-path bases, exact selection and evidence handoff before broader refactoring |
+| 2026-11-11 | Pull a narrow exact-file submission fix forward from MVP1 | The reference test showed an imported definition could reload a neighboring draft; return the saved path and load it directly, retaining timestamp identity independently of mtime |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -334,6 +341,7 @@ or migration decision has already been accepted.
 | 2026-11-09 | MVP0.1 Local installation inventory and executable baseline | Source reference `33bcbd34fb167fca67aa64739a013073c64167b1`; 195 unit tests and four mocked three-job submission cases pass in a disposable offline environment; accounting-probe mock gap recorded in MVP0 design. Source/tests and base installation unchanged; no stable pin, cluster access or promotion; documentation remains uncommitted |
 | 2026-11-09 | Initial planning/baseline documents saved | `efff9b6` on the development branch; pre-existing README and Gaia requirements edits excluded |
 | 2026-11-10 | MVP0.2 Local isolation and explicit storage selection | 238 full offline tests pass, including 18 new root/isolation cases; editable development install and fresh-process discovery verified. Stable source remains unchanged at detached baseline HEAD. Task commit: `git log --grep '^MVP0.2:'` on `codex/mvp0-isolation`; no push, promotion or remote operations |
+| 2026-11-11 | MVP0.3 Current client recipe and scientific reference workloads | 245 full offline tests pass; 13 focused client/context checks pass after final failure-case/documentation updates. Installed standalone application produces matching single/reduced summaries. Expected timestamp-collision warnings exercised by competing-draft tests. Task commit: `git log --grep '^MVP0.3:'`; local milestone tag `mvp0` at closure, without promotion |
 
 ## How we work
 

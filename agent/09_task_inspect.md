@@ -1,6 +1,6 @@
 # Task: Inspect Experiments
 
-Start with `00_operating_rules.md`. Establish which installation and machine
+Start with `00_operating_rules.md` and `01_client_workflow.md`. Establish which installation and machine
 own the selected run; distinguish missing observations from failed computation.
 
 Agents that need to understand what a job bundle contains should focus on these sources:

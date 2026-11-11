@@ -2,10 +2,10 @@
 
 ## Status
 
-**Active**, opened 2026-11-09. The working rules are established in
+**Complete locally, 2026-11-11**, opened 2026-11-09. The working rules are established in
 [WORKFLOW.md](../../WORKFLOW.md); installation/root implementation details below
 remain proposed until verified and settled in their task. The rules-only step
-MVP0.0a, local baseline MVP0.1 and isolation MVP0.2 are complete; MVP0.3 remains in
+MVP0.0a, local baseline MVP0.1, isolation MVP0.2 and client contract MVP0.3 are complete in
 [PLAN.md](../../PLAN.md). The preceding M0 design is superseded; its detailed
 full-product decisions are not prerequisites for starting an MVP.
 
@@ -22,8 +22,9 @@ full-product decisions are not prerequisites for starting an MVP.
 Actual installation evidence belongs in
 [the installation register](../installation-register.md). The local editable
 installation and separate local development lane are verified. Initial operating guidance exists in
-[agent/00_operating_rules.md](../../agent/00_operating_rules.md); MVP0.3 remains
-open until it is grounded in the verified setup and smoke fixtures.
+[agent/00_operating_rules.md](../../agent/00_operating_rules.md) and the tested
+[client recipe](../../agent/01_client_workflow.md). Remote checks and promotion
+remain outside the current scope.
 
 ## Decisions
 
@@ -100,8 +101,8 @@ data importer and compatibility framework remain later work.
 
 ### D4 Minimum evidence for the first release
 
-**Proposed.** Record current fast tests, dependencies and one cheap smoke
-scenario. Add targeted tests when changing a shared rule or fixing a confirmed
+**Baseline and local smoke checks implemented.** Record current fast tests,
+dependencies and one cheap smoke scenario. Add targeted tests when changing a shared rule or fixing a confirmed
 defect. Retain existing useful tests; do not build a new comprehensive fixture
 framework before fixing paths or submission fallback.
 
@@ -111,7 +112,7 @@ check is part of promotion; broad release matrices and publication are later.
 
 ### D5 Accurate minimal agent guidance now
 
-**Proposed.** One brief recipe identifies the installed lane/version, declared
+**Implemented in MVP0.3.** One brief recipe identifies the installed lane/version, declared
 relative paths, supported public operations, exact bundle selection, and what
 to do with partial/uncertain outcomes. Extend it with each supported MVP.
 
@@ -123,9 +124,9 @@ submission recovery, full offline state, or scientific retry support yet.
 
 - Remote inventory, real helper deployment and real cluster validation are
   deferred by local-only scope; no configured remote development lane is implied.
-- Which tiny installed application command should become the reference client?
-  The existing three-job fixture supplies the first mocked submission baseline;
-  no scientific application or live job has been run.
+- MVP1 must settle project-root/working-directory and input path bases. The
+  reference client currently relies on its explicit starting directory; no
+  general application resolver is implied by its successful smoke tests.
 
 ## Local baseline (MVP0.1)
 
@@ -227,6 +228,45 @@ development checkout. Neither real cluster compatibility nor scientific validity
 wheel-resource packaging, automatic deployment or uncertain-submission recovery
 was established. MVP0.3's reference-client recipe remains open.
 
+## Client contract validation and milestone closure
+
+The [current client recipe](../../agent/01_client_workflow.md) is included in
+task-specific context for planning, listing and inspection. It states supported
+path bases and exact selectors, scheduler versus scientific responsibility,
+record/handoff requirements and the remaining fallback/log-refresh limits.
+Older task pages point to this recipe and no longer promise `pre_commands` or
+describe results-relative paths as a general project-input resolver.
+
+The independent [reference application](../../examples/reference_client/README.md)
+has an installed `science-demo` command and no AutoSlurm dependency. A single job
+and a four-task array with an `afterok` reducer both produce a validated count of
+four and sum of squares of 30. Tests run generated scripts with local mocked
+submission, verify accepted IDs and separate task outputs, and require nonzero
+failures for missing inputs, missing shards and mixed-input shards. The installed
+command was also exercised directly with relative arguments in a temporary
+application directory, using only the isolated development environment.
+
+The example exposed one blocking selector defect: `submit_jobs(bundle_path=...)`
+saved an imported definition, then looked up a time-nearest snapshot that could
+be an older/different draft. The narrow fix makes `save_bundle` return its actual
+saved `Path`, loads that path directly and derives saved timestamp identity from
+the filename rather than mutable mtime. Regressions include a historical selected
+definition with a competing current draft, and an altered file mtime. This small
+piece was pulled forward from MVP1; no broad selection/model rewrite was added.
+
+Validation: **245 full offline tests passed in 2.36 s**, then **13 focused
+client/context checks passed** after final documentation/failure-case additions.
+Two expected same-second snapshot warnings arise in the competing-draft cases.
+The report is `.development/test-runs/mvp03-full-1.xml`. Development installed
+`autoslurm-science-demo` 0.0.1 offline; the stable environment and source are
+unchanged. Existing README/Gaia requirements edits remain outside task commits.
+
+Local milestone tag: `mvp0`, at the MVP0.3 task commit. This closes the local
+preparation milestone, not a production release. No push, live cluster check,
+package publication or promotion occurred. Wheel-resource packaging remains a
+promotion gate. Concurrent writers/immutable attempts, broad path handling,
+submission uncertainty/fallback and growing-log refresh remain later MVP work.
+
 ## Forward constraints
 
 - **MVP1:** reuse the current bundle shape; centralize existing path/machine/
@@ -246,3 +286,4 @@ was established. MVP0.3's reference-client recipe remains open.
 | 2026-11-09 | At the user's request, established working rules before setup: shared procedure, unverified installation register, agent operating entry guide and explicit commit-versus-promotion boundary; no runtime setup performed |
 | 2026-11-09 | User required local work with mocked Slurm and installed the editable package in base Conda. Verified the local baseline: 195 unit tests and four mocked dependency-submission cases pass; recorded the accounting-mock gap and retained isolation as the next task |
 | 2026-11-10 | MVP0.2 implemented local code/environment/state separation and explicit storage selection with mocked helper checks. Full offline suite: 238 passed, including the real module-entry-point check with fake Slurm. Stable source pinned at detached baseline HEAD; no cluster access or promotion |
+| 2026-11-11 | MVP0.3 client contract and reference application validated; exact imported-snapshot selection fixed. Full offline suite: 245 passed; local MVP0 closure without promotion |

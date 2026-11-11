@@ -1,4 +1,6 @@
 from autoslurm.context import agent_context, agent_context_paths
+from autoslurm.acp import execute_acp
+import pytest
 
 
 def test_agent_context_includes_key_docs():
@@ -42,3 +44,13 @@ def test_schedule_context_keywords_only():
     assert "Task: Plan & Schedule Jobs" in context
     assert "ACP Reference" in context
     assert "Task: Inspect Experiments" not in context
+
+
+@pytest.mark.parametrize("task", ["schedule", "list_experiments", "inspect_experiments"])
+def test_task_context_delivers_current_client_contract(task):
+    response = execute_acp({"action": "gather_context", "task": task})
+    assert response["status"] == "success"
+    context = response["result"]
+    assert context.index("## 00_operating_rules.md") < context.index("## 01_client_workflow.md")
+    assert "load_bundle_from_path(planned_path)" in context
+    assert "Remote bulk-to-legacy" in context

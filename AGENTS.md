@@ -70,6 +70,10 @@ operate from the workstation; compute nodes use already-prepared environments.
 - Human docs explain purpose, the system map, examples, agent collaboration and
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
+- [The current client recipe](agent/01_client_workflow.md) and
+  [reference client](examples/reference_client/README.md) are the verified MVP0
+  integration boundary. Keep their actual path bases and known limits accurate
+  as MVP1 changes the implementation.
 - Keep development installation working and use a narrow artifact smoke check
   before promotion. Complete packaged agent resources, public index release,
   broad compatibility matrices and polished documentation are later layers.

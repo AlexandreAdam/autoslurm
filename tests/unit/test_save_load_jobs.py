@@ -250,6 +250,14 @@ def test_load_bundle_from_path(tmp_path, mock_load_config):
     assert isinstance(date, datetime)
 
 
+def test_explicit_snapshot_date_survives_file_copy_or_mtime_change(tmp_path):
+    path = tmp_path / "study_20250102030405.json"
+    path.write_text(json.dumps({"sample": {"script": "science-demo", "slurm": {}}}))
+    os.utime(path, (1_700_000_000, 1_700_000_000))
+    _, _, date = load_bundle_from_path(path)
+    assert date == datetime(2025, 1, 2, 3, 4, 5)
+
+
 def test_save_append_jobs_to_bundle(tmp_path, mock_load_config):
     mock_jobA = {"name": "JobA", "dependencies": [], "script": "run-joba"}
     mock_jobB = {"name": "JobB", "dependencies": ["JobA"], "script": "run-jobb"}
