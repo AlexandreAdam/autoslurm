@@ -2,7 +2,7 @@
 
 ## Status
 
-**Local isolation verified, 2026-11-09.** Base Conda retains the original source
+**Local isolation verified, 2026-11-10.** Base Conda retains the original source
 at detached baseline HEAD. A separate development checkout, environment and
 state root are operational. Cluster inventory and operations remain deferred
 by the user's local-only instruction. No release has been promoted.
@@ -20,7 +20,7 @@ by the user's local-only instruction. No release has been promoted.
 | Configuration and tracking root | `/Users/aadam/Projects/autoslurm`; resolved `config.json` absent | `/Users/aadam/Projects/autoslurm/.development/state`, selected by both wrappers through `AUTOSLURM_STORAGE_ROOT`; no machine config created |
 | Script/log locations | Root-relative `jobs/`, `slurm/`, `out/`; no non-dot files at verification | Under selected state root for manual development; tests use fresh roots under `.development/test-runs/` |
 | Application working/result roots | Not configured/verified; no application launched | Default results use selected root's `results/`; real scientific client not yet configured (MVP0.3) |
-| Evidence source and verification time | Executable/prefix, metadata/import, storage API, detached HEAD and no source diff; 2026-11-09 | Executable/import/storage discovery outside checkout, editable-install metadata, 237 full offline tests; 2026-11-09 |
+| Evidence source and verification time | Executable/prefix, metadata/import, storage API, detached HEAD and no source diff; 2026-11-10 | Executable/import/storage discovery outside checkout, editable-install metadata, 238 full offline tests; 2026-11-10 |
 
 Add cluster columns or rows when remote inventory is authorized. Every run
 still targets one selected machine. Store nonsecret paths and identities only;
@@ -38,10 +38,10 @@ never credential contents. An environment path alone is not proof of its imports
 - **Local development isolation:** verified. Source, environment and state have
   distinct locations; the stable default root and empty runtime directories are
   unchanged. The nested `.development/` directory is ignored by the stable tree.
-- **Development validation:** 237 tests passed in 2.17 s, including fresh-process
+- **Development validation:** 238 tests passed in 1.21 s, including fresh-process
   storage/config discovery, generated paths with spaces, mocked submission/
   transfers/sync/results, mismatched/old helper failures, helper payload-root
-  rejection and configuration-editor retention. The missing `sacct` mock is fixed;
+  rejection configuration-editor retention, and the actual helper module entry point with a local fake Slurm executable. The missing `sacct` mock is fixed;
   default test fixtures reject unmocked process/network access.
 - **Remote development isolation:** deferred; all current tests are local mocks.
 - **Promotions or migrations during this refactor:** none performed.

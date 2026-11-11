@@ -200,7 +200,7 @@ without changing application code, environment, configuration or tracking files.
 The `.development/` directory is ignored. Working documentation is mirrored in
 the original checkout for discoverability; implementation lives only in development.
 
-The full offline suite passed **237 tests in 2.17 s**. Added cases cover root
+The full offline suite passed **238 tests in 1.21 s**. Added cases cover root
 precedence/reset and invalid selections, absent selected config, two fresh
 processes sharing configuration/bundles/scripts/logs/results from another current
 directory, and an executed local fixture preserving a path with spaces. Mocked
@@ -214,7 +214,14 @@ local Python/Bash programs. Slurm, SSH and transfer commands remain mocked.
 Storage overrides/environment are restored per test. The baseline's unmocked
 `sacct` probe now has an explicit unavailable-accounting mock.
 
-Test report: `.development/test-runs/full-2.xml` under the original checkout.
+An actual module-entry-point check exposed an existing defect hidden by direct
+function mocks: `python -m autoslurm.apps.bulk_submit_driver` never called `main`.
+The module now invokes it. A fresh-process test places a local fake `sbatch`
+on PATH, verifies the accepted job ID and exact selected script path, then checks
+that a mismatched payload fails without another fake submission. No scheduler
+or network service is involved.
+
+Test report: `.development/test-runs/full-3.xml` under the original checkout.
 Reproduce with the development Python wrapper and `-m pytest -q tests` from the
 development checkout. Neither real cluster compatibility nor scientific validity,
 wheel-resource packaging, automatic deployment or uncertain-submission recovery
@@ -238,4 +245,4 @@ was established. MVP0.3's reference-client recipe remains open.
 | 2026-11-09 | User requested short usable increments, priority on paths/shared core rules/reliability/agents, intentional breaking changes and a way to keep daily use working |
 | 2026-11-09 | At the user's request, established working rules before setup: shared procedure, unverified installation register, agent operating entry guide and explicit commit-versus-promotion boundary; no runtime setup performed |
 | 2026-11-09 | User required local work with mocked Slurm and installed the editable package in base Conda. Verified the local baseline: 195 unit tests and four mocked dependency-submission cases pass; recorded the accounting-mock gap and retained isolation as the next task |
-| 2026-11-09 | MVP0.2 implemented local code/environment/state separation and explicit storage selection with mocked helper checks. Full offline suite: 237 passed. Stable source pinned at detached baseline HEAD; no cluster access or promotion |
+| 2026-11-10 | MVP0.2 implemented local code/environment/state separation and explicit storage selection with mocked helper checks. Full offline suite: 238 passed, including the real module-entry-point check with fake Slurm. Stable source pinned at detached baseline HEAD; no cluster access or promotion |

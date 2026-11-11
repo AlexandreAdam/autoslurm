@@ -12,11 +12,11 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP0, protect daily use and establish a small baseline.
 - **Stage:** local code/environment/state isolation established. The original
   checkout is pinned at the baseline for base Conda; development uses a separate
-  checkout and environment. All 237 offline tests pass, including root isolation
+  checkout and environment. All 238 offline tests pass, including root isolation
   and mocked helper failures. No cluster installation or promotion performed.
 - **Next task:** MVP0.3, publish the small development/client contract and its
   reference smoke fixtures. MVP0 is not yet closed.
-- **Last updated:** 2026-11-09.
+- **Last updated:** 2026-11-10.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
   and [baseline results](REFACTORING_DOCS/design/MVP0_safe_development.md#local-baseline-mvp01).
@@ -333,7 +333,7 @@ or migration decision has already been accepted.
 | 2026-11-09 | MVP0.0a Working agreement, unverified installation register and initial agent operating guide | Documentation/link checks and read-only agent-context smoke check; files remain uncommitted pending baseline identification |
 | 2026-11-09 | MVP0.1 Local installation inventory and executable baseline | Source reference `33bcbd34fb167fca67aa64739a013073c64167b1`; 195 unit tests and four mocked three-job submission cases pass in a disposable offline environment; accounting-probe mock gap recorded in MVP0 design. Source/tests and base installation unchanged; no stable pin, cluster access or promotion; documentation remains uncommitted |
 | 2026-11-09 | Initial planning/baseline documents saved | `efff9b6` on the development branch; pre-existing README and Gaia requirements edits excluded |
-| 2026-11-09 | MVP0.2 Local isolation and explicit storage selection | 237 full offline tests pass, including 17 new root/isolation cases; editable development install and fresh-process discovery verified. Stable source remains unchanged at detached baseline HEAD. Task commit: `git log --grep '^MVP0.2:'` on `codex/mvp0-isolation`; no push, promotion or remote operations |
+| 2026-11-10 | MVP0.2 Local isolation and explicit storage selection | 238 full offline tests pass, including 18 new root/isolation cases; editable development install and fresh-process discovery verified. Stable source remains unchanged at detached baseline HEAD. Task commit: `git log --grep '^MVP0.2:'` on `codex/mvp0-isolation`; no push, promotion or remote operations |
 
 ## How we work
 

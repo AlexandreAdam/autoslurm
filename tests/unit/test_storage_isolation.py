@@ -1,7 +1,10 @@
 import json
+import os
 from pathlib import Path
 import shlex
+import subprocess
 from subprocess import CompletedProcess
+import sys
 
 import pytest
 
@@ -139,3 +142,35 @@ def test_configuration_validation_reports_mismatched_root(monkeypatch, capsys):
     monkeypatch.setattr("subprocess.run", lambda command, **kwargs: CompletedProcess(command, 0, "/remote/stable", ""))
     assert not configuration._validate_machine(machine(), "mock")
     assert "Storage root check: failed" in capsys.readouterr().out
+
+
+@pytest.mark.local_processes
+def test_real_helper_module_uses_selected_root_with_fake_slurm(tmp_path):
+    root = tmp_path / "helper state"
+    (root / "slurm").mkdir(parents=True)
+    (root / "slurm/a.sh").write_text("#!/bin/bash\necho fixture\n")
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    evidence = tmp_path / "mock-slurm-calls.jsonl"
+    fake_sbatch = fake_bin / "sbatch"
+    fake_sbatch.write_text(
+        f"#!{sys.executable}\n"
+        "import json, sys\n"
+        f"with open({str(evidence)!r}, 'a') as report:\n"
+        "    report.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+        "print('123')\n"
+    )
+    fake_sbatch.chmod(0o755)
+    env = dict(os.environ, AUTOSLURM_STORAGE_ROOT=str(root), PATH=str(fake_bin), PYTHONDONTWRITEBYTECODE="1")
+    payload = {"children_by_job": {"a": []}, "slurm_names": {"a": "a.sh"}, "slurm_dir": str(root / "slurm")}
+    command = [sys.executable, "-B", "-m", "autoslurm.apps.bulk_submit_driver"]
+    result = subprocess.run(command, input=json.dumps(payload), env=env, cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["job_ids"] == {"a": "123"}
+    assert json.loads(evidence.read_text()) == ["--parsable", str(root / "slurm/a.sh")]
+
+    payload["slurm_dir"] = "/stable/slurm"
+    rejected = subprocess.run(command, input=json.dumps(payload), env=env, cwd=tmp_path, capture_output=True, text=True)
+    assert rejected.returncode == 1
+    assert not json.loads(rejected.stdout)["ok"]
+    assert len(evidence.read_text().splitlines()) == 1

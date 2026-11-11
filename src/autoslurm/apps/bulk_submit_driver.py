@@ -55,3 +55,7 @@ def main(argv: list[str] | None = None) -> None:
     except Exception as exc:  # pragma: no cover - exercised in tests
         print(json.dumps({"ok": False, "error": str(exc)}))
         raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()
