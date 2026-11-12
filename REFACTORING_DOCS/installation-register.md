@@ -2,31 +2,66 @@
 
 ## Status
 
-**MVP4 local submission boundaries verified, 2026-11-11.** Base Conda retains the original source
-at detached baseline HEAD. A separate development checkout, environment and
-state root are operational. Cluster inventory and operations remain deferred
-by the user's local-only instruction. No release has been promoted.
+**Local `dev` activation verified, 2026-11-12.** The user explicitly selected the
+main repository and base Conda commands for daily use of the refactor. The main
+checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
+records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
+historical. No cluster installation or live job was changed.
 
-## Lane inventory
+## Current local inventory
 
-| Field | Stable workstation | Development workstation |
-|---|---|---|
-| Machine/profile identity | Local workstation; no machine configuration found at resolved config path | Not established |
-| Checkout and source reference | `/Users/aadam/Projects/autoslurm`, detached HEAD `33bcbd34fb167fca67aa64739a013073c64167b1`; application source/tests unchanged; documentation working copies retained | `/Users/aadam/Projects/autoslurm/.development/checkout`, branch `codex/mvp0-isolation`; latest task commit located with `git log --grep '^MVP4.3:'`; local milestone tag `mvp4` |
-| Python environment | `/opt/homebrew/Caskroom/miniforge/base`; Python 3.14.7, unchanged | `/Users/aadam/Projects/autoslurm/.development/venv`; Python 3.14.7; installed offline from local cache |
-| Actual import location | `/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; package 0.1.0; editable install points to stable source | `/Users/aadam/Projects/autoslurm/.development/checkout/src/autoslurm/__init__.py`; separate editable install, version 0.1.0; use path/branch to distinguish these unreleased installs |
-| Command entry points | `/opt/homebrew/Caskroom/miniforge/base/bin/asl` and `/opt/homebrew/Caskroom/miniforge/base/bin/autoslurm` | `/Users/aadam/Projects/autoslurm/.development/asl` and `.development/python` wrappers; actual executables under `.development/venv/bin/` |
-| Helper revision and invocation | Not applicable locally; remote helper not inspected | Remote behavior will be mocked |
-| Configuration and tracking root | `/Users/aadam/Projects/autoslurm`; resolved `config.json` absent | `/Users/aadam/Projects/autoslurm/.development/state`, selected by both wrappers through `AUTOSLURM_STORAGE_ROOT`; no machine config created |
-| Script/log locations | Root-relative `jobs/`, `slurm/`, `out/`; no non-dot files at verification | `jobs/`, `slurm/`, `out/` and new `submissions/` receipts and `observations/` caches under selected state root; tests use fresh roots under `.development/test-runs/` |
-| Application working/result roots | Not configured/verified; no application launched | Installed `science-demo` 0.0.1; mocked reference runs use temporary application/state roots. Direct installed-client check under `.development/test-runs/mvp03-installed-client/`; no persistent machine profile created |
-| Evidence source and verification time | Executable/prefix, metadata/import, storage API, detached HEAD and no source diff; 2026-11-11 | Import/storage identity, 333 offline tests, scientific reference and local/mocked submission/inspection failure boundaries; 2026-11-11 |
+| Field | Active daily use | Test execution | Rollback baseline |
+|---|---|---|---|
+| Source | `/Users/aadam/Projects/autoslurm`, branch `dev` | Same active main source | `/Users/aadam/Projects/autoslurm/.development/stable`, detached `33bcbd34fb167fca67aa64739a013073c64167b1` |
+| Python | `/opt/homebrew/Caskroom/miniforge/base/bin/python`, unchanged base Conda environment | `.development/venv/bin/python`, separate test dependencies; editable source repointed to main offline | `.development/stable-python` selects baseline source through PYTHONPATH with base Python |
+| Commands | Existing base `asl` / `autoslurm` import main through the original editable install; no base reinstall needed | `.development/python` / `.development/asl` wrappers | `.development/stable-python` / `.development/stable-asl` |
+| Default state | `/Users/aadam/Projects/autoslurm`, unless explicitly selected with `AUTOSLURM_STORAGE_ROOT` | `/Users/aadam/Projects/autoslurm/.development/state`; fixtures use temporary roots | `/Users/aadam/Projects/autoslurm/.development/stable`; old baseline does not support the environment root selector |
+| Persistent config / jobs at activation | Config absent; zero non-dot jobs/scripts/logs/receipts/observations; no records migrated | Config absent and zero persistent runtime records | Empty fresh baseline runtime; never adopts active dev records implicitly |
+| Package version | `0.1.0`, unreleased; identify code by branch/commit/import path | Same code/version | `0.1.0`; identify by pinned SHA/import path |
+| Remote installation | Uninspected and unchanged; no cluster commands | All Slurm/SSH/transfer effects mocked | Remote installations retain their existing code and job ownership |
 
-Add cluster columns or rows when remote inventory is authorized. Every run
-still targets one selected machine. Store nonsecret paths and identities only;
-never credential contents. An environment path alone is not proof of its imports.
+The initial development worktree `.development/checkout` remains at MVP4 on
+`codex/mvp0-isolation`, with its pre-existing user edits. It is retained as a
+snapshot, not the active editing/test import source. The baseline rollback wrapper
+changes source selection only; it is not a separately cloned Conda environment.
+No dependencies in base Conda were changed during activation.
 
-## Verification and release record
+## Activation evidence and retained work
+
+- Candidate: `89e27817a620e48553638b9a09eb633b1590acbc`, tag `mvp4`;
+  **333 offline tests** passed before activation. The full suite passed again
+  from the active main source: **333 passed in 3.55 s**, 39 expected timestamp
+  collision warnings; report `.development/test-runs/dev-main-activation.xml`.
+- Narrow artifact check: built `.development/artifacts/mvp4/autoslurm-0.1.0-py3-none-any.whl`
+  offline, SHA-256 `f93d1eb1927c22a832e65e556c4a8a20c459b76efa552be23d31c0a9aaf25f8a`.
+  Isolated target installation under `/private/tmp/autoslurm-mvp4-wheel-smoke`
+  imported independently, previewed a tiny job and performed cached inspection
+  without scheduler calls. This is not a full distribution/resource audit.
+- Original main working files: 38 files copied with verified SHA-256 hashes to
+  `.development/backups/pre-dev-main-20261112-000207/files`; manifest, tracked
+  patch, status, revisions and activation evidence are retained alongside them.
+  Additional Git stash: `7016e9b87bdc682e5cf13640a6c12987d3b0ee1d`.
+- Existing user changes in `REFACTORING_DOCS/README.md` and
+  `REFACTORING_DOCS/requirements-gaia-asteroseismology.md` were restored byte-for-byte
+  and remain excluded from implementation commits. Older mirrored docs were
+  archived rather than reapplied over the current implementation guidance.
+- Base daily commands and the test interpreter both import main source; test
+  state stays separate. The test-only scientific example install also points
+  to the main `examples/reference_client` source. Rollback wrappers import the pinned baseline and use its
+  own root. Do not copy new dev tracking data into that older implementation.
+
+## Rollback use
+
+For read-only baseline help/import checks, use `.development/stable-asl --help`
+and `.development/stable-python`. Its own state is separate and empty at
+activation. The main `dev` branch and current records remain available for runs
+created with the refactor. Switching new work back to baseline would be an
+explicit routing decision; it does not undo submissions or migrate new records.
+
+## Historical verification and release record
+
+The following entries document earlier stages before local `dev` activation.
+Their original pinned-main/separate-development layout is superseded above.
 
 - **Baseline tests:** 195 unit tests and four mocked three-job submission cases
   passed. See [the baseline record](design/MVP0_safe_development.md#local-baseline-mvp01)
@@ -90,23 +125,20 @@ never credential contents. An environment path alone is not proof of its imports
 
 ## Current local commands
 
-The following wrappers select the development interpreter and state for the
-child process without activating or modifying base Conda:
-
 ```sh
-/Users/aadam/Projects/autoslurm/.development/asl --help
-/Users/aadam/Projects/autoslurm/.development/python -m pytest -q /Users/aadam/Projects/autoslurm/.development/checkout/tests
+# Daily use: base Conda's installed commands now import the main dev checkout.
+asl --help
+autoslurm --help
+
+# Development tests: same source, isolated dependencies and state.
+/Users/aadam/Projects/autoslurm/.development/python -m pytest -q /Users/aadam/Projects/autoslurm/tests
+
+# Retained baseline source and its own default root.
+/Users/aadam/Projects/autoslurm/.development/stable-asl --help
 ```
 
-For edits, work in `.development/checkout`, not the original source directory.
-The wrappers/environment/state are local setup files, not versioned application
-configuration. A fresh setup recreates the separate environment, installs that
-checkout, and exports `AUTOSLURM_STORAGE_ROOT` to its own absolute state root.
-No remote profile/helper exists for this refactor. Do not copy stable configuration
-or output roots into development without reviewing their destinations.
-
-When updating the inventory, record the command/report used, resolved locations,
-revision and time; do not replace missing evidence with an assumed default.
-Before promotion, add a dated record of candidate/previous revision, checks,
-new-run routing, ownership of in-flight jobs and rollback destination. Retain
-earlier records so old job ownership stays explainable.
+Edit the main checkout on `dev`. Do not continue implementation in the retained
+`.development/checkout` snapshot or modify the baseline rollback worktree.
+Prepared remote helpers/application environments must still be identified before
+any separately authorized cluster operation. One bundle targets one selected
+machine. Store nonsecret paths/identities, never credential contents.

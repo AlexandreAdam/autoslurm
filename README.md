@@ -48,8 +48,15 @@ scripts stay unchanged; local and remote dependencies use scheduler arguments.
 
 Scientific software owns computation, input/output validation and task reduction.
 AutoSlurm owns machine mapping, submission and tracking; agents use its public
-interface and detailed operating guide. The pinned stable installation keeps its
-existing behavior while development is tested locally with mocked Slurm.
+interface and detailed operating guide. The main checkout is now branch `dev`,
+used by base Conda's editable installation. Tests use isolated state and mocked
+Slurm; the earlier baseline remains available in a rollback checkout. Cluster
+installations have not been changed.
+
+A planned MVP7 will prepare bundle-specified Git projects in isolated, verified
+cluster environments before dispatch. See the
+[software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md);
+this feature is not implemented yet.
 
 ## Installation
 

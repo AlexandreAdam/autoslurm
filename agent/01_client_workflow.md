@@ -1,7 +1,8 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP4. The pinned
-stable installation does not have these additions. Read `00_operating_rules.md`
+Use this recipe with the development installation including MVP4. As of
+2026-11-12, main branch `dev` is the active base Conda editable installation;
+the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
 differ. Current repository work is local only: submissions are tested with
 mocked Slurm, never a real cluster.

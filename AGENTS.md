@@ -29,10 +29,13 @@ operate from the workstation; compute nodes use already-prepared environments.
 - Current refactor scope is local only: mock Slurm and transport commands. No
   cluster discovery, SSH, live jobs or remote installs. See WORKFLOW.md for the
   dated scope and installation register for the editable base Conda install.
-- Write application code only in the development worktree listed in the register
-  (`.development/checkout` under the original repository). The original checkout
-  is the pinned stable source used by base Conda. Use development Python/CLI
-  wrappers for tests and operations; do not advance or edit stable source.
+- The user activated the main checkout for daily development on 2026-11-12.
+  Write application code in `/Users/aadam/Projects/autoslurm`, branch `dev`.
+  Base Conda's editable install imports this checkout. Use `.development/python`
+  for tests; it imports the same source with separate test state/dependencies.
+  `.development/checkout` is the retained MVP4 development snapshot, not the
+  active editing location. `.development/stable` is the pinned baseline rollback
+  source; never edit or advance it during ordinary work.
 - Work on one planned task at a time. Split oversized tasks first.
 - A request to plan or review does not start implementation of later tasks.
 - Update the checkbox, Done log, Status, and affected design document alongside
@@ -77,10 +80,11 @@ operate from the workstation; compute nodes use already-prepared environments.
 - Keep development installation working and use a narrow artifact smoke check
   before promotion. Complete packaged agent resources, public index release,
   broad compatibility matrices and polished documentation are later layers.
-- Develop with isolated local/remote code, helper, configuration, tracking and
-  test output locations. Daily jobs stay managed by their pinned stable lane.
-  Promotion changes new-run routing explicitly; no shared mutable records and no
-  in-place updates to environments referenced by queued/running jobs.
+- Daily local commands follow `dev` in the main checkout, as explicitly requested.
+  Keep test configuration/tracking/output separate through the test wrapper and
+  temporary fixtures. Remote installations remain unchanged and must be mocked.
+  Preserve pinned rollback source and historical evidence. Never update source
+  or environments referenced by queued/running scientific jobs in place.
 - Until the actual installations and isolation are verified, perform only
   documentation and read-only discovery. Do not install dependencies into an
   unidentified environment or run commands/tests with unreviewed side effects.

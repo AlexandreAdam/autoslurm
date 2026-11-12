@@ -18,9 +18,10 @@ the new planning files; an editable production install may import it directly.
 Slurm tests. Do not contact a cluster, discover remote installations, submit live
 jobs or install remote helpers. Test remote behavior with fake commands. This
 scope supersedes live-check suggestions elsewhere in the design documents until
-the user authorizes cluster work. Base Conda imports the original checkout,
-pinned at the baseline. Code changes belong in the separate development checkout
-listed in the installation register; never edit the stable source in place.
+the user authorizes cluster work. On 2026-11-12 the user explicitly activated
+`dev` in the main folder for daily use through base Conda. Code changes now belong
+in that main checkout. Keep tests in their separate state/environment and the
+baseline rollback checkout untouched. No cluster installation was changed.
 
 ## Sources of truth
 
@@ -37,28 +38,36 @@ They do not advertise implemented capabilities or expand the current task.
 
 ## Release lanes
 
-- **Stable** is the identified working revision/environment and its production
-  state on the workstation and cluster. It continues managing its own jobs.
-- **Development** has a separate checkout and Python environment, a matched
-  remote helper, isolated local/remote tracking/configuration roots, and a
-  distinct test-results destination.
+- **Active local development** is `/Users/aadam/Projects/autoslurm`, branch
+  `dev`, imported by base Conda's existing editable installation. The user chose
+  to use and evolve this code directly for local daily work.
+- **Test execution** uses `.development/venv` and `.development/python`, importing
+  the active main source while selecting `.development/state` and temporary
+  test roots. Default tests reject unmocked cluster/network commands.
+- **Rollback** retains baseline `33bcbd3` in `.development/stable`, with explicit
+  source-selecting wrappers and its own default state. Remote installations
+  remain uninspected/unchanged; they retain ownership of existing cluster jobs.
 - Keep one Git repository. A second checkout is not a new project or a second
   independent codebase. Development may use main; production runs a pinned
   revision outside that moving checkout.
-- The current local setup retains `/Users/aadam/Projects/autoslurm` at detached
-  baseline HEAD and develops on `codex/mvp0-isolation` in its
-  `.development/checkout` worktree. `.development/venv` and `.development/state`
-  belong only to development. Use the local wrappers recorded in the register;
-  do not switch the stable checkout to a moving branch or merge code there as
-  part of an ordinary development commit.
+- The initial isolated development worktree `.development/checkout` remains at
+  the tested MVP4 checkpoint on `codex/mvp0-isolation`; do not continue editing
+  there. The main folder is now the active `dev` checkout. Older lane records
+  below and in milestone designs describe history, not today's editing location.
+- The local switch was authorized explicitly, after 333 offline tests and an
+  isolated wheel smoke check. No local tracked jobs/config existed to migrate.
+  Original working files were backed up and stashed; the two user-edited
+  documents were restored unchanged. See the installation register for paths.
 - Branch names, directory names and environment activation alone do not prove
   isolation. Verify import locations and resolved local/remote roots before
   development writes, package installs or cluster checks.
 - Until isolation is verified, limit work to documentation and read-only
   discovery. Do not run scheduling/configuration commands or a test suite whose
   file/remote side effects have not been inspected.
-- Never update a shared application environment or checkout referenced by
-  queued/running jobs. Development must not write stable records or outputs.
+- Never update a shared scientific application environment or checkout referenced
+  by queued/running jobs. Test processes must not write daily records/outputs.
+  Daily commands use the main root unless the operator explicitly selects another
+  storage root; no records are implicitly copied between roots.
 - Do not put private keys, tokens or credential contents in the register, plan,
   test fixtures or commits. Record locations and nonsecret identities only.
 
@@ -81,9 +90,9 @@ They do not advertise implemented capabilities or expand the current task.
    to the implementation session's instructions. A code commit, push, merge or
    tag does not change the stable installation or count as deployment.
 
-The initial planning/rules documents can remain uncommitted while the stable
-baseline is being identified. Record that state honestly; do not sweep existing
-user files into a task commit to make the working tree look clean.
+The initial planning/rules documents remained uncommitted during baseline
+identification. Preserve unrelated working files during later commits and lane
+changes; do not sweep user edits into a task commit to clean the working tree.
 
 ## Test and release gates
 

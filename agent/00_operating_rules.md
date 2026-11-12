@@ -1,3 +1,9 @@
+> Local activation, 2026-11-12: the main repository is active on branch `dev`
+> and base Conda commands import it. `.development/python` uses the same source
+> with isolated test state; `.development/stable` retains baseline rollback code.
+> Older lane descriptions below are historical; use the current installation
+> register before operational work. Remote installations remain unchanged.
+
 # Start here for AutoSlurm operations
 
 Use the guide and public interface belonging to the installation that manages

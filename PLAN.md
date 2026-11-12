@@ -10,17 +10,18 @@ This file is the source of truth for active scope, task order and progress.
 ## Status
 
 - **Current milestone:** MVP4, submission responsibility boundaries; complete locally.
-- **Stage:** stable code remains pinned; development has isolated code,
-  environment/state, a tested client recipe and single/array reference workloads.
+- **Stage:** main checkout is active on `dev`, explicitly selected by the user
+  on 2026-11-12. Base Conda imports it; tests use the same source with isolated
+  environment/state. Baseline rollback source remains in `.development/stable`.
   Full offline suite: 333 passed. Shared preview/submit preparation, explicit
   submission stages, unchanged prepared scripts and accepted-ID preservation
   through persistence interruption are verified alongside MVP1–MVP3 behavior.
-  No cluster installation or promotion performed.
+  Local daily-use activation completed; no cluster installation changed.
 - **Next task:** MVP5, inspection responsibility boundaries; not started.
-- **Scope update:** prioritize implementation modularity after MVP3. Result
-  retrieval remains optional; MVP5 inspection and MVP6 persistence boundaries
-  follow as separately bounded increments.
-- **Last updated:** 2026-11-11.
+- **Scope update:** MVP5 inspection and MVP6 persistence boundaries remain
+  planned. New MVP7 covers bundle-driven Git project/environment preparation;
+  its manifest/helper-runtime contract comes first. Result retrieval is optional.
+- **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
   and [baseline results](REFACTORING_DOCS/design/MVP0_safe_development.md#local-baseline-mvp01).
@@ -62,6 +63,7 @@ Each row is incremental, not cumulative.
 | MVP4 | Shared preparation and explicit submission lifecycle/dispatch boundaries | One to two days | Existing receipt format and failure guarantees; no retry engine |
 | MVP5 | Separate inspection collection, state projection, caches and artifact reads | One to two days | Preserve public inspection results; no new index |
 | MVP6 | Separate bundle persistence/selection from transport and configuration helpers | One to two days | No storage migration or broad module renaming |
+| MVP7 | Prepare exact Git project revisions and verify isolated runtime installations for a bundle | Estimate after manifest contract | Login/preparation host only; never update code/environments used by existing jobs |
 | Optional result retrieval | Filtered retrieval for one declared result subtree | Half to one day | No general data-staging system or automatic scientific retry engine |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
@@ -100,19 +102,22 @@ reducer repair, complete migration, or polished publication.
 
 ## Use the package during the refactor
 
-Maintain two explicit lanes. They may use the same cluster account, but must not
-share mutable tracking directories, helper installations, or test output paths.
+As explicitly requested on 2026-11-12, the main folder is now the active `dev`
+checkout and base Conda's editable installation imports it. Plain `asl` and
+`autoslurm` use development code with the main storage root, unless explicitly
+selected otherwise. No persistent machine config or local jobs existed at the
+switch, so no tracking migration was required. Cluster installations are unchanged.
 
-| Lane | Code and environment | State and jobs |
-|---|---|---|
-| Stable | Pinned working revision in its own checkout and environment on workstation and cluster | Existing production roots and live jobs; routine terminal/agent work |
-| Development | Separate checkout/environment and matched remote helper; implementation can continue on main | Explicit isolated local and remote roots, tiny test jobs and a distinct result namespace |
+Tests use `.development/python`/`.development/asl` with `.development/venv` and
+`.development/state`, importing the active main source. Default fixtures use
+fresh temporary roots and reject unmocked external effects. The old development
+checkout remains as the MVP4 snapshot, not the active editing location.
 
-Local isolation is established in MVP0.2; actual paths and commands are in the
-installation register. Development uses `AUTOSLURM_STORAGE_ROOT` for independent
-configuration/state; explicit remote `storage_root` selects and verifies a helper
-root through mocks. The original checkout stays at its baseline revision and
-retains its existing default root. No remote installation has been created.
+The baseline is preserved at `.development/stable`; source-selecting
+`.development/stable-python` and `.development/stable-asl` use that checkout and
+its own default storage. All original main working files were backed up and
+stashed; existing user edits were restored unchanged. See the installation
+register for exact evidence, wrappers and rollback ownership.
 
 ### Promotion and rollback
 
@@ -320,6 +325,10 @@ Design: [MVP4 submission boundaries](REFACTORING_DOCS/design/MVP4_submission_bou
   unchanged rendered scripts, pre/post-dispatch/storage failures and offline
   science runs. Record structure changes and full-suite results, then tag locally.
 
+- [x] **MVP4.4 Activate local dev on explicit request.** Preserve baseline and
+  user files, smoke-check an artifact, switch main to `dev`, verify base commands
+  and isolated test imports, and update the working agreement/register.
+
 **Outcome:** changing validation or rendering has one owner; tracking failures
 cannot accidentally turn into a second submission or erase known IDs. This is
 implementation modularity, developed locally with mocked Slurm/transport.
@@ -338,6 +347,20 @@ Extract file transfer from bundle storage, consolidate configuration/transport
 helpers, and make public exports explicit. Keep one active implementation per
 concern and existing JSON records. Start with mechanical extraction before
 changing behavior. No migration or module tree redesign required. Not started.
+
+## MVP7 Bundle-driven cluster software preparation
+
+Design: [MVP7 cluster software preparation](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
+
+**Outcome:** a bundle can require exact Git project revisions and a verified
+prepared runtime. Resolve/fetch/install on the login/preparation host; compute
+jobs use ready isolated releases. Existing jobs keep their code/environment.
+
+Start with the manifest attachment and helper/runtime environment separation;
+then implement source materialization, installation checks, release readiness
+and execution/agent evidence. Module responsibilities, detailed tasks and failure
+cases are in the design. This MVP is planned, not implemented; live cluster
+operations remain outside the current local-only scope.
 
 ## Optional scientific result retrieval (formerly proposed MVP4)
 
@@ -423,6 +446,9 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | 2026-11-11 | Prioritize small modularity MVPs: submission, then inspection, then persistence/transport | User requested careful decomposition of brittle concepts and overloaded functions; defer optional result retrieval and preserve existing records/failure guarantees |
 
+| 2026-11-12 | Activate `dev` in the main folder for base Conda daily use, preserving rollback source and user files | Explicit user choice replaces the initial pinned-main/nested-development editing arrangement; cluster installations remain unchanged |
+| 2026-11-12 | Add MVP7 for bundle-specified Git projects and verified prepared environments | User requested less manual cluster maintenance; prepare isolated releases before dispatch and separate helper/runtime environment roles |
+
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
 or migration decision has already been accepted.
@@ -442,6 +468,7 @@ or migration decision has already been accepted.
 | 2026-11-11 | MVP2.0–MVP2.3 Safer submission, receipts and exact inspection | 295 offline tests pass in 2.62 s; 28 expected snapshot-collision warnings. Same-level/later rejection, interruption/malformed output, response loss after final and unfinished helper execution, persisted/in-memory accepted IDs on storage failure, capability/replay guards, read-only refresh with recorded transport, rejection of changed identities/IDs, protected cleanup, shell syntax and literal/runtime exports verified. Report: `.development/test-runs/mvp2-final.xml`. Task commit: `git log --grep '^MVP2.3:'`; local tag `mvp2` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 | 2026-11-11 | MVP3.0–MVP3.3 Shared inspection and bounded log refresh | 313 offline tests pass in 3.87 s; 29 expected snapshot-collision warnings. Mixed scientific array, missing/failed/stale observations, queue/accounting conflicts/errors, raw/dot task IDs and excluded steps, saved transport after profile edits, exact receipt overlay without writes, remote second refresh, checksum log sync and cached no-network reads verified. Shared status/inspect/ACP evidence and task-context handoff checked. One scheduler SSH plus one selected-log SSH in the remote scenario; two local scheduler commands across multiple runs. Report: `.development/test-runs/mvp3-final.xml`. Task commit: `git log --grep '^MVP3.3:'`; local tag `mvp3` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 | 2026-11-11 | MVP4.0–MVP4.3 Shared preparation and submission responsibility boundaries | 333 offline tests pass in 3.22 s; 39 expected snapshot-collision warnings. Four preview/submit inconsistencies and accepted-ID loss on receipt-write interruption reproduced and fixed. Pure preparation, copied values, exact preview/script/path parity, dependency flags for both lanes, initial/staging/transport/session/response/final-tracking failures and known-ID retention verified. `submit_jobs`: 116 to 20 lines; preparation, preflight, record/staging/dispatch/outcome persistence have explicit owners. Report: `.development/test-runs/mvp4-review.xml`. Task commit: `git log --grep '^MVP4.3:'`; local tag `mvp4` at closure. Stable code/import/runtime unchanged; development-only changes, no push, cluster access or promotion |
+| 2026-11-12 | MVP4.4 Local dev activation and MVP7 scope | Main switched to `dev` at tested MVP4 revision `89e2781`; existing base editable import/commands now use it without a base environment reinstall. Baseline retained in `.development/stable`; original files backed up/stashed and two user documents restored unchanged. Isolated wheel import/preview/cached-inspection smoke passed. Test environment repointed to main source with separate test state; 333 tests passed again in 3.55 s from the active checkout (`.development/test-runs/dev-main-activation.xml`). MVP7 planned with explicit Git/release/environment responsibilities; no remote operations performed. Activation commit: `git log --grep '^MVP4.4:'` |
 
 ## How we work
 

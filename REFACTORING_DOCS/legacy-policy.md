@@ -5,8 +5,11 @@ during the refactor.
 
 The [MVP plan](../PLAN.md) supersedes the earlier assumption of preserving every
 public interface throughout development. Intentional breaking changes are
-allowed at explicit promotion boundaries. Keep daily-use code and records in
-their pinned stable lane while a separate development lane changes.
+allowed at explicit promotion boundaries. Initially daily-use code was pinned
+while a separate development lane changed. On 2026-11-12 the user activated `dev`
+in the main folder for daily base Conda use; the old baseline is now a separate
+rollback checkout. See the installation register for current source/state routing.
+Existing remote runs remain owned by their unchanged submitting installations.
 
 ## Purpose
 

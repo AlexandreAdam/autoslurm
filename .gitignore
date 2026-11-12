@@ -174,3 +174,8 @@ out/*
 !out/.gitignore
 
 apps_catalog.json
+
+# Mutable daily run evidence and scientific results
+submissions/
+observations/
+results/

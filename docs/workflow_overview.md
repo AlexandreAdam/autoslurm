@@ -5,9 +5,10 @@ the computation, resources and dependencies; AutoSlurm resolves machine paths,
 prepares scripts, submits the jobs and exposes evidence about what happened.
 Your application remains responsible for the science and its results.
 
-This page describes the development MVP4 workflow. The daily-use installation
-remains pinned to its earlier revision; the new workflow is tested locally with
-mocked Slurm/SSH and has not been promoted or validated on a real cluster.
+This page describes the development MVP4 workflow. The user activated `dev`
+in the main repository for local daily use through base Conda on 2026-11-12.
+Tests use isolated state and mocked Slurm/SSH. A baseline rollback checkout is
+retained; the cluster installation has not been changed or validated.
 
 ## The map
 
