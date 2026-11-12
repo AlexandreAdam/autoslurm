@@ -6,7 +6,9 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. No cluster installation or live job was changed.
+historical. Current tested code is MVP5: locate it with
+`git log --grep '^MVP5.3:'` or local tag `mvp5`. No cluster installation or live
+job was changed.
 
 ## Current local inventory
 
@@ -122,6 +124,17 @@ Their original pinned-main/separate-development layout is superseded above.
   inspection cases remain passing. Stable source/import/runtime and both absent
   persistent configs are unchanged. Documentation updates stay in development.
   See [the MVP4 design](design/MVP4_submission_boundaries.md).
+
+## Current implementation verification
+
+- **MVP5, 2026-11-12:** 366 offline tests passed in 3.15 s; 39 expected snapshot
+  collision warnings. Report `.development/test-runs/mvp5-final.xml` covers
+  collection/projection/cache/artifact boundaries, invalid records and producing
+  metadata, malformed cache structures, cache-write evidence retention, bounded
+  remote decoding, cached no-network/task identity and all previous scientific,
+  submission, terminal and agent workflows. Daily/base and isolated test imports
+  remain the main dev source. Baseline source and both persistent runtime roots
+  remain unchanged. No dependency installs, cluster access, migration or push.
 
 ## Current local commands
 

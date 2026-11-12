@@ -1,15 +1,14 @@
-"""Bounded stdout/stderr reads using producing paths and canonical task identity."""
+"""Bounded log retrieval: select references, read transport, decode, cache."""
 
 import base64
 from datetime import datetime, timezone
-import hashlib
-import json
 from pathlib import Path
 import re
 import shlex
 import subprocess
 
-from .execution import EXECUTION_METADATA_KEY
+from .execution import EXECUTION_METADATA_KEY, producing_machine, is_remote_machine
+from .inspection_cache import InspectionCache
 from .storage import storage_root
 from .utils import ssh_host_from_config
 
@@ -24,9 +23,9 @@ def _expand(pattern, name, parent, index, job_id):
     return re.sub(r"%(.)|%$", replace, pattern)
 
 
-def _references(job, task):
+def _references(job, task, root):
     execution = job.get(EXECUTION_METADATA_KEY, {})
-    root = execution.get("storage_root", str(storage_root()))
+    root = execution.get("storage_root", str(root))
     working = execution.get("working_directory")
     slurm = job.get("slurm") or {}
     patterns = {"stdout": execution.get("log_pattern") or slurm.get("output") or str(Path(root) / "out/%x-%j.out")}
@@ -46,19 +45,15 @@ def _references(job, task):
     return refs
 
 
-def _finish(reference, data, size, tail, max_bytes):
-    text = data.decode("utf-8", errors="replace")
-    lines = text.splitlines()
-    return {**reference, "state": "available", "text": "\n".join(lines[-tail:]) if tail else "",
-            "size_bytes": size, "truncated": size > len(data) or len(lines) > tail,
-            "max_bytes": max_bytes, "observed_at": datetime.now(timezone.utc).isoformat()}
-
-
-def read_job_logs(jobs, resolved_jobs, *, job_name=None, task_index=None, tail=40, max_bytes=65536, max_logs=20, refresh=True):
-    if not isinstance(tail, int) or tail < 0 or not 1 <= max_bytes <= 1048576 or not 1 <= max_logs <= 100:
+def validate_log_bounds(tail, max_bytes, max_logs):
+    if (type(tail) is not int or tail < 0 or type(max_bytes) is not int
+            or not 1 <= max_bytes <= 1048576 or type(max_logs) is not int
+            or not 1 <= max_logs <= 100):
         raise ValueError("Log bounds require nonnegative tail, 1..1048576 bytes and 1..100 files.")
-    from .inspection import producing_machine, _profiles
-    profiles, _ = _profiles(jobs)
+
+
+def select_log_references(jobs, resolved_jobs, *, profiles, root, job_name=None, task_index=None):
+    """Pure producing-path selection; no profile discovery, file reads or queries."""
     by_name = {job["name"]: job for job in jobs}
     references = []
     for resolved in resolved_jobs:
@@ -66,105 +61,159 @@ def read_job_logs(jobs, resolved_jobs, *, job_name=None, task_index=None, tail=4
             continue
         job = by_name[resolved["name"]]
         for task in resolved["tasks"]:
-            if task_index is not None and task["task_index"] != int(task_index):
+            if task_index is not None and task["task_index"] != task_index:
                 continue
             if task["parent_id"] is None:
                 continue
             try:
                 key, config = producing_machine(job, profiles)
-                if config and EXECUTION_METADATA_KEY not in job:
+                if is_remote_machine(config) and EXECUTION_METADATA_KEY not in job:
                     raise ValueError("Remote log locations lack recorded producing metadata; no path guessing.")
-                for ref in _references(job, task):
-                    references.append({**ref, "key": key, "config": config})
-            except ValueError as exc:
-                references.append({"job_name": job["name"], "task_index": task["task_index"], "state": "error", "error": str(exc)})
-    output = []
-    remote_groups = {}
-    for ref in references[:max_logs]:
-        if ref.get("state") == "error":
-            output.append(ref)
+                references.extend({**ref, "key": key, "config": config} for ref in _references(job, task, root))
+            except (ValueError, TypeError, KeyError) as error:
+                references.append({"job_name": job["name"], "task_index": task["task_index"],
+                                   "state": "error", "error": str(error)})
+    return references
+
+
+def _public_reference(reference):
+    return {key: value for key, value in reference.items() if key not in {"key", "config"}}
+
+
+def _finish(reference, data, size, tail, max_bytes, observed_at):
+    lines = data.decode("utf-8", errors="replace").splitlines()
+    return {**reference, "state": "available", "text": "\n".join(lines[-tail:]) if tail else "",
+            "size_bytes": size, "truncated": size > len(data) or len(lines) > tail,
+            "max_bytes": max_bytes, "observed_at": observed_at}
+
+
+def _read_local_reference(reference, tail, max_bytes):
+    public = _public_reference(reference)
+    for candidate in reference["paths"]:
+        try:
+            with Path(candidate).open("rb") as stream:
+                size = stream.seek(0, 2)
+                stream.seek(max(0, size - max_bytes))
+                data = stream.read(max_bytes)
+            return _finish({**public, "path": candidate}, data, size, tail, max_bytes,
+                           datetime.now(timezone.utc).isoformat())
+        except FileNotFoundError:
             continue
-        config = ref.pop("config")
-        key = ref.pop("key")
-        remote = bool(config.get("hostname") or config.get("hosturl") or config.get("username"))
-        if remote:
-            remote_groups.setdefault(key, (config, []))[1].append(ref)
-        else:
-            for candidate in ref["paths"]:
-                path = Path(candidate)
-                try:
-                    with path.open("rb") as stream:
-                        size = stream.seek(0, 2)
-                        stream.seek(max(0, size - max_bytes))
-                        data = stream.read(max_bytes)
-                    output.append(_finish({**ref, "path": candidate}, data, size, tail, max_bytes))
-                    break
-                except FileNotFoundError:
-                    continue
-                except OSError as exc:
-                    output.append({**ref, "path": candidate, "state": "error", "error": str(exc)})
-                    break
-            else:
-                output.append({**ref, "state": "missing", "path": ref["paths"][0]})
-    for key, (config, refs) in remote_groups.items():
-        requests = [(ref, candidate) for ref in refs for candidate in ref["paths"]]
+        except OSError as error:
+            return {**public, "path": candidate, "state": "error", "error": str(error)}
+    return {**public, "state": "missing", "path": reference["paths"][0]}
+
+
+def _query_remote_tails(config, paths, max_bytes):
+    chunks = ["set -o pipefail"]
+    for index, candidate in enumerate(paths):
+        path = shlex.quote(candidate)
+        chunks.append(f"if test -f {path}; then size=$(wc -c < {path}) && data=$(tail -c {max_bytes} -- {path} | base64 | tr -d '\\n') && printf '{index}|ok|%s|%s\\n' \"$size\" \"$data\" || printf '{index}|error||\\n'; else printf '{index}|missing||\\n'; fi")
+    try:
+        host = ssh_host_from_config(config)
+        result = subprocess.run(["ssh", *shlex.split(host), "bash -lc " + shlex.quote("\n".join(chunks))],
+                                capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip() or "Remote log query failed.")
         snapshots = {}
-        if refresh:
-            chunks = ["set -o pipefail"]
-            for index, (_, candidate) in enumerate(requests):
-                path = shlex.quote(candidate)
-                chunks.append(f"if test -f {path}; then size=$(wc -c < {path}) && data=$(tail -c {max_bytes} -- {path} | base64 | tr -d '\\n') && printf '{index}|ok|%s|%s\\n' \"$size\" \"$data\" || printf '{index}|error||\\n'; else printf '{index}|missing||\\n'; fi")
-            try:
-                host = ssh_host_from_config(config)
-                result = subprocess.run(["ssh", *shlex.split(host), "bash -lc " + shlex.quote("\n".join(chunks))], capture_output=True, text=True, timeout=30)
-                if result.returncode != 0:
-                    raise RuntimeError(result.stderr.strip() or "Remote log query failed.")
-                for line in result.stdout.splitlines():
-                    fields = line.split("|", 3)
-                    if len(fields) == 4 and fields[0].isdigit():
-                        snapshots[int(fields[0])] = fields[1:]
-            except Exception as exc:
-                for ref in refs:
-                    output.append({**ref, "state": "error", "error": str(exc), "path": ref["paths"][0]})
+        for line in result.stdout.splitlines():
+            fields = line.split("|", 3)
+            if len(fields) == 4 and fields[0].isdigit():
+                snapshots[int(fields[0])] = fields[1:]
+        return snapshots, None
+    except Exception as error:
+        return {}, str(error)
+
+
+def _decode_remote_entry(reference, candidate, fields, *, tail, max_bytes, observed_at, cache):
+    public = {**_public_reference(reference), "path": candidate}
+    if fields is None:
+        return {**public, "state": "error", "error": "Incomplete remote log response."}
+    if fields[0] == "missing":
+        return {**public, "state": "missing"}
+    if fields[0] != "ok":
+        return {**public, "state": "error", "error": "Remote log read failed."}
+    try:
+        data = base64.b64decode(fields[2], validate=True)
+        size = int(fields[1])
+        if len(data) > max_bytes or size < 0:
+            raise ValueError("Remote log exceeded the requested bound or reported an invalid size.")
+        entry = _finish(public, data, size, tail, max_bytes, observed_at)
+    except (ValueError, TypeError) as error:
+        return {**public, "state": "error", "error": str(error)}
+    error = cache.save_excerpt(reference["key"], candidate, entry)
+    if error:
+        entry["cache_error"] = error
+    return entry
+
+
+def _choose_reference(reference, candidates, missing_state):
+    for state in ("available", "error"):
+        match = next((entry for entry in candidates if entry["state"] == state), None)
+        if match is not None:
+            return match
+    return {**_public_reference(reference), "path": reference["paths"][0], "state": missing_state}
+
+
+def _read_cached_reference(reference, tail, max_bytes, cache):
+    candidates = []
+    for candidate in reference["paths"]:
+        entry, error = cache.load_excerpt(reference["key"], candidate)
+        if error:
+            candidates.append({**_public_reference(reference), "path": candidate,
+                               "state": "error", "error": error["message"]})
+        elif entry is not None:
+            if any(entry.get(key) != reference.get(key) for key in ("job_name", "job_id", "task_index")):
                 continue
-        offset = 0
-        for ref in refs:
-            candidates = []
-            for candidate in ref["paths"]:
-                cache_key = hashlib.sha256((key + candidate).encode()).hexdigest()
-                cache = storage_root() / "observations/logs" / (cache_key + ".json")
-                fields = snapshots.get(offset)
-                offset += 1
-                if not refresh:
-                    if cache.exists():
-                        try:
-                            entry = json.loads(cache.read_text())
-                            previous = entry["text"].encode()
-                            bounded = previous[-max_bytes:]
-                            entry["text"] = "\n".join(bounded.decode("utf-8", errors="replace").splitlines()[-tail:]) if tail else ""
-                            entry["truncated"] = entry["truncated"] or len(entry["text"].encode()) < len(previous)
-                            entry["max_bytes"] = max_bytes
-                            entry["freshness"] = "stale"
-                            candidates.append(entry)
-                        except (OSError, ValueError, KeyError, TypeError) as exc:
-                            candidates.append({**ref, "path": candidate, "state": "error", "error": f"Invalid cached log: {exc}"})
-                    continue
-                if fields is None:
-                    candidates.append({**ref, "path": candidate, "state": "error", "error": "Incomplete remote log response."})
-                elif fields[0] == "ok":
-                    try:
-                        data = base64.b64decode(fields[2], validate=True)
-                        if len(data) > max_bytes:
-                            raise ValueError("Remote log exceeded the requested bound.")
-                        entry = _finish({**ref, "path": candidate}, data, int(fields[1]), tail, max_bytes)
-                        from .submission import atomic_json
-                        atomic_json(cache, entry)
-                        candidates.append(entry)
-                    except (ValueError, OSError) as exc:
-                        candidates.append({**ref, "path": candidate, "state": "error", "error": str(exc)})
-                elif fields[0] == "error":
-                    candidates.append({**ref, "path": candidate, "state": "error", "error": "Remote log read failed."})
-            output.append(next((entry for entry in candidates if entry["state"] == "available"), candidates[0] if candidates else {**ref, "path": ref["paths"][0], "state": "missing" if refresh else "not_cached"}))
-    if len(references) > max_logs:
-        output.append({"state": "omitted", "count": len(references) - max_logs, "reason": "Requested log-file bound reached."})
+            previous = entry["text"].encode()
+            bounded = previous[-max_bytes:]
+            entry["text"] = "\n".join(bounded.decode("utf-8", errors="replace").splitlines()[-tail:]) if tail else ""
+            entry["truncated"] = entry["truncated"] or len(entry["text"].encode()) < len(previous)
+            entry.update(max_bytes=max_bytes, freshness="stale")
+            candidates.append(entry)
+    return _choose_reference(reference, candidates, "not_cached")
+
+
+def _read_remote_references(references, *, tail, max_bytes, refresh, cache):
+    if not refresh:
+        return [_read_cached_reference(ref, tail, max_bytes, cache) for ref in references]
+    paths = [candidate for ref in references for candidate in ref["paths"]]
+    snapshots, error = _query_remote_tails(references[0]["config"], paths, max_bytes)
+    if error:
+        return [{**_public_reference(ref), "path": ref["paths"][0], "state": "error", "error": error} for ref in references]
+    observed_at = datetime.now(timezone.utc).isoformat()
+    output, offset = [], 0
+    for reference in references:
+        candidates = []
+        for candidate in reference["paths"]:
+            candidates.append(_decode_remote_entry(reference, candidate, snapshots.get(offset),
+                tail=tail, max_bytes=max_bytes, observed_at=observed_at, cache=cache))
+            offset += 1
+        output.append(_choose_reference(reference, candidates, "missing"))
     return output
+
+
+def read_job_logs(jobs, resolved_jobs, *, job_name=None, task_index=None, tail=40,
+                  max_bytes=65536, max_logs=20, refresh=True, profiles=None, root=None, cache=None):
+    validate_log_bounds(tail, max_bytes, max_logs)
+    root = storage_root() if root is None else root
+    cache = InspectionCache(root) if cache is None else cache
+    references = select_log_references(jobs, resolved_jobs, profiles=profiles or {}, root=root,
+                                      job_name=job_name, task_index=task_index)
+    output, remote_groups = {}, {}
+    for index, ref in enumerate(references[:max_logs]):
+        if ref.get("state") == "error":
+            output[index] = ref
+        elif is_remote_machine(ref["config"]):
+            remote_groups.setdefault(ref["key"], []).append((index, ref))
+        else:
+            output[index] = _read_local_reference(ref, tail, max_bytes)
+    for group in remote_groups.values():
+        entries = _read_remote_references([ref for _, ref in group], tail=tail, max_bytes=max_bytes,
+                                         refresh=refresh, cache=cache)
+        output.update((index, entry) for (index, _), entry in zip(group, entries))
+    ordered = [output[index] for index in sorted(output)]
+    if len(references) > max_logs:
+        ordered.append({"state": "omitted", "count": len(references) - max_logs,
+                        "reason": "Requested log-file bound reached."})
+    return ordered

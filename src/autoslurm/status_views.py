@@ -104,11 +104,14 @@ def rows_from_resolved(jobs, resolved, *, name_contains=None, name_regex=None, i
 def bundle_job_rows_from_jobs(jobs, bundle_date, *, name_contains=None, name_regex=None, ignore_case=False,
                               status_predicate=None, show_array_tasks=False, array_tasks=None,
                               machine_statuses_by_machine=None, machine_time_left_by_machine=None):
-    from .inspection import resolve_jobs, producing_machine, _profiles
-    observations = None
+    from .inspection import observe_job_statuses
+    from .inspection_state import resolve_jobs
+    from .inspection_collection import load_machine_profiles
+    from .execution import producing_machine
+    resolved = None
     if machine_statuses_by_machine is not None:
         observations = {}
-        profiles, _ = _profiles(jobs)
+        profiles, profile_error = load_machine_profiles(jobs)
         for job in jobs:
             try:
                 key, _ = producing_machine(job, profiles)
@@ -120,7 +123,10 @@ def bundle_job_rows_from_jobs(jobs, bundle_date, *, name_contains=None, name_reg
             observations[key] = {"observed_at": None, "errors": [], "records": {
                 canonical_job_id(identity): {"state": state, "time_remaining": times.get(identity)}
                 for identity, state in states.items() if canonical_job_id(identity)}}
-    return bundle_date, rows_from_resolved(jobs, resolve_jobs(jobs, observations), name_contains=name_contains,
+        resolved = resolve_jobs(jobs, observations, profiles=profiles, profile_error=profile_error)
+    if resolved is None:
+        resolved = observe_job_statuses(jobs)
+    return bundle_date, rows_from_resolved(jobs, resolved, name_contains=name_contains,
         name_regex=name_regex, ignore_case=ignore_case, status_predicate=status_predicate,
         show_array_tasks=show_array_tasks, array_tasks=array_tasks)
 

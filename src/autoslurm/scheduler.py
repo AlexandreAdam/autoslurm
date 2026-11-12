@@ -5,7 +5,7 @@ import re
 import shlex
 import subprocess
 
-from .array_status import canonical_job_id
+from .array_status import canonical_job_id, parent_job_id
 from .utils import ssh_host_from_config
 
 QUERY_START_DATE = "2000-01-01"
@@ -32,7 +32,7 @@ def _parse(text, source):
 def query_scheduler(job_ids, config=None, machine_name=None):
     observed_at = datetime.now(timezone.utc).isoformat()
     ids = sorted(set(str(value) for value in job_ids))
-    if any(not re.fullmatch(r"\d+", value) for value in ids):
+    if any(parent_job_id(value) is None for value in ids):
         raise ValueError("Scheduler queries require numeric parent job IDs.")
     observation = {"observed_at": observed_at, "records": {}, "errors": [], "queries": []}
     if not ids:

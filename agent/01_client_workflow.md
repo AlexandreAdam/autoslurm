@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP4. As of
+Use this recipe with the development installation including MVP5. As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -275,6 +275,15 @@ selected runs (`inspect_bundles(paths)` batches them). It never submits work.
 | `freshness: partial` / `failed`, `errors` | Some or all evidence failed; retain known observations and report the query/transport error |
 | `freshness: stale` / `never` | Explicit cached read or no matching saved observation; never claim current state from these |
 | `last_observed` | Prior observation's state/time, explicitly stale after a failed refresh |
+
+MVP5 isolates bad records from healthy observations in the same machine batch.
+Malformed producing metadata never redirects a remote job to local Slurm.
+Observation caches contain scheduler/receipt evidence; log/script errors belong
+to the particular artifact request and do not contaminate later status-only
+reads. Invalid caches are reported as unavailable evidence. A cache-write error
+keeps current scheduler observations and fetched log text available, with explicit
+cache errors and partial freshness. Cached log excerpts retain their task identity
+and cannot be relabelled for another job sharing an output path.
 
 Missing declared array tasks remain `UNKNOWN`; parent state never fabricates
 individual task completion, failure or reasons. `COMPLETED` means scheduler

@@ -102,16 +102,16 @@ def job_status_text(job):
 
 
 def job_status_texts(jobs):
-    from .inspection import resolve_jobs
-    return {job["name"]: job["state"].lower() if job["id"] is None else job["state"] for job in resolve_jobs(jobs)}
+    from .inspection import observe_job_statuses
+    return {job["name"]: job["state"].lower() if job["id"] is None else job["state"] for job in observe_job_statuses(jobs)}
 
 
 def job_status_details(jobs):
-    from .inspection import resolve_jobs
+    from .inspection import observe_job_statuses
     return {job["name"]: {"status": job["state"], "is_array": job["is_array"],
                          "array_completed": job["counts"]["completed"],
                          "array_total": len(job["tasks"]) if job["is_array"] else 0,
-                         "errors": job["errors"], "observed_at": job["observed_at"]} for job in resolve_jobs(jobs)}
+                         "errors": job["errors"], "observed_at": job["observed_at"]} for job in observe_job_statuses(jobs)}
 
 
 def bundle_index_context(desired_date=None):

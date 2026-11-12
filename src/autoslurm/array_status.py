@@ -154,3 +154,9 @@ def canonical_job_id(value):
     if not match:
         return None
     return match[1] + ("_" + str(int(match[2])) if match[2] is not None else "")
+
+
+def parent_job_id(value):
+    """Validate a scheduler parent identity before it joins a query batch."""
+    text = str(value)
+    return text if re.fullmatch(r"\d+", text) else None

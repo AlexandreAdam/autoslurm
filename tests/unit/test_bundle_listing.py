@@ -173,7 +173,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
         "default_machine": "remote",
     }
     module = importlib.import_module("autoslurm.status")
-    monkeypatch.setattr("autoslurm.inspection.load_config", lambda: config)
+    monkeypatch.setattr("autoslurm.inspection_collection.load_config", lambda: config)
     monkeypatch.setattr("autoslurm.utils.load_config", lambda: config)
 
     seen = {"ssh": 0}

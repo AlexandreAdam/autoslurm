@@ -1,6 +1,6 @@
 # Public workflow map
 
-The development MVP4 boundary is `01_client_workflow.md`. Public Python imports
+The development MVP5 boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
@@ -33,13 +33,29 @@ work. Use fresh output namespaces and keep scientific validation application-own
 For maintainers, the active dependency flow is:
 
 ```text
-Python / CLI / ACP -> inspection -> scheduler (queue/accounting)
-                         |      -> array_status (identity and aggregation)
-                         |      -> log_files (exact bounded tails)
-                         |      -> saved bundles + local submission receipts
-                         v
-                    status_views / human context
+Python / CLI / ACP -> inspection (coordinates explicit stages)
+                       |-> inspection_collection -> files/profiles/scheduler
+                       |-> inspection_state -> pure task/state projection
+                       |-> inspection_cache -> observation/excerpt JSON
+                       |-> inspection_artifacts -> scripts / log_files
+                                                          |-> local reads
+                                                          |-> remote tail batch
+                                                          |-> excerpt cache
 ```
+
+`inspection_state` requires provided observations and producing profiles. It
+never reads configuration, files or a clock, queries a scheduler or mutates
+caller data. Shared producing-machine interpretation lives in execution and
+is data-only. `inspection_collection` explicitly loads local evidence/profiles
+and batches valid IDs; malformed entries do not poison other jobs' observations.
+
+`inspection_cache` owns observation and remote excerpt cache I/O. Status evidence
+is saved before request-specific artifacts are attached, keeping those failure
+scopes distinct. Invalid cache shapes are unavailable evidence, while failed
+cache writes retain already collected observations/log text. `log_files` now
+separates reference selection, local reads, remote batching/decoding and cached
+excerpts, without importing the inspection coordinator.
+
 
 Submission now follows explicit responsibilities:
 
@@ -63,9 +79,10 @@ The graph driver still owns per-job acceptance/persistence ordering. Dependencie
 are command arguments in both lanes; prepared scripts are never edited by it.
 These are internal boundaries, not new client APIs.
 
-Inspection still combines collection/projection/cache/artifact coordination;
-MVP5 will separate those effects. Bundle storage still contains transfer helpers;
-MVP6 will extract that boundary and review configuration/exports. Receipt state
+The inspection coordinator retains operation order and public result assembly;
+its extracted stages own collection, pure projection, storage and artifact reads.
+Bundle storage still contains transfer helpers; MVP6 will extract that boundary
+and review configuration/exports. Receipt state
 transitions and shell argument representation remain further review points.
 
 

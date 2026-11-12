@@ -5,7 +5,7 @@ the computation, resources and dependencies; AutoSlurm resolves machine paths,
 prepares scripts, submits the jobs and exposes evidence about what happened.
 Your application remains responsible for the science and its results.
 
-This page describes the development MVP4 workflow. The user activated `dev`
+This page describes the development MVP5 workflow. The user activated `dev`
 in the main repository for local daily use through base Conda on 2026-11-12.
 Tests use isolated state and mocked Slurm/SSH. A baseline rollback checkout is
 retained; the cluster installation has not been changed or validated.
@@ -60,7 +60,10 @@ exit codes, and distinguishes a failed query from a failed job. An observed
 parent failure stays visible even if individual task records are unavailable.
 Log excerpts use the producing run's recorded paths and exact task IDs. Refresh
 updates growing or replaced logs; excerpts remain bounded and reference full
-artifacts. Cached scheduler evidence is explicitly stale.
+artifacts. Cached scheduler evidence is explicitly stale. Invalid records are isolated
+from healthy jobs; unavailable caches never turn missing evidence into success.
+A failed log/script read belongs to that request, so it does not contaminate
+later status-only inspection.
 
 If a connection drops during submission, retain its receipt and inspect that
 operation before deciding what to do next. Repeating submission can duplicate

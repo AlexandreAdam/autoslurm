@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import posixpath
+import json
 from pathlib import Path, PurePosixPath
 import shlex
 import subprocess
@@ -168,3 +169,27 @@ def execution_context_from_snapshot(bundle_path, job_name=None):
         evidence["machine"], dict(evidence["transport"]),
         evidence["storage_root"], evidence["project_root"], evidence["results_root"], evidence["is_remote"],
     )
+
+
+def producing_machine(job, profiles):
+    """Interpret provided producing metadata/profiles without discovery or I/O."""
+    execution = job.get(EXECUTION_METADATA_KEY)
+    name = job.get("machine")
+    if not isinstance(profiles, dict):
+        raise ValueError("Producing machine profiles are invalid; no local fallback.")
+    if EXECUTION_METADATA_KEY in job:
+        if not isinstance(execution, dict) or not isinstance(execution.get("is_remote"), bool):
+            raise ValueError("Invalid recorded producing machine metadata; no local fallback.")
+        transport = execution.get("transport")
+        if not isinstance(transport, dict) or execution["is_remote"] != is_remote_machine(transport):
+            raise ValueError("Recorded producing transport is unavailable or inconsistent; no local fallback.")
+        config = transport if execution["is_remote"] else {}
+    elif name is None:
+        config = {}
+    else:
+        if name not in profiles or not isinstance(profiles[name], dict):
+            raise ValueError(f"Producing machine {name!r} is unavailable; no local fallback.")
+        config = profiles[name]
+    transport = {key: config[key] for key in ("hostname", "hosturl", "username", "key_path") if key in config}
+    key = json.dumps({"machine": name, "transport": transport}, sort_keys=True)
+    return key, config
