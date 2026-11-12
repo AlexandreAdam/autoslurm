@@ -12,7 +12,7 @@ validation approach.
 | MVP3 Shared inspection | [MVP3_shared_inspection.md](MVP3_shared_inspection.md) | Complete locally; no promotion |
 | MVP4 Submission boundaries | [MVP4_submission_boundaries.md](MVP4_submission_boundaries.md) | Complete locally; no promotion |
 | MVP5 Inspection boundaries | [MVP5_inspection_boundaries.md](MVP5_inspection_boundaries.md) | Complete locally on dev |
-| MVP6 Persistence and transport | [MVP6_persistence_and_transport.md](MVP6_persistence_and_transport.md) | In progress locally on dev |
+| MVP6 Persistence and transport | [MVP6_persistence_and_transport.md](MVP6_persistence_and_transport.md) | Complete locally on dev |
 | MVP7 Cluster software preparation | [MVP7_cluster_software_preparation.md](MVP7_cluster_software_preparation.md) | Planned; manifest contract first |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |
 

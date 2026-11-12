@@ -6,7 +6,7 @@ from .inspection_artifacts import ArtifactRequest, attach_artifacts
 from .inspection_cache import InspectionCache
 from .inspection_collection import load_run, load_machine_profiles, collect_observations
 from .inspection_state import resolve_jobs, project_run
-from .save_load_jobs import list_saved_bundles
+from .bundle_selection import list_saved_bundles
 from .storage import storage_root
 from .submission import load_submission
 

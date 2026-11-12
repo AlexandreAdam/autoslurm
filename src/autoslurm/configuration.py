@@ -6,10 +6,16 @@ import os
 import json
 import shlex
 
+from .record_files import atomic_json
 from .definitions import MACHINE_KEYS
 from .storage import config_file_path, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 __all__ = ["load_config", "save_config", "machine_config", "activation_command_from_config"]
+
+
+def is_remote_machine(config):
+    """One data-only rule for current and recorded transport profiles."""
+    return bool(config.get("hostname") or config.get("hosturl") or config.get("username"))
 
 
 def activation_command_from_config(machine_config: dict) -> str:
@@ -72,8 +78,7 @@ def save_config(config: dict) -> None:
         "default_machine": config["default_machine"],
         "bundle_filter_mode": str(config.get("bundle_filter_mode", "active")).strip().lower(),
     }
-    with open(path, "w") as file:
-        json.dump(data, file, indent=4)
+    atomic_json(path, data, indent=4)
 
 
 def load_config() -> dict:

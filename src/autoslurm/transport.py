@@ -9,54 +9,39 @@ from .configuration import activation_command_from_config
 from .storage import STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 
-def ssh_host_from_config(
-    machine_config: dict, machine_name: Optional[str] = None
-) -> str:
-    hostname = machine_config.get("hostname", None)
-    machine = machine_name if machine_name is not None else ""
-    if hostname is None:
-        if machine_config.get("username", None) is None:
-            raise AttributeError(
-                f"'username' must be provided when 'hostname' is not specified. "
-                f"Rerun with --username option or rerun autoslurm-configuration to edit the configuration for the machine {machine}."
-            )
-        elif machine_config.get("hosturl", None) is None:
-            raise AttributeError(
-                "'hosturl' must be provided if 'hostname' is not specified. "
-                "Rerun with --hosturl option or rerun autoslurm-configuration to edit the configuration for the machine {machine}."
-            )
-        hostname = f"{machine_config['username']}@{machine_config['hosturl']}"
-        if machine_config.get("key_path", None) is not None:
-            # Add the key path to the ssh command
-            hostname = f"-i {machine_config['key_path']} {hostname}"
-    return hostname
+def scp_host_and_keypath_from_config(machine_config: dict,
+                                     machine_name: Optional[str] = None) -> tuple[str, str]:
+    """Return the configured destination and shell-quoted identity options.
+
+    A hostname alias retains the historical SSH-config behavior. Structured
+    username/hosturl profiles carry a separate key path, treated as one value.
+    """
+    hostname = machine_config.get("hostname")
+    if hostname is not None:
+        return hostname, ""
+    machine = machine_name or ""
+    if machine_config.get("username") is None:
+        raise AttributeError(f"'username' must be provided when 'hostname' is not specified for machine {machine}.")
+    if machine_config.get("hosturl") is None:
+        raise AttributeError(f"'hosturl' must be provided if 'hostname' is not specified for machine {machine}.")
+    host = f"{machine_config['username']}@{machine_config['hosturl']}"
+    key = machine_config.get("key_path")
+    return host, shlex.join(["-i", key]) if key is not None else ""
 
 
-def scp_host_and_keypath_from_config(
-    machine_config: dict, machine_name: Optional[str] = None
-) -> str:
-    hostname = machine_config.get("hostname", None)
-    machine = machine_name if machine_name is not None else ""
-    if hostname is None:
-        if machine_config.get("username", None) is None:
-            raise AttributeError(
-                f"'username' must be provided when 'hostname' is not specified. "
-                f"Rerun with --username option or rerun autoslurm-configuration to edit the configuration for the machine {machine}."
-            )
-        elif machine_config.get("hosturl", None) is None:
-            raise AttributeError(
-                "'hosturl' must be provided if 'hostname' is not specified. "
-                "Rerun with --hosturl option or rerun autoslurm-configuration to edit the configuration for the machine {machine}."
-            )
-        hostname = f"{machine_config['username']}@{machine_config['hosturl']}"
-        if machine_config.get("key_path", None) is not None:
-            # # Add the key path to the ssh command
-            key_path = f"-i {machine_config['key_path']}"
-        else:
-            key_path = ""
-    else:
-        key_path = ""
-    return hostname, key_path
+def ssh_host_from_config(machine_config: dict, machine_name: Optional[str] = None) -> str:
+    """Historical string form; all SSH/SCP identity handling has one owner."""
+    host, options = scp_host_and_keypath_from_config(machine_config, machine_name)
+    return f"{options} {host}" if options else host
+
+
+def ssh_command(machine_config: dict, machine_name: Optional[str] = None,
+                remote_command: Optional[str] = None, *, options=None) -> list[str]:
+    """Construct one SSH argument vector without discovering configuration or I/O."""
+    command = ["ssh", *(options or []), *shlex.split(ssh_host_from_config(machine_config, machine_name))]
+    if remote_command is not None:
+        command.append(remote_command)
+    return command
 
 
 def remote_storage_root_from_config(
@@ -76,7 +61,6 @@ def remote_storage_root_from_config(
         requested = str(PurePosixPath(requested))
     elif machine_config.get("path"):
         return str(machine_config["path"])
-    hostname = ssh_host_from_config(machine_config, machine_name)
     env_command = activation_command_from_config(machine_config)
     python_probe = "from autoslurm.storage import storage_root; print(storage_root())"
     python_command = f"python -c {shlex.quote(python_probe)}"
@@ -93,7 +77,7 @@ def remote_storage_root_from_config(
     command_parts.append(python_command)
     remote_command = " && ".join(command_parts)
     result = subprocess.run(
-        ["ssh", *shlex.split(hostname), f"bash -lc {shlex.quote(remote_command)}"],
+        ssh_command(machine_config, machine_name, f"bash -lc {shlex.quote(remote_command)}"),
         capture_output=True,
         text=True,
     )

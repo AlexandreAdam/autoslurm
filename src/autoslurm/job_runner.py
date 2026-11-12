@@ -8,7 +8,8 @@ from typing import Optional
 from .bundle_preparation import prepare_bundle, validate_prepared_bundle
 from .execution import resolve_execution_context
 from .run_slurm import probe_submission_helper
-from .save_load_jobs import load_bundle_from_path, select_bundle_snapshot
+from .save_load_jobs import load_bundle_from_path
+from .bundle_selection import select_bundle_snapshot
 from .submission_operation import execute_prepared_bundle
 from .configuration import machine_config as resolve_machine_config
 from .transport import remote_storage_root_from_config

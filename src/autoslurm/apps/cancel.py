@@ -7,7 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from ..save_load_jobs import bundle_snapshots, load_bundle, load_bundle_from_path
+from ..bundle_selection import bundle_snapshots
+from ..save_load_jobs import load_bundle, load_bundle_from_path
 from ..status import is_cancellable_state
 from ..status_views import (
     bundle_job_rows,
@@ -15,7 +16,7 @@ from ..status_views import (
     bundle_jobs_context_from_rows,
 )
 from ..configuration import load_config
-from ..transport import ssh_host_from_config
+from ..transport import ssh_command
 
 DATE_FORMATS = (
     "%Y-%m-%dT%H:%M:%S",
@@ -82,10 +83,9 @@ def _cancel_local(job_ids: list[str]) -> None:
 def _cancel_remote(machine_name: str, machine_cfg: dict, job_ids: list[str]) -> None:
     if not job_ids:
         return
-    hostname = ssh_host_from_config(machine_cfg, machine_name)
     payload = "scancel " + " ".join(shlex.quote(job_id) for job_id in job_ids)
     result = subprocess.run(
-        ["ssh", *shlex.split(hostname), f"bash -lc {shlex.quote(payload)}"],
+        ssh_command(machine_cfg, machine_name, f"bash -lc {shlex.quote(payload)}"),
         capture_output=True,
         text=True,
     )

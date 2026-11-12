@@ -8,7 +8,7 @@ import shutil
 from contextlib import contextmanager
 from typing import Optional
 from .configuration import load_config
-from .transport import ssh_host_from_config, remote_storage_root_from_config
+from .transport import ssh_command, remote_storage_root_from_config
 from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .submission import SubmissionError, SUBMISSION_PROTOCOL, validate_receipt
 
@@ -57,18 +57,14 @@ def run_slurm_remotely(
         if not machine_config:
             raise EnvironmentError(f"No configuration found for machine: {machine}")
 
-    hostname = ssh_host_from_config(machine_config, machine)
     remote_path = context.storage_root if context else remote_storage_root_from_config(
         machine_config, machine
     )
     script_path = os.path.join(remote_path, "slurm", slurm_name)
-    ssh_command = ["ssh"]
-    if ssh_options:
-        ssh_command.extend(ssh_options)
-    ssh_command.extend([*shlex.split(hostname), f"sbatch {shlex.quote(script_path)}"])
+    command = ssh_command(machine_config, machine, f"sbatch {shlex.quote(script_path)}", options=ssh_options)
 
     # Run the sbatch command on the remote machine
-    result = subprocess.run(ssh_command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True)
 
     # Check for errors
     if result.returncode != 0:
@@ -94,7 +90,6 @@ def ssh_submission_session(
         yield None
         return
 
-    hostname = ssh_host_from_config(machine_config, machine_name)
     tmpdir = tempfile.mkdtemp(prefix="autoslurm-ssh-")
     control_path = os.path.join(tmpdir, "cm-%C")
     ssh_options = [
@@ -107,17 +102,17 @@ def ssh_submission_session(
     ]
 
     try:
-        open_command = ["ssh", *ssh_options, "-MNf", *shlex.split(hostname)]
+        open_command = ssh_command(machine_config, machine_name, options=[*ssh_options, "-MNf"])
         result = subprocess.run(open_command, capture_output=True, text=True)
         if result.returncode != 0:
             message = result.stderr.strip() or result.stdout.strip()
             raise RuntimeError(
-                f"Unable to open SSH multiplexed session for '{machine_name or hostname}': {message}"
+                f"Unable to open SSH multiplexed session for '{machine_name or machine_config.get('hostname', machine_config.get('hosturl', ''))}': {message}"
             )
         yield ssh_options
     finally:
-        close_command = ["ssh", *ssh_options, "-O", "exit", *shlex.split(hostname)]
         try:
+            close_command = ssh_command(machine_config, machine_name, options=[*ssh_options, "-O", "exit"])
             subprocess.run(close_command, capture_output=True, text=True)
         except Exception:
             pass  # Connection cleanup must not erase an already observed receipt.
@@ -151,11 +146,7 @@ def run_bulk_submit_driver_remotely(
         if not machine_config:
             raise EnvironmentError(f"No configuration found for machine: {machine}")
 
-    hostname = ssh_host_from_config(machine_config, machine)
-    ssh_command = ["ssh"]
-    if ssh_options:
-        ssh_command.extend(ssh_options)
-    ssh_command.extend([*shlex.split(hostname)])
+    command = ssh_command(machine_config, machine, options=ssh_options)
     venv_path = machine_config.get("venv_path")
     if not (isinstance(venv_path, str) and venv_path.strip()):
         raise RuntimeError(
@@ -166,15 +157,15 @@ def run_bulk_submit_driver_remotely(
         remote_root = context.storage_root if context else remote_storage_root_from_config(machine_config, machine)
         if payload.get("slurm_dir") != f"{remote_root.rstrip('/')}/slurm":
             raise ValueError("Bulk payload script directory does not match the selected storage root.")
-        ssh_command.append(shlex.join([
+        command.append(shlex.join([
             "env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={remote_root}",
             python_executable, "-m", "autoslurm.apps.bulk_submit_driver",
         ]))
     else:
-        ssh_command.extend([python_executable, "-m", "autoslurm.apps.bulk_submit_driver"])
+        command.extend([python_executable, "-m", "autoslurm.apps.bulk_submit_driver"])
 
     result = subprocess.run(
-        ssh_command,
+        command,
         input=json.dumps(payload),
         capture_output=True,
         text=True,
@@ -205,9 +196,8 @@ def probe_submission_helper(context):
     venv = config.get("venv_path")
     if not isinstance(venv, str) or not venv.strip():
         raise RuntimeError("Receipt-capable remote submission requires a prepared venv_path.")
-    host = ssh_host_from_config(config, context.machine_name)
     command = shlex.join(["env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={context.storage_root}", venv.rstrip("/") + "/bin/python", "-m", "autoslurm.apps.bulk_submit_driver", "--capabilities"])
-    result = subprocess.run(["ssh", *shlex.split(host), command], capture_output=True, text=True)
+    result = subprocess.run(ssh_command(config, context.machine_name, command), capture_output=True, text=True)
     try:
         capable = result.returncode == 0 and json.loads(result.stdout).get("submission_protocol") == SUBMISSION_PROTOCOL
     except (ValueError, AttributeError):

@@ -9,19 +9,21 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP6, persistence and transport boundaries; in progress.
+- **Current milestone:** MVP6, persistence and transport boundaries; complete locally.
 - **Stage:** main checkout is active on `dev`, explicitly selected by the user
   on 2026-11-12. Base Conda imports it; tests use the same source with isolated
   environment/state. Baseline rollback source remains in `.development/stable`.
-  Full offline suite: 366 passed. Inspection collection, pure state projection,
-  cache storage and artifact retrieval have explicit boundaries. Invalid records,
-  malformed caches and cache/artifact failures retain correct evidence alongside
-  the existing path/submission/scientific workflows.
+  Full offline suite: 392 passed. Local persistence/selection, configuration,
+  SSH construction and file movement now have explicit owners. Complete atomic
+  writes, exclusive snapshot creation and one-update batch appends protect saved
+  records. Inspection/submission/scientific workflows remain covered.
   Local daily-use activation completed; no cluster installation changed.
-- **Next task:** MVP6.2, shared atomic writes, collision handling, transport/configuration consolidation and exports.
-- **Scope update:** MVP5 inspection is complete locally; MVP6 persistence and
-  transport boundaries remain planned. MVP7 covers bundle-driven Git project/environment preparation;
-  its manifest/helper-runtime contract comes first. Result retrieval is optional.
+- **Next task:** MVP7 manifest attachment and helper/runtime environment separation;
+  implementation has not started. Read its design before adding software preparation.
+- **Scope update:** MVP4–MVP6 modularity increments are complete locally. MVP7
+  covers bundle-driven Git project/environment preparation on the login/preparation
+  host, with mocked cluster interactions under the current scope. Result retrieval
+  remains optional.
 - **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -369,11 +371,16 @@ Design: [MVP6 persistence and transport](REFACTORING_DOCS/design/MVP6_persistenc
   offline baseline. Preserve public contracts/records and unrelated user files.
 - [x] **MVP6.1 Extract owners.** Separate selection, configuration, file movement
   and transport helpers from local persistence; verify existing workflows.
-- [ ] **MVP6.2 Harden persistence and boundaries.** Share atomic JSON writes,
+- [x] **MVP6.2 Harden persistence and boundaries.** Share atomic JSON writes,
   prevent snapshot clobbering, consolidate configuration/transport use and make
   public exports explicit. Add focused failure checks before changing behavior.
-- [ ] **MVP6.3 Verify and close.** Run offline scientific/CLI/agent workflows;
+- [x] **MVP6.3 Verify and close.** Run offline scientific/CLI/agent workflows;
   update guides, responsibility map, installation register and milestone tag.
+
+**Outcome:** existing JSON formats and intended public functions retained;
+configuration and bundle updates use the shared local record writer, transfers
+have a dedicated adapter, and internal callers depend on their owning services.
+No multi-writer locking, migration, retries or deployment framework was introduced.
 
 ## MVP7 Bundle-driven cluster software preparation
 
@@ -468,15 +475,12 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-11 | Pull a narrow exact-file submission fix forward from MVP1 | The reference test showed an imported definition could reload a neighboring draft; return the saved path and load it directly, retaining timestamp identity independently of mtime |
 | 2026-11-11 | Implement one execution context with project-relative inputs/cwd, results-relative outputs and saved producing roots | Same relative science definition works from unrelated directories under two profiles; remote submission resolves storage once and batches required-input checks; no input staging or broader recovery engine |
 | 2026-11-11 | Use the existing DAG driver for both lanes with incremental execution-side receipts; retire implicit legacy graph submission | Preserve accepted IDs before the next scheduler call, distinguish partial/unknown outcomes, and refresh exact evidence without any automatic resubmission or adoption |
-
 | 2026-11-11 | Consolidate inspection around exact saved paths, one scheduler/task view and producing-path log tails | Preserve missing/error/stale evidence, reduce duplicated queries, and give terminal/ACP/Python the same identity/state contract; no retry or scientific-success inference |
-
 | 2026-11-11 | Prioritize small modularity MVPs: submission, then inspection, then persistence/transport | User requested careful decomposition of brittle concepts and overloaded functions; defer optional result retrieval and preserve existing records/failure guarantees |
-
 | 2026-11-12 | Activate `dev` in the main folder for base Conda daily use, preserving rollback source and user files | Explicit user choice replaces the initial pinned-main/nested-development editing arrangement; cluster installations remain unchanged |
 | 2026-11-12 | Add MVP7 for bundle-specified Git projects and verified prepared environments | User requested less manual cluster maintenance; prepare isolated releases before dispatch and separate helper/runtime environment roles |
-
 | 2026-11-12 | Split inspection into explicit collection, pure projection, cache storage and artifact retrieval | Remove hidden scheduler/config reads, isolate malformed records and make cache/artifact failures unable to erase or contaminate scheduler evidence |
+| 2026-11-12 | Separate local record/selection/configuration/transport owners, share atomic publication and explicit exports | Mechanical extraction retained all 366 existing tests; seven reproduced bugs motivated scoped fixes without changing JSON shapes or submission uncertainty rules |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -499,8 +503,8 @@ or migration decision has already been accepted.
 | 2026-11-11 | MVP4.0–MVP4.3 Shared preparation and submission responsibility boundaries | 333 offline tests pass in 3.22 s; 39 expected snapshot-collision warnings. Four preview/submit inconsistencies and accepted-ID loss on receipt-write interruption reproduced and fixed. Pure preparation, copied values, exact preview/script/path parity, dependency flags for both lanes, initial/staging/transport/session/response/final-tracking failures and known-ID retention verified. `submit_jobs`: 116 to 20 lines; preparation, preflight, record/staging/dispatch/outcome persistence have explicit owners. Report: `.development/test-runs/mvp4-review.xml`. Task commit: `git log --grep '^MVP4.3:'`; local tag `mvp4` at closure. Stable code/import/runtime unchanged; development-only changes, no push, cluster access or promotion |
 | 2026-11-12 | MVP4.4 Local dev activation and MVP7 scope | Main switched to `dev` at tested MVP4 revision `89e2781`; existing base editable import/commands now use it without a base environment reinstall. Baseline retained in `.development/stable`; original files backed up/stashed and two user documents restored unchanged. Isolated wheel import/preview/cached-inspection smoke passed. Test environment repointed to main source with separate test state; 333 tests passed again in 3.55 s from the active checkout (`.development/test-runs/dev-main-activation.xml`). MVP7 planned with explicit Git/release/environment responsibilities; no remote operations performed. Activation commit: `git log --grep '^MVP4.4:'` |
 | 2026-11-12 | MVP5.0–MVP5.3 Inspection responsibility boundaries | 366 offline tests pass in 3.15 s; 39 expected snapshot-collision warnings. Four initial failure regressions reproduced and fixed; 33 added checks cover pure projection/reference selection, invalid IDs/producing profiles, schema/cache-write failures, bounded remote decoding, cached identity/no-network behavior, receipt identity and changing definitions. Existing science/CLI/ACP/receipts pass. `inspect_bundles` 80→22 lines; `read_job_logs` 114→24, with effectful stages separated from pure calculation. Report `.development/test-runs/mvp5-final.xml`. Task commit: `git log --grep '^MVP5.3:'`; local tag `mvp5` at closure. Main dev/base imports retained; daily/rollback state untouched; no cluster operations, migration, dependencies or push |
-
 | 2026-11-12 | MVP6.0–MVP6.1 Boundaries and mechanical extraction | 366 existing offline tests pass in 3.52 s, 39 expected warnings. Configuration/transport/file transfer/selection now have dedicated owners, with historical import aliases. No behavior fixes yet. Task commit: `git log --grep '^MVP6.1:'` |
+| 2026-11-12 | MVP6.2–MVP6.3 Persistence hardening and closure | 392 offline tests pass in 3.27 s, 39 expected warnings; 26 added checks. Reproduced and fixed serialization corruption, partial new files, timestamp clobbering, explicit-profile replacement, key-path splitting and sync transport failure presented as success. Verified interruption/publication failures, exclusive collision races, atomic batch append, staging/copy failures, no hidden process in local operations, pure SSH construction, exports and all prior scientific/CLI/ACP/receipt cases. Report `.development/test-runs/mvp6-final-reviewed.xml`. Task commit: `git log --grep '^MVP6.3:'`; local tag `mvp6` at closure. Base import/help verified; baseline source and all persistent runtime roots unchanged; no cluster/dependency/migration/push operations |
 
 ## How we work
 

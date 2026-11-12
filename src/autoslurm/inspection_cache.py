@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .submission import atomic_json
+from .record_files import atomic_json
 
 
 def _errors_valid(errors):

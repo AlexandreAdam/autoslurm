@@ -7,25 +7,9 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 
-from ..configuration import activation_command_from_config, load_config
-from ..transport import ssh_host_from_config, remote_storage_root_from_config
+from ..configuration import activation_command_from_config, load_config, save_config, is_remote_machine
+from ..transport import ssh_command, remote_storage_root_from_config
 from ..storage import config_file_path
-
-
-
-def _ensure_config_dir():
-    config_file_path().parent.mkdir(parents=True, exist_ok=True)
-
-
-def _save_config(config: Dict[str, Dict]):
-    _ensure_config_dir()
-    data = {
-        "machines": config["machines"],
-        "default_machine": config["default_machine"],
-        "bundle_filter_mode": str(config.get("bundle_filter_mode", "active")).strip().lower(),
-    }
-    with open(config_file_path(), "w") as file:
-        json.dump(data, file, indent=4)
 
 
 def _refresh_config_aliases(config: Dict[str, Dict]):
@@ -33,15 +17,6 @@ def _refresh_config_aliases(config: Dict[str, Dict]):
     config["local"] = config["machines"][default]
     for name, machine in config["machines"].items():
         config[name] = machine
-
-
-def _is_remote(machine: Dict) -> bool:
-    return any(key in machine for key in ("hostname", "hosturl", "username"))
-
-
-def _remote_ssh_command(machine: Dict, name: str, remote_command: str) -> list[str]:
-    hostname = ssh_host_from_config(machine, name)
-    return ["ssh", *shlex.split(hostname), remote_command]
 
 
 def _validation_shell_command(machine: Dict) -> str:
@@ -56,8 +31,8 @@ def _validation_shell_command(machine: Dict) -> str:
 
 
 def _validate_machine(machine: Dict, name: str) -> bool:
-    if _is_remote(machine):
-        ssh_probe = _remote_ssh_command(machine, name, "true")
+    if is_remote_machine(machine):
+        ssh_probe = ssh_command(machine, name, "true")
         result = subprocess.run(ssh_probe, capture_output=True, text=True)
         if result.returncode != 0:
             print(f"[{name}] SSH connectivity check: failed")
@@ -69,7 +44,7 @@ def _validate_machine(machine: Dict, name: str) -> bool:
 
         validation_command = _validation_shell_command(machine)
         result = subprocess.run(
-            _remote_ssh_command(
+            ssh_command(
                 machine, name, f"bash -lc {shlex.quote(validation_command)}"
             ),
             capture_output=True,
@@ -250,13 +225,13 @@ def _create_machine(config: Dict):
     machine = _prompt_machine_details()
     config["machines"][name] = machine
     _refresh_config_aliases(config)
-    _save_config(config)
+    save_config(config)
     print(f"Saved machine '{name}'. Running validation...")
     _validate_machine(machine, name)
     if _prompt_yes_no("Make this the default machine?", default="n"):
         config["default_machine"] = name
         _refresh_config_aliases(config)
-        _save_config(config)
+        save_config(config)
 
 
 def _update_machine(config: Dict):
@@ -266,7 +241,7 @@ def _update_machine(config: Dict):
     machine = _prompt_machine_details(existing=config["machines"][name])
     config["machines"][name] = machine
     _refresh_config_aliases(config)
-    _save_config(config)
+    save_config(config)
     print(f"Saved machine '{name}'. Running validation...")
     _validate_machine(machine, name)
 
@@ -285,7 +260,7 @@ def _rename_machine(config: Dict):
     if config["default_machine"] == old_name:
         config["default_machine"] = new_name
     _refresh_config_aliases(config)
-    _save_config(config)
+    save_config(config)
 
 
 def _change_default_machine(config: Dict):
@@ -297,7 +272,7 @@ def _change_default_machine(config: Dict):
         return
     config["default_machine"] = name
     _refresh_config_aliases(config)
-    _save_config(config)
+    save_config(config)
 
 
 def _set_default_machine_by_name(config: Dict, name: str):
@@ -308,7 +283,7 @@ def _set_default_machine_by_name(config: Dict, name: str):
         return
     config["default_machine"] = name
     _refresh_config_aliases(config)
-    _save_config(config)
+    save_config(config)
 
 
 def _create_default_machine():
@@ -319,7 +294,7 @@ def _create_default_machine():
     config["machines"][name] = machine
     config["default_machine"] = name
     _refresh_config_aliases(config)
-    _save_config(config)
+    save_config(config)
     print(f"Default machine saved: {name}")
     return config
 
@@ -373,7 +348,7 @@ def display_config_summary():
     config = load_config()
     print("machine type default slurm_account venv_path results_root project_root")
     for name, machine in config["machines"].items():
-        machine_type = "remote" if _is_remote(machine) else "local"
+        machine_type = "remote" if is_remote_machine(machine) else "local"
         slurm_account = machine.get("slurm_account", "")
         default_marker = "yes" if name == config["default_machine"] else "no"
         venv_path = machine.get("venv_path", "")

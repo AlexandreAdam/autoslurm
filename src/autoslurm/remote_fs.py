@@ -6,7 +6,7 @@ from pathlib import PurePosixPath
 
 from .execution import resolve_execution_context, execution_context_from_snapshot, is_remote_machine
 from .configuration import machine_config as resolve_machine_config
-from .transport import remote_storage_root_from_config, ssh_host_from_config
+from .transport import remote_storage_root_from_config, ssh_command
 
 __all__ = ["resolve_results_path", "path_exists"]
 
@@ -40,8 +40,7 @@ def path_exists(path, *, machine_name=None, context=None, base="results", bundle
         resolved, remote = selected.resolve_path(path, base), selected.is_remote
         name, config = selected.machine_name, selected.config
     if remote:
-        hostname = ssh_host_from_config(config, name)
-        command = ["ssh", *shlex.split(hostname), f"test -e {shlex.quote(resolved)}"]
+        command = ssh_command(config, name, f"test -e {shlex.quote(resolved)}")
     else:
         command = ["test", "-e", resolved]
     result = subprocess.run(command, capture_output=True, text=True)

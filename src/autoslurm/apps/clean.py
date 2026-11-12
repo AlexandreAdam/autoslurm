@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ..save_load_jobs import all_bundle_snapshots, bundle_snapshots, inactive_bundle_snapshots, load_bundle_from_path
+from ..bundle_selection import all_bundle_snapshots, bundle_snapshots, inactive_bundle_snapshots
+from ..save_load_jobs import load_bundle_from_path
 from ..status import FAILED_STATES, job_status_texts
 
 

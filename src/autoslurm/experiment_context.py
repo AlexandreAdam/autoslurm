@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from .inspection import inspect_bundle
-from .save_load_jobs import select_bundle_snapshot
+from .bundle_selection import select_bundle_snapshot
 
 __all__ = ["experiment_context", "latest_log_context", "job_context"]
 

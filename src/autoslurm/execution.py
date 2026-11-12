@@ -8,15 +8,11 @@ import shlex
 import subprocess
 
 from .storage import storage_root
-from .configuration import machine_config as select_machine
-from .transport import remote_storage_root_from_config, ssh_host_from_config
+from .configuration import machine_config as select_machine, is_remote_machine
+from .transport import remote_storage_root_from_config, ssh_command
 
 __all__ = ["ExecutionContext", "resolve_execution_context", "execution_context_from_snapshot", "recorded_execution"]
 EXECUTION_METADATA_KEY = "_autoslurm_execution"
-
-
-def is_remote_machine(config):
-    return bool(config.get("hostname") or config.get("hosturl") or config.get("username"))
 
 
 def _absolute(value, label):
@@ -126,8 +122,7 @@ class ExecutionContext:
             f"test {kind} {shlex.quote(path)} || {{ echo {shlex.quote(label + ' is unavailable: ' + path)} >&2; exit 1; }}"
             for kind, path, label in sorted(checks)
         ]
-        hostname = ssh_host_from_config(self.config, self.machine_name)
-        result = subprocess.run(["ssh", *shlex.split(hostname), "; ".join(commands)], capture_output=True, text=True)
+        result = subprocess.run(ssh_command(self.config, self.machine_name, "; ".join(commands)), capture_output=True, text=True)
         if result.returncode != 0:
             raise FileNotFoundError(f"Machine {self.machine_name!r} path preflight failed: {result.stderr.strip() or result.stdout.strip()}")
 

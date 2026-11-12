@@ -1,6 +1,6 @@
 # Public workflow map
 
-The development MVP5 boundary is `01_client_workflow.md`. Public Python imports
+The development MVP6 boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
@@ -81,9 +81,43 @@ These are internal boundaries, not new client APIs.
 
 The inspection coordinator retains operation order and public result assembly;
 its extracted stages own collection, pure projection, storage and artifact reads.
-Bundle storage still contains transfer helpers; MVP6 will extract that boundary
-and review configuration/exports. Receipt state
-transitions and shell argument representation remain further review points.
+MVP6 separates the remaining local persistence and transport responsibilities:
+
+```text
+Python / CLI / ACP -> bundle_selection -> local discovery + selection policy
+                  -> save_load_jobs -> normalization + complete snapshot/append
+                  -> configuration -> profiles + shared configuration writer
+                  -> file_transfer -> SCP / rsync / directory probes
+                                      |-> transport -> shared SSH arguments
+execution / scheduler / receipts / logs -> transport -> shared SSH arguments
+bundles / configuration / receipts / caches -> record_files -> atomic JSON
+utils -> explicit compatibility aliases + script naming
+```
+
+`save_load_jobs` now implements local persistence, with explicit aliases for
+historical selection/transfer imports. Internal callers use the owning modules.
+`bundle_metadata` owns older field-update helpers; they share the same writer.
+The configuration CLI and Python API use one writer, and the profile's local/
+remote classification has one owner. Configuration reads do not discover hosts.
+`transport` separates pure argument construction from explicit helper-root probes;
+operation adapters retain their own timeouts/error interpretation and no-retry rules.
+
+New snapshot publication is exclusive and complete, so timestamp collisions never
+clobber earlier work. A multi-job append reads/publishes once. Atomic replacement
+protects existing record bytes against pre-publication failure, but append still
+has no concurrent-writer lock. Directory-sync errors may occur after a complete
+record is published; this is not a transaction over several files.
+
+`file_transfer` batches script copies and checks staging directories per operation,
+without a process-global existence cache. Sync delegates probes/copies to it and
+keeps terminal presentation separate; connection failure cannot become a successful
+sync of supposedly absent directories. Its broader immutable-copy policy remains
+unchanged. Exact inspection/receipt refresh retain their separate evidence contracts.
+
+The package uses explicit imports and `__all__`; intentional public functions
+remain, accidental typing/dataclass exports are removed. Receipt state transitions,
+legacy low-level dispatch, configuration alias handling and shell argument
+representation remain further review points. Backend aliases are not new client APIs.
 
 
 Execution context owns path mapping and saved producing metadata; storage owns

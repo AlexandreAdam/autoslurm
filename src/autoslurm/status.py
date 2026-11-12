@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from .array_status import FAILED_STATES
-from .save_load_jobs import latest_bundle_summaries
+from .bundle_selection import latest_bundle_summaries
 from .configuration import load_config
 
 CANCELLABLE_STATES = {

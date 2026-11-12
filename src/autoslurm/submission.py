@@ -2,15 +2,14 @@
 
 from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 import re
 import shlex
 import subprocess
-import tempfile
 
+from .record_files import atomic_json
 from .storage import storage_root
-from .transport import ssh_host_from_config
+from .transport import ssh_command
 
 __all__ = ["SubmissionError", "load_submission", "list_submissions", "refresh_submission"]
 SUBMISSION_METADATA_KEY = "_autoslurm_submission"
@@ -23,28 +22,6 @@ class SubmissionError(RuntimeError):
     def __init__(self, message, receipt):
         super().__init__(message)
         self.receipt = receipt
-
-
-def atomic_json(path, data):
-    """Replace a complete JSON record atomically, flushing its contents first."""
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as stream:
-            temporary = Path(stream.name)
-            json.dump(data, stream, indent=2)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
-    finally:
-        if temporary is not None and temporary.exists():
-            temporary.unlink()
 
 
 def write_receipt(path, receipt):
@@ -129,8 +106,7 @@ def refresh_submission(receipt_path):
         if not execution["is_remote"]:
             project_receipt(current)
             return current
-        host = ssh_host_from_config(execution["transport"], current["machine"])
-        result = subprocess.run(["ssh", *shlex.split(host), "cat -- " + shlex.quote(current["execution_receipt_path"])], capture_output=True, text=True)
+        result = subprocess.run(ssh_command(execution["transport"], current["machine"], "cat -- " + shlex.quote(current["execution_receipt_path"])), capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(result.stderr.strip() or "Execution receipt is unavailable.")
         observed = validate_receipt(json.loads(result.stdout), current)

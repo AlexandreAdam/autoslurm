@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 
 from ..status_views import bundle_jobs_context_from_rows
-from ..save_load_jobs import bundle_snapshots
+from ..bundle_selection import bundle_snapshots
 
 
 DATE_FORMATS = (

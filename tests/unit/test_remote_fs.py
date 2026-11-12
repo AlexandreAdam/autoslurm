@@ -64,8 +64,7 @@ def test_path_exists_remote(monkeypatch) -> None:
         ),
     )
     monkeypatch.setattr(
-        remote_fs,
-        "ssh_host_from_config",
+        "autoslurm.transport.ssh_host_from_config",
         lambda cfg, name=None: "user@cluster",
     )
     calls = {}

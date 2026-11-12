@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from ..save_load_jobs import get_bundle_filter_mode, set_bundle_filter_mode
+from ..bundle_selection import get_bundle_filter_mode, set_bundle_filter_mode
 
 
 def _build_parser() -> argparse.ArgumentParser:

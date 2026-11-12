@@ -10,7 +10,7 @@ import subprocess
 from .execution import EXECUTION_METADATA_KEY, producing_machine, is_remote_machine
 from .inspection_cache import InspectionCache
 from .storage import storage_root
-from .transport import ssh_host_from_config
+from .transport import ssh_command
 
 
 def _expand(pattern, name, parent, index, job_id):
@@ -110,8 +110,7 @@ def _query_remote_tails(config, paths, max_bytes):
         path = shlex.quote(candidate)
         chunks.append(f"if test -f {path}; then size=$(wc -c < {path}) && data=$(tail -c {max_bytes} -- {path} | base64 | tr -d '\\n') && printf '{index}|ok|%s|%s\\n' \"$size\" \"$data\" || printf '{index}|error||\\n'; else printf '{index}|missing||\\n'; fi")
     try:
-        host = ssh_host_from_config(config)
-        result = subprocess.run(["ssh", *shlex.split(host), "bash -lc " + shlex.quote("\n".join(chunks))],
+        result = subprocess.run(ssh_command(config, remote_command="bash -lc " + shlex.quote("\n".join(chunks))),
                                 capture_output=True, text=True, timeout=30)
         if result.returncode != 0:
             raise RuntimeError(result.stderr.strip() or "Remote log query failed.")

@@ -5,7 +5,7 @@ the computation, resources and dependencies; AutoSlurm resolves machine paths,
 prepares scripts, submits the jobs and exposes evidence about what happened.
 Your application remains responsible for the science and its results.
 
-This page describes the development MVP5 workflow. The user activated `dev`
+This page describes the development MVP6 workflow. The user activated `dev`
 in the main repository for local daily use through base Conda on 2026-11-12.
 Tests use isolated state and mocked Slurm/SSH. A baseline rollback checkout is
 retained; the cluster installation has not been changed or validated.
@@ -24,6 +24,11 @@ Saved definition --> path preview --> submit once --> exact receipt/run path
                                                        v
                              application validates results; human decides next
 ```
+
+Saving a definition publishes a complete record. Rapid scheduling creates distinct
+snapshots, and appending several jobs updates the file once. Configuration changes
+use the same protected writer. A save failure needs inspection before dispatch;
+a copy failure is reported separately and never triggers another job submission.
 
 A machine profile maps project, results and prepared environment locations.
 Application definitions keep relative paths, so they do not branch on machine

@@ -12,7 +12,7 @@ import re
 
 from .execution import ExecutionContext
 from .job_to_slurm import write_slurm_content, validate_slurm_content
-from .save_load_jobs import SNAPSHOT_KIND_KEY
+from .bundle_selection import SNAPSHOT_KIND_KEY
 from .submission import SUBMISSION_METADATA_KEY
 
 

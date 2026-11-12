@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP5. As of
+Use this recipe with the development installation including MVP6. As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -99,6 +99,14 @@ definition = {
 planned_path = save_bundle(definition, bundle_name)
 jobs, dependencies, saved_date = load_bundle_from_path(planned_path)
 ```
+
+MVP6 publishes complete JSON records through one atomic writer. New snapshots
+never replace an existing timestamp, including rapid `schedule_job` calls.
+Appending several jobs publishes the complete batch once. A failed serialization
+or write before publication keeps the previous record intact; an error during
+final directory synchronization can occur after the complete file is visible.
+After a save error, rediscover and inspect the exact definition before submitting.
+This does not provide concurrent append locking or a transaction across records.
 
 Record the bundle name, planned path and definition in the client handoff before
 submission. Rediscover work with `list_saved_bundles(bundle_name=...)` or ACP
@@ -328,3 +336,22 @@ bounded and reference full artifacts. Exclude credentials.
 `examples/reference_client/` demonstrates one job and four shards followed by a
 reducer. Its application does not import AutoSlurm; tests exercise this recipe
 with temporary state and mocked submission commands.
+
+## Configuration and transfer failures
+
+The Python configuration API and terminal editor share one configuration writer.
+Reading local profiles, saving/selecting definitions and cached inspection do not
+contact a cluster. Remote root discovery and transfers are explicit operations;
+a supplied execution context keeps its recorded profile and roots.
+
+`sync` raises on a connection/probe/copy failure. A reported missing remote
+directory is distinct from a transport failure. It copies jobs/scripts using the
+existing ignore-existing policy and refreshes mutable logs using checksums;
+it does not reconcile receipt state or recover submissions. Interrupted copies
+may leave partial local transfer results, so inspect the exact run's evidence.
+Never infer scheduler acceptance from a copy outcome or retry compute submission
+as a remedy for a transfer failure.
+
+Client imports stay under `autoslurm`. Public exports are explicit; accidental
+imports of typing helpers or dataclass utilities are removed. Internal module
+aliases remain for compatibility and do not replace this supported recipe.

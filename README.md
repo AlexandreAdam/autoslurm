@@ -50,6 +50,11 @@ MVP5 separates inspection collection, state calculation, caching and artifact
 retrieval. Bad records and cache failures preserve healthy/current evidence;
 selected log/script errors stay separate from cached scheduler status.
 
+MVP6 separates local persistence/selection, configuration and file transfer, with
+explicit public exports. Complete atomic writes protect records, rapid scheduling
+cannot overwrite snapshots, and sync distinguishes connection failures from
+missing directories.
+
 Scientific software owns computation, input/output validation and task reduction.
 AutoSlurm owns machine mapping, submission and tracking; agents use its public
 interface and detailed operating guide. The main checkout is now branch `dev`,

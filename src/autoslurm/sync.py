@@ -1,46 +1,14 @@
 from __future__ import annotations
 
-import shlex
-import subprocess
-from pathlib import Path
 from typing import Optional
 
 from .storage import storage_root
 from .execution import resolve_execution_context, is_remote_machine
-from .transport import remote_storage_root_from_config, scp_host_and_keypath_from_config, ssh_host_from_config
+from .transport import remote_storage_root_from_config
+from .file_transfer import pull_storage_directory
 from .configuration import machine_config as resolve_machine_config
 
 SYNC_DIRECTORIES = ("jobs", "slurm", "out")
-
-
-def _remote_ssh_command(machine: dict, machine_name: str, remote_command: str) -> list[str]:
-    hostname = ssh_host_from_config(machine, machine_name)
-    return ["ssh", *shlex.split(hostname), remote_command]
-
-
-def _rsync_command(remote_source: str, local_target: Path, key_path: str = "", *, mutable=False) -> list[str]:
-    ssh_parts = ["ssh"]
-    if key_path:
-        ssh_parts.extend(shlex.split(key_path))
-    ssh_transport = shlex.join(ssh_parts)
-    return [
-        "rsync",
-        "-a",
-        "--checksum" if mutable else "--ignore-existing",
-        "-e",
-        ssh_transport,
-        remote_source,
-        f"{local_target}/",
-    ]
-
-
-def _remote_dir_exists(machine: dict, machine_name: str, remote_path: str) -> bool:
-    result = subprocess.run(
-        _remote_ssh_command(machine, machine_name, f"test -d {shlex.quote(remote_path)}"),
-        capture_output=True,
-        text=True,
-    )
-    return result.returncode == 0
 
 
 def sync_machine(machine_name: Optional[str] = None) -> None:
@@ -51,29 +19,14 @@ def sync_machine(machine_name: Optional[str] = None) -> None:
         return
 
     context = resolve_execution_context(resolved_name, machine, root_resolver=remote_storage_root_from_config)
-    remote_root = context.storage_root
-    remote_target, key_path = scp_host_and_keypath_from_config(machine, resolved_name)
     local_root = storage_root()
 
     for directory in SYNC_DIRECTORIES:
-        remote_source = f"{remote_root.rstrip('/')}/{directory}/"
-        local_target = local_root / directory
-        local_target.mkdir(parents=True, exist_ok=True)
-        if not _remote_dir_exists(machine, resolved_name, remote_source.rstrip("/")):
+        output = pull_storage_directory(context, directory, local_root / directory,
+                                        mutable=directory == "out")
+        if output is None:
             print(f"Skipping missing remote directory '{directory}' on '{resolved_name}'.")
-            continue
-        result = subprocess.run(
-            _rsync_command(f"{remote_target}:{remote_source}", local_target, key_path, mutable=directory == "out"),
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            message = result.stderr.strip() or result.stdout.strip()
-            raise RuntimeError(
-                f"Failed to sync '{directory}' from machine '{resolved_name}': {message}"
-            )
-
-        if result.stdout.strip():
-            print(result.stdout.strip())
+        elif output:
+            print(output)
 
     print(f"Synced jobs, slurm, and out from '{resolved_name}'.")

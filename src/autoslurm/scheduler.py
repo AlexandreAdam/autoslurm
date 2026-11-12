@@ -6,7 +6,8 @@ import shlex
 import subprocess
 
 from .array_status import canonical_job_id, parent_job_id
-from .transport import ssh_host_from_config
+from .transport import ssh_command
+from .configuration import is_remote_machine
 
 QUERY_START_DATE = "2000-01-01"
 
@@ -42,15 +43,14 @@ def query_scheduler(job_ids, config=None, machine_name=None):
         ["sacct", "-n", "-P", "-S", QUERY_START_DATE, "-j", ",".join(ids), "-o", "JobID,State,ExitCode,Reason,JobIDRaw"],
     ]
     config = config or {}
-    remote = bool(config.get("hostname") or config.get("hosturl") or config.get("username"))
+    remote = is_remote_machine(config)
     results = []
     if remote:
         try:
-            host = ssh_host_from_config(config, machine_name)
             chunks = []
             for index, command in enumerate(commands):
                 chunks.append(f"printf '__AUTOSLURM_QUERY_{index}__\\n'; {shlex.join(command)} 2>&1; printf '\\n__AUTOSLURM_EXIT__%s\\n' \"$?\"")
-            result = subprocess.run(["ssh", *shlex.split(host), "bash -lc " + shlex.quote("\n".join(chunks))], capture_output=True, text=True, timeout=30)
+            result = subprocess.run(ssh_command(config, machine_name, "bash -lc " + shlex.quote("\n".join(chunks))), capture_output=True, text=True, timeout=30)
             if result.returncode != 0:
                 raise RuntimeError(result.stderr.strip() or "Scheduler transport failed.")
             for index in range(2):

@@ -30,7 +30,7 @@ def test_log_aliases_resolve_saved_job_task_identity(run, capsys, flag):
     text = capsys.readouterr().out
     assert "array-101_1.out" in text
     if flag != "--list-files":
-        assert "last" in text and "first" not in text
+        assert "last" in text.splitlines() and "first" not in text.splitlines()
 
 
 def test_job_defaults_to_bounded_logs(run, capsys):

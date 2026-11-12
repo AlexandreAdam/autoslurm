@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional
 from .definitions import DATE_FORMAT
 from .context import agent_context
 from .experiment_context import experiment_context
-from .save_load_jobs import list_saved_bundles, schedule_job
+from .bundle_selection import list_saved_bundles
+from .save_load_jobs import schedule_job
 from .storage import ensure_storage_dirs, jobs_dir
 from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
 from .inspection import inspect_bundle, list_runs
