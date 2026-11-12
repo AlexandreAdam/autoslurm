@@ -14,6 +14,7 @@ from .execution import ExecutionContext
 from .job_to_slurm import write_slurm_content, validate_slurm_content
 from .bundle_selection import SNAPSHOT_KIND_KEY
 from .submission import SUBMISSION_METADATA_KEY
+from .software_manifest import bundle_software_manifest
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,8 @@ def prepare_bundle(jobs, children_by_job, context: ExecutionContext) -> Prepared
     if not jobs:
         raise ValueError("Cannot submit an empty bundle.")
     definitions = copy.deepcopy(jobs)
+    if bundle_software_manifest(definitions) is not None:
+        raise ValueError("Managed software execution is not available yet; source preparation does not establish runtime readiness.")
     for definition in definitions:
         _validate_definition(definition)
         definition.setdefault("slurm", {})

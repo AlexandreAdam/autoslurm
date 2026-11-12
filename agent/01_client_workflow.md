@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP7.0d (configuration/path simplification; software preparation is still planned). As of
+Use this recipe with the development installation including MVP7.1 (host-side Git source preparation; managed runtime execution is still planned). As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -17,7 +17,9 @@ machine and resolved storage root. Both local installations report version
 Use `AUTOSLURM_STORAGE_ROOT` for every development process. Keep its config,
 tracking, logs and results separate from stable storage. Prepared environments
 are operator-owned; compute jobs do not install packages, pull Git repositories
-or change shared code. One bundle targets one machine.
+or change shared code. One bundle targets one machine. The
+[software source recipe](13_software_preparation.md) documents optional shared
+requests and the host-side engine; source preparation alone cannot submit them.
 
 ## Adapt scientific software
 
@@ -72,8 +74,9 @@ asl config --summary
 ```
 
 Root-setting flags only save local configuration; they do not contact a cluster
-or move files. `software_root` is recorded for future preparation, which is not
-implemented yet. Both inputs and outputs live under `results_root`; the data root
+or move files. `software_root` is recorded for preparation; the explicit source
+engine can use it on its current host, while remote dispatch and environment
+preparation remain planned. Both inputs and outputs live under `results_root`; the data root
 and required working directories/inputs must already exist before preview.
 The two roots default to `<storage_root>/software` and `<storage_root>/results`.
 `storage_root` remains AutoSlurm's internal tracking location.

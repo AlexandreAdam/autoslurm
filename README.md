@@ -64,11 +64,12 @@ used by base Conda's editable installation. Tests use isolated state and mocked
 Slurm; the earlier baseline remains available in a rollback checkout. Cluster
 installations have not been changed.
 
-MVP7.0c implements this simpler configuration interface; cloning and installation
-are still planned. A later part of MVP7 will prepare bundle-specified Git projects in isolated, verified
-cluster environments before dispatch. See the
-[software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md);
-this feature is not implemented yet.
+MVP7.1 adds the first Git software layer: shared bundle requests, fresh upstream
+revision resolution, first-time cloning and isolated exact-commit source sets.
+The explicit Python operation acts on its current preparation host. Environment
+installation, remote preparation commands and managed-runtime submission remain
+planned. See the [source preparation recipe](agent/13_software_preparation.md)
+and [software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
 
 ## Installation
 

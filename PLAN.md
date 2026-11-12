@@ -9,22 +9,26 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP7; configuration slices MVP7.0c/MVP7.0d complete locally, software preparation still planned.
+- **Current milestone:** MVP7; config slices and MVP7.1 source preparation complete,
+  environment preparation and managed-runtime execution still planned.
 - **Stage:** main checkout is active on `dev`, explicitly selected by the user
   on 2026-11-12. Base Conda imports it; tests use the same source with isolated
   environment/state. Baseline rollback source remains in `.development/stable`.
-  Full offline suite: 427 passed. Local persistence/selection, configuration,
+  Full offline suite: 485 passed. Local persistence/selection, configuration,
   SSH construction and file movement now have explicit owners. Complete atomic
   writes, exclusive snapshot creation and one-update batch appends protect saved
   records. Inspection/submission/scientific workflows remain covered.
   Local daily-use activation completed; no cluster installation changed.
-- **Next task:** remaining MVP7.0 software manifest and helper/runtime contract.
+- **Next task:** finish the MVP7.0 helper/runtime policy contract, then MVP7.2
+  isolated environment installation and verification.
   Config simplification is implemented: SSH aliases only, `config`, `software_root`, and one
   `results_root` for inputs, cwd and outputs. Latest-source defaults, machine-owned
-  dependencies and first-time cloning remain confirmed preparation requirements.
+  dependencies remain confirmed preparation requirements. Shared requests and
+  fresh exact-commit Git source preparation are now implemented.
 - **Scope update:** MVP4–MVP6 modularity increments and MVP7.0c/MVP7.0d are complete
-  locally. Git project/environment preparation on the login/preparation host still
-  needs implementation and mocked verification. Result retrieval remains optional.
+  locally. MVP7.1 adds the current-host source engine and partial/failure evidence;
+  remote preparation commands, environment creation and execution wiring remain
+  planned. Result retrieval remains optional.
 - **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
@@ -414,12 +418,28 @@ configurable `software_root` from the shared input/output `results_root`.
   from current configuration and CLI; save alias-only transport for new work,
   preserve historical transports and update the existing local profile safely.
 
-Start with the manifest attachment and helper/runtime environment separation;
-then implement source materialization, installation checks, release readiness
-and execution/agent evidence. Module responsibilities, detailed tasks and failure
-cases are in the design. Configuration/path simplification is implemented;
-remaining software preparation is planned. Live cluster operations remain outside
-the current local-only scope.
+- [x] **MVP7.1 Implement source and manifest primitives.** Pure shared `software`
+  requests on existing job definitions, credential-free repository identities,
+  current upstream resolution, managed bare caches and fresh detached checkouts.
+  Keep exact source/failure evidence and old sources unchanged; reject ambiguous
+  selectors, unmanaged caches, unsafe paths, unsupported submodules and concurrent
+  cache writers. Verify with fake remotes and a temporary local Git fixture.
+
+- [ ] **MVP7.0 Remaining environment roles.** Finalize machine-owned Python/
+  dependency policy and separate helper/bootstrap from managed application runtime.
+  The manifest selects only a logical runtime name; no policy editor or environment
+  installation is implemented yet.
+
+- [ ] **MVP7.2 Prepare/verify environments.** Install source projects in isolated
+  environments and publish readiness only after interpreter/install checks.
+- [ ] **MVP7.3 Wire execution and handoff.** Remote preparation commands, ready
+  runtime selection, execution evidence and terminal/ACP operations.
+
+The current-host `prepare_software_sources` Python operation is source-only.
+`sources_prepared` never means runtime-ready; preview/submission reject opted-in
+managed requests until runtime wiring exists. Existing operator-prepared bundles
+remain usable. Detailed cases are in the design. Live cluster operations remain
+outside the current local-only scope.
 
 ## Optional scientific result retrieval (formerly proposed MVP4)
 
@@ -510,6 +530,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-12 | MVP7 prepares missing Git repositories and separates managed software from input/result filesystems | User needs first-time cloning and independent package/results placement; preserve existing path bases and record producing paths so agents can locate both |
 | 2026-11-12 | Make config canonical; configure only software_root and shared results_root | User requested simpler configuration and merging project/results. Old saved runs retain recorded bases; conflicting old profiles need an explicit root choice; only configuration/path behavior is implemented in this slice |
 | 2026-11-12 | Delegate remote connection details to SSH config; store only ssh_alias in current profiles/new transports | User always uses SSH config and wants to remove hostname/username/key duplication. Preserve historical transport interpretation while rejecting obsolete new CLI fields |
+| 2026-11-12 | Implement source preparation before environment creation, preserving the existing job dictionary | Shared per-job software requests are normalized and checked for equality; explicit current-host preparation produces source evidence only. Runtime opt-in fails closed until installation/execution are implemented; no changes to GitHub settings |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -539,6 +560,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP7.0c Config and two-root path implementation | 405 offline tests pass in 3.22 s, 39 expected warnings, report `.development/test-runs/config-reviewed.xml`. Added 13 checks, including nine initial failures for new behavior; shared input/cwd/output roots, configured software evidence, no-network edits, explicit legacy merge, invalid roots and historical/new producing paths verified. Existing scientific fixtures use temporary merged data roots. Base config help, pre-existing main config retention and empty job/runtime directories/rollback verified at closure. No cluster operations/install/migration; no mvp7 completion tag. Task commit: `git log --grep '^MVP7.0c:'` |
 | 2026-11-12 | MVP7.0d SSH aliases only | 427 offline tests passed in 3.23 s, 39 expected warnings; 22 new cases (14 initially failing, one initial history check passing, seven later CLI/session cases). Canonical alias config/editor/CLI and SSH/SCP/rsync/status/session evidence verified, historical transports retained. Report `.development/test-runs/ssh-alias-final.xml`. Local rusty profile switched from a mistaken hostname value to ssh_alias rusty, with original backup and all other settings preserved; SSH config untouched. No cluster/install/push operations. Task commit: `git log --grep '^MVP7.0d:'`; full MVP7 stays open |
 | 2026-11-12 | MAINT.1 Remove repository workflow files | Removed only the CI/Codecov and book-deployment Actions files. Reverted extra local documentation/hosting changes; unintended remote settings changes were restored and verified: Actions enabled, Read the Docs webhook active, Pages legacy source gh-pages at /. Diff checks passed; application code unchanged. Task commit: `git log --grep '^MAINT.1:'` |
+| 2026-11-12 | MVP7.1 Git source and manifest engine | 485 full offline tests passed in 4.86 s (38 expected warnings), up from 427 baseline. Report `.development/test-runs/software-sources-final.xml`. Verified fresh upstream/default-branch changes, exact commits/annotated tags, first cloning, separate source sets/storage, partial/tracking/interruption failures, evidence-collision protection, stale-cache refusal, unsafe/unmanaged/redirected caches, locking and preview/submit guards. Real Git fixture uses temporary local repositories only; existing scientific/CLI/ACP workflows pass. Human/agent recipe and schema updated. No cluster commands, package installation or GitHub settings changes. Task commit: `git log --grep '^MVP7.1:'`; full MVP7 remains open |
 
 ## How we work
 

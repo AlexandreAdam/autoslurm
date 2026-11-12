@@ -2,13 +2,13 @@
 
 ## Status
 
-Planned, 2026-11-12. The user requested Git-based preparation of several projects
+In progress, 2026-11-12. The user requested Git-based preparation of several projects
 and verification that the bundle's required versions are installed in its Python
-environment. This document creates the MVP scope; these modules/APIs are not
-implemented yet, except configuration slices MVP7.0c/MVP7.0d described below.
-Local development/mocked commands remain the execution scope.
-No repository fetch, remote installation or cluster command is authorized by
-this planning step alone under the current local-only working agreement.
+environment. Configuration slices MVP7.0c/MVP7.0d and MVP7.1 source preparation
+are implemented. Environment creation, runtime readiness and execution wiring
+remain planned. Local development/mocked commands remain the execution scope;
+the Git engine is verified with fake remotes and temporary local repositories.
+No live cluster or remote installation has been performed.
 
 ## Problem and concepts
 
@@ -39,23 +39,28 @@ never update a helper environment while using it to submit another run.
 |---|---|
 | `software_manifest` | Pure validation/normalization of requested and resolved project/environment specifications |
 | `git_projects` | Clone missing repositories, resolve refs, fetch managed caches and materialize exact commits; no mutation of active release checkouts |
+| `software_sources` | Implemented current-host source orchestration and exact preparation/failure evidence; no runtime readiness |
 | `python_environments` | Prepare an isolated environment, install specified projects through its own interpreter and verify installations |
 | `software_releases` | Coordinate staging, readiness checks, locking, publication/reuse and preparation evidence |
 
-These names are proposed. Extract existing machine/transport policy rather than
+The first, second and source-orchestration modules are implemented; the environment
+and release modules remain proposed. Extract existing machine/transport policy rather than
 adding another SSH implementation. Keep side effects behind adapters and make
 pure manifest/fingerprint decisions testable without Git, pip or a filesystem.
 
 ## Bundle contract to settle first
 
 Current bundle JSON is a dictionary of jobs, with no top-level metadata envelope.
-MVP7.0 must choose an optional shared manifest attachment without accidentally
-interpreting metadata as a job. Keep current bundles usable; a new versioned
-container would require an explicit release boundary. Do not silently invent one.
+MVP7.1 attaches an optional shared `software` request to every job, normalized
+and compared by one manifest owner. `attach_software_manifest` copies/attaches
+the request; no top-level metadata is interpreted as a job. Existing containers
+remain dictionaries of jobs, and bundles without software retain current behavior.
+Manifest version 1 is new metadata, not a new bundle-container version.
 
-The specification needs repository identity, an optional revision and optional
-project-relative install subdirectory/distribution/import/entry-point checks.
-An optional logical runtime name may select a target-machine environment policy.
+The implemented request contains named repository identities, optional revisions,
+repository-relative install `subdirectory` and an optional logical `runtime`
+name (default `default`). Distribution/import/entry-point checks are deferred to
+the environment contract; unsupported fields fail rather than being ignored.
 Infrastructure roots/interpreters and dependency sources belong to that machine's
 profile; application manifests must not embed machine-specific absolute paths.
 Support one prepared application environment for the selected bundle initially.
@@ -129,7 +134,8 @@ release identity must not claim endpoint immutability from an alias string alone
 Configure these infrastructure paths once per target machine; application
 manifests continue to name repositories and logical runtimes, not absolute paths.
 The two root names and configuration/path behavior are implemented in MVP7.0c;
-managed release layout, cloning and environment preparation remain planned.
+managed caches/checkouts are implemented in MVP7.1; environment/release readiness
+and remote preparation commands remain planned.
 
 ```json
 {
@@ -141,7 +147,7 @@ managed release layout, cloning and environment preparation remain planned.
 
 | Root | Responsibility |
 |---|---|
-| `software_root` | Configured/recorded location for managed repositories, source releases and scientific environments; preparation still planned |
+| `software_root` | Managed repositories and isolated source sets; scientific environment preparation still planned |
 | `results_root` | Shared base for application inputs, working directories and scientific outputs |
 
 `storage_root` remains the internal AutoSlurm state location; it is not another
@@ -232,9 +238,10 @@ can be moved freely between staging and final locations.
   helper/runtime separation, software and merged data roots, ownership,
   readiness/errors and bounded client operations. Requirements D5–D8 and the two
   configuration root names are confirmed; release layout/container/API details
-  remain proposed.
+  remain proposed. Shared manifest attachment is implemented in MVP7.1; finalize
+  helper/runtime roles and machine dependency policy before MVP7.2.
   Record the implemented boundary before changing formats.
-- [ ] **MVP7.1 Implement source and manifest primitives.** Resolve exact commits,
+- [x] **MVP7.1 Implement source and manifest primitives.** Resolve exact commits,
   materialize isolated project sets and return structured preparation evidence;
   mock fetch/transport, and test omitted revisions resolving current upstream,
   default-branch changes despite a cached release, first-time cloning into a
@@ -274,6 +281,48 @@ Cluster compatibility remains unverified until a separately authorized live test
 | 2026-11-12 | MVP7.0b user requested first-time Git cloning and independent package/results locations; recorded initial D7/D8, superseded the proposed third project root in MVP7.0c |
 | 2026-11-12 | MVP7.0c config/two-root slice implemented; 405 offline tests passed, software preparation remains planned |
 | 2026-11-12 | MVP7.0d SSH config aliases replace current host/user/key fields; 427 offline tests passed; local rusty profile updated with backup, no live cluster operations |
+| 2026-11-12 | MVP7.1 shared manifest and current-host Git source engine implemented; 485 offline tests passed, including real Git against temporary local remotes; environments and execution remain planned |
+
+## MVP7.1 implemented boundary and verification
+
+Public operations: `normalize_software_manifest`, `attach_software_manifest`,
+`bundle_software_manifest`, `prepare_software_sources` and
+`SoftwarePreparationError.evidence`. The [agent recipe](../../agent/13_software_preparation.md)
+contains omitted/pinned source examples, role boundaries and failure/handoff rules.
+Runtime names are logical; they do not select an installed environment yet.
+The existing helper/operator `venv_path` behavior is unchanged. A managed software
+request is rejected by preview/submission before script/tracking/scheduler effects.
+
+The host-side engine uses `software_root/repositories/<repository-hash>.git`,
+`software_root/sources/<preparation-id>/<project-name>` and exact preparation
+records under `software_root/source_preparations`. These are internal layouts,
+not client path-construction contracts. Each invocation resolves upstream before
+materializing its sources and makes a fresh set. Source evidence has state
+`sources_prepared`, never runtime `ready`. Old source sets and scientific data
+are not edited. Git/network effects live behind `GitCommands`; source orchestration
+uses the existing atomic JSON owner. No new SSH implementation was introduced.
+
+Repository caches carry ownership markers and locks; unsafe paths, wrong origins
+and unmanaged caches fail before modification. Omitted/branch/tag requests require
+upstream resolution even with a cache. Exact pins are fetched and verified as
+commits. Clone/fetch/checkout failures, interrupted preparation and record failures
+produce failed/partial evidence; raw Git errors are not recorded because they can
+contain operator credentials. A killed process may leave a cache lock needing
+operator inspection. Incomplete source directories remain inspectable. Reuse,
+cleanup, automatic recovery, submodules and LFS are outside this source increment;
+submodules are explicitly rejected. Root setup failure can occur before a tracking
+record exists, while later record failures retain in-memory evidence.
+
+Baseline: 427 offline tests passed in 3.16 s. Final: 485 passed in 4.86 s with
+38 expected collision warnings. Report `.development/test-runs/software-sources-final.xml`.
+The 58 added checks cover normalization/copying/shared requests, Git adapter
+boundaries, latest changes/default-branch changes, exact pins/annotated tags,
+unavailable/ambiguous/malformed refs, no stale fallback, checkout/object verification,
+distinct roots/checkouts, subdirectory containment, cache ownership/origin/locking,
+partial progress, interruption/tracking failures, evidence-collision protection and saved-bundle submission guards.
+The executable fixture creates only temporary local Git remotes and checkouts;
+it performs no internet or cluster operations. Existing science/CLI/ACP checks pass.
+Task commit: `git log --grep '^MVP7.1:'`; no full `mvp7` completion tag.
 
 ## Implemented configuration/path slice (MVP7.0c)
 

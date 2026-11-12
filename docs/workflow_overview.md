@@ -5,7 +5,7 @@ the computation, resources and dependencies; AutoSlurm resolves machine paths,
 prepares scripts, submits the jobs and exposes evidence about what happened.
 Your application remains responsible for the science and its results.
 
-This page describes the development workflow through MVP7.0c. The user activated `dev`
+This page describes the development workflow through MVP7.1. The user activated `dev`
 in the main repository for local daily use through base Conda on 2026-11-12.
 Tests use isolated state and mocked Slurm/SSH. A baseline rollback checkout is
 retained; the cluster installation has not been changed or validated.
@@ -32,8 +32,13 @@ a copy failure is reported separately and never triggers another job submission.
 
 A machine profile maps two locations: software/code and shared scientific data
 (inputs, working directories and results). Use `asl config` to set `software_root`
-and `results_root`. Software preparation remains planned; the two settings and
-data-path mapping are implemented.
+and `results_root`. The first software layer can now clone or fetch Git projects
+and create a new set of exact-commit checkouts on the preparation host. Omitting
+a revision means resolving the current upstream version each time. Older source
+sets remain unchanged. Installation into isolated environments and connecting
+those environments to jobs are the next layers; a source checkout alone cannot
+be submitted as a managed runtime. The [agent recipe](../agent/13_software_preparation.md)
+documents the current Python interface and evidence.
 Application definitions keep relative paths, so they do not branch on machine
 names or embed cluster filesystem prefixes. Compute nodes use prepared software;
 they do not need Git access or package downloads inside jobs.

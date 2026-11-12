@@ -1,12 +1,14 @@
 # Public workflow map
 
-The development MVP7.0d boundary is `01_client_workflow.md`. Public Python imports
+The development MVP7.1 boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
 | Stage | Supported surface | Durable result |
 |---|---|---|
 | Describe work | `save_bundle`, `schedule_job` | Exact planned path and saved job names |
+| Declare software | `attach_software_manifest`, `bundle_software_manifest`, `normalize_software_manifest` | One shared request; machine-owned runtime name |
+| Prepare source on the current host | `prepare_software_sources` | Exact Git commits/checkouts or `SoftwarePreparationError.evidence`; no runtime readiness |
 | Check paths/scripts | `preview_bundle(path, machine=...)` | Resolved producing paths and script text; no submission |
 | Dispatch once | `submit_jobs(..., bundle_path=path)` | Receipt, or `SubmissionError.receipt` |
 | Rediscover | `list_runs`, `list_submissions` | Exact local run/receipt references |
@@ -29,6 +31,13 @@ Prepare software and inputs before running; compute jobs do no installation/Git
 work. Use fresh output namespaces and keep scientific validation application-owned.
 
 ## Ownership inside AutoSlurm
+
+Source preparation has a separate dependency flow:
+`software_sources` coordinates tracking and calls `git_projects` for managed
+cache/checkout effects; `software_manifest` owns pure request validation.
+`GitCommands` is the sole Git process adapter. `record_files` remains the shared
+JSON publication owner. Runtime installation and execution wiring remain planned;
+no new SSH or scheduler implementation was added.
 
 For maintainers, the active dependency flow is:
 

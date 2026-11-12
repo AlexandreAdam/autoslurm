@@ -6,10 +6,17 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code includes MVP7.0d: locate it with
-`git log --grep '^MVP7.0d:'`; the last completed full milestone tag is `mvp6`.
+historical. Current tested code includes MVP7.1: locate it with
+`git log --grep '^MVP7.1:'`; the last completed full milestone tag is `mvp6`.
 No cluster installation or live
 job was changed.
+
+MVP7.1 validation: 485 full offline tests passed (38 expected warnings), report
+`.development/test-runs/software-sources-final.xml`. Git source preparation was
+exercised through mocks and temporary local bare repositories only. Base editable
+imports gain the source API without installation; no runtime packages or helper
+environments were changed. Daily config, persistent records and rollback source
+remain untouched. Managed environment preparation/execution remain planned.
 
 ## Current local inventory
 

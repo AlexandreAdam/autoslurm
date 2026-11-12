@@ -85,9 +85,13 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP7.0d
+  [reference client](examples/reference_client/README.md) are the verified MVP7.1
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
+- [Software source preparation](agent/13_software_preparation.md) documents the
+  current-host Git engine. Source preparation is not runtime readiness; managed
+  requests stay blocked from submission until environment/execution wiring exists.
+  Do not infer authorization to run it on a real cluster from its availability.
 - Keep development installation working and use a narrow artifact smoke check
   before promotion. Complete packaged agent resources, public index release,
   broad compatibility matrices and polished documentation are later layers.

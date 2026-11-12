@@ -17,6 +17,21 @@ def local_profile():
                  "default_machine": "mock"})
 
 
+def test_software_opt_in_cannot_fall_back_to_operator_runtime(local_profile, monkeypatch):
+    from autoslurm import attach_software_manifest, load_bundle_from_path
+    software = {"projects": [{"name": "science", "repository": "https://example.invalid/science.git"}]}
+    selected = save_bundle(attach_software_manifest({"science": {"script": "science", "slurm": {}}}, software), "study")
+    assert load_bundle_from_path(selected)[0][0]["software"]["projects"][0]["revision"] is None
+    before = selected.read_bytes()
+    monkeypatch.setattr("subprocess.run", lambda *a, **k: pytest.fail("Managed request ran an external command"))
+    for operation in (lambda: preview_bundle(selected), lambda: submit_jobs("study", bundle_path=selected)):
+        with pytest.raises(ValueError, match="runtime readiness"):
+            operation()
+    assert selected.read_bytes() == before
+    assert not list(slurm_dir().glob("*.sh"))
+    assert not list((storage_root() / "submissions").glob("*.json"))
+
+
 @pytest.mark.parametrize("problem", ["empty", "missing-command", "invalid-name", "already-submitted"])
 def test_preview_and_submission_reject_the_same_invalid_definition(problem, local_profile, monkeypatch):
     jobs = {"sample": {"name": "sample", "script": "echo science", "slurm": {}}}
