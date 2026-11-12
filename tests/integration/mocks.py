@@ -95,24 +95,21 @@ mock_machine_config_local = {
 
 mock_machine_config1 = {
     "venv_path": "/path/to/remote/venv",
-    "hostname": "remote",
+    "ssh_alias": "remote",
     "env_command": "source /path/to/remote/venv/bin/activate",
     "path": "/path/to/remote",
 }
 
 mock_machine_config2 = {
     "venv_path": "/path/to/remote/venv",
-    "hosturl": "remote.host.com",
-    "username": "user",
-    "key_path": "/path/to/key",
+    "ssh_alias": "remote-with-key",
     "env_command": "source /path/to/remote/venv/bin/activate",
     "path": "/path/to/remote",
 }
 
 mock_machine_config3 = {
     "venv_path": "/path/to/remote/venv",
-    "hosturl": "remote.host.com",
-    "username": "user",
+    "ssh_alias": "remote",
     "env_command": "source /path/to/remote/venv/bin/activate",
     "path": "/path/to/remote",
 }

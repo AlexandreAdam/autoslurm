@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 
-from ..config import activation_command_from_config, load_config, save_config, is_remote_machine, normalize_machine_profile, set_machine_roots
+from ..config import activation_command_from_config, load_config, save_config, is_remote_machine, normalize_machine_profile, set_machine_settings
 from ..transport import ssh_command, remote_storage_root_from_config
 from ..storage import config_file_path
 
@@ -146,7 +146,7 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
         existing.get("slurm_account"),
         required=True,
     )
-    remote_default = bool(existing.get("hostname") or existing.get("hosturl"))
+    remote_default = is_remote_machine(existing)
     is_remote = _prompt_yes_no("Is this a remote machine?", default="y" if remote_default else "n")
     machine = {"venv_path": venv_path, "slurm_account": slurm_account}
     software_root = _prompt_text(
@@ -164,41 +164,9 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
     if is_remote:
         if "storage_root" in existing:
             machine["storage_root"] = existing["storage_root"]
-        print("Remote connection mode:")
-        print("  1) SSH config alias (machine.hostname)")
-        print("  2) Explicit host URL + username")
-        while True:
-            connection_type = input("Connection type [1/2]: ").strip()
-            if not connection_type:
-                connection_type = "1"
-            if connection_type in {"1", "2"}:
-                break
-            print("Please enter 1 or 2.")
-        key_path = _prompt_text(
-            "SSH private key path (optional; used with explicit host URL or alias)",
-            existing.get("key_path"),
+        machine["ssh_alias"] = _prompt_text(
+            "SSH config alias (Host entry in ~/.ssh/config)", existing.get("ssh_alias"), required=True,
         )
-        if connection_type == "1":
-            hostname = _prompt_text(
-                "SSH hostname alias (entry from ~/.ssh/config)", existing.get("hostname"), required=True
-            )
-            machine["hostname"] = hostname
-        else:
-            hosturl = _prompt_text(
-                "Remote host URL (for example: login.cluster.edu)", existing.get("hosturl"), required=True
-            )
-            username = _prompt_text(
-                "Remote username", existing.get("username"), required=True
-            )
-            machine["hosturl"] = hosturl
-            machine["username"] = username
-        if key_path:
-            machine["key_path"] = key_path
-    else:
-        machine.pop("hostname", None)
-        machine.pop("hosturl", None)
-        machine.pop("username", None)
-        machine.pop("key_path", None)
     return normalize_machine_profile(machine)
 
 
@@ -350,15 +318,16 @@ def display_config_summary():
         print("No configuration file found.")
         return
     config = load_config()
-    print("machine type default slurm_account venv_path software_root results_root")
+    print("machine type default ssh_alias slurm_account venv_path software_root results_root")
     for name, machine in config["machines"].items():
         machine_type = "remote" if is_remote_machine(machine) else "local"
         slurm_account = machine.get("slurm_account", "")
         default_marker = "yes" if name == config["default_machine"] else "no"
         venv_path = machine.get("venv_path", "")
+        alias = machine.get("ssh_alias", "-")
         results_root = machine.get("results_root") or "<storage_root>/results"
         software_root = machine.get("software_root") or "<storage_root>/software"
-        print(f"{name} {machine_type} {default_marker} {slurm_account} {venv_path} {software_root} {results_root}")
+        print(f"{name} {machine_type} {default_marker} {alias} {slurm_account} {venv_path} {software_root} {results_root}")
 
 
 def _main(argv: list[str] | None = None):
@@ -376,7 +345,7 @@ def _main(argv: list[str] | None = None):
     parser.add_argument(
         "--summary",
         action="store_true",
-        help="Print one-line machine summaries (type/default/account/venv/software_root/results_root) and exit.",
+        help="Print one-line machine summaries (type/default/ssh_alias/account/venv/software_root/results_root) and exit.",
     )
     parser.add_argument(
         "-i",
@@ -388,6 +357,7 @@ def _main(argv: list[str] | None = None):
         "--set-default",
         help="Set default machine by exact name and exit.",
     )
+    parser.add_argument("--ssh-alias", help="Set the SSH config Host alias; SSH manages hostname, user and keys.")
     parser.add_argument("--machine", help="Machine to update (default: configured default).")
     parser.add_argument("--software-root", help="Set the absolute software directory without connecting to the machine.")
     parser.add_argument("--results-root", help="Set the absolute shared input/output directory; merges an old project_root setting.")
@@ -398,14 +368,14 @@ def _main(argv: list[str] | None = None):
         return
     args = parser.parse_args(argv)
 
-    if args.software_root is not None or args.results_root is not None:
+    if args.software_root is not None or args.results_root is not None or args.ssh_alias is not None:
         if args.view or args.summary or args.interactive or args.set_default:
-            parser.error("Root updates cannot be combined with view, summary, interactive or set-default.")
-        selected = set_machine_roots(args.machine, software_root=args.software_root, results_root=args.results_root)
-        print(f"Saved roots for machine '{selected}'.")
+            parser.error("Profile updates cannot be combined with view, summary, interactive or set-default.")
+        selected = set_machine_settings(args.machine, software_root=args.software_root, results_root=args.results_root, ssh_alias=args.ssh_alias)
+        print(f"Saved settings for machine '{selected}'.")
         return
     if args.machine is not None:
-        parser.error("--machine requires --software-root or --results-root.")
+        parser.error("--machine requires --ssh-alias, --software-root or --results-root.")
 
     if args.view:
         display_config()

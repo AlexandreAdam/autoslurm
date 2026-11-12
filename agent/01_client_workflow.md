@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP7.0c (configuration/path simplification; software preparation is still planned). As of
+Use this recipe with the development installation including MVP7.0d (configuration/path simplification; software preparation is still planned). As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -51,7 +51,7 @@ settings (replace them with its real isolated locations):
 
 ```json
 {
-  "hostname": "cluster-development",
+  "ssh_alias": "cluster-development",
   "storage_root": "/cluster/autoslurm-development",
   "software_root": "/cluster/science-software",
   "results_root": "/cluster/science-data",
@@ -60,12 +60,14 @@ settings (replace them with its real isolated locations):
 }
 ```
 
+Remote profiles use only `ssh_alias`, the `Host` name in SSH config. HostName, User,
+IdentityFile and other connection options are owned by SSH, not AutoSlurm.
 Local profiles omit SSH identity and use the process's selected storage root;
 legacy local `path` does not override that selection. Set profile roots through
 `asl config --interactive` or the public configuration API. For an existing profile:
 
 ```sh
-asl config --machine cluster --software-root /cluster/science-software --results-root /cluster/science-data
+asl config --machine cluster --ssh-alias cluster-development --software-root /cluster/science-software --results-root /cluster/science-data
 asl config --summary
 ```
 
@@ -378,3 +380,13 @@ That edit drops the old setting but never moves input/output files. Retain the
 existing data or prepare it at the selected location before submitting new work.
 Saved runs remain readable using their original input/result roots; new execution
 records contain `software_root` and `results_root`, with no duplicate project root.
+
+MVP7.0d removes hostname/hosturl/username/key_path from current profile writes,
+editor prompts and submit/schedule overrides. Use `--ssh-alias` for explicit
+selection; omit it for a local profile. Old hostname aliases normalize on read/save;
+old explicit host/user profiles need an explicit alias choice through config.
+New run transport evidence contains only the alias. Historical recorded connection
+fields remain readable for existing runs and are never rewritten implicitly.
+The saved alias refers to the current SSH config entry: editing that entry can
+change its destination. AutoSlurm does not snapshot or resolve SSH credentials or
+hostnames. Inspect connection failures rather than substituting another profile.

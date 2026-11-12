@@ -7,7 +7,7 @@ import shlex
 import subprocess
 
 from .storage import storage_root
-from .config import machine_config as select_machine, is_remote_machine, normalize_machine_profile, absolute_machine_path as _absolute
+from .config import machine_config as select_machine, is_remote_machine, normalize_machine_profile, recorded_transport, absolute_machine_path as _absolute
 from .transport import remote_storage_root_from_config, ssh_command
 
 __all__ = ["ExecutionContext", "resolve_execution_context", "execution_context_from_snapshot", "recorded_execution"]
@@ -74,7 +74,7 @@ class ExecutionContext:
             working_directory = self.resolve_path(job.get("working_directory", "."), "project", relative_only=True)
             if job.get("slurm", {}).get("chdir") is not None:
                 raise ValueError("Use working_directory rather than a separate Slurm chdir directive.")
-        transport = {key: self.config[key] for key in ("hostname", "hosturl", "username", "key_path") if key in self.config}
+        transport = recorded_transport(self.config)
         log_pattern = job.get("slurm", {}).get("output") or str(PurePosixPath(self.storage_root) / "out/%x-%j.out")
         if working_directory and job.get("slurm", {}).get("output"):
             path = PurePosixPath(log_pattern)
@@ -183,6 +183,6 @@ def producing_machine(job, profiles):
         if name not in profiles or not isinstance(profiles[name], dict):
             raise ValueError(f"Producing machine {name!r} is unavailable; no local fallback.")
         config = profiles[name]
-    transport = {key: config[key] for key in ("hostname", "hosturl", "username", "key_path") if key in config}
+    transport = recorded_transport(config)
     key = json.dumps({"machine": name, "transport": transport}, sort_keys=True)
     return key, config

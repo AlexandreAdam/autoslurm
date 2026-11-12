@@ -8,10 +8,7 @@ from autoslurm.utils import machine_config
 def args():
     return Namespace(
         machine=None,
-        hostname=None,
-        hosturl=None,
-        username=None,
-        key_path=None,
+        ssh_alias=None,
         path=None,
         venv_path=None,
         env_command=None,
@@ -29,7 +26,7 @@ def mock_load_config(tmp_path):
                 "env_command": "source /path/to/env/bin/activate",
             },
             "remote_machine": {
-                "hostname": "remote_host",
+                "ssh_alias": "remote_host",
                 "path": "/path/to/dir",
                 "env_command": "source activate env",
                 "slurm_account": "def-bengioy",
@@ -50,10 +47,7 @@ def test_machine_config_custom_machine_complete(mock_load_config, args):
     mock_config = {
         "machines": {
             "local": {
-                "hostname": "localhost",
-                "hosturl": "host.url.com",
-                "username": "user",
-                "key_path": "/path/to/key",
+                "ssh_alias": "localhost",
                 "path": "/path/to/dir",
                 "env_command": "source activate env",
                 "slurm_account": "account",
@@ -80,13 +74,13 @@ def test_machine_config_custom_remote_machine_missing_keys(args, mock_load_confi
     """
     Test that the function raises a ValueError when the custom remote machine configuration is missing keys.
     """
-    args.hostname = "remote_host"
+    args.ssh_alias = "remote_host"
     args.path = "/path/to/dir"
     args.slurm_account = "account"
 
     # Backward-compatible behavior: falls back to existing configured activation settings.
     _, result = machine_config(args)
-    assert result["hostname"] == "remote_host"
+    assert result["ssh_alias"] == "remote_host"
     assert result["slurm_account"] == "account"
 
 
@@ -104,7 +98,7 @@ def test_machine_config_custom_remote_machine(args, mock_load_config):
     print(result)
 
     expected_result = {  # See the mock_load_config fixture
-        "hostname": "remote_host",
+        "ssh_alias": "remote_host",
         "path": "/path/to/dir",
         "env_command": "source activate env",
         "slurm_account": "def-bengioy",

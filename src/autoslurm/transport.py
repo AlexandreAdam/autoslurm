@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 import shlex
 import subprocess
 
-from .config import activation_command_from_config
+from .config import activation_command_from_config, validate_ssh_alias
 from .storage import STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 
@@ -13,9 +13,11 @@ def scp_host_and_keypath_from_config(machine_config: dict,
                                      machine_name: Optional[str] = None) -> tuple[str, str]:
     """Return the configured destination and shell-quoted identity options.
 
-    A hostname alias retains the historical SSH-config behavior. Structured
-    username/hosturl profiles carry a separate key path, treated as one value.
+    Current profiles use only ssh_alias and delegate connection details to SSH.
+    Older recorded transports remain readable for existing job management.
     """
+    if "ssh_alias" in machine_config:
+        return validate_ssh_alias(machine_config["ssh_alias"]), ""
     hostname = machine_config.get("hostname")
     if hostname is not None:
         return hostname, ""
@@ -38,7 +40,9 @@ def ssh_host_from_config(machine_config: dict, machine_name: Optional[str] = Non
 def ssh_command(machine_config: dict, machine_name: Optional[str] = None,
                 remote_command: Optional[str] = None, *, options=None) -> list[str]:
     """Construct one SSH argument vector without discovering configuration or I/O."""
-    command = ["ssh", *(options or []), *shlex.split(ssh_host_from_config(machine_config, machine_name))]
+    destination = ([validate_ssh_alias(machine_config["ssh_alias"])] if "ssh_alias" in machine_config
+                   else shlex.split(ssh_host_from_config(machine_config, machine_name)))
+    command = ["ssh", *(options or []), *destination]
     if remote_command is not None:
         command.append(remote_command)
     return command

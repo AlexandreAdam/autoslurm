@@ -5,7 +5,7 @@
 Planned, 2026-11-12. The user requested Git-based preparation of several projects
 and verification that the bundle's required versions are installed in its Python
 environment. This document creates the MVP scope; these modules/APIs are not
-implemented yet, except the configuration/path slice MVP7.0c described below.
+implemented yet, except configuration slices MVP7.0c/MVP7.0d described below.
 Local development/mocked commands remain the execution scope.
 No repository fetch, remote installation or cluster command is authorized by
 this planning step alone under the current local-only working agreement.
@@ -108,6 +108,22 @@ old environment satisfies a fresh resolution: make dependency refresh/reuse an
 explicit machine policy and do not silently claim reproducibility or freshness.
 No dependency solver framework is required for this MVP.
 
+## SSH alias ownership (MVP7.0d, accepted and implemented)
+
+Remote configuration uses one `ssh_alias` that selects the operator's SSH config
+Host entry. No hostname/hosturl/username/key_path setup, key handling or connection
+mode choice belongs in current AutoSlurm profiles. `config --ssh-alias` edits the
+selection without connecting; submit/schedule have the same override. Local
+profiles omit the alias. New run transport evidence stores only the alias, and
+all SSH/copy/session adapters use it without identity flags.
+
+Old hostname aliases normalize to ssh_alias on read/save and obsolete fields are
+dropped. Old explicit host/user profiles need an explicit alias selection; no
+inferred user@host fallback for new preparation. Existing saved job/receipt
+transports retain their old address/key interpretation for historical management.
+A recorded alias does not freeze the server behind an SSH config entry. Future
+release identity must not claim endpoint immutability from an alias string alone.
+
 ## Software, input and output locations
 
 Configure these infrastructure paths once per target machine; application
@@ -117,6 +133,7 @@ managed release layout, cloning and environment preparation remain planned.
 
 ```json
 {
+  "ssh_alias": "research-cluster",
   "software_root": "/home/scientist/autoslurm-software",
   "results_root": "/scratch/scientist/studies"
 }
@@ -200,6 +217,11 @@ can be moved freely between staging and final locations.
 
 ## Tasks and completion criteria
 
+- [x] **MVP7.0d Use SSH config aliases only.** Current config and CLI use
+  ssh_alias, adapters share selection and new evidence stores no duplicate user/
+  host/key settings. Historical transports remain readable. Update the user's
+  existing local profile with a backup; verify all cluster effects through mocks.
+
 - [x] **MVP7.0c Simplify config and application roots.** Canonical config modules/
   command, software_root and shared results_root, explicit old-profile root edits,
   recorded historical paths and local-only verification. This implements the
@@ -251,6 +273,7 @@ Cluster compatibility remains unverified until a separately authorized live test
 | 2026-11-12 | MVP7.0a user confirmed omitted revisions mean latest source and dependency setup belongs to the target machine; recorded D5/D6 and associated failure checks; no implementation started |
 | 2026-11-12 | MVP7.0b user requested first-time Git cloning and independent package/results locations; recorded initial D7/D8, superseded the proposed third project root in MVP7.0c |
 | 2026-11-12 | MVP7.0c config/two-root slice implemented; 405 offline tests passed, software preparation remains planned |
+| 2026-11-12 | MVP7.0d SSH config aliases replace current host/user/key fields; 427 offline tests passed; local rusty profile updated with backup, no live cluster operations |
 
 ## Implemented configuration/path slice (MVP7.0c)
 
@@ -280,3 +303,22 @@ array/reducer, submission, inspection and CLI/ACP checks remain passing. No real
 cluster commands, base reinstall, runtime data migration or code preparation.
 Task commit: `git log --grep '^MVP7.0c:'`. No `mvp7` completion tag: remaining
 software-manifest/helper/runtime/source/environment tasks are still open.
+
+## MVP7.0d verification
+
+Baseline: 405 offline tests passed in 3.32 s. Fourteen new checks initially failed;
+one historical explicit-transport check already passed. Final suite: 427 passed
+in 3.23 s, 39 expected collision warnings. Report
+`.development/test-runs/ssh-alias-final.xml`. Twenty-two added cases cover alias
+validation before discovery, no local fallback, canonical profile serialization,
+local-only alias edits, simple editor/summary, SSH/SCP/rsync/session arguments,
+saved-alias stability, old explicit transports and retired CLI flags stopping
+before application argument discovery. All prior scientific/receipt/CLI/ACP
+workflows remain covered.
+
+At the user's request, main's existing rusty profile now selects ssh_alias rusty.
+The prior hostname contained a username, while local SSH config defines Host rusty.
+Only connection settings changed; all non-connection values were verified equal.
+Backup `.development/backups/pre-ssh-alias-20261112-121325/config.json`; SSH config
+was not modified. No cluster connection, job submission or dependency installation.
+Task commit: `git log --grep '^MVP7.0d:'`; full software-preparation MVP stays open.

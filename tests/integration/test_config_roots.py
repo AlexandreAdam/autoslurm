@@ -98,7 +98,7 @@ def test_config_flags_resolve_old_split_and_preserve_other_fields(monkeypatch):
     monkeypatch.setattr("subprocess.run", lambda *a, **kw: pytest.fail("Root edit must not contact cluster"))
     root.main(["config", "--machine", "cluster", "--software-root", "/software", "--results-root", "/study"])
     profile = load_config()["machines"]["cluster"]
-    assert profile == {"hostname": "saved-host", "venv_path": "/env", "software_root": "/software", "results_root": "/study"}
+    assert profile == {"ssh_alias": "saved-host", "venv_path": "/env", "software_root": "/software", "results_root": "/study"}
 
 
 def test_config_invalid_edit_and_unknown_machine_preserve_file():

@@ -26,6 +26,7 @@ For the local development refactor, start with the
 [scientific example](examples/reference_client/README.md). Current profiles use
 `software_root` for code/environments and `results_root` for inputs, working
 directories and outputs. `asl config` edits or displays these two locations.
+Remote profiles store only `ssh_alias`; SSH config owns server/user/key settings.
 The same relative workload can run under different machine profiles without
 changing the application. Preview checks paths before submission; saved execution
 locations let an agent find a run's results after a profile changes.

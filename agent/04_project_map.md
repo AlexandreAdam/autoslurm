@@ -1,6 +1,6 @@
 # Public workflow map
 
-The development MVP7.0c boundary is `01_client_workflow.md`. Public Python imports
+The development MVP7.0d boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
@@ -144,3 +144,11 @@ SSH. New execution evidence saves the two roots; historical execution contexts
 still read the older separate project/result fields. The context's internal
 `project_root` field is a compatibility input-base slot, never a third configurable
 root for new work. Software cloning/install/release management remain planned.
+
+MVP7.0d centralizes SSH alias validation and transport evidence in config/transport.
+Current profiles normalize to `ssh_alias`; new execution/receipt metadata stores
+that alias alone. SSH, SCP, rsync and submission sessions all delegate HostName,
+User and IdentityFile lookup to SSH. Legacy address/key parsing remains only to
+interpret older recorded transports and compatibility adapters, not as another
+configuration mode. Retired schedule flags are rejected before application
+argument discovery, preventing connection fields from leaking into science args.

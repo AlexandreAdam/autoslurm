@@ -67,9 +67,10 @@ def test_invalid_machine_root_fails_before_remote_discovery(key):
 
 
 def test_saved_remote_artifact_uses_producing_transport_without_profile(tmp_path, monkeypatch):
-    context = resolve_execution_context("old-name", {"hosturl": "old-host", "username": "scientist", "results_root": "/old/results"}, root_resolver=lambda *args: "/old/state")
+    context = resolve_execution_context("old-name", {"ssh_alias": "old-alias", "results_root": "/old/results"}, root_resolver=lambda *args: "/old/state")
     evidence = context.resolve_job({"script_args": {"output_dir": "study"}})
     evidence["project_root"] = "/old/project"  # A saved pre-merge producing record.
+    evidence["transport"] = {"hosturl": "old-host", "username": "scientist"}
     saved = tmp_path / "historical_20260101000000.json"
     saved.write_text(json.dumps({"sample": {"name": "sample", "script": "science-demo", "slurm": {}, EXECUTION_METADATA_KEY: evidence}}))
     calls = []

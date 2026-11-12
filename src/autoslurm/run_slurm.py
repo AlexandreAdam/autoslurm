@@ -7,7 +7,7 @@ import tempfile
 import shutil
 from contextlib import contextmanager
 from typing import Optional
-from .config import load_config
+from .config import load_config, is_remote_machine
 from .transport import ssh_command, remote_storage_root_from_config
 from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .submission import SubmissionError, SUBMISSION_PROTOCOL, validate_receipt
@@ -86,7 +86,7 @@ def ssh_submission_session(
     if machine_config is None:
         yield None
         return
-    if not (machine_config.get("hostname") or machine_config.get("hosturl")):
+    if not is_remote_machine(machine_config):
         yield None
         return
 
@@ -107,7 +107,7 @@ def ssh_submission_session(
         if result.returncode != 0:
             message = result.stderr.strip() or result.stdout.strip()
             raise RuntimeError(
-                f"Unable to open SSH multiplexed session for '{machine_name or machine_config.get('hostname', machine_config.get('hosturl', ''))}': {message}"
+                f"Unable to open SSH multiplexed session for '{machine_name or machine_config.get('ssh_alias', machine_config.get('hostname', machine_config.get('hosturl', '')))}': {message}"
             )
         yield ssh_options
     finally:

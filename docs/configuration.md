@@ -18,9 +18,21 @@ The default machine is used when an operation omits its machine selection.
 To update only the two roots of an existing profile without remote commands:
 
 ```sh
-asl config --machine cluster --software-root /home/user/software --results-root /scratch/user/studies
+asl config --machine cluster --ssh-alias research-cluster --software-root /home/user/software --results-root /scratch/user/studies
 asl config --set-default cluster
 ```
+
+Remote profiles select one `ssh_alias`, matching a `Host` entry in SSH config.
+AutoSlurm does not configure hostname, username or keys. To change only the alias:
+
+```sh
+asl config --machine cluster --ssh-alias research-cluster
+```
+
+The same `--ssh-alias` override is available to submit/schedule. Old hostname-based
+aliases normalize to this field; old explicit host/user profiles require selecting
+an alias. New run records retain the alias; older recorded transports are still
+readable. Actual connection details stay in SSH config.
 
 For example, `input_args = ["input_file"]` with `input_file = "inputs/data.json"`
 and `output_dir = "study-42/summary"` both resolve under `results_root`.
@@ -47,6 +59,8 @@ New profiles with configured roots require relative application paths; absolute
 output overrides previously allowed by results-only profiles are rejected.
 
 `configuration` and the existing `autoslurm-configuration` command remain aliases.
+The alias/root flags only save settings; they do not validate a live connection.
+The interactive editor retains connection/environment validation.
 New installations also expose `autoslurm-config`; the existing editable installation
 can use `asl config` immediately without reinstalling console scripts.
 See [the client workflow](../agent/01_client_workflow.md) and

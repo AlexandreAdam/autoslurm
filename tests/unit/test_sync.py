@@ -86,9 +86,7 @@ def test_sync_remote_pulls_storage(tmp_path, monkeypatch):
                 "remote": {
                     "env_command": "source /path/to/remote/venv/bin/activate",
                     "slurm_account": "rrg-account_name",
-                    "hosturl": "machine.domain.com",
-                    "username": "user1",
-                    "key_path": "~/.ssh/id1_rsa",
+                    "ssh_alias": "research-cluster",
                 }
             },
             "default_machine": "remote",
@@ -105,11 +103,11 @@ def test_sync_remote_pulls_storage(tmp_path, monkeypatch):
             return MagicMock(returncode=0, stdout="", stderr="")
         if cmd[0] == "rsync":
             assert ("--checksum" if "/out/" in cmd[-2] else "--ignore-existing") in cmd
-            assert cmd[cmd.index("-e") + 1] == shlex.join(["ssh", "-i", "~/.ssh/id1_rsa"])
+            assert cmd[cmd.index("-e") + 1] == "ssh"
             assert cmd[-2] in {
-                "user1@machine.domain.com:/remote/autoslurm/jobs/",
-                "user1@machine.domain.com:/remote/autoslurm/slurm/",
-                "user1@machine.domain.com:/remote/autoslurm/out/",
+                "research-cluster:/remote/autoslurm/jobs/",
+                "research-cluster:/remote/autoslurm/slurm/",
+                "research-cluster:/remote/autoslurm/out/",
             }
             assert cmd[-1] in {
                 f"{storage_root()}/jobs/",
@@ -135,8 +133,7 @@ def test_sync_remote_skips_missing_dirs(tmp_path, monkeypatch, capsys):
                 "remote": {
                     "env_command": "source /path/to/remote/venv/bin/activate",
                     "slurm_account": "rrg-account_name",
-                    "hosturl": "machine.domain.com",
-                    "username": "user1",
+                    "ssh_alias": "research-cluster",
                 }
             },
             "default_machine": "remote",

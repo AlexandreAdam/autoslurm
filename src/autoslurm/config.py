@@ -6,6 +6,7 @@ import os
 import json
 import shlex
 import posixpath
+import re
 from pathlib import Path, PurePosixPath
 
 from .record_files import atomic_json
@@ -22,9 +23,33 @@ def absolute_machine_path(value, label):
     return posixpath.normpath(str(value))
 
 
+LEGACY_CONNECTION_FIELDS = ("hostname", "hosturl", "username", "key_path")
+
+
+def validate_ssh_alias(alias):
+    """One literal SSH-config selector, never an option, username or command."""
+    if not isinstance(alias, str) or re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", alias) is None:
+        raise ValueError("ssh_alias must be one nonempty SSH config alias without a username, options or whitespace.")
+    return alias
+
+
+def recorded_transport(config):
+    """Save aliases for new profiles; retain old transport shapes when reading history."""
+    if "ssh_alias" in config:
+        return {"ssh_alias": validate_ssh_alias(config["ssh_alias"])}
+    return {key: config[key] for key in LEGACY_CONNECTION_FIELDS if key in config}
+
+
 def normalize_machine_profile(profile):
     """Use two scientific roots; reject ambiguous old input/output configurations."""
     profile = dict(profile)
+    alias = profile.get("ssh_alias", profile.get("hostname"))
+    if "ssh_alias" in profile or profile.get("hostname") is not None:
+        profile["ssh_alias"] = validate_ssh_alias(alias)
+    elif any(profile.get(key) is not None for key in LEGACY_CONNECTION_FIELDS):
+        raise ValueError("Configure ssh_alias; put HostName, User and IdentityFile in your SSH config. Use asl config --machine NAME --ssh-alias ALIAS.")
+    for key in LEGACY_CONNECTION_FIELDS:
+        profile.pop(key, None)
     for key in ("software_root", "results_root", "project_root"):
         if key in profile:
             profile[key] = absolute_machine_path(profile[key], f"Machine {key}")
@@ -42,7 +67,7 @@ def normalize_machine_profile(profile):
 
 def is_remote_machine(config):
     """One data-only rule for current and recorded transport profiles."""
-    return bool(config.get("hostname") or config.get("hosturl") or config.get("username"))
+    return "ssh_alias" in config or bool(config.get("hostname") or config.get("hosturl") or config.get("username"))
 
 
 def activation_command_from_config(machine_config: dict) -> str:
@@ -56,7 +81,7 @@ def activation_command_from_config(machine_config: dict) -> str:
     return ""
 
 
-def _normalize_config(raw: dict, *, root_overrides=None, machine=None) -> dict:
+def _normalize_config(raw: dict, *, profile_overrides=None, machine=None) -> dict:
     """
     Normalize the configuration to ensure the structure contains 'machines',
     'default_machine', and an alias 'local' that points to the default machine.
@@ -71,15 +96,18 @@ def _normalize_config(raw: dict, *, root_overrides=None, machine=None) -> dict:
         }
     if not isinstance(machines, dict):
         raise EnvironmentError("The 'machines' entry must be a dictionary.")
-    if root_overrides:
+    if profile_overrides:
         selected = machine or raw.get("default_machine") or ("local" if "local" in machines else next(iter(machines), None))
         if selected not in machines:
             raise ValueError(f"No configuration found for machine: {selected}")
         machines = dict(machines)
         profile = dict(machines[selected])
-        profile.update(root_overrides)
-        if "results_root" in root_overrides:
+        profile.update(profile_overrides)
+        if "results_root" in profile_overrides:
             profile.pop("project_root", None)
+        if "ssh_alias" in profile_overrides:
+            for key in LEGACY_CONNECTION_FIELDS:
+                profile.pop(key, None)
         machines[selected] = profile
     machines = {name: normalize_machine_profile(value) if isinstance(value, dict) else value
                 for name, value in machines.items()}
@@ -140,12 +168,12 @@ def load_config() -> dict:
     return _normalize_config(_read_config())
 
 
-def set_machine_roots(machine=None, *, software_root=None, results_root=None):
-    """Save explicitly selected roots, preserving other fields and historical runs."""
-    roots = {key: value for key, value in (("software_root", software_root), ("results_root", results_root)) if value is not None}
+def set_machine_settings(machine=None, *, software_root=None, results_root=None, ssh_alias=None):
+    """Save selected roots/alias, preserving other fields and historical run evidence."""
+    roots = {key: value for key, value in (("software_root", software_root), ("results_root", results_root), ("ssh_alias", ssh_alias)) if value is not None}
     if not roots:
-        raise ValueError("Provide software_root or results_root.")
-    config = _normalize_config(_read_config(), root_overrides=roots, machine=machine)
+        raise ValueError("Provide software_root, results_root or ssh_alias.")
+    config = _normalize_config(_read_config(), profile_overrides=roots, machine=machine)
     save_config(config)
     return machine or config["default_machine"]
 
@@ -161,16 +189,9 @@ def machine_config(
     machine_name = machine
     if args is not None:
         machine_name = machine_name or args.machine
-        if args.hosturl is not None or args.hostname is not None:
-            for key in ["slurm_account"]:
-                if getattr(args, key, None) is None:
-                    raise AttributeError(
-                        f"Custom machine configuration with 'hosturl' requires {key}."
-                    )
-            for key in MACHINE_KEYS:
-                value = getattr(args, key, None)
-                if value is not None:
-                    final_overrides[key] = value
+        alias = getattr(args, "ssh_alias", None)
+        if alias is not None:
+            final_overrides["ssh_alias"] = alias
         over_keys = ["env_command", "venv_path", "slurm_account"]
         for key in over_keys:
             value = getattr(args, key, None)

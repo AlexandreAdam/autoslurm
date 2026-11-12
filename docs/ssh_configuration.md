@@ -1,70 +1,40 @@
-# SSH Configuration
+# SSH configuration
 
-AutoSlurm stores SSH credentials so it can reach remote machines. Every remote machine you add must already accept key-based authentication before AutoSlurm can copy files or submit jobs.
+AutoSlurm uses your existing SSH configuration. It stores an alias, while SSH
+owns the actual server name, username, identity file, proxy settings and other
+connection options. Prepare authentication through your normal cluster setup.
 
-## Generate SSH keys
+For example, an entry in `~/.ssh/config` can look like:
 
-Run `ssh-keygen` once on your workstation:
-
-```bash
-ssh-keygen -t rsa -b 4096 -C "you@example.com"
+```sshconfig
+Host research-cluster
+    HostName login.example.edu
+    User your-account
+    IdentityFile ~/.ssh/your-existing-key
 ```
 
-It produces two files under `~/.ssh/`: the private key (`id_rsa`) stays on your workstation, and the public key (`id_rsa.pub`) is safe to share. 
-The private key must remain secret. Do not copy it to the remote host.
+The `Host` label is the value to select in AutoSlurm:
 
-## Install the public key on the remote machine
-
-Use `ssh-copy-id` to append your public key to the remote account’s `~/.ssh/authorized_keys`:
-
-```bash
-ssh-copy-id -i ~/.ssh/id_rsa.pub username@hostname
+```sh
+asl config --machine cluster --ssh-alias research-cluster
 ```
 
-After this step you can ssh with your private key without a password:
-
-```bash
-ssh username@hostname
+```json
+{
+  "ssh_alias": "research-cluster"
+}
 ```
 
-If you cannot run `ssh-copy-id`, paste the contents of `~/.ssh/id_rsa.pub` into the remote file manually:
+SCP, rsync, status, log retrieval and submission use the same alias. AutoSlurm's
+current profiles do not duplicate HostName, User or IdentityFile and do not read
+private key contents. Normal SSH configuration (including any includes) is
+interpreted by SSH, rather than reimplemented by AutoSlurm.
 
-```bash
-cat ~/.ssh/id_rsa.pub | ssh username@hostname 'cat >> ~/.ssh/authorized_keys'
-```
+Alias/root edits only save local configuration. The interactive config validation
+checks SSH connectivity and environment activation/import. Complete path/access
+checks are not yet implemented in config; see [config](configuration.md).
 
-## Configure `~/.ssh/config`
-
-Create an entry to avoid repeating the details:
-
-```
-Host myremote
-    HostName hostname
-    User username
-    IdentityFile ~/.ssh/id_rsa
-```
-
-You can now ssh using only the host keyword
-
-```bash
-ssh myremote 
-```
-
-Use `myremote` as the `hostname` field inside `~/.autoslurmconfig`, and AutoSlurm will fill in the rest automatically.
-
-### Optional: Keep-alive for 2FA
-
-If the cluster enforces two-factor authentication, enable connection multiplexing so AutoSlurm can reuse a single authenticated session:
-
-```
-Host myremote
-    HostName hostname
-    User username
-    IdentityFile ~/.ssh/id_rsa
-    ServerAliveInterval 60
-    ControlMaster auto
-    ControlPersist yes
-    ControlPath ~/.ssh/sockets/%r@%h-%p
-```
-
-`ServerAliveInterval` avoids timeouts and `ControlMaster`/`ControlPersist` let you run many jobs without re-entering credentials after each command.
+Saved runs retain their producing alias rather than adopting a new profile's
+alias. Editing the SSH entry itself can change its destination; the record does
+not pin the underlying server or credentials. Older recorded explicit transports
+remain readable for historical job management.

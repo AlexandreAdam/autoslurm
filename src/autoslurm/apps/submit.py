@@ -30,14 +30,7 @@ def parse_args(argv=None):
     )
 
     # Optional arguments for custom machine configuration
-    parser.add_argument(
-        "--hostname", required=False, help="Hostname of the remote machine"
-    )
-    parser.add_argument("--hosturl", required=False, help="The url of the machine")
-    parser.add_argument("--username", required=False, help="Username for SSH login")
-    parser.add_argument(
-        "--key_path", required=False, help="Path to the SSH private key"
-    )
+    parser.add_argument("--ssh-alias", help="SSH config Host alias for the selected machine.")
     parser.add_argument(
         "--venv_path",
         required=False,
@@ -81,10 +74,7 @@ def main(argv=None):
         parser = argparse.ArgumentParser(description="Run scripts on a SLURM cluster.")
         parser.add_argument("name", help="Name of the job")
         parser.add_argument("--machine", required=False, help="Machine name to run the jobs (e.g., local, remote_1)")
-        parser.add_argument("--hostname", required=False, help="Hostname of the remote machine")
-        parser.add_argument("--hosturl", required=False, help="The url of the machine")
-        parser.add_argument("--username", required=False, help="Username for SSH login")
-        parser.add_argument("--key_path", required=False, help="Path to the SSH private key")
+        parser.add_argument("--ssh-alias", help="SSH config Host alias for the selected machine.")
         parser.add_argument("--venv_path", required=False, help="Path to the virtualenv root; autoslurm renders source <venv>/bin/activate.")
         parser.add_argument("--env_command", required=False, help="Legacy command to activate environment (deprecated; prefer --venv_path).")
         parser.add_argument("--slurm_account", required=False, help="SLURM account to use for job submission")

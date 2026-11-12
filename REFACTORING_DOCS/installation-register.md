@@ -6,8 +6,8 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code includes MVP7.0c: locate it with
-`git log --grep '^MVP7.0c:'`; the last completed full milestone tag is `mvp6`.
+historical. Current tested code includes MVP7.0d: locate it with
+`git log --grep '^MVP7.0d:'`; the last completed full milestone tag is `mvp6`.
 No cluster installation or live
 job was changed.
 
@@ -158,6 +158,17 @@ Their original pinned-main/separate-development layout is superseded above.
   already present before this task (mtime 2026-11-12 11:17:16 local; baseline tests
   began 11:43:57); it was preserved, not migrated. Test/rollback configs remain
   absent, and jobs/scripts/logs/receipts/observations are empty in all three roots.
+
+- **MVP7.0d, 2026-11-12:** 427 offline tests passed in 3.23 s, 39 expected
+  warnings, report `.development/test-runs/ssh-alias-final.xml`. Current profiles,
+  overrides and new run transports use ssh_alias only. SSH config owns host/user/
+  identity options; historical explicit transports remain readable. Main profile
+  rusty now selects alias rusty, matching its existing local SSH Host entry. User
+  requested this local config edit; all non-connection fields verified unchanged.
+  Original config SHA `3b9c7feed9c8508d61265f339e634812219cefef519042424ff2900f893a369a`;
+  backup `.development/backups/pre-ssh-alias-20261112-121325/config.json` (mode 0600).
+  Updated config SHA `b07fe4e437dac32607fb95b4e303d5e7d76dea07234e3705cf9b05e7acd39914`.
+  SSH config and baseline source/state unchanged. No cluster access or installs.
 
 ## Current local commands
 

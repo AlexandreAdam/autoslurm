@@ -124,10 +124,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # Optional arguments for custom machine configuration
     machine_config = parser.add_argument_group('machine_config', 'Custom machine configuration options.')
     machine_config.add_argument('--machine', required=False, help='Machine name to run the jobs (e.g., local, remote_1).')
-    machine_config.add_argument('--hostname', required=False, help='Hostname of the remote machine. This requires ssh config to be set.')
-    machine_config.add_argument('--hosturl', required=False, help='The url of the machine. When provided, consider providing username and key_path also.')
-    machine_config.add_argument('--username', required=False, help='Username for SSH login')
-    machine_config.add_argument('--key_path', required=False, help='Path to the SSH private key.')
+    machine_config.add_argument('--ssh-alias', help='SSH config Host alias for the selected machine.')
     machine_config.add_argument('--venv_path', required=False, help='Path to the virtualenv root; autoslurm renders source <venv>/bin/activate.')
     machine_config.add_argument('--env_command', required=False, help='Command to activate the environment on the remote machine.')
     machine_config.add_argument('--slurm_account', required=False, help='SLURM account to use for job submission.')
@@ -136,7 +133,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def parse_args(argv=None):
     parser = _build_parser()
-    args, unknown_args = parser.parse_known_args(argv)
+    selected_args = sys.argv[1:] if argv is None else argv
+    retired = {"--hostname", "--hosturl", "--username", "--key_path", "--key-path"}
+    if any(token.split("=", 1)[0] in retired for token in selected_args):
+        parser.error("Connection fields were replaced by --ssh-alias; configure hostname, username and keys in SSH config.")
+    args, unknown_args = parser.parse_known_args(selected_args)
     script_args = parse_script_args(args.script, unknown_args)
     return args, script_args
 

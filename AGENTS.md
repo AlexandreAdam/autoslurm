@@ -68,6 +68,10 @@ operate from the workstation; compute nodes use already-prepared environments.
   and artifact retrieval; clients do not embed absolute machine paths or branch
   on hostname. Record logical and resolved paths per attempt. Each application
   run/bundle uses one selected machine; multi-machine routing is outside scope.
+- Remote profiles use only `ssh_alias`, referencing operator-owned SSH config.
+  Do not manage HostName, User, IdentityFile or keys in AutoSlurm profiles. New
+  run transports store the alias alone; historical recorded transports remain
+  readable. Never silently fall back to local execution or another profile.
 - Tests use temporary storage and fake external commands. Real cluster tests
   are separate and must not be triggered by the default test suite.
 - Update human and agent documentation when public behavior changes.
@@ -78,7 +82,7 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP7.0c
+  [reference client](examples/reference_client/README.md) are the verified MVP7.0d
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
 - Keep development installation working and use a narrow artifact smoke check

@@ -9,20 +9,20 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP7; configuration/path slice MVP7.0c complete locally, software preparation still planned.
+- **Current milestone:** MVP7; configuration slices MVP7.0c/MVP7.0d complete locally, software preparation still planned.
 - **Stage:** main checkout is active on `dev`, explicitly selected by the user
   on 2026-11-12. Base Conda imports it; tests use the same source with isolated
   environment/state. Baseline rollback source remains in `.development/stable`.
-  Full offline suite: 405 passed. Local persistence/selection, configuration,
+  Full offline suite: 427 passed. Local persistence/selection, configuration,
   SSH construction and file movement now have explicit owners. Complete atomic
   writes, exclusive snapshot creation and one-update batch appends protect saved
   records. Inspection/submission/scientific workflows remain covered.
   Local daily-use activation completed; no cluster installation changed.
-- **Next task:** remaining MVP7.0 manifest attachment and helper/runtime separation.
-  Config simplification is implemented: `config`, `software_root`, and one
+- **Next task:** remaining MVP7.0 software manifest and helper/runtime contract.
+  Config simplification is implemented: SSH aliases only, `config`, `software_root`, and one
   `results_root` for inputs, cwd and outputs. Latest-source defaults, machine-owned
   dependencies and first-time cloning remain confirmed preparation requirements.
-- **Scope update:** MVP4–MVP6 modularity increments and MVP7.0c are complete
+- **Scope update:** MVP4–MVP6 modularity increments and MVP7.0c/MVP7.0d are complete
   locally. Git project/environment preparation on the login/preparation host still
   needs implementation and mocked verification. Result retrieval remains optional.
 - **Last updated:** 2026-11-12.
@@ -408,6 +408,10 @@ configurable `software_root` from the shared input/output `results_root`.
   expose `software_root`, merge inputs/cwd/outputs under `results_root` and retain
   recorded historical paths. Reject conflicting old profiles; mock all effects.
 
+- [x] **MVP7.0d Use SSH config aliases only.** Remove hostname/user/key fields
+  from current configuration and CLI; save alias-only transport for new work,
+  preserve historical transports and update the existing local profile safely.
+
 Start with the manifest attachment and helper/runtime environment separation;
 then implement source materialization, installation checks, release readiness
 and execution/agent evidence. Module responsibilities, detailed tasks and failure
@@ -503,6 +507,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-12 | MVP7 omitted revisions resolve latest upstream; dependency setup belongs to the selected machine | User requested less friction and different dependency sets for local and cluster use; resolved commits and actual installations remain recorded, with no silent stale-source fallback |
 | 2026-11-12 | MVP7 prepares missing Git repositories and separates managed software from input/result filesystems | User needs first-time cloning and independent package/results placement; preserve existing path bases and record producing paths so agents can locate both |
 | 2026-11-12 | Make config canonical; configure only software_root and shared results_root | User requested simpler configuration and merging project/results. Old saved runs retain recorded bases; conflicting old profiles need an explicit root choice; only configuration/path behavior is implemented in this slice |
+| 2026-11-12 | Delegate remote connection details to SSH config; store only ssh_alias in current profiles/new transports | User always uses SSH config and wants to remove hostname/username/key duplication. Preserve historical transport interpretation while rejecting obsolete new CLI fields |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -530,6 +535,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP7.0a Source and dependency defaults | User-confirmed design refinement: optional revisions resolve latest remote default-branch commit per new preparation; target-machine dependency policy replaces mandatory package/local locks. Planning text and failure criteria reviewed; no code changes or application tests. MVP7 implementation and remaining contract decisions remain open |
 | 2026-11-12 | MVP7.0b Cloning and filesystem separation | User-confirmed requirements recorded with proposed software_root, first-clone/fetch behavior, independent input/result locations, configuration visibility and producing-path evidence. Reviewed local path/configuration implementation and design links; documentation only, no application tests or cluster operations |
 | 2026-11-12 | MVP7.0c Config and two-root path implementation | 405 offline tests pass in 3.22 s, 39 expected warnings, report `.development/test-runs/config-reviewed.xml`. Added 13 checks, including nine initial failures for new behavior; shared input/cwd/output roots, configured software evidence, no-network edits, explicit legacy merge, invalid roots and historical/new producing paths verified. Existing scientific fixtures use temporary merged data roots. Base config help, pre-existing main config retention and empty job/runtime directories/rollback verified at closure. No cluster operations/install/migration; no mvp7 completion tag. Task commit: `git log --grep '^MVP7.0c:'` |
+| 2026-11-12 | MVP7.0d SSH aliases only | 427 offline tests passed in 3.23 s, 39 expected warnings; 22 new cases (14 initially failing, one initial history check passing, seven later CLI/session cases). Canonical alias config/editor/CLI and SSH/SCP/rsync/status/session evidence verified, historical transports retained. Report `.development/test-runs/ssh-alias-final.xml`. Local rusty profile switched from a mistaken hostname value to ssh_alias rusty, with original backup and all other settings preserved; SSH config untouched. No cluster/install/push operations. Task commit: `git log --grep '^MVP7.0d:'`; full MVP7 stays open |
 
 ## How we work
 

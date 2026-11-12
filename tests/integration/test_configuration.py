@@ -12,20 +12,17 @@ EXAMPLE_CONFIG = {
     "remote_machine_w_key": {
         "env_command": "source /path/to/remote/venv/bin/activate",
         "slurm_account": "rrg-account_name",
-        "hosturl": "machine.domain.com",
-        "username": "user1",
-        "key_path": "~/.ssh/id1_rsa",
+        "ssh_alias": "machine-with-key",
     },
     "remote_machine_wo_key": {
         "env_command": "source /path/to/remote/venv/bin/activate",
         "slurm_account": "rrg-account_name",
-        "hosturl": "machine.domain.com",
-        "username": "user1",
+        "ssh_alias": "machine-without-key",
     },
     "remote_machine_w_hostname": {
         "env_command": "source /path/to/remote/venv/bin/activate",
         "slurm_account": "rrg-account_name",
-        "hostname": "machine",
+        "ssh_alias": "machine",
     },
 }
 
@@ -80,7 +77,7 @@ def test_autoslurm_configuration_set_default_machine(
             "remote": {
                 "env_command": "source /path/to/remote/venv/bin/activate",
                 "slurm_account": "rrg-account_name",
-                "hostname": "machine",
+                "ssh_alias": "machine",
             },
         },
         "default_machine": "local",
@@ -117,7 +114,7 @@ def test_autoslurm_configuration_summary(
             "remote": {
                 "env_command": "source /path/to/remote/venv/bin/activate",
                 "slurm_account": "rrg-account_name",
-                "hostname": "machine",
+                "ssh_alias": "machine",
             },
         },
         "default_machine": "local",
@@ -128,9 +125,9 @@ def test_autoslurm_configuration_summary(
     main(["--summary"])
     output = capsys.readouterr().out.strip().splitlines()
 
-    assert output[0] == "machine type default slurm_account venv_path software_root results_root"
-    assert any("local local yes def-bengioy" in line for line in output[1:])
-    assert any("remote remote no rrg-account_name" in line for line in output[1:])
+    assert output[0] == "machine type default ssh_alias slurm_account venv_path software_root results_root"
+    assert any("local local yes - def-bengioy" in line for line in output[1:])
+    assert any("remote remote no machine rrg-account_name" in line for line in output[1:])
 
 
 def test_autoslurm_configuration_rename_machine(
@@ -153,7 +150,7 @@ def test_autoslurm_configuration_rename_machine(
             "remote": {
                 "env_command": "source /path/to/remote/venv/bin/activate",
                 "slurm_account": "rrg-account_name",
-                "hostname": "machine",
+                "ssh_alias": "machine",
             },
         },
         "default_machine": "local",
@@ -189,7 +186,7 @@ def test_autoslurm_configuration_validate_remote_machine(
             "remote": {
                 "env_command": "source /path/to/remote/venv/bin/activate",
                 "slurm_account": "rrg-account_name",
-                "hostname": "rorqual",
+                "ssh_alias": "rorqual",
             }
         },
         "default_machine": "remote",

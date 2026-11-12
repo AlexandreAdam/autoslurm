@@ -217,7 +217,7 @@ def test_each_transfer_prepares_directories_and_batches_scripts(monkeypatch):
     from autoslurm.execution import resolve_execution_context
     import shlex
 
-    machine = {"username": "scientist", "hosturl": "cluster", "key_path": "/keys/science key", "path": "/prepared state"}
+    machine = {"ssh_alias": "research-cluster", "path": "/prepared state"}
     context = resolve_execution_context("saved", machine)
     monkeypatch.setattr("autoslurm.file_transfer.load_config", lambda: pytest.fail("Saved context must not reload profiles"))
     commands = []
@@ -225,11 +225,11 @@ def test_each_transfer_prepares_directories_and_batches_scripts(monkeypatch):
     for _ in range(2):
         transfer_slurms_to_remote(["a.sh", "b.sh"], context=context)
     assert [c[0] for c in commands] == ["ssh", "scp", "ssh", "scp"]
-    assert commands[0][1:3] == ["-i", "/keys/science key"]
+    assert commands[0][1] == "research-cluster"
     assert shlex.split(commands[0][-1]) == ["mkdir", "-p", "/prepared state/slurm", "/prepared state/out"]
-    assert commands[1][1:3] == ["-i", "/keys/science key"]
-    assert [Path(value).name for value in commands[1][3:5]] == ["a.sh", "b.sh"]
-    assert commands[1][-1] == "scientist@cluster:/prepared state/slurm/"
+    assert commands[1][0] == "scp"
+    assert [Path(value).name for value in commands[1][1:3]] == ["a.sh", "b.sh"]
+    assert commands[1][-1] == "research-cluster:/prepared state/slurm/"
 
 
 def test_empty_transfer_has_no_profile_or_process_effect(monkeypatch):

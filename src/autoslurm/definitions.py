@@ -7,10 +7,7 @@ __all__ = ["CONFIG_FILE_PATH", "MACHINE_KEYS", "DATE_FORMAT"]
 DATE_FORMAT = "%Y%m%d%H%M%S"
 CONFIG_FILE_PATH = config_file_path()
 MACHINE_KEYS = [
-    "hostname",
-    "hosturl",
-    "username",
-    "key_path",
+    "ssh_alias",
     "results_root",
     "software_root",
     "storage_root",
