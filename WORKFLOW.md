@@ -86,9 +86,12 @@ They do not advertise implemented capabilities or expand the current task.
    update the affected agent recipe with the implemented behavior and limits.
 6. Update the task, Status, Done log and design decisions together. Record the
    actual check results and any unresolved failure; unmet criteria stay open.
-7. Commit task work with its ID and preserve unrelated changes. Push according
-   to the implementation session's instructions. A code commit, push, merge or
-   tag does not change the stable installation or count as deployment.
+7. Commit task work with its ID and preserve unrelated changes. As requested on
+   2026-11-12, push each completed commit on `dev` to `origin/dev` without another
+   confirmation. Use ordinary fast-forward pushes; report any push failure.
+   This Git publishing instruction leaves the mocked-cluster scope unchanged.
+   A code commit, push, merge or tag does not change the stable installation or
+   count as deployment.
 
 The initial planning/rules documents remained uncommitted during baseline
 identification. Preserve unrelated working files during later commits and lane

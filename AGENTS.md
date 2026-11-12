@@ -42,6 +42,9 @@ operate from the workstation; compute nodes use already-prepared environments.
   the completed code and tests. Use the task ID as the commit-message prefix.
 - Follow PLAN.md for commits and milestone closure. Do not include unrelated
   changes already in the working tree.
+- Push completed `dev` commits to `origin/dev` as part of each task, as requested
+  on 2026-11-12. Use ordinary fast-forward pushes and report failures; cluster
+  operations remain outside the authorized scope.
 - Follow WORKFLOW.md for the execution procedure. Initial planning/rules files
   may remain uncommitted until the stable baseline is identified. A commit,
   push or tag never implicitly promotes code to daily use.
