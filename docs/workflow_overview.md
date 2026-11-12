@@ -35,10 +35,12 @@ A machine profile maps two locations: software/code and shared scientific data
 and `results_root`. The first software layer can now clone or fetch Git projects
 and create a new set of exact-commit checkouts on the preparation host. Omitting
 a revision means resolving the current upstream version each time. Older source
-sets remain unchanged. Installation into isolated environments and connecting
-those environments to jobs are the next layers; a source checkout alone cannot
-be submitted as a managed runtime. The [agent recipe](../agent/13_software_preparation.md)
-documents the current Python interface and evidence.
+sets remain unchanged. `asl software prepare` builds and installs applications
+in a separate release location over the machine's unchanged scientific Python
+environment. Select its exact ID through `--software-release` when submitting.
+A source checkout alone cannot be submitted as a managed runtime. The
+[walkthrough](software.md) and [agent recipe](../agent/13_software_preparation.md)
+document the interface and evidence.
 
 Before choosing a run, `asl software status --machine NAME` shows the machine's
 project branches, commits and local changes. Add `--local-project PATH` to compare

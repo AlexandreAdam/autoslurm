@@ -5,22 +5,15 @@ from argparse import Namespace
 import os
 import json
 import shlex
-import posixpath
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from .record_files import atomic_json
 from .definitions import MACHINE_KEYS
 from .storage import config_file_path, STORAGE_ROOT_ENVIRONMENT_VARIABLE
+from .machine_paths import absolute_machine_path
 
 __all__ = ["load_config", "save_config", "machine_config", "activation_command_from_config"]
-
-
-def absolute_machine_path(value, label):
-    """Normalize an infrastructure path without probing a local or remote host."""
-    if not isinstance(value, (str, Path)) or not str(value).strip() or not PurePosixPath(str(value)).is_absolute():
-        raise ValueError(f"{label} must be a nonempty absolute machine path.")
-    return posixpath.normpath(str(value))
 
 
 LEGACY_CONNECTION_FIELDS = ("hostname", "hosturl", "username", "key_path")

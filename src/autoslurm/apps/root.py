@@ -35,7 +35,7 @@ ACTION_HELP = {
     "sync": "Pull remote AutoSlurm storage into the local mirror.",
     "initialize": "Create an empty bundle.",
     "status": "Show bundles with saved timestamp and job count.",
-    "software": "Inspect local or remote Git project status.",
+    "software": "Prepare application releases or inspect machine software.",
     "scan": "Scan and list your own package apps.",
     "inspect": "Inspect bundle jobs and output logs.",
     "logs": "Inspect bundles and job logs.",

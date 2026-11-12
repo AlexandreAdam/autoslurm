@@ -49,7 +49,9 @@ Legacy unrooted jobs with no input/cwd declarations retain their old behavior.
 and caches. Local configuration is `<storage_root>/config.json`, selected through
 `AUTOSLURM_STORAGE_ROOT` or the process root selector. Configuration writes are
 atomic; saving roots does not move files, clone repositories or install software.
-Cloning/prepared releases remain planned in MVP7.
+`asl software prepare` explicitly clones/builds/installs a new application release;
+saving configuration alone does none of these. See [software preparation](software.md)
+for the unchanged dependency base and optional machine runtime policy.
 
 An old `project_root` alone becomes `results_root`; equal old roots are coalesced.
 Different old project/result roots need an explicit choice with `--results-root`.

@@ -66,9 +66,8 @@ installations have not been changed.
 
 MVP7.1 adds the first Git software layer: shared bundle requests, fresh upstream
 revision resolution, first-time cloning and isolated exact-commit source sets.
-The explicit Python operation acts on its current preparation host. Environment
-installation, remote preparation commands and managed-runtime submission remain
-planned. See the [source preparation recipe](agent/13_software_preparation.md)
+MVP7.2 adds verified application installations, remote preparation and explicit
+release selection for jobs. See the [software preparation recipe](agent/13_software_preparation.md)
 and [software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
 
 `asl software status --machine NAME` now inspects existing Git projects locally
@@ -76,6 +75,23 @@ or over SSH. Add `--local-project PATH` to compare declared major dependencies
 and the application's version/Git identity with the selected machine environment.
 `--json` returns compatible/mismatch/unknown evidence. The read-only probe works
 with existing cluster installations and performs no update or package installation.
+
+Prepare an update on the login host, then select its returned release ID:
+
+```sh
+asl software prepare --machine cluster --local-project /path/to/application
+asl software status --release RELEASE_ID --verify
+asl submit --bundle-file /path/to/bundle.json --software-release RELEASE_ID
+```
+
+Omitting `--revision` prepares the current upstream default-branch tip. Add a
+commit, branch or tag to select another version; local edits are not uploaded.
+Each preparation installs application wheels in a new location. Existing source
+and scientific dependencies stay unchanged; incompatible requirements stop the
+preparation. Compute jobs use the selected installation without Git or downloads.
+The [human walkthrough](docs/software.md) explains setup, recovery and limits.
+This workflow is verified offline with mocked SSH/Slurm and local package builds;
+live cluster preparation has not been exercised.
 
 ## Installation
 

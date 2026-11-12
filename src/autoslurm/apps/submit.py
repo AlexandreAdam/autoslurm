@@ -17,6 +17,7 @@ def parse_args(argv=None):
     """
     parser = argparse.ArgumentParser(description="Run scripts on a SLURM cluster.")
     parser.add_argument("name", nargs="?", help="Name of the job")
+    parser.add_argument("--software-release", help="Exact verified preparation ID for this bundle's application code.")
     # parser.add_argument('date', required=False, help='If provided, will look for job closest to this date. Otherwise, latest job is ran.'
     # 'Provide in the format [Y]YYYY-[M]MM-[D]DD-[H]HH-[m]mm-[s]ss.'
     # 'E.g., Y2021 will yield the latest job of 2021. M09 will yield the latest job of last September.'
@@ -73,6 +74,7 @@ def main(argv=None):
     if not argv:
         parser = argparse.ArgumentParser(description="Run scripts on a SLURM cluster.")
         parser.add_argument("name", help="Name of the job")
+        parser.add_argument("--software-release", help="Exact verified preparation ID for this bundle's application code.")
         parser.add_argument("--machine", required=False, help="Machine name to run the jobs (e.g., local, remote_1)")
         parser.add_argument("--ssh-alias", help="SSH config Host alias for the selected machine.")
         parser.add_argument("--venv_path", required=False, help="Path to the virtualenv root; autoslurm renders source <venv>/bin/activate.")
@@ -121,6 +123,7 @@ def main(argv=None):
             machine_overrides=config,
             bundle_path=args.bundle_file,
             context=resolve_execution_context(machine_name, config),
+            **({'software_release': args.software_release} if args.software_release else {}),
         )
-    except SubmissionError as exc:
+    except (SubmissionError, ValueError, RuntimeError, OSError) as exc:
         raise SystemExit(str(exc)) from exc

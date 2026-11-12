@@ -1,8 +1,8 @@
-# Software source preparation (MVP7.1)
+# Software preparation and release selection (MVP7.2)
 
-This includes the MVP7.1 source engine and MVP7.1b read-only software-status CLI.
-Environment installation, remote preparation writes and ready-runtime submission
-remain planned. Default tests mock transport and use temporary local Git repos.
+This includes Git sources, read-only software status, application installation,
+exact release inspection and explicit runtime selection. Default tests mock
+transport and use temporary local Git repos, environments and package builds.
 The user authorized a read-only status demonstration on rusty on 2026-11-12;
 do not infer permission for other cluster operations. Compute jobs never clone
 repositories or install packages.
@@ -99,9 +99,10 @@ credential-free HTTPS, SSH URLs or SSH scp-style addresses. Git access belongs
 to the operator's setup, including SSH config aliases. Local filesystem repo
 addresses, credentials in URLs and arbitrary shell commands are not accepted.
 
-`runtime` is a logical machine-policy selector. It does not mean the workstation
-environment or the AutoSlurm helper environment. Runtime policies, Python and
-dependency configuration will be implemented with environment preparation.
+`runtime` is a logical machine-policy selector. Its default Python is the
+machine's `venv_path/bin/python`; `software_runtimes` can independently select
+another interpreter and an absolute machine constraints file. The AutoSlurm
+submission helper always retains its original configured environment.
 Existing bundles without `software` keep their operator-prepared runtime behavior.
 
 ## Host-side operation and evidence
@@ -143,10 +144,93 @@ can put credentials in them. Failed/incomplete source sets are retained for
 inspection; cleanup, source reuse and automatic lock recovery are not implemented.
 Git submodules are explicitly rejected. LFS preparation is not supported.
 
-`sources_prepared` does not establish an installed or usable environment.
-Preview/submission currently reject any managed `software` request before
-scripts, receipts or scheduler dispatch, rather than running it in the legacy
-environment. Do not remove the request to bypass this guard. Complete runtime
-preparation and execution wiring are the next steps; no prepare CLI/ACP operation
-exists yet. `asl software status` and `inspect_software` provide read-only
-project/environment observations. Scientific result validation remains application-owned.
+`sources_prepared` does not establish an installed or usable environment. Use
+the complete operation below and explicitly select the ready release. A managed
+request without that selection fails before dispatch. Do not remove a request
+to bypass validation. ACP preparation remains a later layer.
+
+## Prepare, inspect and select a verified application release
+
+```sh
+asl software prepare --machine cluster --bundle-file /path/to/study.json
+# Alternative: infer the name, literal Git origin and repository subdirectory.
+asl software prepare --machine cluster --local-project /path/to/science
+asl software prepare --machine cluster --local-project /path/to/science --revision FULL_COMMIT
+asl software status --release RELEASE_ID --verify --json
+asl submit --bundle-file /path/to/study.json --software-release RELEASE_ID
+```
+
+Every preparation makes a new ID and resolves omitted revisions upstream.
+`--local-project` does not upload files, push commits or pin the local HEAD.
+Use `--bundle-file` for multiple projects. Preparation never submits jobs or
+changes configuration. Empty `software`, `software prepare` and `software status`
+commands show help without contacting a machine.
+
+```python
+from autoslurm import prepare_software, inspect_software_release, preview_bundle, submit_jobs
+
+try:
+    release = prepare_software(machine="cluster", bundle_path=planned_path)
+except SoftwarePreparationError as error:
+    release = error.evidence  # Save the identity even when the outcome is unknown.
+    raise
+release_id = release["release_id"]
+observed = inspect_software_release(release_id, verify=True)
+preview = preview_bundle(planned_path, machine="cluster", software_release=release_id)
+receipt = submit_jobs("study", machine="cluster", bundle_path=planned_path,
+                      software_release=release_id)
+```
+
+The public function also accepts a normalized manifest as its first argument,
+or `local_project=PATH, revision=REF`. Exactly one source selector is required.
+An optional `on_created(ID)` callback runs after local identity publication and
+before dispatch; CLI text mode prints that identity immediately. JSON mode emits
+one final evidence object. Keep the same AutoSlurm storage selection when
+inspecting a release: the local reference owns its original root and SSH alias.
+
+Evidence states are `preparing_sources`, `building`, `installing`, `verifying`,
+`ready` and `failed`. Client `requested`/`unknown` states describe a dispatch whose
+remote outcome has not been established. Save `release_id`, `request`, exact
+project commits, installation/wheel hashes and machine. Failure records retain
+the current stage, completed projects and any source failure evidence. A
+`tracking_error` means persistence failed; retain the returned evidence itself.
+
+A lost/interrupted SSH response can leave work running. Inspect the exact ID;
+never call prepare automatically to recover. Exact inspection never starts work.
+`observation.state=unavailable` means saved state may be stale; it is not fresh
+proof of readiness or failure. `state=missing` does not prove an earlier request
+cannot still arrive. An interrupted remote stage may need operator inspection;
+there is no automatic resume, lock removal or cleanup. Worker protocol 1 travels
+through the shared SSH adapter over stdin, so preparation and inspection need no
+remote AutoSlurm upgrade. Target preparation Python must be 3.11 or newer.
+
+Readiness builds wheels from fixed commits with the target's existing build
+tools, installs only the requested applications in a new release location and
+checks installed code against wheel contents. It verifies distribution versions,
+import origins, entry-point metadata/executables, Python requirements and the full
+declared dependency closure, including markers/extras. Unlike the convenient
+major-dependency status report, readiness enforces declared transitive requirements.
+Dependencies are never downloaded or upgraded; conflicts fail. A machine constraint
+file can add bounds; directives, includes and direct-source requirements are
+unsupported. Existing pip/build backends must already be available. Relocated
+wheel data/scripts, submodules and LFS are not supported in this first layer.
+
+`--verify` freshly checks installed content, the recorded base inventory and
+constraints. Preview/submission always perform that verification. A bundle's
+runtime/projects/revisions must match; an omitted revision retains the selected
+resolved commit during submission. Select a new release explicitly to update.
+Even bundles without a software request can opt in through the explicit ID.
+Jobs must invoke an installed application console command or
+`python -m application.module`; direct source scripts/shell pipelines fail.
+AutoSlurm pins the interpreter/application paths and rejects job overrides of
+those runtime variables. Declared data/log paths cannot enter managed storage.
+Submission snapshots/receipts retain producing release evidence alongside paths.
+
+The scientific base remains operator-managed and must stay stable while jobs
+are queued/running. Verification compares versions/locations, not every byte of
+scientific libraries, drivers or external datasets. It checks metadata/origins
+without importing applications or scientific libraries, and does not prove GPU
+availability, console-callable correctness or scientific validity. Clients still
+need cheap import/smoke checks and output validation. No job-side Git, installs,
+automatic profile switch, dependency rebuild, live deployment, or release garbage
+collection is performed.

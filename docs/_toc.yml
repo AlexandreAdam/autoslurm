@@ -4,6 +4,7 @@ chapters:
   - file: workflow_overview
   - file: getting_started
   - file: configuration
+  - file: software
   - file: ssh_configuration
   - file: register_script
   - file: cli_integration

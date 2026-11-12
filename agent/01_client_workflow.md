@@ -1,6 +1,7 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP7.1b (Git sources and read-only software/environment status; managed runtime execution is still planned). As of
+Use this recipe with the development installation including MVP7.2 (verified
+application preparation and explicit managed-runtime selection). As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -18,9 +19,10 @@ Use `AUTOSLURM_STORAGE_ROOT` for every development process. Keep its config,
 tracking, logs and results separate from stable storage. Prepared environments
 are operator-owned; compute jobs do not install packages, pull Git repositories
 or change shared code. One bundle targets one machine. The
-[software source recipe](13_software_preparation.md) documents optional shared
-requests, the host-side engine and `asl software status` compatibility checks;
-source preparation alone cannot submit managed software requests.
+[software recipe](13_software_preparation.md) documents shared requests,
+`prepare_software`, exact release inspection and explicit `software_release=ID`
+selection for preview/submission. Source preparation alone cannot submit managed
+software requests. Retain the selected ID in the client handoff.
 
 ## Adapt scientific software
 
@@ -75,9 +77,9 @@ asl config --summary
 ```
 
 Root-setting flags only save local configuration; they do not contact a cluster
-or move files. `software_root` is recorded for preparation; the explicit source
-engine can use it on its current host, while remote dispatch and environment
-preparation remain planned. Both inputs and outputs live under `results_root`; the data root
+or move files. `prepare_software` separately dispatches preparation to the selected
+machine, installs applications under `software_root` and preserves existing releases.
+Both inputs and outputs live under `results_root`; the data root
 and required working directories/inputs must already exist before preview.
 The two roots default to `<storage_root>/software` and `<storage_root>/results`.
 `storage_root` remains AutoSlurm's internal tracking location.

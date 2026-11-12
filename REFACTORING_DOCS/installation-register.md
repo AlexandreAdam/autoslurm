@@ -212,3 +212,16 @@ Edit the main checkout on `dev`. Do not continue implementation in the retained
 Prepared remote helpers/application environments must still be identified before
 any separately authorized cluster operation. One bundle targets one selected
 machine. Store nonsecret paths/identities, never credential contents.
+
+- **MVP7.2a–d, 2026-11-12:** 596 offline tests passed in 16.13 s, 39 expected
+  collision warnings, report `.development/test-runs/software-prepare-final.xml`.
+  Temporary local repositories/environments exercise wheel preparation, unchanged
+  scientific base with older editable application, two separate runnable releases,
+  exact SSH worker via fake transport, and mocked submission producing evidence.
+  Final wheel `.development/artifacts/mvp7.2/autoslurm-0.1.0-py3-none-any.whl`
+  built offline and installed into a disposable target for API/worker/help smoke;
+  SHA256 `0f8f0dad71f2a84200e47379b4069183070182e9c47601468b2d85c0ae8ff796`.
+  No base package install or daily profile/state changes. Base imports the active
+  main checkout; rollback import/clean HEAD `33bcbd3` reverified. Actual cluster
+  source, helper, environments and running/queued jobs were not changed or queried.
+  Real remote preparation remains unverified; no release was promoted remotely.
