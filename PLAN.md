@@ -9,16 +9,20 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP7; config slices and MVP7.1 source preparation complete,
+- **Current milestone:** MVP7; config slices, MVP7.1 sources and MVP7.1b read-only
+  software/environment inspection complete,
   environment preparation and managed-runtime execution still planned.
 - **Stage:** main checkout is active on `dev`, explicitly selected by the user
   on 2026-11-12. Base Conda imports it; tests use the same source with isolated
   environment/state. Baseline rollback source remains in `.development/stable`.
-  Full offline suite: 485 passed. Local persistence/selection, configuration,
+  Full offline suite: 523 passed. Local persistence/selection, configuration,
   SSH construction and file movement now have explicit owners. Complete atomic
   writes, exclusive snapshot creation and one-update batch appends protect saved
   records. Inspection/submission/scientific workflows remain covered.
   Local daily-use activation completed; no cluster installation changed.
+- **Latest completed task:** MVP7.1b read-only software status CLI, with focused
+  dependency and application-version/commit comparisons. Authorized live checks
+  on rusty observed compatible Gaia dependency ranges but different source commits.
 - **Next task:** finish the MVP7.0 helper/runtime policy contract, then MVP7.2
   isolated environment installation and verification.
   Config simplification is implemented: SSH aliases only, `config`, `software_root`, and one
@@ -27,7 +31,7 @@ This file is the source of truth for active scope, task order and progress.
   fresh exact-commit Git source preparation are now implemented.
 - **Scope update:** MVP4–MVP6 modularity increments and MVP7.0c/MVP7.0d are complete
   locally. MVP7.1 adds the current-host source engine and partial/failure evidence;
-  remote preparation commands, environment creation and execution wiring remain
+  remote preparation writes, environment creation and execution wiring remain
   planned. Result retrieval remains optional.
 - **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
@@ -37,6 +41,8 @@ This file is the source of truth for active scope, task order and progress.
   and [baseline results](REFACTORING_DOCS/design/MVP0_safe_development.md#local-baseline-mvp01).
 - **Current execution scope:** local only. Mock Slurm and remote commands in
   tests; no SSH, live submissions, remote discovery or cluster installation.
+  User-authorized exception: read-only Git and installed-package inspection on
+  `rusty` for the software status demonstration; no remote writes or live jobs.
 - **Previous plan:** [archived M0-M6 roadmap](REFACTORING_DOCS/archive/PLAN_before_mvps.md).
   Old task IDs remain historical; they are not reused by this plan.
 
@@ -425,6 +431,15 @@ configurable `software_root` from the shared input/output `results_root`.
   selectors, unmanaged caches, unsafe paths, unsupported submodules and concurrent
   cache writers. Verify with fake remotes and a temporary local Git fixture.
 
+- [x] **MVP7.1b Inspect software and environment compatibility.** Add
+  `asl software status`, preserving one SSH alias/transport owner and requiring
+  no remote package upgrade. Compare important declared dependencies and desired
+  application version/commit against the configured environment's metadata;
+  report mismatch/unknown separately. Verify with mocks and temporary local
+  Git/venv fixtures, then try the authorized read-only check on `rusty`.
+  Completed: Git status, selected environment metadata and declared major
+  constraints; no scientific imports, installs or automatic dispatch validation.
+
 - [ ] **MVP7.0 Remaining environment roles.** Finalize machine-owned Python/
   dependency policy and separate helper/bootstrap from managed application runtime.
   The manifest selects only a logical runtime name; no policy editor or environment
@@ -531,6 +546,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-12 | Make config canonical; configure only software_root and shared results_root | User requested simpler configuration and merging project/results. Old saved runs retain recorded bases; conflicting old profiles need an explicit root choice; only configuration/path behavior is implemented in this slice |
 | 2026-11-12 | Delegate remote connection details to SSH config; store only ssh_alias in current profiles/new transports | User always uses SSH config and wants to remove hostname/username/key duplication. Preserve historical transport interpretation while rejecting obsolete new CLI fields |
 | 2026-11-12 | Implement source preparation before environment creation, preserving the existing job dictionary | Shared per-job software requests are normalized and checked for equality; explicit current-host preparation produces source evidence only. Runtime opt-in fails closed until installation/execution are implemented; no changes to GitHub settings |
+| 2026-11-12 | Pull read-only remote software/environment inspection forward before installation | User requested a visible CLI and potential-problem report for important dependencies and installed application identity. Compare declared ranges against the selected remote interpreter; allow compatible stricter pins, expose unknown source identity and avoid full workstation freezes. Read-only rusty inspection is explicitly authorized; remote writes remain out of scope |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -561,6 +577,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP7.0d SSH aliases only | 427 offline tests passed in 3.23 s, 39 expected warnings; 22 new cases (14 initially failing, one initial history check passing, seven later CLI/session cases). Canonical alias config/editor/CLI and SSH/SCP/rsync/status/session evidence verified, historical transports retained. Report `.development/test-runs/ssh-alias-final.xml`. Local rusty profile switched from a mistaken hostname value to ssh_alias rusty, with original backup and all other settings preserved; SSH config untouched. No cluster/install/push operations. Task commit: `git log --grep '^MVP7.0d:'`; full MVP7 stays open |
 | 2026-11-12 | MAINT.1 Remove repository workflow files | Removed only the CI/Codecov and book-deployment Actions files. Reverted extra local documentation/hosting changes; unintended remote settings changes were restored and verified: Actions enabled, Read the Docs webhook active, Pages legacy source gh-pages at /. Diff checks passed; application code unchanged. Task commit: `git log --grep '^MAINT.1:'` |
 | 2026-11-12 | MVP7.1 Git source and manifest engine | 485 full offline tests passed in 4.86 s (38 expected warnings), up from 427 baseline. Report `.development/test-runs/software-sources-final.xml`. Verified fresh upstream/default-branch changes, exact commits/annotated tags, first cloning, separate source sets/storage, partial/tracking/interruption failures, evidence-collision protection, stale-cache refusal, unsafe/unmanaged/redirected caches, locking and preview/submit guards. Real Git fixture uses temporary local repositories only; existing scientific/CLI/ACP workflows pass. Human/agent recipe and schema updated. No cluster commands, package installation or GitHub settings changes. Task commit: `git log --grep '^MVP7.1:'`; full MVP7 remains open |
+| 2026-11-12 | MVP7.1b Read-only software status and compatibility | 523 offline tests passed in 6.19 s (39 expected warnings); report `.development/test-runs/software-status-final.xml`. Added 38 checks for focused constraints, target markers, selected-interpreter identity, missing/unknown/mismatched metadata, clean/dirty/invalid Git paths, malformed SSH responses and CLI failure reporting. A temporary Git/venv fixture exercised the exact standalone SSH payload without installing AutoSlurm or scientific packages in that venv. Live read-only rusty checks succeeded: AutoSlurm dev 213de79 and Gaia main d21f04d were clean and used by editable installs; Gaia major requirements satisfied but expected local commit 0155e17 differed. Reports `.development/test-runs/rusty-software-status.json` and `rusty-gaia-software-status.json`. No cluster writes/install/fetch/jobs or base environment changes. Task commit: `git log --grep '^MVP7.1b:'` |
 
 ## How we work
 

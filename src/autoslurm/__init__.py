@@ -95,6 +95,8 @@ from .inspection import (
 )
 from .software_manifest import attach_software_manifest, normalize_software_manifest, bundle_software_manifest
 from .software_sources import prepare_software_sources, SoftwarePreparationError
+from .software_status import inspect_software
+from .software_requirements import software_expectations
 
 __all__ = [
     'CONFIG_FILE_PATH',
@@ -165,4 +167,6 @@ __all__ = [
     'bundle_software_manifest',
     'prepare_software_sources',
     'SoftwarePreparationError',
+    'inspect_software',
+    'software_expectations',
 ]

@@ -29,6 +29,9 @@ operate from the workstation; compute nodes use already-prepared environments.
 - Current refactor scope is local only: mock Slurm and transport commands. No
   cluster discovery, SSH, live jobs or remote installs. See WORKFLOW.md for the
   dated scope and installation register for the editable base Conda install.
+  The user's 2026-11-12 read-only software-status exception permits inspecting
+  Git and installed distribution metadata on `rusty`; see WORKFLOW.md. It does
+  not authorize remote preparation, writes or job submission.
 - The user activated the main checkout for daily development on 2026-11-12.
   Write application code in `/Users/aadam/Projects/autoslurm`, branch `dev`.
   Base Conda's editable install imports this checkout. Use `.development/python`
@@ -85,13 +88,16 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP7.1
+  [reference client](examples/reference_client/README.md) are the verified MVP7.1b
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
 - [Software source preparation](agent/13_software_preparation.md) documents the
   current-host Git engine. Source preparation is not runtime readiness; managed
   requests stay blocked from submission until environment/execution wiring exists.
   Do not infer authorization to run it on a real cluster from its availability.
+  `asl software status` provides read-only Git and selected-environment metadata
+  comparisons against local declared major dependencies/application identity. It
+  reports mismatch/unknown; it does not establish runtime readiness or update code.
 - Keep development installation working and use a narrow artifact smoke check
   before promotion. Complete packaged agent resources, public index release,
   broad compatibility matrices and polished documentation are later layers.

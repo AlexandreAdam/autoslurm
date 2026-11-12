@@ -10,7 +10,7 @@ authors = [
 description = "The AutoSlurm project job scheduler designed for HPC cluster scheduling and code reproducibility"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = []
+dependencies = ["packaging>=23", "tomli; python_version < '3.11'"]
 version = "0.1.0"
 
 [project.optional-dependencies]

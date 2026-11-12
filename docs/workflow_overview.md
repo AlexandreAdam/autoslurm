@@ -39,6 +39,13 @@ sets remain unchanged. Installation into isolated environments and connecting
 those environments to jobs are the next layers; a source checkout alone cannot
 be submitted as a managed runtime. The [agent recipe](../agent/13_software_preparation.md)
 documents the current Python interface and evidence.
+
+Before choosing a run, `asl software status --machine NAME` shows the machine's
+project branches, commits and local changes. Add `--local-project PATH` to compare
+the important declared dependencies and desired application revision against
+its configured Python environment. Matching version strings can still hide a
+different Git revision. The report flags mismatches and unknowns, and reads
+metadata without loading scientific libraries or modifying the cluster.
 Application definitions keep relative paths, so they do not branch on machine
 names or embed cluster filesystem prefixes. Compute nodes use prepared software;
 they do not need Git access or package downloads inside jobs.

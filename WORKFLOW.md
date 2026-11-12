@@ -23,6 +23,13 @@ the user authorizes cluster work. On 2026-11-12 the user explicitly activated
 in that main checkout. Keep tests in their separate state/environment and the
 baseline rollback checkout untouched. No cluster installation was changed.
 
+**Read-only inspection exception (2026-11-12):** the user explicitly requested
+trying project status on the configured remote machine (`rusty`), including
+installed major dependencies and application identity versus local declarations.
+Read-only SSH Git/metadata inspection is authorized for this check. No remote
+fetch, installation, checkout update, configuration write or live job is authorized.
+Default tests still use fake transport and temporary local fixtures.
+
 ## Sources of truth
 
 | Question | Read or update |

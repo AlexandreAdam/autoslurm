@@ -71,6 +71,12 @@ installation, remote preparation commands and managed-runtime submission remain
 planned. See the [source preparation recipe](agent/13_software_preparation.md)
 and [software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
 
+`asl software status --machine NAME` now inspects existing Git projects locally
+or over SSH. Add `--local-project PATH` to compare declared major dependencies
+and the application's version/Git identity with the selected machine environment.
+`--json` returns compatible/mismatch/unknown evidence. The read-only probe works
+with existing cluster installations and performs no update or package installation.
+
 ## Installation
 
 ### Install the `autoslurm` package

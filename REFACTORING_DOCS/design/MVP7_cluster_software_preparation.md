@@ -5,10 +5,11 @@
 In progress, 2026-11-12. The user requested Git-based preparation of several projects
 and verification that the bundle's required versions are installed in its Python
 environment. Configuration slices MVP7.0c/MVP7.0d and MVP7.1 source preparation
-are implemented. Environment creation, runtime readiness and execution wiring
-remain planned. Local development/mocked commands remain the execution scope;
+and MVP7.1b read-only status are implemented. Environment creation, runtime
+readiness and execution wiring remain planned. Default tests remain local/mocked;
 the Git engine is verified with fake remotes and temporary local repositories.
-No live cluster or remote installation has been performed.
+The user authorized read-only project/environment status on rusty, verified below.
+No remote installation, source update or live Slurm operation has been performed.
 
 ## Problem and concepts
 
@@ -40,6 +41,8 @@ never update a helper environment while using it to submit another run.
 | `software_manifest` | Pure validation/normalization of requested and resolved project/environment specifications |
 | `git_projects` | Clone missing repositories, resolve refs, fetch managed caches and materialize exact commits; no mutation of active release checkouts |
 | `software_sources` | Implemented current-host source orchestration and exact preparation/failure evidence; no runtime readiness |
+| `software_status` / `software_probe` | Implemented selected-machine read-only Git observations through the shared SSH adapter; portable probe needs no remote AutoSlurm upgrade |
+| `software_requirements` / `environment_probe` | Implemented local declared expectations, selected-interpreter distribution/source metadata and pure compatibility comparison; no scientific imports |
 | `python_environments` | Prepare an isolated environment, install specified projects through its own interpreter and verify installations |
 | `software_releases` | Coordinate staging, readiness checks, locking, publication/reuse and preparation evidence |
 
@@ -247,6 +250,12 @@ can be moved freely between staging and final locations.
   default-branch changes despite a cached release, first-time cloning into a
   distinct software root, clone/fetch failure with no stale fallback, unavailable
   commits and dirty/shared checkout protection.
+- [x] **MVP7.1b Read-only status and dependency checks.** CLI/Python reports
+  Git state and configured environment metadata, checks important declared
+  dependency constraints and desired application version/commit, and reports
+  known mismatches/unknowns separately. Verify the standalone transport with
+  local fixtures, then the explicitly authorized read-only rusty demonstration.
+
 - [ ] **MVP7.2 Implement environment preparation/verification.** Install the
   project set into a staged environment, check the actual selected interpreter,
   versions/import paths/dependencies/entry points and publish readiness only when
@@ -282,6 +291,61 @@ Cluster compatibility remains unverified until a separately authorized live test
 | 2026-11-12 | MVP7.0c config/two-root slice implemented; 405 offline tests passed, software preparation remains planned |
 | 2026-11-12 | MVP7.0d SSH config aliases replace current host/user/key fields; 427 offline tests passed; local rusty profile updated with backup, no live cluster operations |
 | 2026-11-12 | MVP7.1 shared manifest and current-host Git source engine implemented; 485 offline tests passed, including real Git against temporary local remotes; environments and execution remain planned |
+| 2026-11-12 | MVP7.1b read-only software status and major dependency/application metadata comparisons implemented; 523 offline tests pass; authorized live rusty observations found matching Gaia dependency ranges but different local/remote code revisions |
+
+## MVP7.1b read-only inspection boundary
+
+`asl software status --machine NAME` shows current Git evidence under the
+configured software_root, including immediate projects and managed source sets.
+`--project` narrows that relative location; limits/timeouts and omitted-project
+indicators bound discovery. Unknown/missing state is never labeled clean.
+
+`--local-project` reads local pyproject.toml and optional requirements.txt;
+`--requirements` selects another file. Focus on NumPy/JAX/JAXlib/PyTorch/SciPy
+unless `--dependency` adds another library. Requirements are PEP 508/440 declarations
+evaluated against target Python/platform markers; requires-python checks the
+selected interpreter version and compatible stricter target dependency pins
+pass. Unsupported directives, unconstrained dependencies or unverified evidence
+stay unknown. `packaging` and older-Python `tomli` are declared client dependencies;
+both active local interpreters already had the required runtime support, so no
+base/test package installation was performed for this change.
+
+The selected profile's venv_path/bin/python reads distribution metadata, which
+establishes availability/version and, where recorded, VCS identity. Editable
+installs also expose source HEAD/changes; immutable VCS installs use direct-url
+commit metadata. User/local-declared versions or commits are compared separately.
+Absence of required commit evidence cannot become a version-based identity pass.
+Markers use target information; missing target markers cannot fall back to laptop
+values. A missing/wrong environment is unknown with no system-Python fallback.
+The portable probes use standard libraries, suppress bytecode/Git index writes,
+and do not import AutoSlurm or scientific applications in the target environment.
+
+The result is observation evidence, not runtime readiness or a mandatory
+submission gate. It does not verify imports, ABI/CUDA/GPU availability, transitive
+packages, future queue-time immutability or latest upstream state. Exit 1 signals
+failed/missing inspection or requested mismatch/unknown compatibility; JSON retains
+individual checks. Installation, remote preparation writes and dispatch integration
+remain open tasks. No GitHub repository settings were touched.
+
+Verification: 38 added checks, 523 full offline tests passed in 6.19 s, 39 expected
+collision warnings, report `.development/test-runs/software-status-final.xml`.
+The local fixture exercises the exact SSH stdin payload against a temporary Git
+repo and virtual environment containing only fixture metadata. It checks real
+constraint comparisons, interpreter identity, editable install subdirectories,
+application commits and unchanged
+Git index mtime. Additional tests cover pure comparisons, malformed transport,
+credential-bearing requirement URLs, missing markers and CLI reporting.
+
+The user-authorized live read-only checks on rusty observed clean AutoSlurm dev
+213de79 and Gaia main d21f04d, with matching editable installation paths/commits
+in `/mnt/home/aadam/envs/python3.11`. Installed NumPy 2.2.4, SciPy 1.15.2, JAX
+0.10.2 and Astropy 7.0.1 satisfy the selected local Gaia declarations; its local
+HEAD 0155e17 differed from the installed d21f04d, so the report correctly flags
+`potential_problem` despite equal package version 0.1.0. Local uncommitted work
+was reported separately. Snapshot reports are retained under `.development/test-runs/`
+as `rusty-software-status.json` and `rusty-gaia-software-status.json`. These are
+timestamped observations, not a guarantee about later installs/commits. No remote
+files, installed packages, Git refs or jobs were changed.
 
 ## MVP7.1 implemented boundary and verification
 

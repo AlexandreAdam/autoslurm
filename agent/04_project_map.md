@@ -1,6 +1,6 @@
 # Public workflow map
 
-The development MVP7.1 boundary is `01_client_workflow.md`. Public Python imports
+The development MVP7.1b boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
@@ -9,6 +9,7 @@ tracking JSON directly. The pinned stable installation retains its earlier API.
 | Describe work | `save_bundle`, `schedule_job` | Exact planned path and saved job names |
 | Declare software | `attach_software_manifest`, `bundle_software_manifest`, `normalize_software_manifest` | One shared request; machine-owned runtime name |
 | Prepare source on the current host | `prepare_software_sources` | Exact Git commits/checkouts or `SoftwarePreparationError.evidence`; no runtime readiness |
+| Inspect software | `inspect_software`, `software_expectations`, `asl software status` | Read-only Git/selected-environment evidence and focused compatibility checks |
 | Check paths/scripts | `preview_bundle(path, machine=...)` | Resolved producing paths and script text; no submission |
 | Dispatch once | `submit_jobs(..., bundle_path=path)` | Receipt, or `SubmissionError.receipt` |
 | Rediscover | `list_runs`, `list_submissions` | Exact local run/receipt references |
@@ -35,9 +36,16 @@ work. Use fresh output namespaces and keep scientific validation application-own
 Source preparation has a separate dependency flow:
 `software_sources` coordinates tracking and calls `git_projects` for managed
 cache/checkout effects; `software_manifest` owns pure request validation.
-`GitCommands` is the sole Git process adapter. `record_files` remains the shared
+`GitCommands` owns Git process effects for source preparation. `record_files` remains the shared
 JSON publication owner. Runtime installation and execution wiring remain planned;
 no new SSH or scheduler implementation was added.
+
+Read-only inspection uses `software_status` for selected-machine orchestration
+through the existing SSH adapter, `software_probe` for filesystem/Git observations
+and `environment_probe` for distribution metadata through the configured Python.
+`software_requirements` loads local expectations and compares observations as
+data. Probe modules are standard-library-only so existing clusters need no
+AutoSlurm upgrade to inspect them. They never import scientific applications.
 
 For maintainers, the active dependency flow is:
 

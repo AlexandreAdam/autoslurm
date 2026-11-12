@@ -6,8 +6,8 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code includes MVP7.1: locate it with
-`git log --grep '^MVP7.1:'`; the last completed full milestone tag is `mvp6`.
+historical. Current tested code includes MVP7.1b: locate it with
+`git log --grep '^MVP7.1b:'`; the last completed full milestone tag is `mvp6`.
 No cluster installation or live
 job was changed.
 
@@ -17,6 +17,22 @@ exercised through mocks and temporary local bare repositories only. Base editabl
 imports gain the source API without installation; no runtime packages or helper
 environments were changed. Daily config, persistent records and rollback source
 remain untouched. Managed environment preparation/execution remain planned.
+
+MVP7.1b validation: 523 offline tests passed (39 expected warnings), report
+`.development/test-runs/software-status-final.xml`. Base `asl software status`
+uses the active editable source without reinstalling entry points. The client
+now declares packaging and conditional tomli dependencies; existing base/test
+interpreters already provided the needed packages. No environment was modified.
+
+The user authorized read-only rusty status checks on 2026-11-12. They observed
+AutoSlurm dev 213de79 and Gaia main d21f04d under `/mnt/home/aadam/projects`, both
+clean, and the same source identities in editable distributions selected by
+`/mnt/home/aadam/envs/python3.11/bin/python` (Python 3.11.11). Gaia major declared
+constraints passed, but the observed local source commit differed. Reports:
+`.development/test-runs/rusty-software-status.json` and
+`.development/test-runs/rusty-gaia-software-status.json`. This verified metadata
+only, with no cluster installation/update, checkout changes, imports of scientific
+libraries or scheduler operations. Other remote installations remain uninspected.
 
 ## Current local inventory
 
@@ -28,7 +44,7 @@ remain untouched. Managed environment preparation/execution remain planned.
 | Default state | `/Users/aadam/Projects/autoslurm`, unless explicitly selected with `AUTOSLURM_STORAGE_ROOT` | `/Users/aadam/Projects/autoslurm/.development/state`; fixtures use temporary roots | `/Users/aadam/Projects/autoslurm/.development/stable`; old baseline does not support the environment root selector |
 | Persistent config / jobs at activation | Config absent; zero non-dot jobs/scripts/logs/receipts/observations; no records migrated | Config absent and zero persistent runtime records | Empty fresh baseline runtime; never adopts active dev records implicitly |
 | Package version | `0.1.0`, unreleased; identify code by branch/commit/import path | Same code/version | `0.1.0`; identify by pinned SHA/import path |
-| Remote installation | Uninspected and unchanged; no cluster commands | All Slurm/SSH/transfer effects mocked | Remote installations retain their existing code and job ownership |
+| Remote installation | Rusty Git/runtime metadata inspected read-only on 2026-11-12; code/packages unchanged | All Slurm/SSH/transfer effects mocked | Remote installations retain their existing code and job ownership |
 
 The initial development worktree `.development/checkout` remains at MVP4 on
 `codex/mvp0-isolation`, with its pre-existing user edits. It is retained as a
