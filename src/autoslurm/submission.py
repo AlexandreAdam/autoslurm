@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 
 from .storage import storage_root
-from .utils import ssh_host_from_config
+from .transport import ssh_host_from_config
 
 __all__ = ["SubmissionError", "load_submission", "list_submissions", "refresh_submission"]
 SUBMISSION_METADATA_KEY = "_autoslurm_submission"

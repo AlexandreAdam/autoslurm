@@ -181,9 +181,9 @@ def mock_load_config(monkeypatch, tmp_path):
     os.makedirs(tmp_path / "jobs", exist_ok=True)
     os.makedirs(tmp_path / "slurm", exist_ok=True)
 
-    monkeypatch.setattr("autoslurm.save_load_jobs.load_config", lambda: mock_config)
+    monkeypatch.setattr("autoslurm.bundle_selection.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.run_slurm.load_config", lambda: mock_config)
-    monkeypatch.setattr("autoslurm.utils.load_config", lambda: mock_config)
+    monkeypatch.setattr("autoslurm.configuration.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.load_config", lambda: mock_config)
     from autoslurm.storage import ensure_storage_dirs, set_storage_root
     set_storage_root(tmp_path)

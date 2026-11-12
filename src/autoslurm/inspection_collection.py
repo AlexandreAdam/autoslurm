@@ -11,7 +11,7 @@ from .execution import EXECUTION_METADATA_KEY, producing_machine
 from .save_load_jobs import load_bundle_from_path
 from .scheduler import query_scheduler
 from .submission import load_submission, SUBMISSION_METADATA_KEY
-from .utils import load_config
+from .configuration import load_config
 
 
 @dataclass

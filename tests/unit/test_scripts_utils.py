@@ -38,7 +38,7 @@ def mock_load_config(tmp_path):
         "default_machine": "local",
     }
     with patch(
-        "autoslurm.utils.load_config", return_value=mock_config
+        "autoslurm.configuration.load_config", return_value=mock_config
     ) as mock_load_config:
         yield mock_load_config
 

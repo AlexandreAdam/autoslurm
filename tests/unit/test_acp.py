@@ -17,7 +17,7 @@ def mock_save_load_config(monkeypatch, isolate_storage):
         },
         "default_machine": "local",
     }
-    monkeypatch.setattr("autoslurm.save_load_jobs.load_config", lambda: config)
+    monkeypatch.setattr("autoslurm.bundle_selection.load_config", lambda: config)
     yield
 
 

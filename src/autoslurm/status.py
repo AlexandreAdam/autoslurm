@@ -6,7 +6,7 @@ from typing import Optional
 
 from .array_status import FAILED_STATES
 from .save_load_jobs import latest_bundle_summaries
-from .utils import load_config
+from .configuration import load_config
 
 CANCELLABLE_STATES = {
     "PENDING",

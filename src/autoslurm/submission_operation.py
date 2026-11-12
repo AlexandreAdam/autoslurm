@@ -14,7 +14,8 @@ from .bulk_submit_driver import BulkSubmitPayload, submit_payload
 from .bundle_preparation import PreparedBundle
 from .execution import ExecutionContext, EXECUTION_METADATA_KEY
 from .run_slurm import ssh_submission_session, run_bulk_submit_driver_remotely
-from .save_load_jobs import save_bundle, transfer_slurms_to_remote, SNAPSHOT_KIND_KEY
+from .save_load_jobs import save_bundle, SNAPSHOT_KIND_KEY
+from .file_transfer import transfer_slurms_to_remote
 from .storage import storage_root
 from .submission import (
     SubmissionError, SUBMISSION_METADATA_KEY, SUBMISSION_PROTOCOL,

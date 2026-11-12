@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 
-from ..utils import activation_command_from_config, load_config, ssh_host_from_config, remote_storage_root_from_config
+from ..configuration import activation_command_from_config, load_config
+from ..transport import ssh_host_from_config, remote_storage_root_from_config
 from ..storage import config_file_path
 
 

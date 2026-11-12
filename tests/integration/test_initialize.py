@@ -17,7 +17,7 @@ def mock_load_config(tmp_path):
     mock_config = {"local": {"path": tmp_path}}
     os.makedirs(tmp_path / "jobs", exist_ok=True)
     with patch(
-        "autoslurm.save_load_jobs.load_config", return_value=mock_config
+        "autoslurm.bundle_selection.load_config", return_value=mock_config
     ) as mock_load_config:
         yield mock_load_config
 

@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 from autoslurm.apps import submit
-from autoslurm import save_load_jobs as bundles
+from autoslurm import bundle_selection as bundles
 from autoslurm.storage import ensure_storage_dirs, jobs_dir, set_storage_root
 
 

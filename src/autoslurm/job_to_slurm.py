@@ -5,7 +5,8 @@ from io import TextIOWrapper
 from datetime import datetime
 from .utils import name_slurm_script
 from .storage import ensure_storage_dirs, slurm_dir
-from .utils import activation_command_from_config, remote_storage_root_from_config
+from .configuration import activation_command_from_config
+from .transport import remote_storage_root_from_config
 from .execution import resolve_execution_context
 
 

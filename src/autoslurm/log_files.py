@@ -10,7 +10,7 @@ import subprocess
 from .execution import EXECUTION_METADATA_KEY, producing_machine, is_remote_machine
 from .inspection_cache import InspectionCache
 from .storage import storage_root
-from .utils import ssh_host_from_config
+from .transport import ssh_host_from_config
 
 
 def _expand(pattern, name, parent, index, job_id):

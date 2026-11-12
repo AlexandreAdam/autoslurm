@@ -8,7 +8,8 @@ import shlex
 import subprocess
 
 from .storage import storage_root
-from .utils import machine_config as select_machine, remote_storage_root_from_config, ssh_host_from_config
+from .configuration import machine_config as select_machine
+from .transport import remote_storage_root_from_config, ssh_host_from_config
 
 __all__ = ["ExecutionContext", "resolve_execution_context", "execution_context_from_snapshot", "recorded_execution"]
 EXECUTION_METADATA_KEY = "_autoslurm_execution"

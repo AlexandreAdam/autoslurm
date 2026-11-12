@@ -6,7 +6,7 @@ import shlex
 import subprocess
 
 from .array_status import canonical_job_id, parent_job_id
-from .utils import ssh_host_from_config
+from .transport import ssh_host_from_config
 
 QUERY_START_DATE = "2000-01-01"
 

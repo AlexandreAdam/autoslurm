@@ -46,7 +46,7 @@ def mock_load_config(tmp_path, monkeypatch):
     ensure_storage_dirs()
     mock_config = {"machines": {"local": {"path": tmp_path}}, "default_machine": "local"}
     with patch(
-        "autoslurm.save_load_jobs.load_config", return_value=mock_config
+        "autoslurm.file_transfer.load_config", return_value=mock_config
     ) as mock_load_config:
         yield mock_load_config
 

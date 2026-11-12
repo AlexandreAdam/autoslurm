@@ -1,7 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
-from ..utils import machine_config
+from ..configuration import machine_config
 from ..save_load_jobs import bundle_snapshot_state, select_bundle_snapshot
 from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs

@@ -14,7 +14,8 @@ from ..status_views import (
     bundle_job_rows_from_jobs,
     bundle_jobs_context_from_rows,
 )
-from ..utils import load_config, ssh_host_from_config
+from ..configuration import load_config
+from ..transport import ssh_host_from_config
 
 DATE_FORMATS = (
     "%Y-%m-%dT%H:%M:%S",

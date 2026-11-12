@@ -7,12 +7,8 @@ from typing import Optional
 
 from .storage import storage_root
 from .execution import resolve_execution_context, is_remote_machine
-from .utils import (
-    remote_storage_root_from_config,
-    machine_config as resolve_machine_config,
-    scp_host_and_keypath_from_config,
-    ssh_host_from_config,
-)
+from .transport import remote_storage_root_from_config, scp_host_and_keypath_from_config, ssh_host_from_config
+from .configuration import machine_config as resolve_machine_config
 
 SYNC_DIRECTORIES = ("jobs", "slurm", "out")
 
