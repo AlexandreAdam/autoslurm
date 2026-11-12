@@ -21,9 +21,9 @@ def test_relative_science_under_two_profiles_from_unrelated_directory(profile, t
     project = tmp_path / profile / "project with spaces"
     (project / "data").mkdir(parents=True)
     shutil.copyfile(EXAMPLE / "data/measurements.json", project / "data/measurements.json")
-    results = tmp_path / profile / "results with spaces"
+    results = project
     activation = "true" if profile == "workstation" else "cd " + shlex.quote(str(tmp_path))
-    save_config({"machines": {profile: {"project_root": str(project), "results_root": str(results), "env_command": activation, "slurm_account": "mock"}}, "default_machine": profile})
+    save_config({"machines": {profile: {"software_root": str(tmp_path / profile / "software"), "results_root": str(results), "env_command": activation, "slurm_account": "mock"}}, "default_machine": profile})
     unrelated = tmp_path / "unrelated"
     unrelated.mkdir()
     monkeypatch.chdir(unrelated)
@@ -77,7 +77,7 @@ def test_relative_science_under_two_profiles_from_unrelated_directory(profile, t
     result = results / "reference-array/summary/summary.json"
     assert json.loads(result.read_text())["sum_squares"] == 30
     # A renamed profile/root must not redirect artifacts from an old submission.
-    save_config({"machines": {profile: {"project_root": str(unrelated), "results_root": str(tmp_path / "replacement"), "env_command": "true", "slurm_account": "mock"}}, "default_machine": profile})
+    save_config({"machines": {profile: {"results_root": str(tmp_path / "replacement"), "env_command": "true", "slurm_account": "mock"}}, "default_machine": profile})
     relative = "reference-array/summary/summary.json"
     assert resolve_results_path(relative, bundle_path=submission, job_name="reduce") == str(result)
     assert path_exists(relative, bundle_path=submission, job_name="reduce")
@@ -89,14 +89,14 @@ def test_invalid_project_paths_stop_before_submission(problem, tmp_path, monkeyp
     project = tmp_path / "project"
     (project / "data").mkdir(parents=True)
     (project / "data/input.json").write_text("[1]")
-    config = {"project_root": str(project), "slurm_account": "mock", "env_command": "true"}
+    config = {"results_root": str(project), "slurm_account": "mock", "env_command": "true"}
     job = {"name": "sample", "script": "science-demo", "input_args": ["input_file"], "script_args": {"input_file": "data/input.json", "output_dir": "study"}, "slurm": {}}
     if problem == "missing-root":
-        config["project_root"] = str(tmp_path / "missing")
+        config["results_root"] = str(tmp_path / "missing")
     elif problem == "missing-input":
         job["script_args"]["input_file"] = "data/missing.json"
     elif problem == "missing-project-setting":
-        config.pop("project_root")
+        config.pop("results_root")
     elif problem == "absolute-input":
         job["script_args"]["input_file"] = str(project / "data/input.json")
     elif problem == "traversal":
@@ -110,7 +110,7 @@ def test_invalid_project_paths_stop_before_submission(problem, tmp_path, monkeyp
         pytest.fail("Invalid paths reached an external command")
     monkeypatch.setattr("subprocess.run", no_effects)
     for operation in [lambda: preview_bundle(selected, machine="mock"), lambda: submit_jobs("invalid", machine="mock", bundle_path=selected)]:
-        with pytest.raises((ValueError, FileNotFoundError), match="unavailable|project_root|relative|traverse"):
+        with pytest.raises((ValueError, FileNotFoundError), match="unavailable|results_root|relative|traverse"):
             operation()
     assert selected.read_bytes() == before
     assert not list(slurm_dir().iterdir())
@@ -118,7 +118,7 @@ def test_invalid_project_paths_stop_before_submission(problem, tmp_path, monkeyp
 
 @pytest.mark.parametrize("missing_input", [False, True])
 def test_remote_operation_discovers_root_once_and_batches_input_validation(tmp_path, monkeypatch, missing_input):
-    config = {"hostname": "mock-host", "storage_root": "/remote/development", "project_root": "/remote/project", "venv_path": "/remote/env", "slurm_account": "mock"}
+    config = {"hostname": "mock-host", "storage_root": "/remote/development", "results_root": "/remote/project", "venv_path": "/remote/env", "slurm_account": "mock"}
     save_config({"machines": {"remote": config}, "default_machine": "remote"})
     definitions = json.loads((EXAMPLE / "bundles/array.json").read_text())
     selected = save_bundle(definitions, "remote-study")
@@ -161,7 +161,7 @@ def test_failed_environment_activation_does_not_run_application(tmp_path):
     from autoslurm.job_to_slurm import create_slurm_script
     script = create_slurm_script(
         {"name": "environment-check", "script": "echo must-not-run", "slurm": {}},
-        datetime(2026, 1, 1), {"project_root": str(tmp_path), "env_command": "false"},
+        datetime(2026, 1, 1), {"results_root": str(tmp_path), "env_command": "false"},
     )
     result = subprocess.run(["bash", str(slurm_dir() / script)], capture_output=True, text=True)
     assert result.returncode == 1

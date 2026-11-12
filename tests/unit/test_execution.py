@@ -21,7 +21,7 @@ def test_nested_working_directory_keeps_input_and_results_bases(tmp_path, log_na
     (project / "analysis").mkdir(parents=True)
     (project / "data").mkdir()
     (project / "data/input.json").write_text("[1]")
-    config = {"project_root": str(project), "results_root": str(tmp_path / "results"), "path": "/obsolete-storage"}
+    config = {"software_root": str(tmp_path / "software"), "results_root": str(project), "path": "/obsolete-storage"}
     job = {"name": "sample", "script": "science-demo", "slurm": {"output": log_name, "chdir": None}, "working_directory": "analysis", "input_args": ["input_file"], "path_args": ["parts_dir"], "script_args": {"input_file": "data/input.json", "parts_dir": "future/parts", "output_dir": "future/summary"}}
     context = resolve_execution_context("local", config)
     context.validate_jobs([job])  # Future results need not exist yet.
@@ -29,7 +29,7 @@ def test_nested_working_directory_keeps_input_and_results_bases(tmp_path, log_na
     assert evidence["storage_root"] == str(storage_root())
     assert evidence["working_directory"] == str(project / "analysis")
     assert evidence["resolved_paths"]["input_file"] == str(project / "data/input.json")
-    assert evidence["resolved_paths"]["parts_dir"] == str(tmp_path / "results/future/parts")
+    assert evidence["resolved_paths"]["parts_dir"] == str(project / "future/parts")
     output = StringIO()
     write_slurm_content(output, job, config, context=context)
     directives = [line for line in output.getvalue().splitlines() if line.startswith("#SBATCH --output=")]
@@ -54,7 +54,7 @@ def test_project_aware_paths_cannot_escape_declared_bases(field, value, tmp_path
 
 def test_one_argument_cannot_use_two_path_bases(tmp_path):
     context = resolve_execution_context("local", {"project_root": str(tmp_path)})
-    with pytest.raises(ValueError, match="both project and results"):
+    with pytest.raises(ValueError, match="both a required input and a result"):
         context.resolve_job({"input_args": ["parts"], "path_args": ["parts"], "script_args": {"parts": "study"}})
 
 
@@ -67,8 +67,9 @@ def test_invalid_machine_root_fails_before_remote_discovery(key):
 
 
 def test_saved_remote_artifact_uses_producing_transport_without_profile(tmp_path, monkeypatch):
-    context = resolve_execution_context("old-name", {"hosturl": "old-host", "username": "scientist", "project_root": "/old/project", "results_root": "/old/results"}, root_resolver=lambda *args: "/old/state")
+    context = resolve_execution_context("old-name", {"hosturl": "old-host", "username": "scientist", "results_root": "/old/results"}, root_resolver=lambda *args: "/old/state")
     evidence = context.resolve_job({"script_args": {"output_dir": "study"}})
+    evidence["project_root"] = "/old/project"  # A saved pre-merge producing record.
     saved = tmp_path / "historical_20260101000000.json"
     saved.write_text(json.dumps({"sample": {"name": "sample", "script": "science-demo", "slurm": {}, EXECUTION_METADATA_KEY: evidence}}))
     calls = []

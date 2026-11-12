@@ -29,7 +29,7 @@ def mock_load_config(monkeypatch, tmp_path):
         "bundle_filter_mode": "all",
     }
     monkeypatch.setattr("autoslurm.bundle_selection.load_config", lambda: config)
-    monkeypatch.setattr("autoslurm.configuration.load_config", lambda: config)
+    monkeypatch.setattr("autoslurm.config.load_config", lambda: config)
     yield config
 
 
@@ -174,7 +174,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
     }
     module = importlib.import_module("autoslurm.status")
     monkeypatch.setattr("autoslurm.inspection_collection.load_config", lambda: config)
-    monkeypatch.setattr("autoslurm.configuration.load_config", lambda: config)
+    monkeypatch.setattr("autoslurm.config.load_config", lambda: config)
 
     seen = {"ssh": 0}
 

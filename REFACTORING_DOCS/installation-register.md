@@ -6,8 +6,9 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code is MVP6: locate it with
-`git log --grep '^MVP6.3:'` or local tag `mvp6`. No cluster installation or live
+historical. Current tested code includes MVP7.0c: locate it with
+`git log --grep '^MVP7.0c:'`; the last completed full milestone tag is `mvp6`.
+No cluster installation or live
 job was changed.
 
 ## Current local inventory
@@ -145,6 +146,18 @@ Their original pinned-main/separate-development layout is superseded above.
   bugs were reproduced before fixes; 26 cases added. Base import/help still uses
   main dev source. Clean rollback HEAD and absent configs/empty runtime directories
   verified in main/test/rollback roots. No dependency, remote, migration or push work.
+
+- **MVP7.0c, 2026-11-12:** 405 offline tests passed in 3.22 s, 39 expected
+  warnings. Report `.development/test-runs/config-reviewed.xml` covers canonical
+  config modules/command, two scientific roots, merged input/cwd/output mapping,
+  recorded software/data locations, explicit/no-network legacy profile edits and
+  saved historical paths. No base reinstall: `asl config` and the older installed
+  command work immediately; `autoslurm-config` is declared for future installs.
+  Git/software preparation remains unimplemented. No config or user data migrated;
+  baseline source and persistent runtime roots remain unchanged. Main config was
+  already present before this task (mtime 2026-11-12 11:17:16 local; baseline tests
+  began 11:43:57); it was preserved, not migrated. Test/rollback configs remain
+  absent, and jobs/scripts/logs/receipts/observations are empty in all three roots.
 
 ## Current local commands
 

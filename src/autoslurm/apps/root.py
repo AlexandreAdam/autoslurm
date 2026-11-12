@@ -8,7 +8,7 @@ from . import (
     agent_context,
     cancel,
     clean,
-    configuration,
+    config,
     experiment_context,
     filter as filter_app,
     inspect,
@@ -24,7 +24,7 @@ from . import (
 
 
 ACTION_HELP = {
-    "configuration": "Configure machines and storage.",
+    "config": "Configure machines, software and data locations.",
     "schedule": "Schedule a job or append it to a bundle.",
     "submit": "Submit an existing bundle.",
     "submission": "Inspect submission receipts without submitting jobs.",
@@ -41,7 +41,7 @@ ACTION_HELP = {
 }
 
 ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
-    "configuration": configuration.main,
+    "config": config.main,
     "schedule": schedule.main,
     "submit": submit.main,
     "submission": submission.main,
@@ -58,7 +58,7 @@ ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
 }
 
 ACTION_ALIASES = {
-    "config": "configuration",
+    "configuration": "config",
     "stat": "status",
     "kill": "cancel",
     "context": "inspect",

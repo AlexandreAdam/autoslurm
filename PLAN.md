@@ -9,23 +9,22 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP6, persistence and transport boundaries; complete locally.
+- **Current milestone:** MVP7; configuration/path slice MVP7.0c complete locally, software preparation still planned.
 - **Stage:** main checkout is active on `dev`, explicitly selected by the user
   on 2026-11-12. Base Conda imports it; tests use the same source with isolated
   environment/state. Baseline rollback source remains in `.development/stable`.
-  Full offline suite: 392 passed. Local persistence/selection, configuration,
+  Full offline suite: 405 passed. Local persistence/selection, configuration,
   SSH construction and file movement now have explicit owners. Complete atomic
   writes, exclusive snapshot creation and one-update batch appends protect saved
   records. Inspection/submission/scientific workflows remain covered.
   Local daily-use activation completed; no cluster installation changed.
-- **Next task:** MVP7 manifest attachment and helper/runtime environment separation;
-  implementation has not started. Latest-source defaults and machine-owned dependency
-  setup, first-time cloning and independent software/results locations are confirmed;
-  read the design before adding software preparation.
-- **Scope update:** MVP4–MVP6 modularity increments are complete locally. MVP7
-  covers bundle-driven Git project/environment preparation on the login/preparation
-  host, with mocked cluster interactions under the current scope. Result retrieval
-  remains optional.
+- **Next task:** remaining MVP7.0 manifest attachment and helper/runtime separation.
+  Config simplification is implemented: `config`, `software_root`, and one
+  `results_root` for inputs, cwd and outputs. Latest-source defaults, machine-owned
+  dependencies and first-time cloning remain confirmed preparation requirements.
+- **Scope update:** MVP4–MVP6 modularity increments and MVP7.0c are complete
+  locally. Git project/environment preparation on the login/preparation host still
+  needs implementation and mocked verification. Result retrieval remains optional.
 - **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -395,21 +394,26 @@ The target machine owns dependency setup; a workstation/package lockfile is not
 required. Resolve/fetch/install on the login/preparation host; compute jobs use
 ready isolated releases. Existing jobs keep their code/environment. First-time
 preparation clones missing repositories; managed code/environments use a separate
-configurable root from scientific inputs and results (proposed `software_root`).
+configurable `software_root` from the shared input/output `results_root`.
 
 - [x] **MVP7.0a Confirm source/dependency defaults.** Record latest-by-default
   Git selection, exact resolved evidence and target-machine dependency ownership.
   Planning only; remaining MVP7.0 format/API/environment-role decisions stay open.
 
 - [x] **MVP7.0b Confirm cloning and filesystem separation.** Record first-time
-  clone support and independent code/results locations, preserving project-relative
-  inputs/cwd. Naming/layout/configuration changes remain planned.
+  clone support and independent code/results locations. The initial separate
+  project root was superseded by the user's two-root choice in MVP7.0c.
+
+- [x] **MVP7.0c Simplify config and application roots.** Make `config` canonical,
+  expose `software_root`, merge inputs/cwd/outputs under `results_root` and retain
+  recorded historical paths. Reject conflicting old profiles; mock all effects.
 
 Start with the manifest attachment and helper/runtime environment separation;
 then implement source materialization, installation checks, release readiness
 and execution/agent evidence. Module responsibilities, detailed tasks and failure
-cases are in the design. This MVP is planned, not implemented; live cluster
-operations remain outside the current local-only scope.
+cases are in the design. Configuration/path simplification is implemented;
+remaining software preparation is planned. Live cluster operations remain outside
+the current local-only scope.
 
 ## Optional scientific result retrieval (formerly proposed MVP4)
 
@@ -498,6 +502,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-12 | Separate local record/selection/configuration/transport owners, share atomic publication and explicit exports | Mechanical extraction retained all 366 existing tests; seven reproduced bugs motivated scoped fixes without changing JSON shapes or submission uncertainty rules |
 | 2026-11-12 | MVP7 omitted revisions resolve latest upstream; dependency setup belongs to the selected machine | User requested less friction and different dependency sets for local and cluster use; resolved commits and actual installations remain recorded, with no silent stale-source fallback |
 | 2026-11-12 | MVP7 prepares missing Git repositories and separates managed software from input/result filesystems | User needs first-time cloning and independent package/results placement; preserve existing path bases and record producing paths so agents can locate both |
+| 2026-11-12 | Make config canonical; configure only software_root and shared results_root | User requested simpler configuration and merging project/results. Old saved runs retain recorded bases; conflicting old profiles need an explicit root choice; only configuration/path behavior is implemented in this slice |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -524,6 +529,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP6.2–MVP6.3 Persistence hardening and closure | 392 offline tests pass in 3.27 s, 39 expected warnings; 26 added checks. Reproduced and fixed serialization corruption, partial new files, timestamp clobbering, explicit-profile replacement, key-path splitting and sync transport failure presented as success. Verified interruption/publication failures, exclusive collision races, atomic batch append, staging/copy failures, no hidden process in local operations, pure SSH construction, exports and all prior scientific/CLI/ACP/receipt cases. Report `.development/test-runs/mvp6-final-reviewed.xml`. Task commit: `git log --grep '^MVP6.3:'`; local tag `mvp6` at closure. Base import/help verified; baseline source and all persistent runtime roots unchanged; no cluster/dependency/migration/push operations |
 | 2026-11-12 | MVP7.0a Source and dependency defaults | User-confirmed design refinement: optional revisions resolve latest remote default-branch commit per new preparation; target-machine dependency policy replaces mandatory package/local locks. Planning text and failure criteria reviewed; no code changes or application tests. MVP7 implementation and remaining contract decisions remain open |
 | 2026-11-12 | MVP7.0b Cloning and filesystem separation | User-confirmed requirements recorded with proposed software_root, first-clone/fetch behavior, independent input/result locations, configuration visibility and producing-path evidence. Reviewed local path/configuration implementation and design links; documentation only, no application tests or cluster operations |
+| 2026-11-12 | MVP7.0c Config and two-root path implementation | 405 offline tests pass in 3.22 s, 39 expected warnings, report `.development/test-runs/config-reviewed.xml`. Added 13 checks, including nine initial failures for new behavior; shared input/cwd/output roots, configured software evidence, no-network edits, explicit legacy merge, invalid roots and historical/new producing paths verified. Existing scientific fixtures use temporary merged data roots. Base config help, pre-existing main config retention and empty job/runtime directories/rollback verified at closure. No cluster operations/install/migration; no mvp7 completion tag. Task commit: `git log --grep '^MVP7.0c:'` |
 
 ## How we work
 

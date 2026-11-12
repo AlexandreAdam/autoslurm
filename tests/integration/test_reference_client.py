@@ -1,4 +1,5 @@
 import json
+import shutil
 import os
 from datetime import datetime
 from pathlib import Path
@@ -30,7 +31,10 @@ def science_client(tmp_path, monkeypatch):
     monkeypatch.setenv("PATH", str(commands) + os.pathsep + os.environ["PATH"])
     monkeypatch.setenv("PYTHONDONTWRITEBYTECODE", "1")
     monkeypatch.chdir(EXAMPLE)
-    save_config({"machines": {"mock": {"slurm_account": "mock", "env_command": "true", "project_root": str(EXAMPLE)}}, "default_machine": "mock"})
+    data_root = storage_root() / "results"
+    (data_root / "data").mkdir(parents=True)
+    shutil.copyfile(EXAMPLE / "data/measurements.json", data_root / "data/measurements.json")
+    save_config({"machines": {"mock": {"slurm_account": "mock", "env_command": "true", "results_root": str(data_root)}}, "default_machine": "mock"})
 
 
 @pytest.mark.local_processes

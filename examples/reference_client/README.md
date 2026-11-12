@@ -49,11 +49,11 @@ Slurm scheduling behavior.
 Tests introduce a newer competing draft: explicit selection must keep the chosen
 historical definition. They also verify nonzero exits for missing inputs and
 incomplete reduction. Input `data/measurements.json` is declared in `input_args`
-and resolved under the profile's absolute `project_root`; `output_dir` and
-declared `parts_dir` use its `results_root` (default: selected storage's `results/`).
-AutoSlurm establishes `project_root` as the working directory by default, or a
-job's relative `working_directory`. It validates required inputs without copying
-them. Machine roots and prepared environment locations are infrastructure
+and resolved under the profile's absolute `results_root`, as are `output_dir`
+and declared `parts_dir` (default: selected storage's `results/`). AutoSlurm uses
+that same data root for the working directory when roots are configured, or a
+job's relative `working_directory`. `software_root` separately locates managed
+code/environments. Required inputs are validated without copying them. Machine roots and prepared environment locations are infrastructure
 configuration; bundle definitions keep application paths relative.
 
 The path tests run the array/reducer under two distinct profiles from an unrelated

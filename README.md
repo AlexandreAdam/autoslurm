@@ -23,8 +23,9 @@ You can find the full documentation [here](https://autoslurm.readthedocs.io/en/l
 For the local development refactor, start with the
 [human workflow overview](docs/workflow_overview.md), the
 [current client workflow](agent/01_client_workflow.md) and
-[scientific example](examples/reference_client/README.md). MVP1 gives inputs a
-project root, outputs a results root, and jobs a predictable working directory.
+[scientific example](examples/reference_client/README.md). Current profiles use
+`software_root` for code/environments and `results_root` for inputs, working
+directories and outputs. `asl config` edits or displays these two locations.
 The same relative workload can run under different machine profiles without
 changing the application. Preview checks paths before submission; saved execution
 locations let an agent find a run's results after a profile changes.
@@ -62,7 +63,8 @@ used by base Conda's editable installation. Tests use isolated state and mocked
 Slurm; the earlier baseline remains available in a rollback checkout. Cluster
 installations have not been changed.
 
-A planned MVP7 will prepare bundle-specified Git projects in isolated, verified
+MVP7.0c implements this simpler configuration interface; cloning and installation
+are still planned. A later part of MVP7 will prepare bundle-specified Git projects in isolated, verified
 cluster environments before dispatch. See the
 [software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md);
 this feature is not implemented yet.
@@ -80,7 +82,7 @@ pip install -e .
 ### Configure `autoslurm` for your environment
 
 ```bash
-autoslurm-configuration
+asl config --interactive
 ```
 
 This command will configure the user-specific details required to connect to

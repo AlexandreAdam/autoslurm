@@ -5,7 +5,8 @@
 Planned, 2026-11-12. The user requested Git-based preparation of several projects
 and verification that the bundle's required versions are installed in its Python
 environment. This document creates the MVP scope; these modules/APIs are not
-implemented yet. Local development/mocked commands remain the execution scope.
+implemented yet, except the configuration/path slice MVP7.0c described below.
+Local development/mocked commands remain the execution scope.
 No repository fetch, remote installation or cluster command is authorized by
 this planning step alone under the current local-only working agreement.
 
@@ -84,10 +85,10 @@ Support one prepared application environment for the selected bundle initially.
 - **D7 Separate software and result locations — accepted requirement.** Machine
   configuration must independently locate managed repositories/prepared software
   and scientific results, so they can use different cluster filesystems. The
-  proposed new field is `software_root`; preserve existing `project_root` for
-  application inputs/working directories and `results_root` for outputs. This
-  does not redefine either existing path base. Expose software/project/results
-  roots in the configuration editor and summary, not only through manual JSON.
+  field is `software_root`. **Amended by the user in MVP7.0c:** merge project and
+  results into one `results_root` for inputs/working directories/outputs. Only two
+  scientific roots are configured. `config` is the canonical command/module;
+  expose both roots in its editor, summary and direct root-setting flags.
 - **D8 First-time clone — accepted requirement.** Preparation can start from a
   repository identity without an existing cluster checkout. Clone missing repos
   into the managed cache, fetch updates there and create isolated releases. Do
@@ -111,37 +112,43 @@ No dependency solver framework is required for this MVP.
 
 Configure these infrastructure paths once per target machine; application
 manifests continue to name repositories and logical runtimes, not absolute paths.
-The names/layout below are proposed; filesystem separation and cloning are the
-user-confirmed requirements.
+The two root names and configuration/path behavior are implemented in MVP7.0c;
+managed release layout, cloning and environment preparation remain planned.
 
 ```json
 {
   "software_root": "/home/scientist/autoslurm-software",
-  "project_root": "/project/scientist/study-inputs",
   "results_root": "/scratch/scientist/studies"
 }
 ```
 
 | Root | Responsibility |
 |---|---|
-| `software_root` (new) | Managed Git cache, fixed source releases and prepared scientific environments |
-| `project_root` (existing) | Relative application inputs and working directories; may be on another filesystem |
-| `results_root` (existing) | Relative scientific output paths; independent of package/source location |
-| `storage_root` (existing) | AutoSlurm definitions, receipts, scripts and observation evidence |
+| `software_root` | Configured/recorded location for managed repositories, source releases and scientific environments; preparation still planned |
+| `results_root` | Shared base for application inputs, working directories and scientific outputs |
+
+`storage_root` remains the internal AutoSlurm state location; it is not another
+scientific directory to organize. No separate project root is required.
 
 A possible managed layout is `software_root/repositories/<repository-id>` and
 `software_root/releases/<release-id>/{projects,environment}`. There is one
 software root per selected machine initially; it can serve multiple Git projects.
-For minimal configuration, an omitted software root may default to
-`<storage_root>/software`; this default is proposed and must be shown in resolved
-configuration. Configured roots are absolute infrastructure paths. Application
-jobs keep relative paths such as `script_args.output_dir = "study-42/summary"`,
-which resolve only under `results_root`, regardless of source release location.
+Omitted roots default to `<storage_root>/software` and `<storage_root>/results`.
+Summary displays symbolic defaults without a remote probe; execution saves actual
+resolved values. Configured roots are absolute infrastructure paths. Application
+jobs keep relative inputs/working directories/output paths, all under
+`results_root`, independently of source release location. Configured data roots
+and required inputs/working directories must already exist before preview; future
+output subdirectories need not exist yet. Legacy unrooted jobs with no input/cwd
+declarations retain their absolute-output/current-directory behavior.
 
-Do not automatically change `project_root`/cwd to a cloned package directory:
-that would silently change the meaning of existing relative inputs. Installed
-commands run from the application's declared working directory; package resources
-and scientific inputs are distinct. Do not put results into managed code releases,
+Do not change cwd to a cloned package directory. Installed commands run from the
+application's declared data working directory; package resources and scientific
+inputs are distinct. New machine profiles have no independent `project_root`.
+Old project-only/equal-root profiles coalesce to results_root, while conflicting
+old roots require an explicit data-root choice before new work. Root-setting flags
+remove the retired profile setting without moving files; saved old execution paths
+retain their original meanings. Do not put results into managed code releases,
 copy them during Git updates, or attempt to track them with Git. Validate declared
 paths against managed release locations before dispatch to prevent writable
 working/output targets from corrupting prepared software.
@@ -193,11 +200,17 @@ can be moved freely between staging and final locations.
 
 ## Tasks and completion criteria
 
+- [x] **MVP7.0c Simplify config and application roots.** Canonical config modules/
+  command, software_root and shared results_root, explicit old-profile root edits,
+  recorded historical paths and local-only verification. This implements the
+  configuration slice, not the remaining manifest/environment/release operations.
+
 - [ ] **MVP7.0 Settle the manifest and environment roles.** Concrete bundle
   examples with omitted and pinned revisions, machine-owned dependency policy,
-  helper/runtime separation, independent software/input/results roots, ownership,
-  readiness/errors and bounded client operations. Requirements D5–D8 are confirmed;
-  field/layout/container/API details remain proposed.
+  helper/runtime separation, software and merged data roots, ownership,
+  readiness/errors and bounded client operations. Requirements D5–D8 and the two
+  configuration root names are confirmed; release layout/container/API details
+  remain proposed.
   Record the implemented boundary before changing formats.
 - [ ] **MVP7.1 Implement source and manifest primitives.** Resolve exact commits,
   materialize isolated project sets and return structured preparation evidence;
@@ -215,8 +228,8 @@ can be moved freely between staging and final locations.
 - [ ] **MVP7.3 Wire bundle execution and handoff.** Select ready release paths
   through the existing execution context, preserve legacy opt-out behavior, and
   verify two requested software revisions never change each other's queued job
-  code/environment. Verify code, inputs and results on separate roots, unchanged
-  relative-path semantics, configuration editor/summary retention, rejection of
+  code/environment. Verify software separate from the shared input/output root,
+  current relative-path semantics, configuration editor/summary retention, rejection of
   writable targets inside releases, and lookup after profile edits. Expose exact
   prepare/inspect evidence to terminal/Python/ACP.
 
@@ -236,4 +249,34 @@ Cluster compatibility remains unverified until a separately authorized live test
 |---|---|
 | 2026-11-12 | User requested a dedicated MVP for Git project versions and verified bundle-specified installations; scoped as MVP7 |
 | 2026-11-12 | MVP7.0a user confirmed omitted revisions mean latest source and dependency setup belongs to the target machine; recorded D5/D6 and associated failure checks; no implementation started |
-| 2026-11-12 | MVP7.0b user requested first-time Git cloning and independent package/results locations; recorded D7/D8, proposed software_root and preserved input/cwd semantics; no implementation started |
+| 2026-11-12 | MVP7.0b user requested first-time Git cloning and independent package/results locations; recorded initial D7/D8, superseded the proposed third project root in MVP7.0c |
+| 2026-11-12 | MVP7.0c config/two-root slice implemented; 405 offline tests passed, software preparation remains planned |
+
+## Implemented configuration/path slice (MVP7.0c)
+
+The user requested renaming configuration to config and only two scientific roots.
+Implemented locally on `dev`: `asl config` canonical action and `config` owner
+modules, `software_root` editor/summary/settings, shared results-relative input/cwd/
+output mapping and producing evidence. Historical `configuration` commands/modules
+remain aliases. New installs gain `autoslurm-config`; current base commands can
+use `asl config` without reinstalling entry points.
+
+Root-only flags (`--machine NAME --software-root PATH --results-root PATH`) edit
+local configuration without probes. They also permit an explicit merged root
+choice for old conflicting profiles, without moving data. Configured data roots
+require relative application paths, including results-only profiles that formerly
+allowed absolute output overrides. New execution records save software/results
+roots; old records with separate project/results fields remain readable. The
+context's project_root slot remains solely for historical input-base interpretation.
+The current venv_path continues to select operator-prepared software; a software_root
+setting alone does not move/install code or implement release preparation.
+
+Baseline: 392 offline tests passed in 3.33 s (38 collision warnings). Nine new
+checks initially failed and the historical-path check passed; after implementation,
+405 tests pass in 3.22 s (39 expected warnings), including three additional root-edit/
+identity checks. Report `.development/test-runs/config-reviewed.xml`. Scientific
+fixtures now stage inputs and outputs under temporary shared data roots; existing
+array/reducer, submission, inspection and CLI/ACP checks remain passing. No real
+cluster commands, base reinstall, runtime data migration or code preparation.
+Task commit: `git log --grep '^MVP7.0c:'`. No `mvp7` completion tag: remaining
+software-manifest/helper/runtime/source/environment tasks are still open.

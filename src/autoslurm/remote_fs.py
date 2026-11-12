@@ -5,7 +5,7 @@ import subprocess
 from pathlib import PurePosixPath
 
 from .execution import resolve_execution_context, execution_context_from_snapshot, is_remote_machine
-from .configuration import machine_config as resolve_machine_config
+from .config import machine_config as resolve_machine_config
 from .transport import remote_storage_root_from_config, ssh_command
 
 __all__ = ["resolve_results_path", "path_exists"]

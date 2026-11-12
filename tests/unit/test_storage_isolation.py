@@ -132,21 +132,21 @@ def test_helper_rejects_payload_outside_selected_root(tmp_path, monkeypatch, cap
 
 
 def test_configuration_editor_preserves_selected_remote_root(monkeypatch):
-    from autoslurm.apps import configuration
+    from autoslurm.apps import config as configuration
 
     cfg = machine()
-    cfg["project_root"] = "/remote/science-project"
+    cfg["software_root"] = "/remote/science-software"
     cfg["results_root"] = "/remote/science-results"
     monkeypatch.setattr(configuration, "_prompt_text", lambda prompt, default=None, required=False: default or "")
     monkeypatch.setattr(configuration, "_prompt_yes_no", lambda *args, **kwargs: True)
     monkeypatch.setattr("builtins.input", lambda *args: "1")
     edited = configuration._prompt_machine_details(cfg)
-    for key in ("storage_root", "project_root", "results_root"):
+    for key in ("storage_root", "software_root", "results_root"):
         assert edited[key] == cfg[key]
 
 
 def test_configuration_validation_reports_mismatched_root(monkeypatch, capsys):
-    from autoslurm.apps import configuration
+    from autoslurm.apps import config as configuration
 
     monkeypatch.setattr("subprocess.run", lambda command, **kwargs: CompletedProcess(command, 0, "/remote/stable", ""))
     assert not configuration._validate_machine(machine(), "mock")

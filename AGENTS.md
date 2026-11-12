@@ -59,7 +59,11 @@ operate from the workstation; compute nodes use already-prepared environments.
   retry a submission whose scheduler outcome may already have taken effect.
 - No package installation, checkout changes, or Git/network preparation inside
   compute jobs. Automatic deployment is outside the initial refactor.
-- Client application paths are relative to explicitly declared bases. AutoSlurm
+- Client application paths use the shared `results_root` base for inputs, cwd
+  and outputs; `software_root` locates managed code/environments. `config` is the
+  canonical module/command; `configuration` is a compatibility alias. Conflicting
+  old project/results profiles need an explicit root choice, while saved runs
+  retain their original path evidence. AutoSlurm
   owns machine-root discovery and one resolution policy for preview, execution
   and artifact retrieval; clients do not embed absolute machine paths or branch
   on hostname. Record logical and resolved paths per attempt. Each application
@@ -74,7 +78,7 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP6
+  [reference client](examples/reference_client/README.md) are the verified MVP7.0c
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
 - Keep development installation working and use a narrow artifact smoke check

@@ -47,8 +47,9 @@ capabilities. This page establishes operating rules during the MVP transition.
 Keep scientific computation independent of submission glue. Prefer an installed
 command, explicit validated parameters, relative input/output paths, resource
 and worker limits, distinct task outputs, and meaningful nonzero failures.
-AutoSlurm owns the selected machine's path mapping. Development MVP1 supports
-profile `project_root`, relative `working_directory` and declared `input_args`,
+AutoSlurm owns the selected machine's path mapping. The current dev interface uses
+`software_root` for managed code and `results_root` for relative inputs, outputs
+and working directories. Declare required inputs in `input_args`,
 with shared preview/execution resolution and recorded artifact roots. Read
 `01_client_workflow.md` for the supported bases and preflight contract. The pinned
 stable installation retains its previous behavior. Arbitrary configuration

@@ -5,7 +5,7 @@ the computation, resources and dependencies; AutoSlurm resolves machine paths,
 prepares scripts, submits the jobs and exposes evidence about what happened.
 Your application remains responsible for the science and its results.
 
-This page describes the development MVP6 workflow. The user activated `dev`
+This page describes the development workflow through MVP7.0c. The user activated `dev`
 in the main repository for local daily use through base Conda on 2026-11-12.
 Tests use isolated state and mocked Slurm/SSH. A baseline rollback checkout is
 retained; the cluster installation has not been changed or validated.
@@ -30,7 +30,10 @@ snapshots, and appending several jobs updates the file once. Configuration chang
 use the same protected writer. A save failure needs inspection before dispatch;
 a copy failure is reported separately and never triggers another job submission.
 
-A machine profile maps project, results and prepared environment locations.
+A machine profile maps two locations: software/code and shared scientific data
+(inputs, working directories and results). Use `asl config` to set `software_root`
+and `results_root`. Software preparation remains planned; the two settings and
+data-path mapping are implemented.
 Application definitions keep relative paths, so they do not branch on machine
 names or embed cluster filesystem prefixes. Compute nodes use prepared software;
 they do not need Git access or package downloads inside jobs.

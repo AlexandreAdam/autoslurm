@@ -7,7 +7,7 @@ import tempfile
 import shutil
 from contextlib import contextmanager
 from typing import Optional
-from .configuration import load_config
+from .config import load_config
 from .transport import ssh_command, remote_storage_root_from_config
 from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .submission import SubmissionError, SUBMISSION_PROTOCOL, validate_receipt

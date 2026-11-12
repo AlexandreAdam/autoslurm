@@ -13,7 +13,7 @@ pip install -e .
 ### Configure `autoslurm` for your environment
 
 ```bash
-autoslurm-configuration
+asl config --interactive
 ```
 
 This command will allow you to configure paths and user-specific details for
@@ -23,7 +23,7 @@ your local and remote SLURM machines. More details can be found in the
 ### Registering a script (optional)
 
 If you don't want to worry about filesystem paths, register your script inside your Python package so AutoSlurm can locate it by name. 
-This produces a clearer submission flow and avoids path issues, but remember to install the package into the virtual environment specified via `autoslurm-configuration`.
+This produces a clearer submission flow and avoids path issues, but remember to install the package into the virtual environment specified via `asl config`.
 
 Read [Registering a script](register_script.md) for the optional workflow, which explains how SLURM submission works, how AutoSlurm activates the configured environment, and how declaring entry points keeps your job definitions portable.
 
@@ -209,7 +209,7 @@ autoslurm-schedule inference \
     --checkpoint /models/ldm.ckpt --input_path /data/batch.json
 ```
 
-If `research-gpu` is defined in `autoslurm-configuration`, the job is copied to
+If `research-gpu` is defined in `asl config`, the job is copied to
 the remote `$path/slurm/` directory, `sbatch` is executed over SSH, and the
 stack keeps track of the returned job ID.
 

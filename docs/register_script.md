@@ -19,7 +19,7 @@ This entry creates an application called `train-model` which can be used in the 
 
 ## Install the package inside the configured environment
 
-Before scheduling, activate the environment specified in `autoslurm-configuration` and run:
+Before scheduling, activate the environment specified in `asl config` and run:
 
 ```bash
 pip install -e .

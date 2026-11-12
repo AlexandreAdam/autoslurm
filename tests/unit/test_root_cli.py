@@ -36,7 +36,7 @@ def test_root_accepts_action_aliases(monkeypatch):
 
     monkeypatch.setitem(root.ACTION_HANDLERS, "inspect", fake_inspect)
     monkeypatch.setitem(root.ACTION_HANDLERS, "agent", fake_agent)
-    monkeypatch.setitem(root.ACTION_HANDLERS, "configuration", fake_configuration)
+    monkeypatch.setitem(root.ACTION_HANDLERS, "config", fake_configuration)
     monkeypatch.setitem(root.ACTION_HANDLERS, "status", fake_status)
     monkeypatch.setitem(root.ACTION_HANDLERS, "scan", fake_scan)
 

@@ -7,7 +7,7 @@ from typing import Optional
 import json
 import re
 
-from .configuration import load_config, save_config
+from .config import load_config, save_config
 from .definitions import DATE_FORMAT
 from .job_dependency import dependency_graph
 from .storage import ensure_storage_dirs, jobs_dir

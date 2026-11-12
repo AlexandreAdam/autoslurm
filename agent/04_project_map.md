@@ -1,6 +1,6 @@
 # Public workflow map
 
-The development MVP6 boundary is `01_client_workflow.md`. Public Python imports
+The development MVP7.0c boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
@@ -86,18 +86,18 @@ MVP6 separates the remaining local persistence and transport responsibilities:
 ```text
 Python / CLI / ACP -> bundle_selection -> local discovery + selection policy
                   -> save_load_jobs -> normalization + complete snapshot/append
-                  -> configuration -> profiles + shared configuration writer
+                  -> config -> profiles + shared configuration writer
                   -> file_transfer -> SCP / rsync / directory probes
                                       |-> transport -> shared SSH arguments
 execution / scheduler / receipts / logs -> transport -> shared SSH arguments
-bundles / configuration / receipts / caches -> record_files -> atomic JSON
+bundles / config / receipts / caches -> record_files -> atomic JSON
 utils -> explicit compatibility aliases + script naming
 ```
 
 `save_load_jobs` now implements local persistence, with explicit aliases for
 historical selection/transfer imports. Internal callers use the owning modules.
 `bundle_metadata` owns older field-update helpers; they share the same writer.
-The configuration CLI and Python API use one writer, and the profile's local/
+The `config` CLI and Python API use one writer, and the profile's local/
 remote classification has one owner. Configuration reads do not discover hosts.
 `transport` separates pure argument construction from explicit helper-root probes;
 operation adapters retain their own timeouts/error interpretation and no-retry rules.
@@ -134,3 +134,13 @@ exact inspection is the run-specific observation boundary.
 Prepared code/input contents are not snapshotted automatically. Scheduler
 history can be unavailable; real-cluster validation, automated reconciliation,
 scientific retries and complete packaged agent resources remain later work.
+
+MVP7.0c makes `config` the implementation/command owner; `configuration` modules
+retain explicit compatibility entry points. Profiles configure `software_root`
+and a merged `results_root` for input/cwd/output paths. One normalization helper
+coalesces unambiguous old profiles and rejects conflicting roots before effects.
+Explicit root-setting flags resolve an old split without moving files or invoking
+SSH. New execution evidence saves the two roots; historical execution contexts
+still read the older separate project/result fields. The context's internal
+`project_root` field is a compatibility input-base slot, never a third configurable
+root for new work. Software cloning/install/release management remain planned.

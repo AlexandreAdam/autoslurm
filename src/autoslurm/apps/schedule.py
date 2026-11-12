@@ -7,7 +7,7 @@ from typing import Dict, List, Sequence
 
 from ..job_runner import submit_jobs
 from ..save_load_jobs import schedule_job
-from ..configuration import machine_config
+from ..config import machine_config
 
 OPTION_PATTERN = re.compile(r"--[a-zA-Z0-9_-]+")
 VALUE_PATTERN = re.compile(r"\s+([A-Z0-9_\[\]<>-]+)")

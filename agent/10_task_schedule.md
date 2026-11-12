@@ -22,9 +22,10 @@ When preparing `script_args` for jobs that write results (for example `--output-
 
 AutoSlurm is responsible for mapping relative output paths to an absolute remote location (for example under a configured `results_root` on the target machine). This keeps bundles portable when generated on one machine and submitted on another.
 
-In development MVP1, declare required project inputs in `input_args` and configure
-the selected profile's absolute `project_root`. AutoSlurm establishes that root
-as the working directory, or a job's relative `working_directory`, and validates
-required inputs. `path_args` uses the same results base as `output_dir`; use it
-for upstream results that will be produced later. Check `preview_bundle` before
-submission; consult `01_client_workflow.md` for remote effects and saved evidence.
+Configure `software_root` for managed code and `results_root` for scientific data
+with `asl config`. Declare required inputs in `input_args`; they, `working_directory`,
+`path_args` and `output_dir` all resolve relative to `results_root`. The working
+directory does not change the base for declared arguments. Required inputs must
+already exist; `path_args` can point to future upstream results. Check
+`preview_bundle` before submission and retain exact producing paths. See
+`01_client_workflow.md` for defaults, legacy profile handling and saved evidence.

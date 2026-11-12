@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 import shlex
 import subprocess
 
-from .configuration import activation_command_from_config
+from .config import activation_command_from_config
 from .storage import STORAGE_ROOT_ENVIRONMENT_VARIABLE
 
 

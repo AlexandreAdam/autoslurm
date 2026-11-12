@@ -28,6 +28,7 @@ lint = [
 [project.scripts]
 autoslurm = "autoslurm.apps.root:main"
 asl = "autoslurm.apps.root:main"
+autoslurm-config = "autoslurm.apps.config:main"
 autoslurm-configuration = "autoslurm.apps.configuration:main"
 autoslurm-submit = "autoslurm.apps.submit:main"
 autoslurm-sync = "autoslurm.apps.sync:main"

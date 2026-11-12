@@ -128,7 +128,7 @@ def test_autoslurm_configuration_summary(
     main(["--summary"])
     output = capsys.readouterr().out.strip().splitlines()
 
-    assert output[0] == "machine type default slurm_account venv_path results_root project_root"
+    assert output[0] == "machine type default slurm_account venv_path software_root results_root"
     assert any("local local yes def-bengioy" in line for line in output[1:])
     assert any("remote remote no rrg-account_name" in line for line in output[1:])
 
@@ -226,10 +226,11 @@ def test_autoslurm_configuration_interactive_creates_config(
     answers = iter(
         [
             "rorqual",
-            "source /path/to/venv/bin/activate",
+            "/path/to/venv",
             "def-bengioy",
-            "",
             "n",
+            "",
+            "",
         ]
     )
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
@@ -252,10 +253,11 @@ def test_autoslurm_configuration_short_interactive_flag(
     answers = iter(
         [
             "rorqual",
-            "source /path/to/venv/bin/activate",
+            "/path/to/venv",
             "def-bengioy",
-            "",
             "n",
+            "",
+            "",
         ]
     )
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))

@@ -5,7 +5,7 @@ from .definitions import (
     MACHINE_KEYS,
     DATE_FORMAT,
 )
-from .configuration import (
+from .config import (
     load_config,
     save_config,
     machine_config,

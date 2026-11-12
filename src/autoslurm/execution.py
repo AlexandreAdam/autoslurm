@@ -1,24 +1,17 @@
 """Shared machine, working-directory and application-path policy."""
 
 from dataclasses import dataclass
-import posixpath
 import json
 from pathlib import Path, PurePosixPath
 import shlex
 import subprocess
 
 from .storage import storage_root
-from .configuration import machine_config as select_machine, is_remote_machine
+from .config import machine_config as select_machine, is_remote_machine, normalize_machine_profile, absolute_machine_path as _absolute
 from .transport import remote_storage_root_from_config, ssh_command
 
 __all__ = ["ExecutionContext", "resolve_execution_context", "execution_context_from_snapshot", "recorded_execution"]
 EXECUTION_METADATA_KEY = "_autoslurm_execution"
-
-
-def _absolute(value, label):
-    if not isinstance(value, (str, Path)) or not str(value).strip() or not PurePosixPath(str(value)).is_absolute():
-        raise ValueError(f"{label} must be a nonempty absolute machine path.")
-    return posixpath.normpath(str(value))
 
 
 def _names(value, label):
@@ -34,9 +27,10 @@ class ExecutionContext:
     machine_name: str | None
     config: dict
     storage_root: str
-    project_root: str | None
+    project_root: str | None  # Historical input base; new contexts alias results_root.
     results_root: str
     is_remote: bool
+    software_root: str | None = None
 
     def resolve_path(self, value, base="results", *, relative_only=False):
         if not isinstance(value, str) or not value.strip():
@@ -53,7 +47,7 @@ class ExecutionContext:
         roots = {"project": self.project_root, "results": self.results_root, "storage": self.storage_root}
         root = roots[base]
         if root is None:
-            raise ValueError("Machine project_root is required for project-relative paths.")
+            raise ValueError("Saved execution has no root for this path base.")
         return str(PurePosixPath(root) / path)
 
     def resolve_job(self, job):
@@ -61,8 +55,9 @@ class ExecutionContext:
         inputs = _names(job.get("input_args"), "input_args")
         results = _names(job.get("path_args"), "path_args") | {"output_dir"}
         if inputs & results:
-            raise ValueError("An argument cannot use both project and results path bases.")
-        strict = self.project_root is not None or bool(inputs) or "working_directory" in job
+            raise ValueError("An argument cannot be both a required input and a result path.")
+        rooted = bool(self.config.get("results_root") or self.config.get("software_root"))
+        strict = rooted or bool(inputs) or "working_directory" in job
         logical = {}
         resolved = {}
         for name in sorted(inputs | results):
@@ -75,7 +70,7 @@ class ExecutionContext:
             resolved[name] = self.resolve_path(value, "project" if name in inputs else "results", relative_only=strict)
             arguments[name] = resolved[name]
         working_directory = None
-        if self.project_root is not None or "working_directory" in job:
+        if rooted or inputs or "working_directory" in job:
             working_directory = self.resolve_path(job.get("working_directory", "."), "project", relative_only=True)
             if job.get("slurm", {}).get("chdir") is not None:
                 raise ValueError("Use working_directory rather than a separate Slurm chdir directive.")
@@ -84,11 +79,12 @@ class ExecutionContext:
         if working_directory and job.get("slurm", {}).get("output"):
             path = PurePosixPath(log_pattern)
             if path.is_absolute() or ".." in path.parts:
-                raise ValueError("Project-aware Slurm output paths must be relative without traversal.")
+                raise ValueError("Slurm output paths must be relative without traversal.")
             log_pattern = str(PurePosixPath(working_directory) / path)
         return {
             "machine": self.machine_name, "storage_root": self.storage_root,
-            "project_root": self.project_root, "results_root": self.results_root,
+            "results_root": self.results_root,
+            "software_root": self.software_root,
             "working_directory": working_directory,
             "logical_working_directory": job.get("working_directory", ".") if working_directory else None,
             "logical_paths": logical, "resolved_paths": resolved,
@@ -103,8 +99,8 @@ class ExecutionContext:
     def validate_resolved_jobs(self, executions):
         """Preflight prepared paths without resolving the definitions again."""
         checks = set()
-        if self.project_root is not None:
-            checks.add(("-d", self.project_root, "Project root"))
+        if self.project_root is not None and any(item["working_directory"] for item in executions):
+            checks.add(("-d", self.project_root, "Data root"))
         for resolved in executions:
             if resolved["working_directory"]:
                 checks.add(("-d", resolved["working_directory"], "Working directory"))
@@ -131,8 +127,7 @@ def resolve_execution_context(machine_name=None, machine_config=None, *, root_re
     """Resolve one selected profile once; pass this context through an operation."""
     if machine_config is None:
         machine_name, machine_config = select_machine(machine=machine_name)
-    config = dict(machine_config)
-    project = _absolute(config["project_root"], "Machine project_root") if "project_root" in config else None
+    config = normalize_machine_profile(machine_config)
     configured_results = _absolute(config["results_root"], "Machine results_root") if config.get("results_root") else None
     remote = is_remote_machine(config)
     if remote:
@@ -141,7 +136,8 @@ def resolve_execution_context(machine_name=None, machine_config=None, *, root_re
         root = str(storage_root())
     root = _absolute(root, "Storage root")
     results = configured_results or str(PurePosixPath(root) / "results")
-    return ExecutionContext(machine_name, config, root, project, results, remote)
+    software = config.get("software_root") or str(PurePosixPath(root) / "software")
+    return ExecutionContext(machine_name, config, root, results, results, remote, software)
 
 
 def recorded_execution(bundle_path, job_name=None):
@@ -163,7 +159,8 @@ def execution_context_from_snapshot(bundle_path, job_name=None):
     evidence = recorded_execution(bundle_path, job_name)
     return ExecutionContext(
         evidence["machine"], dict(evidence["transport"]),
-        evidence["storage_root"], evidence["project_root"], evidence["results_root"], evidence["is_remote"],
+        evidence["storage_root"], evidence.get("project_root", evidence["results_root"]), evidence["results_root"], evidence["is_remote"],
+        evidence.get("software_root"),
     )
 
 

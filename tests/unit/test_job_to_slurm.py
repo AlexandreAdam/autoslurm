@@ -200,7 +200,7 @@ def test_write_slurm_resolves_relative_output_dir_with_default_results_root():
     )
 
 
-def test_write_slurm_keeps_absolute_output_dir_unchanged():
+def test_configured_data_root_rejects_absolute_output_dir():
     job = {
         "name": "absolute_output_dir_job",
         "slurm": {},
@@ -215,12 +215,8 @@ def test_write_slurm_keeps_absolute_output_dir_unchanged():
         "results_root": "/should/not/be/used",
     }
 
-    write_slurm_content(file, job, machine_config)
-    content = file.getvalue()
-    assert (
-        "--output-dir=/lustre10/scratch/aadam/substructure_lens/results/run_003"
-        in content
-    )
+    with pytest.raises(ValueError, match="relative"):
+        write_slurm_content(file, job, machine_config)
 
 
 def test_write_slurm_resolves_declared_path_args_with_results_root():

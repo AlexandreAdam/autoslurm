@@ -7,7 +7,7 @@ import os
 import shlex
 import subprocess
 
-from .configuration import load_config
+from .config import load_config
 from .definitions import DATE_FORMAT
 from .execution import resolve_execution_context
 from .storage import ensure_storage_dirs, jobs_dir, slurm_dir

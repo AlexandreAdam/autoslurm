@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP6. As of
+Use this recipe with the development installation including MVP7.0c (configuration/path simplification; software preparation is still planned). As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -33,17 +33,17 @@ Client definitions keep paths relative. These are the current bases:
 | Field | Base and behavior |
 |---|---|
 | `script` | Installed application command in the prepared environment |
-| `working_directory` | Project-relative directory; defaults to `.` under the machine's absolute `project_root` |
-| String arguments named in `input_args` | Required, pre-existing project-relative inputs; resolved under `project_root`, independent of `working_directory` |
+| `working_directory` | Directory relative to `results_root`; defaults to `.` when using configured roots |
+| String arguments named in `input_args` | Required, pre-existing inputs relative to `results_root`, independent of `working_directory` |
 | `script_args.output_dir` | Results-relative; AutoSlurm resolves under machine `results_root`, or selected execution storage's `results/` |
 | String arguments named in `path_args` | Same results-relative base, for example a reducer's `parts_dir` |
 | Undeclared arguments | Passed through; relative paths depend on the established working directory |
 | Paths inside application config files | Application-owned; never inspected or rewritten by AutoSlurm |
 
 Configure absolute infrastructure roots once in the selected machine profile;
-keep application declarations relative. Project-aware jobs reject absolute paths
+keep application declarations relative. Jobs using configured software/data roots reject absolute paths
 and `..` traversal in declared inputs, results and working directories. Use
-`working_directory`, not a separate Slurm `chdir`. AutoSlurm validates the project,
+`working_directory`, not a separate Slurm `chdir`. AutoSlurm validates the data root,
 working directory and required inputs before writing scripts or submitting.
 
 For example, an operator-prepared remote profile contains these infrastructure
@@ -53,8 +53,8 @@ settings (replace them with its real isolated locations):
 {
   "hostname": "cluster-development",
   "storage_root": "/cluster/autoslurm-development",
-  "project_root": "/cluster/science-project",
-  "results_root": "/cluster/science-results",
+  "software_root": "/cluster/science-software",
+  "results_root": "/cluster/science-data",
   "venv_path": "/cluster/prepared-environment",
   "slurm_account": "account"
 }
@@ -62,15 +62,27 @@ settings (replace them with its real isolated locations):
 
 Local profiles omit SSH identity and use the process's selected storage root;
 legacy local `path` does not override that selection. Set profile roots through
-the public configuration API; the interactive editor preserves existing roots.
-Custom project-relative Slurm `output` paths need an existing parent directory;
+`asl config --interactive` or the public configuration API. For an existing profile:
+
+```sh
+asl config --machine cluster --software-root /cluster/science-software --results-root /cluster/science-data
+asl config --summary
+```
+
+Root-setting flags only save local configuration; they do not contact a cluster
+or move files. `software_root` is recorded for future preparation, which is not
+implemented yet. Both inputs and outputs live under `results_root`; the data root
+and required working directories/inputs must already exist before preview.
+The two roots default to `<storage_root>/software` and `<storage_root>/results`.
+`storage_root` remains AutoSlurm's internal tracking location.
+Custom relative Slurm `output` paths need an existing parent directory;
 otherwise use the default log destination managed by AutoSlurm.
 
 Inputs must already exist on the selected machine; staging and opaque config
 rewriting are not supported. Declare an upstream job's future results in
 `path_args`, rather than required pre-existing `input_args`. Use fresh study/output
-namespaces for attempts; scientific validity belongs to the client. Legacy jobs
-without project context retain their previous absolute-path behavior.
+namespaces for attempts; scientific validity belongs to the client. Legacy jobs with no explicit software/data roots, input declarations or working
+directory retain their previous absolute-output/current-directory behavior.
 
 ## Save and select an exact definition
 
@@ -339,6 +351,9 @@ with temporary state and mocked submission commands.
 
 ## Configuration and transfer failures
 
+`config` is the canonical command; `configuration` and the installed
+`autoslurm-configuration` entry point remain aliases. Python implementations live
+in `config`; clients keep importing supported functions from `autoslurm`.
 The Python configuration API and terminal editor share one configuration writer.
 Reading local profiles, saving/selecting definitions and cached inspection do not
 contact a cluster. Remote root discovery and transfers are explicit operations;
@@ -355,3 +370,11 @@ as a remedy for a transfer failure.
 Client imports stay under `autoslurm`. Public exports are explicit; accidental
 imports of typing helpers or dataclass utilities are removed. Internal module
 aliases remain for compatibility and do not replace this supported recipe.
+
+An old profile containing only `project_root` is read as `results_root`; equal
+old roots are coalesced. Conflicting old roots are rejected until the operator
+explicitly chooses one with `asl config --machine NAME --results-root PATH`.
+That edit drops the old setting but never moves input/output files. Retain the
+existing data or prepare it at the selected location before submitting new work.
+Saved runs remain readable using their original input/result roots; new execution
+records contain `software_root` and `results_root`, with no duplicate project root.

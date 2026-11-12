@@ -7,7 +7,7 @@ import subprocess
 
 from .array_status import canonical_job_id, parent_job_id
 from .transport import ssh_command
-from .configuration import is_remote_machine
+from .config import is_remote_machine
 
 QUERY_START_DATE = "2000-01-01"
 

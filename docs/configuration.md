@@ -1,31 +1,53 @@
-# Configuration
+# Config
 
-Run `autoslurm-configuration` to interactively define one or more machines and choose which one is considered the default. You can also inspect the current configuration without entering the menu by passing `--view`.
+Use `asl config` to manage machine profiles. Each machine has two scientific
+locations: `software_root` for repositories/prepared environments and
+`results_root` for inputs, working directories and outputs. They can live on
+different cluster filesystems. Application definitions keep relative paths.
 
-```bash
-autoslurm-configuration --view
-```
-The default machine is the one AutoSlurm uses whenever `--machine` is omitted.
-
-```bash
-autoslurm-configuration
-```
-
-The first time you run the command it immediately prompts for the information needed to create a `local` machine (path, environment activation command, SLURM account) and stores it in `~/.autoslurmconfig`. 
-On subsequent runs you get a menu:
-
-1. **Update an existing machine** – edit the stored fields for any configured machine.
-2. **Add a new machine** – create another entry (remote or local) and optionally mark it as the default.
-3. **Change the default machine** – switch which machine auto-start routines and `autoslurm` commands use when no `--machine` flag is present.
-4. **Exit** – leave the configuration untouched.
-
-After you finish the menu, AutoSlurm ensures two directories exist inside its storage root: `jobs/` (job metadata) and `slurm/` (generated SLURM scripts). You can override the storage location by setting `AUTOSLURM_STORAGE_ROOT` before running the configuration command:
-
-```bash
-export AUTOSLURM_STORAGE_ROOT=/tmp/autoslurm_storage
-autoslurm-configuration
+```sh
+asl config --interactive
+asl config --summary
+asl config --view
 ```
 
-The same command also creates those directories on every remote machine under `~/.autoslurm/` (the storage root is constant unless you configure a custom `path` per machine). When a remote machine is added the wizard asks whether you want to reference it via an SSH config alias or by providing the host URL plus username; whichever option you choose determines the fields that must be filled. Re-run `autoslurm-configuration` whenever you need to refresh credentials, add more machines, or change the default profile—it will recreate or synchronize the storage directories for you.
+The interactive editor creates profiles and supports editing, adding, renaming,
+choosing the default and explicit validation. Adding/editing a machine retains
+its environment/connectivity validation behavior, including remote SSH checks.
+The default machine is used when an operation omits its machine selection.
+To update only the two roots of an existing profile without remote commands:
 
-Refer to [SSH Configuration](ssh_configuration.md) for help preparing SSH keys, `ssh_config`, and common flags when defining remote machines.
+```sh
+asl config --machine cluster --software-root /home/user/software --results-root /scratch/user/studies
+asl config --set-default cluster
+```
+
+For example, `input_args = ["input_file"]` with `input_file = "inputs/data.json"`
+and `output_dir = "study-42/summary"` both resolve under `results_root`.
+A relative `working_directory` uses that same base; it does not change how
+declared arguments resolve. Required inputs/data working directories must exist
+before preview/submission; future output subdirectories need not exist yet.
+The software location does not become the job's working directory.
+
+Root settings are absolute infrastructure paths. Defaults are
+`<storage_root>/software` and `<storage_root>/results`; summaries show symbolic
+defaults without probing a remote host, and execution records save resolved paths.
+Legacy unrooted jobs with no input/cwd declarations retain their old behavior.
+`storage_root` separately holds AutoSlurm's internal definitions, scripts, receipts
+and caches. Local configuration is `<storage_root>/config.json`, selected through
+`AUTOSLURM_STORAGE_ROOT` or the process root selector. Configuration writes are
+atomic; saving roots does not move files, clone repositories or install software.
+Cloning/prepared releases remain planned in MVP7.
+
+An old `project_root` alone becomes `results_root`; equal old roots are coalesced.
+Different old project/result roots need an explicit choice with `--results-root`.
+This removes the old profile setting without moving data. Existing saved runs
+retain their recorded input/output paths and are not redirected by this edit.
+New profiles with configured roots require relative application paths; absolute
+output overrides previously allowed by results-only profiles are rejected.
+
+`configuration` and the existing `autoslurm-configuration` command remain aliases.
+New installations also expose `autoslurm-config`; the existing editable installation
+can use `asl config` immediately without reinstalling console scripts.
+See [the client workflow](../agent/01_client_workflow.md) and
+[SSH configuration](ssh_configuration.md) for integration and connection details.

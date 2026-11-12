@@ -183,7 +183,7 @@ def mock_load_config(monkeypatch, tmp_path):
 
     monkeypatch.setattr("autoslurm.bundle_selection.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.run_slurm.load_config", lambda: mock_config)
-    monkeypatch.setattr("autoslurm.configuration.load_config", lambda: mock_config)
+    monkeypatch.setattr("autoslurm.config.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.load_config", lambda: mock_config)
     from autoslurm.storage import ensure_storage_dirs, set_storage_root
     set_storage_root(tmp_path)

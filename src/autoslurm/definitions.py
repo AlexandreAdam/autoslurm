@@ -12,7 +12,7 @@ MACHINE_KEYS = [
     "username",
     "key_path",
     "results_root",
-    "project_root",
+    "software_root",
     "storage_root",
     "venv_path",
     "env_command",

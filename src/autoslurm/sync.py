@@ -6,7 +6,7 @@ from .storage import storage_root
 from .execution import resolve_execution_context, is_remote_machine
 from .transport import remote_storage_root_from_config
 from .file_transfer import pull_storage_directory
-from .configuration import machine_config as resolve_machine_config
+from .config import machine_config as resolve_machine_config
 
 SYNC_DIRECTORIES = ("jobs", "slurm", "out")
 
