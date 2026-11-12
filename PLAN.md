@@ -27,6 +27,8 @@ This file is the source of truth for active scope, task order and progress.
   needs implementation and mocked verification. Result retrieval remains optional.
 - **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
+- **Repository workflows:** removed the two GitHub Actions workflow files on
+  `dev`; GitHub repository settings and documentation integrations stay as they were.
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
   and [baseline results](REFACTORING_DOCS/design/MVP0_safe_development.md#local-baseline-mvp01).
 - **Current execution scope:** local only. Mock Slurm and remote commands in
@@ -536,6 +538,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP7.0b Cloning and filesystem separation | User-confirmed requirements recorded with proposed software_root, first-clone/fetch behavior, independent input/result locations, configuration visibility and producing-path evidence. Reviewed local path/configuration implementation and design links; documentation only, no application tests or cluster operations |
 | 2026-11-12 | MVP7.0c Config and two-root path implementation | 405 offline tests pass in 3.22 s, 39 expected warnings, report `.development/test-runs/config-reviewed.xml`. Added 13 checks, including nine initial failures for new behavior; shared input/cwd/output roots, configured software evidence, no-network edits, explicit legacy merge, invalid roots and historical/new producing paths verified. Existing scientific fixtures use temporary merged data roots. Base config help, pre-existing main config retention and empty job/runtime directories/rollback verified at closure. No cluster operations/install/migration; no mvp7 completion tag. Task commit: `git log --grep '^MVP7.0c:'` |
 | 2026-11-12 | MVP7.0d SSH aliases only | 427 offline tests passed in 3.23 s, 39 expected warnings; 22 new cases (14 initially failing, one initial history check passing, seven later CLI/session cases). Canonical alias config/editor/CLI and SSH/SCP/rsync/status/session evidence verified, historical transports retained. Report `.development/test-runs/ssh-alias-final.xml`. Local rusty profile switched from a mistaken hostname value to ssh_alias rusty, with original backup and all other settings preserved; SSH config untouched. No cluster/install/push operations. Task commit: `git log --grep '^MVP7.0d:'`; full MVP7 stays open |
+| 2026-11-12 | MAINT.1 Remove repository workflow files | Removed only the CI/Codecov and book-deployment Actions files. Reverted extra local documentation/hosting changes; unintended remote settings changes were restored and verified: Actions enabled, Read the Docs webhook active, Pages legacy source gh-pages at /. Diff checks passed; application code unchanged. Task commit: `git log --grep '^MAINT.1:'` |
 
 ## How we work
 
