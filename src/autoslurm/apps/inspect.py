@@ -1,67 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import re
 import shutil
 import subprocess
-import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-from ..experiment_context import _array_task_log_job_ids, job_context, latest_log_context
-from ..save_load_jobs import bundle_snapshots, latest_bundle_summaries, load_bundle
-from ..status_views import bundle_job_rows_from_jobs, bundle_jobs_context
-from ..storage import out_dir
-from ..sync import sync_machine
+from ..array_status import declared_array_indices
 
 
-DATE_FORMATS = (
-    "%Y-%m-%dT%H:%M:%S",
-    "%Y-%m-%d",
-    "%Y%m%d%H%M%S",
-    "%Y%m%d",
-)
-
-
-def _parse_date(value: Optional[str]) -> Optional[datetime]:
-    if value is None:
-        return None
-    for fmt in DATE_FORMATS:
-        try:
-            return datetime.strptime(value, fmt)
-        except ValueError:
-            continue
-    try:
-        return datetime.fromisoformat(value)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            "Date must be ISO formatted (e.g. 2023-09-01T12:00:00) or use YYYYMMDDHHMMSS."
-        ) from exc
-
-
-def _build_reference_date(
-    date: Optional[str],
-    year: Optional[int],
-    month: Optional[int],
-    day: Optional[int],
-    hour: Optional[int],
-    minute: Optional[int],
-    second: Optional[int],
-) -> Optional[datetime]:
-    if date is not None:
-        return _parse_date(date)
-    if any(value is not None for value in (year, month, day, hour, minute, second)):
-        now = datetime.now()
-        return datetime(
-            year=year if year is not None else now.year,
-            month=month if month is not None else 1,
-            day=day if day is not None else 1,
-            hour=hour if hour is not None else 0,
-            minute=minute if minute is not None else 0,
-            second=second if second is not None else 0,
-        )
-    return None
+from .status import _build_reference_date
 
 
 def _copy_to_clipboard(text: str) -> None:
@@ -88,198 +35,12 @@ def _emit(text: str, copy_to_clipboard: bool = False) -> None:
         _copy_to_clipboard(text)
 
 
-def _resolve_job_selector(bundle_name: str, selector: str, reference_date: Optional[datetime]) -> str:
-    jobs, _, _ = load_bundle(bundle_name, reference_date)
-    if selector.isdigit():
-        index = int(selector)
-        if 1 <= index <= len(jobs):
-            return jobs[index - 1]["name"]
-        raise KeyError(f"Job index '{selector}' is out of range.")
-    job = next((item for item in jobs if item["name"] == selector), None)
-    if job is None:
-        raise KeyError(f"Job '{selector}' not found.")
-    return job["name"]
-
-
-def _resolve_bundle_target(
-    bundle_arg: Optional[str], latest: bool, reference_date: Optional[datetime]
-) -> str:
-    rows = list(bundle_snapshots(reference_date))
-    rows.sort(key=lambda entry: entry["date"], reverse=True)
-
-    if latest:
-        if not rows:
-            raise LookupError("No saved bundles found.")
-        return rows[0]["bundle"]
-
-    assert bundle_arg is not None
-    if bundle_arg.isdigit():
-        if not rows:
-            raise LookupError("No saved bundles found.")
-        index = int(bundle_arg)
-        if index < 1 or index > len(rows):
-            raise KeyError(f"Bundle index '{bundle_arg}' is out of range.")
-        return rows[index - 1]["bundle"]
-    return bundle_arg
-
-
-def _strip_status_instruction(text: str) -> str:
-    lines = text.splitlines()
-    filtered = [line for line in lines if line.strip() != "Use --job <number|name> to inspect a job."]
-    return "\n".join(filtered) if filtered else text
-
-
-def _tail_text(text: str, lines: int) -> str:
-    parts = text.splitlines()
-    return "\n".join(parts[-lines:]) if parts else text
-
-
-def _list_job_log_files(bundle_name: str, job_selector: str, reference_date: Optional[datetime]) -> str:
-    jobs, _, _ = load_bundle(bundle_name, reference_date)
-    if job_selector.isdigit():
-        index = int(job_selector)
-        if index < 1 or index > len(jobs):
-            raise KeyError(f"Job index '{job_selector}' is out of range.")
-        job = jobs[index - 1]
-    else:
-        job = next((item for item in jobs if item["name"] == job_selector), None)
-        if job is None:
-            raise KeyError(f"Job '{job_selector}' not found.")
-    job_name = str(job["name"])
-    job_id = job.get("id")
-    files = sorted(
-        (
-            path
-            for path in out_dir().glob(f"{job_name}-*.out")
-            if job_id is None or _log_path_matches_job_id(path, str(job_id))
-        ),
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
-    )
-    if not files:
-        return f"No local log files found for job '{job_name}'. Try `asl sync` or `asl logs --refresh`."
-    return "\n".join(str(path) for path in files)
-
-
-def _log_path_matches_job_id(path: Path, job_id: str) -> bool:
-    return re.search(rf"-{re.escape(job_id)}(?:[_.]\d+)?$", path.stem) is not None
-
-
-def _list_array_task_log_files(
-    bundle_name: str, job_selector: str, array_task: str, reference_date: Optional[datetime]
-) -> str:
-    jobs, _, _ = load_bundle(bundle_name, reference_date)
-    if job_selector.isdigit():
-        index = int(job_selector)
-        if index < 1 or index > len(jobs):
-            raise KeyError(f"Job index '{job_selector}' is out of range.")
-        job = jobs[index - 1]
-    else:
-        match = next((item for item in jobs if item["name"] == job_selector), None)
-        if match is None:
-            raise KeyError(f"Job '{job_selector}' not found.")
-        job = match
-
-    job_name = str(job["name"])
-    job_id = job.get("id")
-    if job_id is None:
-        return f"Job '{job_name}' has no submitted id, cannot select array task '{array_task}'."
-    log_job_ids = _array_task_log_job_ids(job_id, array_task, job.get("machine"))
-    files = sorted(
-        (
-            path
-            for path in out_dir().glob(f"{job_name}-*.out")
-            if any(_log_path_matches_job_id(path, log_job_id) for log_job_id in log_job_ids)
-        ),
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
-    )
-    if not files:
-        return (
-            f"No local log files found for job '{job_name}' array task '{array_task}'. "
-            f"Try `asl sync` or `asl logs --refresh`."
-    )
-    return "\n".join(str(path) for path in files)
-
-
-def _parse_array_task_filter(
-    tokens: Optional[list[str]], parser: argparse.ArgumentParser
-) -> Optional[set[int]]:
-    if tokens is None:
-        return None
-    if not tokens:
-        return None
-
-    selected: set[int] = set()
-    for token in tokens:
-        if token.isdigit():
-            selected.add(int(token))
-            continue
-        if "-" in token:
-            left, right = token.split("-", 1)
-            if left.isdigit() and right.isdigit():
-                start = int(left)
-                end = int(right)
-                if start > end:
-                    parser.error(f"Invalid array range '{token}': start must be <= end.")
-                selected.update(range(start, end + 1))
-                continue
-        parser.error(
-            f"Invalid array selector '{token}'. Use integer indices or ranges like 1-3."
-        )
-    return selected
-
-
-def _resolve_job_row(
-    jobs: list[dict],
-    bundle_name: str,
-    bundle_date: datetime,
-    selector: str,
-    *,
-    show_array_tasks: bool,
-    array_tasks: Optional[set[int]],
-) -> tuple[dict, Optional[str]]:
-    if show_array_tasks:
-        _, rows = bundle_job_rows_from_jobs(
-            jobs,
-            bundle_date,
-            show_array_tasks=True,
-            array_tasks=array_tasks,
-        )
-        if selector.isdigit():
-            index = int(selector)
-            if index < 1 or index > len(rows):
-                raise KeyError(f"Job index '{selector}' is out of range.")
-            row = rows[index - 1]
-        else:
-            row = next((item for item in rows if item["name"] == selector), None)
-            if row is None:
-                raise KeyError(f"Job '{selector}' not found.")
-        job = next((item for item in jobs if item["name"] == row["name"]), None)
-        if job is None:
-            raise KeyError(f"Job '{selector}' not found.")
-        job_id_raw = row.get("job_id_raw")
-        array_task = None
-        if isinstance(job_id_raw, str):
-            match = re.search(r"[_.](\d+)$", job_id_raw)
-            if match is not None:
-                array_task = match.group(1)
-        return job, array_task
-
-    if selector.isdigit():
-        index = int(selector)
-        if 1 <= index <= len(jobs):
-            return jobs[index - 1], None
-        raise KeyError(f"Job index '{selector}' is out of range.")
-    job = next((item for item in jobs if item["name"] == selector), None)
-    if job is None:
-        raise KeyError(f"Job '{selector}' not found.")
-    return job, None
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Inspect job output logs.")
     parser.add_argument("bundle", nargs="*", help="Bundle name/index to inspect. Supports ranges like 1-3.")
+    parser.add_argument("--view", action="store_true", help="List saved runs with shared status observations.")
+    parser.add_argument("--list", action="store_true", help="Show selected bundle jobs.")
+    parser.add_argument("--full", action="store_true", help="Include scripts and bounded log tails.")
     parser.add_argument("--latest", "-l", action="store_true", help="Use the latest saved bundle.")
     parser.add_argument("--job", help="Select a job by index or name.")
     parser.add_argument(
@@ -295,11 +56,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--script", action="store_true", help="Print the rendered SLURM script for --job.")
     parser.add_argument("--status", action="store_true", help="Print SLURM status for --job.")
-    parser.add_argument("--log", action="store_true", help="Print latest .out content (bundle or selected job).")
+    parser.add_argument("--log", action="store_true", help="Print bounded stdout/stderr for submitted identities.")
     parser.add_argument("--logs", dest="log", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--tail", type=int, help="Print only the last N lines of the selected log output.")
-    parser.add_argument("--list-files", action="store_true", help="List local .out files for the selected job.")
-    parser.add_argument("--refresh", action="store_true", help="Sync the configured default machine before reading logs.")
+    parser.add_argument("--list-files", action="store_true", help="List resolved log paths and availability.")
+    parser.add_argument("--refresh", action="store_true", help="Refresh selected producing-machine evidence and bounded log tails.")
     parser.add_argument("--clipboard", "--clip", action="store_true", help="Copy output to clipboard.")
     parser.add_argument("--date", help="Optional timestamp to target the bundle closest to the provided date.")
     parser.add_argument("--year", type=int, help="Reference year, e.g. 2025.")
@@ -311,199 +72,96 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> None:
-    args = sys.argv[1:] if argv is None else list(argv)
+def main(argv=None):
+    import json
+    from ..inspection import inspect_bundles
+    from ..save_load_jobs import load_bundle_from_path, bundle_snapshots
+    from ..status_views import rows_from_resolved, bundle_jobs_context_from_rows, observation_text
+    from .status import _selected_paths, _parse_array_task_filter
     parser = _build_parser()
-    if not args:
+    parser.add_argument("--bundle-file", type=Path, help="Select an exact saved snapshot.")
+    parser.add_argument("--receipt", type=Path, help="Select the exact snapshot referenced by a local receipt.")
+    parser.add_argument("--json", action="store_true", help="Return the shared structured observation.")
+    parser.add_argument("--cached", action="store_true", help="Read cached scheduler evidence without network calls.")
+    args = parser.parse_args(argv)
+    if args.cached and args.refresh:
+        parser.error("Choose cached evidence or an explicit refresh.")
+    if args.view:
+        from .status import main as status_main
+        forwarded = ["--cached"] if args.cached else []
+        for field in ("date", "year", "month", "day", "hour", "minute", "second"):
+            if getattr(args, field) is not None:
+                forwarded.extend(["--" + field, str(getattr(args, field))])
+        if args.json:
+            forwarded.append("--json")
+        status_main(forwarded)
+        return
+    if args.full:
+        args.script = args.log = True
+    if argv == [] or (not args.bundle and not args.latest and not args.bundle_file and not args.receipt):
         parser.print_help()
         return
-    parsed = parser.parse_args(args)
-
-    if parsed.latest and parsed.bundle:
-        parser.error("Specify either a bundle name or --latest, not both.")
-    if not parsed.latest and not parsed.bundle:
-        parser.error("Provide a bundle name or --latest.")
-    if parsed.tail is not None and parsed.tail <= 0:
-        parser.error("--tail must be a positive integer.")
-    if parsed.list_files and not parsed.job:
-        parser.error("--list-files requires --job.")
-    array_tasks = _parse_array_task_filter(parsed.array, parser)
-    if parsed.array_task is not None and not parsed.job:
-        parser.error("--array-task requires --job.")
-    if parsed.script and not parsed.job:
-        parser.error("--script requires --job.")
-    if parsed.status and not parsed.job:
-        parser.error("--status requires --job.")
-    if len(parsed.bundle) > 1 and any((parsed.job, parsed.script, parsed.list_files, parsed.log, parsed.tail is not None)):
-        parser.error("Multi-bundle selection only supports status-style output (no --job/--script/--log/--tail/--list-files).")
-
-    reference_date = _build_reference_date(
-        parsed.date,
-        parsed.year,
-        parsed.month,
-        parsed.day,
-        parsed.hour,
-        parsed.minute,
-        parsed.second,
-    )
-
-    if parsed.refresh:
-        sync_machine()
-
-    rows = list(bundle_snapshots(reference_date))
-    rows.sort(key=lambda entry: entry["date"], reverse=True)
-    try:
-        if parsed.latest:
-            if not rows:
-                raise LookupError("No saved bundles found.")
-            targets: list[tuple[str, Optional[datetime]]] = [(str(rows[0]["bundle"]), rows[0]["date"])]
-        else:
-            targets = []
-            for token in parsed.bundle:
-                if token.isdigit():
-                    index = int(token)
-                    if index < 1 or index > len(rows):
-                        raise KeyError(f"Bundle index '{token}' is out of range.")
-                    row = rows[index - 1]
-                    targets.append((str(row["bundle"]), row["date"]))
-                    continue
-                if "-" in token:
-                    left, right = token.split("-", 1)
-                    if left.isdigit() and right.isdigit():
-                        start, end = int(left), int(right)
-                        if start > end:
-                            raise KeyError(f"Invalid range '{token}': start must be <= end.")
-                        for index in range(start, end + 1):
-                            if index < 1 or index > len(rows):
-                                raise KeyError(f"Bundle index '{index}' from range '{token}' is out of range.")
-                            row = rows[index - 1]
-                            targets.append((str(row["bundle"]), row["date"]))
-                        continue
-                targets.append((token, reference_date))
-    except LookupError as exc:
-        _emit(str(exc), parsed.clipboard)
-        return
-    except KeyError as exc:
-        parser.error(str(exc))
-
-    if parsed.list_files:
-        bundle_name, bundle_date = targets[0]
-        if parsed.array is not None:
-            jobs, _, _ = load_bundle(bundle_name, bundle_date)
-            if parsed.job is None:
-                _emit(bundle_jobs_context(bundle_name, bundle_date, show_array_tasks=True, array_tasks=array_tasks), parsed.clipboard)
-            else:
-                selected_job, selected_array_task = _resolve_job_row(
-                    jobs,
-                    bundle_name,
-                    bundle_date,
-                    parsed.job,
-                    show_array_tasks=True,
-                    array_tasks=array_tasks,
-                )
-                if selected_array_task is not None:
-                    _emit(
-                        _list_array_task_log_files(bundle_name, selected_job["name"], selected_array_task, bundle_date),
-                        parsed.clipboard,
-                    )
-                else:
-                    _emit(_list_job_log_files(bundle_name, selected_job["name"], bundle_date), parsed.clipboard)
-        elif parsed.array_task is not None:
-            _emit(_list_array_task_log_files(bundle_name, parsed.job, parsed.array_task, bundle_date), parsed.clipboard)
-        else:
-            _emit(_list_job_log_files(bundle_name, parsed.job, bundle_date), parsed.clipboard)
-        return
-
-    if parsed.script:
-        bundle_name, bundle_date = targets[0]
-        _emit(
-            job_context(
-                bundle_name,
-                parsed.job,
-                bundle_date,
-                include_script=True,
-                include_logs=False,
-                include_status=False,
-            ),
-            parsed.clipboard,
-        )
-        return
-
-    if parsed.status:
-        bundle_name, bundle_date = targets[0]
-        _emit(
-            job_context(
-                bundle_name,
-                parsed.job,
-                bundle_date,
-                include_script=False,
-                include_logs=False,
-                include_status=True,
-            ),
-            parsed.clipboard,
-        )
-        return
-
-    wants_log_output = parsed.log or parsed.job is not None or parsed.tail is not None
-    if not wants_log_output:
-        sections: list[str] = []
-        for bundle_name, bundle_date in targets:
-            if parsed.array is not None:
-                status_text = bundle_jobs_context(
-                    bundle_name,
-                    bundle_date,
-                    show_array_tasks=True,
-                    array_tasks=array_tasks,
-                )
-            else:
-                status_text = bundle_jobs_context(bundle_name, bundle_date)
-            sections.append(f"Bundle: {bundle_name}")
-            sections.append(_strip_status_instruction(status_text))
-        _emit("\n\n".join(sections), parsed.clipboard)
-        return
-
-    bundle_name, bundle_date = targets[0]
-    if parsed.job is not None:
-        if parsed.array is not None:
-            jobs, _, _ = load_bundle(bundle_name, bundle_date)
-            selected_job, selected_array_task = _resolve_job_row(
-                jobs,
-                bundle_name,
-                bundle_date,
-                parsed.job,
-                show_array_tasks=True,
-                array_tasks=array_tasks,
-            )
-            if parsed.script or parsed.status:
-                content = job_context(
-                    bundle_name,
-                    selected_job["name"],
-                    bundle_date,
-                    include_script=parsed.script,
-                    include_logs=False,
-                    include_status=parsed.status,
-                )
-            else:
-                content = latest_log_context(
-                    bundle_name,
-                    bundle_date,
-                    selected_job["name"],
-                    selected_array_task,
-                )
-        else:
-            if parsed.script or parsed.status:
-                content = job_context(
-                    bundle_name,
-                    parsed.job,
-                    bundle_date,
-                    include_script=parsed.script,
-                    include_logs=False,
-                    include_status=parsed.status,
-                )
-            else:
-                content = latest_log_context(bundle_name, bundle_date, parsed.job, parsed.array_task)
+    if sum([bool(args.bundle), args.latest, args.bundle_file is not None, args.receipt is not None]) > 1:
+        parser.error("Choose one bundle selector.")
+    reference = _build_reference_date(args.date, args.year, args.month, args.day, args.hour, args.minute, args.second)
+    entries = sorted(bundle_snapshots(reference), key=lambda item: item["date"], reverse=True)
+    if args.receipt:
+        from ..submission import load_submission
+        paths = [Path(load_submission(args.receipt)["bundle_path"])]
+    elif args.bundle_file:
+        paths = [args.bundle_file]
+    elif args.latest:
+        if not entries:
+            print("No saved bundles found.")
+            return
+        paths = [entries[0]["path"]]
     else:
-        content = latest_log_context(bundle_name, bundle_date, parsed.job, parsed.array_task)
-    if parsed.tail is not None:
-        content = _tail_text(content, parsed.tail)
-    _emit(content, parsed.clipboard)
+        paths = _selected_paths(args.bundle, entries, parser, reference)
+    # Resolve display indices before the observation call; this never queries.
+    selected_name = args.job
+    selected_task = int(args.array_task) if args.array_task is not None else None
+    array_tasks = _parse_array_task_filter(args.array, parser)
+    if args.job and len(paths) != 1:
+        parser.error("A job selector requires one exact bundle.")
+    if args.job:
+        jobs, _, _ = load_bundle_from_path(paths[0])
+        if args.job.isdigit():
+            pairs = [(job["name"], index) for job in jobs for index in (declared_array_indices((job.get("slurm") or {}).get("array")) or [None])] if args.array is not None else [(job["name"], None) for job in jobs]
+            if array_tasks is not None:
+                pairs = [pair for pair in pairs if pair[1] in array_tasks]
+            if not 1 <= int(args.job) <= len(pairs):
+                parser.error("Job index is out of range.")
+            selected_name, selected_task = pairs[int(args.job) - 1]
+        elif args.job not in {job["name"] for job in jobs}:
+            parser.error("Selected job is absent from this snapshot.")
+    logs = args.log or args.list_files or (args.job is not None and not args.script and not args.status)
+    views = inspect_bundles(paths, refresh=not args.cached, include_logs=logs, job_name=selected_name,
+                            task_index=selected_task, tail=40 if args.tail is None else args.tail,
+                            include_script=args.script, refresh_logs=args.refresh and not args.cached)
+    if args.json:
+        _emit(json.dumps(views[0] if len(views) == 1 else views, indent=2), args.clipboard)
+        return
+    parts = []
+    for path, view in zip(paths, views):
+        if view["state"] == "broken":
+            parts.append(f"Run: broken ({path})")
+            parts.extend(f"Observation error: {error['source']}: {error['message']}" for error in view["errors"])
+            continue
+        jobs, _, date = load_bundle_from_path(path)
+        parts.append(observation_text(view))
+        if args.script:
+            parts.extend(item["content"] or f"script missing: {item['path']}" for item in view.get("scripts", []))
+        if not logs and not args.script:
+            visible = [job for job in jobs if selected_name is None or job["name"] == selected_name]
+            rows = rows_from_resolved(visible, [job for job in view["jobs"] if selected_name is None or job["name"] == selected_name], show_array_tasks=args.array is not None, array_tasks=array_tasks)
+            parts.append(bundle_jobs_context_from_rows(Path(path).stem.rsplit("_", 1)[0], date, rows, show_array_tasks=args.array is not None))
+        if logs:
+            for log in view["logs"]:
+                parts.append(log.get("path", ""))
+                if args.list_files:
+                    parts.append(f"Log {log['state']}")
+                else:
+                    parts.append(log.get("text", f"Log {log['state']}: {log.get('error', '')}"))
+            if not view["logs"]:
+                parts.append("No logs found for this submitted identity.")
+    _emit("\n".join(parts), args.clipboard)

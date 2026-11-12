@@ -1,10 +1,27 @@
-# ACP Actions Reference
+# ACP actions reference
 
-AutoSlurm exposes a small Agent Communication Protocol (ACP) whose actions are documented in `src/autoslurm/acp_action.json`. Each payload follows the shape `{"action": "...", ...}` and returns `{"status": "...", "result": ...}`. The available actions are:
+`execute_acp({"action": "...", ...})` returns `status` and `result`, or an error
+message. Discover supported actions with `action_definitions()`; metadata lives
+in `src/autoslurm/acp_action.json`. Use the owning installation's metadata.
 
-1. **inspect_experiments**: returns the `autoslurm.experiment_context` snapshot (bundle JSON + scripts + `.out` logs) for a given bundle and optional date.
-2. **list_experiments**: lists the available bundle JSON files (`jobs/<bundle>_*.json`) so an agent knows which timestamps are available and which jobs they contain.
-3. **schedule**: persists a job dict into storage (new bundle or appended bundle), mirroring what `autoslurm.schedule_job(...)` does.
-4. **gather_context**: returns the `autoslurm.agent_context` dump (docs + examples + schema) so the agent documentation can be ingested via ACP. Accepts an optional `sections` list to limit which numbered files are concatenated or a `task` keyword (e.g., `inspect_experiments`, `schedule`) to automatically gather the summary sections associated with that action.
+| Action | Purpose |
+|---|---|
+| `list_runs` | Discover local exact run paths; optional `bundle` filter |
+| `inspect_run` | Structured exact inspection by `bundle_path` or `receipt_path`; fresh by default |
+| `list_submissions` | Discover local incremental submission receipts |
+| `inspect_submission` | Read an exact receipt; explicit `refresh` fetches execution-side evidence |
+| `schedule` | Save a definition; never dispatches work |
+| `gather_context` | Read selected guidance sections or a task recipe |
+| `list_experiments` | Older bundle-specific listing; returns exact snapshot paths |
+| `inspect_experiments` | Human overview with scripts and bounded logs; use `inspect_run` for structured evidence |
 
-Tools should call `autoslurm.acp.execute_acp(...)` with one of the above actions. Use `autoslurm.acp.action_definitions()` to discover the allowed payload structure programmatically if needed. The new `autoslurm-agent-context` CLI/`agent_context()` API can serve as a companion reference tool for the agent documentation that underpins the ACP.
+`inspect_run` accepts optional `include_logs`, `job_name`, `task_index`, `tail`,
+`max_log_bytes`, `max_logs`, and `refresh`. Setting `refresh: false` performs no
+network calls and labels cached scheduler/remote-log evidence stale or absent.
+Default refresh can query the producing cluster and fetch requested log tails.
+Inspection never submits/cancels work; submission uses the public Python/CLI
+surface and requires authorization for that lane.
+
+A response with `status: success` can contain failed queries, unknown tasks or
+failed computation. Read `result.freshness`, `errors`, task states and receipt
+outcomes. `01_client_workflow.md` defines the evidence contract and next steps.

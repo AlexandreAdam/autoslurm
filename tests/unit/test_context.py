@@ -46,7 +46,7 @@ def test_schedule_context_keywords_only():
     assert "Task: Inspect Experiments" not in context
 
 
-@pytest.mark.parametrize("task", ["schedule", "list_experiments", "inspect_experiments"])
+@pytest.mark.parametrize("task", ["schedule", "list_experiments", "inspect_experiments", "list_runs", "inspect_run"])
 def test_task_context_delivers_current_client_contract(task):
     response = execute_acp({"action": "gather_context", "task": task})
     assert response["status"] == "success"

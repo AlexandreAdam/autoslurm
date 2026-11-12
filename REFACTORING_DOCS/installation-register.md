@@ -2,7 +2,7 @@
 
 ## Status
 
-**MVP2 local submission and client contract verified, 2026-11-11.** Base Conda retains the original source
+**MVP3 local inspection and client contract verified, 2026-11-11.** Base Conda retains the original source
 at detached baseline HEAD. A separate development checkout, environment and
 state root are operational. Cluster inventory and operations remain deferred
 by the user's local-only instruction. No release has been promoted.
@@ -12,15 +12,15 @@ by the user's local-only instruction. No release has been promoted.
 | Field | Stable workstation | Development workstation |
 |---|---|---|
 | Machine/profile identity | Local workstation; no machine configuration found at resolved config path | Not established |
-| Checkout and source reference | `/Users/aadam/Projects/autoslurm`, detached HEAD `33bcbd34fb167fca67aa64739a013073c64167b1`; application source/tests unchanged; documentation working copies retained | `/Users/aadam/Projects/autoslurm/.development/checkout`, branch `codex/mvp0-isolation`; latest task commit located with `git log --grep '^MVP2.3:'`; local milestone tag `mvp2` |
+| Checkout and source reference | `/Users/aadam/Projects/autoslurm`, detached HEAD `33bcbd34fb167fca67aa64739a013073c64167b1`; application source/tests unchanged; documentation working copies retained | `/Users/aadam/Projects/autoslurm/.development/checkout`, branch `codex/mvp0-isolation`; latest task commit located with `git log --grep '^MVP3.3:'`; local milestone tag `mvp3` |
 | Python environment | `/opt/homebrew/Caskroom/miniforge/base`; Python 3.14.7, unchanged | `/Users/aadam/Projects/autoslurm/.development/venv`; Python 3.14.7; installed offline from local cache |
 | Actual import location | `/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; package 0.1.0; editable install points to stable source | `/Users/aadam/Projects/autoslurm/.development/checkout/src/autoslurm/__init__.py`; separate editable install, version 0.1.0; use path/branch to distinguish these unreleased installs |
 | Command entry points | `/opt/homebrew/Caskroom/miniforge/base/bin/asl` and `/opt/homebrew/Caskroom/miniforge/base/bin/autoslurm` | `/Users/aadam/Projects/autoslurm/.development/asl` and `.development/python` wrappers; actual executables under `.development/venv/bin/` |
 | Helper revision and invocation | Not applicable locally; remote helper not inspected | Remote behavior will be mocked |
 | Configuration and tracking root | `/Users/aadam/Projects/autoslurm`; resolved `config.json` absent | `/Users/aadam/Projects/autoslurm/.development/state`, selected by both wrappers through `AUTOSLURM_STORAGE_ROOT`; no machine config created |
-| Script/log locations | Root-relative `jobs/`, `slurm/`, `out/`; no non-dot files at verification | `jobs/`, `slurm/`, `out/` and new `submissions/` receipts under selected state root; tests use fresh roots under `.development/test-runs/` |
+| Script/log locations | Root-relative `jobs/`, `slurm/`, `out/`; no non-dot files at verification | `jobs/`, `slurm/`, `out/` and new `submissions/` receipts and `observations/` caches under selected state root; tests use fresh roots under `.development/test-runs/` |
 | Application working/result roots | Not configured/verified; no application launched | Installed `science-demo` 0.0.1; mocked reference runs use temporary application/state roots. Direct installed-client check under `.development/test-runs/mvp03-installed-client/`; no persistent machine profile created |
-| Evidence source and verification time | Executable/prefix, metadata/import, storage API, detached HEAD and no source diff; 2026-11-11 | Import/storage identity, 295 offline tests, scientific reference and local/mocked remote submission recovery; 2026-11-11 |
+| Evidence source and verification time | Executable/prefix, metadata/import, storage API, detached HEAD and no source diff; 2026-11-11 | Import/storage identity, 313 offline tests, scientific reference and local/mocked remote inspection/refresh; 2026-11-11 |
 
 Add cluster columns or rows when remote inventory is authorized. Every run
 still targets one selected machine. Store nonsecret paths and identities only;
@@ -67,6 +67,16 @@ never credential contents. An environment path alone is not proof of its imports
   verified. Stable baseline source/import/runtime remain unchanged; both
   persistent configuration files remain absent. See
   [the MVP2 design](design/MVP2_submission_safety.md).
+
+- **MVP3 validation:** 313 offline tests passed in 3.87 s; 29 expected timestamp
+  collision warnings. Report `.development/test-runs/mvp3-final.xml` covers
+  shared terminal/Python/ACP task evidence, canonical IDs/reasons/exit codes,
+  exact local receipt overlays, missing/failed/stale observations, saved
+  producing-path bounded remote log tails, growing/replaced/truncated logs,
+  query batching and cached no-network reads. CLI help/agent task-context and
+  documentation links verified. Base Conda still imports the baseline source;
+  stable code/tests/runtime and both absent persistent configs are unchanged.
+  See [the MVP3 design](design/MVP3_shared_inspection.md).
 
 ## Current local commands
 

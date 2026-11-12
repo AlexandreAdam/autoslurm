@@ -21,6 +21,7 @@ shell scripts and provides the following features:
 You can find the full documentation [here](https://autoslurm.readthedocs.io/en/latest/).
 
 For the local development refactor, start with the
+[human workflow overview](docs/workflow_overview.md), the
 [current client workflow](agent/01_client_workflow.md) and
 [scientific example](examples/reference_client/README.md). MVP1 gives inputs a
 project root, outputs a results root, and jobs a predictable working directory.
@@ -34,6 +35,12 @@ rejection or an uncertain response. `submit_jobs` returns a receipt;
 list receipts or inspect an exact receipt, with explicit `--refresh` to retrieve
 remote execution evidence. Refresh never submits work again. Submission success
 means Slurm accepted the jobs; the application still validates scientific results.
+
+MVP3 adds `inspect_bundle` and `list_runs`, with ACP `inspect_run`/`list_runs`
+and exact terminal selectors. They share task identity, scheduler evidence and
+bounded logs, retain query errors and unknown tasks, and label cached evidence
+stale. Remote log refresh uses recorded producing paths; broader sync refreshes
+growing/replaced logs while preserving existing definitions.
 
 Scientific software owns computation, input/output validation and task reduction.
 AutoSlurm owns machine mapping, submission and tracking; agents use its public

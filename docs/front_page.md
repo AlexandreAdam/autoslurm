@@ -4,6 +4,10 @@
 You describe what python script to run alongside the resources it need and the toolkit writes, stores, and submits the job locally or over SSH. 
 Autoslurm produces structured JSON files as traces of the jobs so humans, CI jobs, or autonomous agents can reason about past and future runs.
 
+For the development refactor, read [the workflow overview](workflow_overview.md)
+for the high-level map, a scientific example and how humans and agents work
+together. The pinned stable installation retains its previous behavior.
+
 ## Why AutoSlurm?
 
 - **Consistent infrastructure** – user-specific paths, accounts, and SSH details are stored once in a configuration file, not in your scripts.

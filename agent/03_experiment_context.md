@@ -1,37 +1,27 @@
-# Experiment Context
+# Experiment context
 
-`autoslurm-experiment-context` is the go-to helper for agents that need to reason
-about completed or ongoing experiments. Run it via the CLI or import
-`autoslurm.experiment_context.experiment_context(...)` to get a single string
-payload with:
+Use the structured `inspect_bundle` / ACP `inspect_run` contract in
+`01_client_workflow.md` and `09_task_inspect.md` for operational decisions.
+One shared pipeline provides scheduler state, task IDs, evidence and bounded
+stdout/stderr to both programmatic and human interfaces.
 
-1. The bundle JSON that AutoSlurm persisted under `$AUTOSLURM/jobs`.
-2. Every rendered SLURM script from `$AUTOSLURM/slurm`.
-3. All `.out` logs inside `$AUTOSLURM/out`. When a job ran remotely, the command
-   SSHs into that machine, activates the configured environment (`env_command`),
-   runs the same CLI remotely (with `--date` pointing at the bundle timestamp),
-   and pulls the logs back into `out/` so they appear in the dump.
+`experiment_context(bundle_name, desired_date=None)` is a human overview with
+saved identity, status, scripts and bounded log tails. Selection by date is
+nearest-date. It uses recorded producing transport/paths directly; it does not
+run or parse a remote context command. It can contact the producing cluster.
+The Python string is presentation, not a serialized bundle or structured API.
 
-### CLI usage
+The historical `autoslurm-experiment-context` entry point forwards to the
+inspection CLI. Use `--full` for scripts and bounded logs, `--refresh` for remote
+log tails, `--cached` for no network calls, and `--bundle-file` or `--receipt` for
+exact identity. Name selection alone shows the shared job table.
 
-```bash
-autoslurm-experiment-context my-bundle               # latest bundle
-autoslurm-experiment-context my-bundle --date 20250101T120000
+```sh
+asl inspect --receipt /absolute/receipt.json --json
+asl inspect --bundle-file /absolute/run.json --full --refresh --tail 40
+asl inspect --bundle-file /absolute/run.json --cached --script
 ```
 
-The command prints the concatenated payload to stdout, so agents can capture it
-directly or pipe it through other processors. When no `.out` files exist yet,
-the dump clearly indicates whether the job never submitted or lacks logs even
-though it has a job ID.
-
-### Python API
-
-```python
-from autoslurm.experiment_context import experiment_context
-
-payload = experiment_context("my-bundle")
-```
-
-The helper returns the same string the CLI prints. Agents can parse it, store it
-for downstream reasoning, or reformat it for structured storage, while still
-relying on AutoSlurm’s own view of the experiment state.
+Logs are bounded excerpts with exact references. No unsubmitted draft or
+same-name unrelated job adopts a log. For scientific validation, use the
+application's output manifest/checks rather than inferring correctness from logs.

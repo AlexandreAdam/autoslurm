@@ -1,544 +1,94 @@
-from __future__ import annotations
-
-import re
-from datetime import datetime
-
+"""CLI behavior checked against saved snapshots and the real shared view."""
+import json
+import pytest
 from autoslurm.apps import status
+from autoslurm.utils import save_config
+from tests.inspection_helpers import saved_run, mock_scheduler
 
 
-def test_status_prints_numbered_summary_rows(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "older", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-            {"bundle": "newer", "date": datetime(2025, 1, 2, 0, 0, 0), "job_count": 2},
-        ],
-    )
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(status, "_job_status_texts", lambda jobs: {})
+@pytest.fixture
+def runs(monkeypatch):
+    save_config({"machines": {"local": {}}, "default_machine": "local", "bundle_filter_mode": "all"})
+    old = saved_run("study", "20250101000000")
+    new = saved_run("study", "20250102000000", {"sample": {"id": "102"}})
+    calls = mock_scheduler(monkeypatch, queue="102|RUNNING|00:10:00|None", accounting="101|COMPLETED|0:0|None|101")
+    return old, new, calls
 
+
+def test_summary_keeps_two_snapshots_and_batches_queries(runs, capsys):
     status.main([])
-    output = capsys.readouterr().out.splitlines()
-
-    assert "idx" in output[0]
-    assert output[1].startswith("1")
-    assert "newer" in output[1]
-    assert output[2].startswith("2")
-    assert "older" in output[2]
+    text = capsys.readouterr().out
+    assert text.count("study") == 2
+    assert "unknown" in text.splitlines()[0]
+    assert "running" in text and "completed" in text
+    assert len(runs[2]) == 2
 
 
-def test_status_index_selects_bundle_detail(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "older", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-            {"bundle": "newer", "date": datetime(2025, 1, 2, 0, 0, 0), "job_count": 2},
-        ],
-    )
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(
-        status,
-        "bundle_job_rows_from_jobs",
-        lambda jobs, bundle_date, **kwargs: (bundle_date, []),
-    )
-    monkeypatch.setattr(
-        status,
-        "bundle_jobs_context_from_rows",
-        lambda bundle_name, bundle_date, rows, **kwargs: f"detail:{bundle_name}",
-    )
-
-    status.main(["1"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "Bundle: newer\n\ndetail:newer"
+@pytest.mark.parametrize("selector", [["1"], ["study"], ["--bundle-file", "PATH"]])
+def test_detail_resolves_to_the_exact_latest_snapshot(runs, selector, capsys):
+    status.main([str(runs[1]) if value == "PATH" else value for value in selector])
+    text = capsys.readouterr().out
+    assert "102" in text and "RUNNING" in text and "2025-01-02" in text
+    assert "101 " not in text
 
 
-def test_status_forwards_reference_date(monkeypatch, capsys):
-    seen = {"value": None}
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(status, "_job_status_texts", lambda jobs: {})
-
-    def fake_bundle_snapshots(desired_date=None):
-        seen["value"] = desired_date
-        return [{"bundle": "experiment", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1}]
-
-    monkeypatch.setattr(status, "bundle_snapshots", fake_bundle_snapshots)
-    status.main(["--year", "2025", "--month", "1"])
-    capsys.readouterr()
-
-    assert seen["value"] is not None
-    assert seen["value"].year == 2025
-    assert seen["value"].month == 1
-
-
-def test_status_keeps_multiple_snapshots_with_same_name(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "recovery", "date": datetime(2025, 1, 3, 0, 0, 0), "job_count": 2},
-            {"bundle": "recovery", "date": datetime(2025, 1, 2, 0, 0, 0), "job_count": 3},
-            {"bundle": "other", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-        ],
-    )
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(status, "_job_status_texts", lambda jobs: {})
-
-    status.main([])
-    lines = capsys.readouterr().out.splitlines()
-    recovery_rows = [line for line in lines if "recovery" in line]
-    assert len(recovery_rows) == 2
-
-
-def test_status_supports_multiple_indices_and_range_in_order(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "b3", "date": datetime(2025, 1, 3, 0, 0, 0), "job_count": 1},
-            {"bundle": "b2", "date": datetime(2025, 1, 2, 0, 0, 0), "job_count": 1},
-            {"bundle": "b1", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-        ],
-    )
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(
-        status,
-        "bundle_job_rows_from_jobs",
-        lambda jobs, bundle_date, **kwargs: (bundle_date, []),
-    )
-    monkeypatch.setattr(
-        status,
-        "bundle_jobs_context_from_rows",
-        lambda bundle_name, bundle_date, rows, **kwargs: f"detail:{bundle_name}",
-    )
-
+def test_multiple_indices_and_ranges_keep_requested_order(runs, capsys):
     status.main(["2", "1-2"])
-    output = capsys.readouterr().out
-
-    assert "Bundle: b2" in output
-    assert "Bundle: b3" in output
-    assert output.find("Bundle: b2") < output.find("Bundle: b3")
-
-
-def test_status_array_filter_is_forwarded_to_bundle_detail(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "array_bundle", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-        ],
-    )
-    captured = {"kwargs": None}
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(
-        status,
-        "bundle_job_rows_from_jobs",
-        lambda jobs, bundle_date, **kwargs: (
-            captured.__setitem__("kwargs", kwargs) or bundle_date,
-            [],
-        ),
-    )
-    monkeypatch.setattr(
-        status,
-        "bundle_jobs_context_from_rows",
-        lambda bundle_name, bundle_date, rows, **kwargs: f"detail:{bundle_name}:{kwargs}",
-    )
-
-    status.main(["1", "--array", "2-3"])
-    output = capsys.readouterr().out
-
-    assert "Bundle: array_bundle" in output
-    assert captured["kwargs"] is not None
-    assert captured["kwargs"]["show_array_tasks"] is True
-    assert captured["kwargs"]["array_tasks"] == {2, 3}
+    text = capsys.readouterr().out
+    assert text.index("2025-01-01") < text.index("2025-01-02")
+    assert text.count("Observation:") == 2
+    assert len(runs[2]) == 2
 
 
-def test_status_array_detail_uses_declared_zero_based_indices(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "array_bundle", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "array_job",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "0-2"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: ({"123": "PENDING"}, {}),
-    )
-
-    status.main(["1", "--array"])
-    output = re.sub(r"\x1b\[[0-9;]*m", "", capsys.readouterr().out)
-
-    assert "123_0" in output
-    assert "123_1" in output
-    assert "123_2" in output
-    assert "123_3" not in output
+def test_partial_date_components_select_historical_snapshot(runs, capsys):
+    status.main(["study", "--year", "2025", "--month", "1", "--day", "1", "--json"])
+    view = json.loads(capsys.readouterr().out)[0]
+    assert view["bundle_path"] == str(runs[0])
+    assert view["state"] == "completed"
 
 
-def test_status_array_detail_keeps_parent_row_when_failed_tasks_are_unknown(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "array_bundle", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "array_job",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "0-2"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: ({"123": "FAILED"}, {}),
-    )
-
-    status.main(["1", "--array"])
-    output = re.sub(r"\x1b\[[0-9;]*m", "", capsys.readouterr().out)
-
-    assert "123 " in output
-    assert "123_0" not in output
-    assert "123_1" not in output
-    assert "123_2" not in output
+def test_exact_missing_file_never_selects_a_neighbor(runs, capsys):
+    status.main(["--bundle-file", str(runs[0]) + ".missing", "--json"])
+    view = json.loads(capsys.readouterr().out)[0]
+    assert view["state"] == "broken" and view["errors"]
 
 
-def test_status_summary_includes_bundle_status(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "broken_bundle", "date": datetime(2025, 1, 4, 0, 0, 0), "job_count": 1, "state": "broken"},
-        ],
-    )
-    monkeypatch.setattr(status, "load_bundle", lambda bundle_name, desired_date=None: ([], {}, desired_date))
-    monkeypatch.setattr(status, "_job_status_texts", lambda jobs: {})
-
-    status.main([])
-    output = capsys.readouterr().out
-    assert "status" in output.splitlines()[0]
-    assert "broken" in output
+@pytest.mark.parametrize("array_filter", [[], ["0"], ["1-2"]])
+def test_array_indices_and_filters_keep_unknown_tasks(monkeypatch, capsys, array_filter):
+    path = saved_run(jobs={"array": {"id": "101", "slurm": {"array": "0-2"}}})
+    mock_scheduler(monkeypatch, accounting="101_0|COMPLETED|0:0|None|500\n101_1|FAILED|1:0|None|501")
+    status.main(["--bundle-file", str(path), "--array", *array_filter])
+    text = capsys.readouterr().out
+    for index in ({0, 1, 2} if not array_filter else {0} if array_filter == ["0"] else {1, 2}):
+        assert f"101_{index}" in text
+    assert "101_3" not in text
+    if not array_filter or array_filter == ["1-2"]:
+        assert "UNKNOWN" in text
 
 
-def test_status_summary_marks_ready_to_go_for_unsubmitted_valid_bundle(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "draft_bundle", "date": datetime(2025, 1, 5, 0, 0, 0), "job_count": 1, "state": "ready_to_go"},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [{"name": "job_a", "id": None}],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(status, "_job_status_texts", lambda jobs: {"job_a": "not_submitted"})
-
-    status.main([])
-    output = capsys.readouterr().out
-    assert "ready_to_go" in output
+@pytest.mark.parametrize("state", ["COMPLETED", "CANCELLED", "FAILED", "PENDING", "UNKNOWN"])
+def test_summary_state_is_shared_with_json(monkeypatch, capsys, state):
+    path = saved_run()
+    mock_scheduler(monkeypatch, accounting=f"101|{state}|0:0|None|101")
+    status.main(["--bundle-file", str(path), "--json"])
+    view = json.loads(capsys.readouterr().out)[0]
+    assert view["state"] == state.lower()
 
 
-def test_status_summary_colors_completed_and_broken(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "broken_bundle", "date": datetime(2025, 1, 4, 0, 0, 0), "job_count": 1, "state": "broken"},
-            {"bundle": "done_bundle", "date": datetime(2025, 1, 5, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-
-    def fake_load_bundle(bundle_name, desired_date=None):
-        if bundle_name == "done_bundle":
-            return ([{"name": "job_a", "id": "123"}], {}, desired_date)
-        raise RuntimeError("broken")
-
-    monkeypatch.setattr(status, "load_bundle", fake_load_bundle)
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: ({"123": "COMPLETED"}, {"123": "00:10:00"}),
-    )
-
-    status.main([])
-    output = capsys.readouterr().out
-    assert "\x1b[38;2;220;0;0mbroken\x1b[0m" in output
-    assert "\x1b[38;2;0;200;0mcompleted\x1b[0m" in output
+def test_draft_never_queries_scheduler(monkeypatch, capsys):
+    path = saved_run(jobs={"draft": {"script": "echo draft"}})
+    calls = mock_scheduler(monkeypatch)
+    status.main(["--bundle-file", str(path), "--json"])
+    view = json.loads(capsys.readouterr().out)[0]
+    assert view["state"] == "ready_to_go"
+    assert calls == []
 
 
-def test_status_summary_marks_cancelled(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "cancelled_bundle", "date": datetime(2025, 1, 6, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: ([{"name": "job_a", "id": "123"}], {}, desired_date),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: ({"123": "CANCELLED"}, {"123": "-"}),
-    )
-
-    status.main([])
-    output = capsys.readouterr().out
-    assert "cancelled" in output
-    assert "\x1b[38;2;220;0;0mcancelled\x1b[0m" in output
-
-
-def test_status_summary_marks_cancelled_from_slurm_state(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "cancelled_bundle", "date": datetime(2025, 1, 6, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: ([{"name": "job_a", "id": "123"}], {}, desired_date),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: ({"123": "CANCELLED"}, {}),
-    )
-
-    status.main([])
-    output = capsys.readouterr().out
-    assert "cancelled" in output
-    assert "\x1b[38;2;220;0;0mcancelled\x1b[0m" in output
-
-
-def test_status_summary_counts_array_task_states(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "array_bundle", "date": datetime(2025, 1, 7, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "array_job",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "1-3"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: (
-            {
-                "123_1": "COMPLETED",
-                "123_2": "FAILED",
-                "123_3": "RUNNING",
-            },
-            {},
-        ),
-    )
-
-    status.main([])
-    output = capsys.readouterr().out
-    lines = [line for line in output.splitlines() if line.strip()]
-    header = re.sub(r"\x1b\[[0-9;]*m", "", lines[0])
-    row = re.sub(r"\x1b\[[0-9;]*m", "", next(line for line in lines if "array_bundle" in line))
-    header_fields = re.split(r"\s{2,}", header.strip())
-    row_fields = re.split(r"\s{2,}", row.strip())
-
-    assert header_fields == [
-        "idx",
-        "bundle",
-        "status",
-        "saved",
-        "jobs",
-        "array",
-        "pending",
-        "running",
-        "success",
-        "failed",
-        "cancelled",
-    ]
-    assert row_fields[1] == "array_bundle"
-    assert row_fields[5] == "3"
-    assert row_fields[6] == "0"
-    assert row_fields[7] == "1"
-    assert row_fields[8] == "1"
-    assert row_fields[9] == "1"
-
-
-def test_status_summary_does_not_count_parent_array_failure_as_every_task(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "array_bundle", "date": datetime(2025, 1, 7, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "array_job",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "0-19"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: ({"123": "FAILED"}, {}),
-    )
-
-    status.main([])
-    output = capsys.readouterr().out
-    lines = [line for line in output.splitlines() if line.strip()]
-    header = re.sub(r"\x1b\[[0-9;]*m", "", lines[0])
-    row = re.sub(r"\x1b\[[0-9;]*m", "", next(line for line in lines if "array_bundle" in line))
-    header_fields = re.split(r"\s{2,}", header.strip())
-    row_fields = re.split(r"\s{2,}", row.strip())
-
-    assert header_fields[5] == "array"
-    assert header_fields[9] == "failed"
-    assert row_fields[5] == "20"
-    assert row_fields[9] == "1"
-
-
-def test_status_summary_prefers_cancelled_over_running_for_mixed_array_states(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "mixed_bundle", "date": datetime(2025, 1, 8, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-    monkeypatch.setattr(
-        status,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "array_job",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "1-3"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        status,
-        "_fetch_statuses_and_time_left_for_job_ids",
-        lambda job_ids, machine_name: (
-            {
-                "123_1": "CANCELLED",
-                "123_2": "COMPLETED",
-                "123_3": "PENDING",
-            },
-            {},
-        ),
-    )
-
-    status.main([])
-    output = capsys.readouterr().out
-    assert "mixed_bundle" in output
-    assert "cancelled" in output
-    assert "running" not in output.splitlines()[1]
-    assert "\x1b[38;2;220;0;0mcancelled\x1b[0m" in output
-
-
-def test_status_summary_batches_remote_queries_across_bundles(monkeypatch, capsys):
-    monkeypatch.setattr(
-        status,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "bundle_a", "date": datetime(2025, 1, 2, 0, 0, 0), "job_count": 1, "state": "active"},
-            {"bundle": "bundle_b", "date": datetime(2025, 1, 1, 0, 0, 0), "job_count": 1, "state": "active"},
-        ],
-    )
-
-    def fake_load_bundle(bundle_name, desired_date=None):
-        if bundle_name == "bundle_a":
-            return ([{"name": "job_a", "id": "111", "machine": "remote"}], {}, desired_date)
-        if bundle_name == "bundle_b":
-            return ([{"name": "job_b", "id": "222", "machine": "remote"}], {}, desired_date)
-        raise AssertionError(bundle_name)
-
-    monkeypatch.setattr(status, "load_bundle", fake_load_bundle)
-    seen = {"fetch": 0}
-
-    def fake_fetch(job_ids, machine_name):
-        seen["fetch"] += 1
-        assert machine_name == "remote"
-        assert sorted(job_ids) == ["111", "222"]
-        return {"111": "RUNNING", "222": "PENDING"}, {"111": "00:10:00", "222": "00:20:00"}
-
-    monkeypatch.setattr(status, "_fetch_statuses_and_time_left_for_job_ids", fake_fetch)
-
-    status.main([])
-    output = capsys.readouterr().out
-
-    assert seen["fetch"] == 1
-    assert "bundle_a" in output
-    assert "bundle_b" in output
-    assert "running" in output or "completed" in output
+def test_broken_entry_does_not_hide_healthy_entries(runs, capsys):
+    broken = runs[1].parent / "broken_20250103000000.json"
+    broken.write_text('{"bad": {"dependencies": ["absent"]}}')
+    status.main(["--json"])
+    views = json.loads(capsys.readouterr().out)
+    assert len(views) == 3
+    assert any(view["state"] == "broken" for view in views)
+    assert any(view["state"] == "completed" for view in views)

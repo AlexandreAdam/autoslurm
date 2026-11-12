@@ -1,10 +1,10 @@
 [
   {
     "name": "inspect_experiments",
-    "description": "Return the agent-focused snapshot for a bundle (bundle JSON + generated SLURM scripts + .out logs).",
+    "description": "Human overview of a selected bundle with shared status evidence, scripts and bounded stdout/stderr. Use inspect_run for structured exact inspection.",
     "parameters": {
       "bundle": "Required. The logical bundle name (e.g., the value passed to autoslurm-schedule).",
-      "date": "Optional. ISO-8601 or autoslurm DATE_FORMAT to pick a specific bundle instance."
+      "date": "Optional ISO-8601 or autoslurm DATE_FORMAT; nearest-date convenience selection, not exact identity."
     },
     "context_sections": [
       "00_operating_rules.md",
@@ -106,6 +106,48 @@
     "keywords": [
       "submission",
       "receipt"
+    ]
+  },
+  {
+    "name": "list_runs",
+    "description": "Discover exact local saved run paths without scheduler or network calls. Includes drafts and submissions; inspect one exact path next.",
+    "parameters": {
+      "bundle": "Optional exact logical bundle-name filter."
+    },
+    "context_sections": [
+      "00_operating_rules.md",
+      "01_client_workflow.md",
+      "09_task_inspect.md",
+      "12_task_acp_reference.md"
+    ],
+    "keywords": [
+      "rediscover",
+      "runs"
+    ]
+  },
+  {
+    "name": "inspect_run",
+    "description": "Observe an exact saved run through the shared Python/terminal pipeline. Scheduler failures and unknown tasks remain explicit; no scheduler mutations.",
+    "parameters": {
+      "bundle_path": "Select exactly one of bundle_path or receipt_path. Exact local saved snapshot path.",
+      "receipt_path": "Exact local submission receipt path, used to select its tracking snapshot. Reads local evidence; use inspect_submission refresh to fetch a remote receipt first.",
+      "refresh": "Optional boolean, default true. Query producing scheduler; false uses stale cached evidence and performs no network calls.",
+      "include_logs": "Optional boolean, default false. Include bounded producing stdout/stderr; refresh controls remote fetching too.",
+      "job_name": "Optional concrete job name to restrict logs.",
+      "task_index": "Optional concrete declared/observed array index to restrict logs.",
+      "tail": "Optional nonnegative integer, default 40 lines per log.",
+      "max_log_bytes": "Optional bound per log read, 1..1048576, default 65536 bytes.",
+      "max_logs": "Optional file bound 1..100, default 20; omitted files are reported."
+    },
+    "context_sections": [
+      "00_operating_rules.md",
+      "01_client_workflow.md",
+      "09_task_inspect.md",
+      "12_task_acp_reference.md"
+    ],
+    "keywords": [
+      "observe",
+      "diagnose"
     ]
   }
 ]

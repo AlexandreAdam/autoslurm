@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.inspection_helpers import remote_observation
 
 from autoslurm import status
 
@@ -9,12 +10,6 @@ def test_combined_remote_fetch_uses_sacct_for_completed_jobs(monkeypatch):
         "load_config",
         lambda: {"machines": {"remote": {"hostname": "remote.example.org"}}},
     )
-    monkeypatch.setattr(
-        status,
-        "ssh_host_from_config",
-        lambda machine_config, machine_name: "remote.example.org",
-    )
-
     seen = {"ssh": 0}
 
     def fake_run(cmd, *args, **kwargs):
@@ -23,13 +18,7 @@ def test_combined_remote_fetch_uses_sacct_for_completed_jobs(monkeypatch):
 
         class Result:
             returncode = 0
-            stdout = (
-                "123|COMPLETED\n"
-                "__AUTOSLURM_SPLIT__\n"
-                "123|COMPLETED\n"
-                "__AUTOSLURM_SPLIT__\n"
-                "123|00:10:00\n"
-            )
+            stdout = remote_observation("123|COMPLETED|00:10:00|None", "123|COMPLETED|0:0|None|123")
             stderr = ""
 
         return Result()

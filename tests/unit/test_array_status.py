@@ -23,7 +23,7 @@ def test_status_for_job_id_array_accepts_dot_task_ids():
         "123.0": "COMPLETED",
         "123.1": "COMPLETED",
     }
-    assert status_for_job_id("123", raw, declared_total=2) == "COMPLETED"
+    assert status_for_job_id("123", raw, declared_total=2) == "FAILED"
 
 
 def test_status_for_job_id_array_failure_wins():

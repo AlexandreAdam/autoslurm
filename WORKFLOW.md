@@ -116,7 +116,8 @@ required to complete a small reliability MVP.
 - Document only implemented operations and known limits. MVP0.2 implements an
   explicit root selector in development; the stable baseline does not have it.
   Development MVP2 adds incremental submission receipts and exact read-only
-  refresh; unified status/logs and automatic recovery remain planned. A passing
+  refresh. Development MVP3 shares status/task/log evidence with explicit
+  errors/staleness and bounded refresh. Automatic recovery remains planned. A passing
   mock helper check is not evidence about a real installation.
 - Update the small integration/operate/diagnose recipe in the same task as a
   changed public behavior. Include the source of evidence, unknown state and a

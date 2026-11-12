@@ -1,6 +1,7 @@
 format: jb-book
 root: front_page
 chapters:
+  - file: workflow_overview
   - file: getting_started
   - file: configuration
   - file: ssh_configuration

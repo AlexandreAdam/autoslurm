@@ -1,478 +1,71 @@
-import os
-import importlib
-import json
+"""Historical renderers use exact saved identity and bounded shared observations."""
 import pytest
-from datetime import datetime
-
-from autoslurm.experiment_context import (
-    _array_task_log_job_ids,
-    experiment_context,
-    latest_log_context,
-)
-from autoslurm.definitions import DATE_FORMAT
-from autoslurm.save_load_jobs import nearest_bundle_filename, save_bundle
-from autoslurm.storage import ensure_storage_dirs, jobs_dir, out_dir, set_storage_root, slurm_dir
-from autoslurm.utils import name_slurm_script
-
-
-@pytest.fixture(autouse=True)
-def mock_save_load_config(monkeypatch, isolate_storage):
-    config = {
-        "machines": {
-            "local": {
-                "path": str(isolate_storage),
-            }
-        },
-        "default_machine": "local",
-    }
-    monkeypatch.setattr("autoslurm.save_load_jobs.load_config", lambda: config)
-    yield
-
-
-def test_experiment_context_includes_bundle_and_logs():
-    bundle_name = "experiment"
-    job = {
-        "name": "analysis",
-        "script": "python train.py",
-        "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-    }
-
-    save_bundle({job["name"]: job}, bundle_name)
-    _, bundle_date = nearest_bundle_filename(bundle_name)
-    slurm_name = name_slurm_script(job, bundle_date)
-    slurm_path = slurm_dir() / slurm_name
-    slurm_path.write_text("#!/bin/bash\necho analysis")
-
-    log_path = out_dir() / f"{job['name']}-42.out"
-    log_path.write_text("analysis completed")
-
-    context = experiment_context(bundle_name)
-
-    assert f"Job or bundle '{bundle_name}'" in context
-    assert "#!/bin/bash" in context
-    assert "analysis completed" in context
-
-
-def test_experiment_context_fetches_remote_logs(monkeypatch):
-    bundle_name = "remote_experiment"
-    job = {
-        "name": "remote_task",
-        "script": "python train.py",
-        "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        "machine": "remote_machine",
-    }
-
-    save_bundle({job["name"]: job}, bundle_name)
-
-    def fake_fetch(bundle_arg, bundle_date, job_arg, machine_arg):
-        assert bundle_arg == bundle_name
-        assert job_arg == job["name"]
-        assert machine_arg == job["machine"]
-        path = out_dir() / f"{job['name']}-fetched.out"
-        path.write_text("fetched remote log")
-        return [(path, "fetched remote log")], None
-
-    module = importlib.import_module("autoslurm.experiment_context")
-    monkeypatch.setattr(module, "_fetch_remote_logs_for_job", fake_fetch)
-
-    context = experiment_context(bundle_name)
-
-    assert "fetched remote log" in context
-
-
-def test_experiment_context_reports_unstarted_job():
-    bundle_name = "pending_experiment"
-    job = {
-        "name": "pending_task",
-        "script": "python train.py",
-        "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-    }
-
-    save_bundle({job["name"]: job}, bundle_name)
-
-    context = experiment_context(bundle_name)
-
-    assert "job 'pending_task' has not been submitted yet" in context
-
-
-def test_context_log_prints_newest_out_file_for_bundle(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "latest_log_experiment"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-        "cleanup": {
-            "name": "cleanup",
-            "script": "python cleanup.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-    }
-
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    first_log = out_dir() / "analysis-1.out"
-    second_log = out_dir() / "cleanup-2.out"
-    first_log.write_text("older log")
-    second_log.write_text("newer log")
-    older = 1_700_000_000
-    newer = older + 10
-    os.utime(first_log, (older, older))
-    os.utime(second_log, (newer, newer))
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main([bundle_name, "--log"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "newer log"
-
-
-def test_context_latest_bundle_log_prints_newest_out_file(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "latest_bundle_experiment"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-        "cleanup": {
-            "name": "cleanup",
-            "script": "python cleanup.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-    }
-
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    first_log = out_dir() / "analysis-1.out"
-    second_log = out_dir() / "cleanup-2.out"
-    first_log.write_text("older log")
-    second_log.write_text("newest log")
-    older = 1_700_000_000
-    newer = older + 10
-    os.utime(first_log, (older, older))
-    os.utime(second_log, (newer, newer))
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main(["--latest", "--log"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "newest log"
-
-
-def test_context_latest_bundle_log_accepts_numeric_job_selector(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "latest_bundle_numeric_job"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-        "cleanup": {
-            "name": "cleanup",
-            "script": "python cleanup.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-    }
-
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    first_log = out_dir() / "analysis-1.out"
-    second_log = out_dir() / "cleanup-2.out"
-    first_log.write_text("older log")
-    second_log.write_text("newest log")
-    older = 1_700_000_000
-    newer = older + 10
-    os.utime(first_log, (older, older))
-    os.utime(second_log, (newer, newer))
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main(["--latest", "--job", "1", "--log"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "newest log"
-
-
-def test_context_latest_bundle_job_defaults_to_log(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "latest_bundle_default_log"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-        "cleanup": {
-            "name": "cleanup",
-            "script": "python cleanup.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        },
-    }
-
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    first_log = out_dir() / "analysis-1.out"
-    second_log = out_dir() / "cleanup-2.out"
-    first_log.write_text("older log")
-    second_log.write_text("default latest log")
-    older = 1_700_000_000
-    newer = older + 10
-    os.utime(first_log, (older, older))
-    os.utime(second_log, (newer, newer))
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main(["--latest", "--job", "1"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "default latest log"
-
-
-def test_context_latest_bundle_job_script_view(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "latest_bundle_script_view"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        }
-    }
-
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    _, bundle_date = nearest_bundle_filename(bundle_name)
-    slurm_name = name_slurm_script(bundle["analysis"], bundle_date)
-    (slurm_dir() / slurm_name).write_text("#!/bin/bash\necho analysis")
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main(["--latest", "--job", "1", "--script"])
-    output = capsys.readouterr().out.strip()
-
-    assert "#!/bin/bash" in output
-    assert "echo analysis" in output
-    assert "status=" not in output
-
-
-def test_context_log_reports_missing_logs_with_hint(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "empty_bundle"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        }
-    }
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main([bundle_name, "--log"])
-    output = capsys.readouterr().out.strip()
-
-    assert "No logs found for bundle 'empty_bundle'" in output
-    assert "Try `asl sync` or `asl logs --refresh`." in output
-
-
-def test_latest_log_filters_submitted_job_logs_by_saved_slurm_id(tmp_path):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "versioned_bundle"
-    saved_date = datetime(2025, 1, 1, 0, 0, 0)
-    (jobs_dir() / f"{bundle_name}_{saved_date.strftime(DATE_FORMAT)}.json").write_text(
-        json.dumps(
-            {
-                "analysis": {
-                    "name": "analysis",
-                    "id": "123",
-                    "script": "python train.py",
-                    "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-                }
-            }
-        )
-    )
-
-    selected_log = out_dir() / "analysis-123.out"
-    wrong_version_log = out_dir() / "analysis-999.out"
-    selected_log.write_text("selected snapshot log")
-    wrong_version_log.write_text("wrong snapshot log")
-    os.utime(selected_log, (1_700_000_000, 1_700_000_000))
-    os.utime(wrong_version_log, (1_700_000_100, 1_700_000_100))
-
-    assert latest_log_context(bundle_name, saved_date, "analysis") == "selected snapshot log"
-
-
-def test_latest_log_accepts_array_task_log_for_saved_slurm_id(tmp_path, monkeypatch):
-    def missing_sacct(*args, **kwargs):
-        raise FileNotFoundError("Mock Slurm accounting unavailable")
-
-    monkeypatch.setattr("subprocess.run", missing_sacct)
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "array_versioned_bundle"
-    saved_date = datetime(2025, 1, 1, 0, 0, 0)
-    (jobs_dir() / f"{bundle_name}_{saved_date.strftime(DATE_FORMAT)}.json").write_text(
-        json.dumps(
-            {
-                "analysis": {
-                    "name": "analysis",
-                    "id": "123",
-                    "script": "python train.py",
-                    "slurm": {"array": "0-1", "time": "00:05:00"},
-                }
-            }
-        )
-    )
-
-    array_log = out_dir() / "analysis-123_1.out"
-    dot_array_log = out_dir() / "analysis-123.2.out"
-    wrong_version_log = out_dir() / "analysis-999_1.out"
-    array_log.write_text("underscore array log")
-    dot_array_log.write_text("dot array log")
-    wrong_version_log.write_text("wrong array log")
-    os.utime(array_log, (1_700_000_000, 1_700_000_000))
-    os.utime(dot_array_log, (1_700_000_050, 1_700_000_050))
-    os.utime(wrong_version_log, (1_700_000_100, 1_700_000_100))
-
-    assert latest_log_context(bundle_name, saved_date, "analysis") == "dot array log"
-    assert latest_log_context(bundle_name, saved_date, "analysis", array_task="1") == "underscore array log"
-
-
-def test_array_task_log_ids_include_slurm_raw_job_id(monkeypatch):
-    module = importlib.import_module("autoslurm.experiment_context")
-
-    class Result:
-        returncode = 0
-        stdout = "\n".join(
-            [
-                "123_0|999",
-                "123_0.batch|999.batch",
-                "123_1|1000",
-            ]
-        )
-        stderr = ""
-
-    monkeypatch.setattr(module.subprocess, "run", lambda *args, **kwargs: Result())
-
-    assert _array_task_log_job_ids("123", "1", None) == ["123_1", "123.1", "1000"]
-
-
-def test_array_task_log_ids_falls_back_without_sacct(monkeypatch):
-    module = importlib.import_module("autoslurm.experiment_context")
-
-    def missing_sacct(*args, **kwargs):
-        raise FileNotFoundError("sacct")
-
-    monkeypatch.setattr(module.subprocess, "run", missing_sacct)
-
-    assert _array_task_log_job_ids("123", "1", None) == ["123_1", "123.1"]
-
-
-def test_context_log_copies_to_clipboard(tmp_path, monkeypatch, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    bundle_name = "clipboard_bundle"
-    bundle = {
-        "analysis": {
-            "name": "analysis",
-            "script": "python train.py",
-            "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
-        }
-    }
-    save_bundle(bundle, bundle_name)
-    capsys.readouterr()
-
-    log_path = out_dir() / "analysis-1.out"
-    log_path.write_text("clipboard log")
-
-    clipboard = {}
-
-    def fake_which(name):
-        return "/usr/bin/pbcopy" if name == "pbcopy" else None
-
-    def fake_run(cmd, *args, **kwargs):
-        if cmd[0] == "pbcopy":
-            clipboard["text"] = kwargs.get("input", "")
-            return type("Result", (), {"returncode": 0})()
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr("autoslurm.apps.experiment_context.shutil.which", fake_which)
-    monkeypatch.setattr("autoslurm.apps.experiment_context.subprocess.run", fake_run)
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main([bundle_name, "--log", "--clip"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "clipboard log"
-    assert clipboard["text"] == "clipboard log"
-
-
-def test_context_latest_prints_latest_bundle_status(tmp_path, capsys):
-    set_storage_root(tmp_path / "storage")
-    ensure_storage_dirs()
-
-    (jobs_dir() / "job_a_20250102000000.json").write_text(
-        json.dumps({"job_a": {"script": "run-a"}})
-    )
-    (jobs_dir() / "job_b_20250103000000.json").write_text(
-        json.dumps({"job_b": {"script": "run-b"}})
-    )
-
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    experiment_context_app.main(["--latest"])
-    output = capsys.readouterr().out.splitlines()
-
-    assert output[0].startswith("job_b ")
-    assert any("name" in line and "status" in line for line in output)
-    assert any("name" in line and "status" in line for line in output)
-    assert any("job_b" in line and "not_submitted" in line for line in output)
-
-
-def test_context_refresh_syncs_before_printing(monkeypatch, capsys):
-    from autoslurm.apps import experiment_context as experiment_context_app
-
-    seen = {"sync": 0}
-
-    def fake_sync_machine(machine_name=None):
-        seen["sync"] += 1
-        assert machine_name is None
-
-    monkeypatch.setattr(experiment_context_app, "sync_machine", fake_sync_machine)
-    monkeypatch.setattr(experiment_context_app, "bundle_index_context", lambda reference_date=None: "refreshed context")
-
-    experiment_context_app.main(["--refresh"])
-
-    assert seen["sync"] == 1
-    assert capsys.readouterr().out.strip() == "refreshed context"
+from autoslurm.experiment_context import experiment_context, latest_log_context, job_context
+from autoslurm.storage import out_dir, slurm_dir
+from tests.inspection_helpers import saved_run, mock_scheduler
+
+
+def test_human_context_includes_selected_script_and_bound_log(monkeypatch):
+    saved_run(jobs={"analysis": {"id": "42"}})
+    (slurm_dir() / "analysis_20250101000000.sh").write_text("#!/bin/bash\necho analysis")
+    (out_dir() / "analysis-42.out").write_text("analysis completed")
+    mock_scheduler(monkeypatch, accounting="42|COMPLETED|0:0|None|42")
+    text = experiment_context("study")
+    assert "Job or bundle 'study'" in text and "analysis completed" in text and "echo analysis" in text
+
+
+def test_unsubmitted_draft_does_not_adopt_a_same_name_log():
+    saved_run(jobs={"analysis": {"script": "echo analysis"}})
+    (out_dir() / "analysis-42.out").write_text("unrelated evidence")
+    text = experiment_context("study")
+    assert "has not been submitted yet" in text
+    assert "unrelated evidence" not in text
+
+
+@pytest.mark.parametrize("task_suffix", ["123_1", "123.1"])
+def test_task_log_uses_saved_parent_and_exact_task(monkeypatch, task_suffix):
+    saved_run(jobs={"array": {"id": "123", "slurm": {"array": "0-2"}}})
+    (out_dir() / f"array-{task_suffix}.out").write_text("selected task log")
+    (out_dir() / "array-999_1.out").write_text("unrelated log")
+    mock_scheduler(monkeypatch)
+    assert latest_log_context("study", job_name="array", array_task="1") == "selected task log"
+
+
+def test_scalar_log_does_not_take_newer_unrelated_id(monkeypatch):
+    saved_run(jobs={"sample": {"id": "101"}})
+    (out_dir() / "sample-101.out").write_text("selected")
+    (out_dir() / "sample-999.out").write_text("newer but unrelated")
+    mock_scheduler(monkeypatch)
+    assert latest_log_context("study", job_name="1") == "selected"
+
+
+def test_missing_log_is_absent_not_success(monkeypatch):
+    saved_run()
+    mock_scheduler(monkeypatch)
+    assert "No logs found" in latest_log_context("study", job_name="sample")
+
+
+def test_context_requires_an_exact_run_for_logs():
+    with pytest.raises(ValueError, match="exact run"):
+        latest_log_context()
+
+
+def test_script_only_view_never_queries_scheduler():
+    saved_run(jobs={"sample": {"script": "echo sample"}})
+    (slurm_dir() / "sample_20250101000000.sh").write_text("#!/bin/bash\necho sample")
+    text = job_context("study", "1", include_script=True, include_status=False)
+    assert "echo sample" in text and "status=" not in text
+
+
+def test_job_selector_absent_from_snapshot_fails():
+    saved_run()
+    with pytest.raises(KeyError):
+        job_context("study", "absent")
+
+
+def test_legacy_cli_entry_point_uses_shared_inspection(monkeypatch, capsys):
+    from autoslurm.apps import experiment_context as cli
+    saved_run()
+    mock_scheduler(monkeypatch, queue="101|RUNNING|01:00|None")
+    cli.main(["study", "--status"])
+    assert "RUNNING" in capsys.readouterr().out

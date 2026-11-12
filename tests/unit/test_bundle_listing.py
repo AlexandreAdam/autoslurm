@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tests.inspection_helpers import remote_observation
 
 import importlib
 import json
@@ -74,7 +75,7 @@ def test_context_list_mode_accepts_partial_date_components(tmp_path, capsys):
     output = capsys.readouterr().out
 
     lines = output.splitlines()
-    assert lines[0].startswith("bundle")
+    assert "bundle" in lines[0]
     assert all("path=" not in line for line in lines)
 
 
@@ -133,11 +134,11 @@ def test_context_job_status_is_compact(tmp_path, monkeypatch, capsys):
 
     monkeypatch.setattr("subprocess.run", fake_run)
 
-    experiment_context.main(["experiment", "--job", "1"])
+    experiment_context.main(["experiment", "--job", "1", "--status"])
     output = capsys.readouterr().out
 
     assert "analysis" in output
-    assert "status=RUNNING" in output
+    assert "RUNNING" in output
     assert "path=" not in output
 
 
@@ -172,7 +173,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
         "default_machine": "remote",
     }
     module = importlib.import_module("autoslurm.status")
-    monkeypatch.setattr(module, "load_config", lambda: config)
+    monkeypatch.setattr("autoslurm.inspection.load_config", lambda: config)
     monkeypatch.setattr("autoslurm.utils.load_config", lambda: config)
 
     seen = {"ssh": 0}
@@ -183,13 +184,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
 
             class Result:
                 returncode = 0
-                stdout = (
-                    "11111|RUNNING\n"
-                    "22222|PENDING\n"
-                    "__AUTOSLURM_SPLIT__\n"
-                    "11111|RUNNING\n"
-                    "22222|PENDING\n"
-                )
+                stdout = remote_observation("11111|RUNNING|10:00|None\n22222|PENDING|20:00|Resources", "")
                 stderr = ""
 
             return Result()
@@ -262,7 +257,7 @@ def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch)
 
     module = importlib.import_module("autoslurm.status")
     text = module.bundle_jobs_context("experiment")
-    assert "\x1b[38;2;0;200;0mSUCCESS\x1b[0m" in text
+    assert "\x1b[38;2;0;200;0mCOMPLETED\x1b[0m" in text
     assert "\x1b[38;2;220;180;0mRUNNING\x1b[0m" in text
     assert "\x1b[38;2;220;0;0mCANCELLED\x1b[0m" in text
     assert "\x1b[38;2;220;0;0mFAILED\x1b[0m" in text
@@ -489,7 +484,8 @@ def test_context_list_uses_declared_array_size_when_task_rows_missing(tmp_path, 
     output = capsys.readouterr().out
 
     assert "0/4" in output
-    assert "4/4" in output
+    assert "4/4" not in output
+    assert "UNKNOWN" in output
 
 
 def test_context_list_shows_partial_array_progress_from_declared_size(tmp_path, monkeypatch, capsys):

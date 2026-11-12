@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP2. The pinned
+Use this recipe with the development installation including MVP3. The pinned
 stable installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
 differ. Current repository work is local only: submissions are tested with
@@ -106,8 +106,9 @@ reconstruct filenames, edit tracking JSON or parse terminal rows. Name, `latest`
 and index selectors can move. `load_bundle(name, desired_date=...)` selects the
 nearest date, as does `submit_jobs(..., date=...)`. Neither is an exact snapshot
 selector. `select_bundle_snapshot` owns the shared CLI/name selection policy:
-default CLI name/latest selection prefers ready drafts; dated loading selects
-the nearest timestamp across saved snapshots.
+submission name/latest selection prefers ready drafts; inspection resolves the
+newest selected snapshot. Dated loading selects the nearest timestamp across
+saved snapshots.
 
 Before submission, `preview_bundle(planned_path, machine="target")` validates and
 returns plain resolved paths and rendered script text without writing scripts or
@@ -229,15 +230,73 @@ or `path_exists(relative, bundle_path=submission_path, job_name=job_name)` to us
 those producing roots/transport even after profile edits. A legacy record without
 execution evidence fails explicitly; select its original profile yourself.
 These records preserve locations, not immutable code/input contents or scheduler
-observations. Status/log readers are consolidated separately in MVP3.
+observations.
 
-Use the owning installation's `status`/`inspect` for observations. Retain the full
-saved timestamp and verify identity: `asl inspect NAME --date FULL_TIMESTAMP
---job JOB_NAME --log --tail 40` bounds the excerpt. Date selection is nearest-date
-selection; stop if the recorded snapshot is missing rather than accepting a
-neighbor. These commands can query/fetch from the cluster. `sync` currently
-skips existing files; do not assume growing logs refreshed. Unified evidence
-and refresh fixes remain MVP3.
+MVP3 provides one structured observation pipeline for Python, ACP and terminal:
+
+```python
+from autoslurm import list_runs, inspect_bundle
+
+runs = list_runs(bundle_name="study")  # Local discovery, no cluster calls.
+view = inspect_bundle(receipt_path=receipt_path)  # Exact tracking snapshot.
+failed = [task for job in view["jobs"] for task in job["tasks"]
+          if task["state"] in {"FAILED", "TIMEOUT", "OUT_OF_MEMORY"}]
+detail = inspect_bundle(receipt_path=receipt_path, include_logs=True,
+                        job_name="shards", task_index=1, tail=40)
+cached = inspect_bundle(receipt_path=receipt_path, refresh=False)
+```
+
+`inspect_bundle(bundle_path)` is the other exact selector; provide one path or
+receipt, never both. Inspection overlays known IDs from its local receipt in
+memory; it never edits the definition, tracking snapshot or receipt. To fetch
+updated remote submission evidence first, use explicit `refresh_submission`.
+Inspection queries queue and accounting once per producing machine across the
+selected runs (`inspect_bundles(paths)` batches them). It never submits work.
+
+| Evidence | Meaning and next step |
+|---|---|
+| `state`, `jobs[].state`, `tasks[].state` | Scheduler aggregate and concrete task states; completion requires every expected task, and parent failure stays visible |
+| `jobs[].submission_state`, `submissions` | Submission evidence, separate from scheduler progress; an uncertain receipt remains uncertain even when a known job is observable |
+| `tasks[].job_id`, `parent_id`, `task_index`, `raw_id` | Canonical `parent_index`, array index and distinct accounting raw ID; step rows are excluded |
+| `observed_at`, task `source` | Observation time and queue/accounting provenance; queue wins when both report a task |
+| `reason`, `exit_code` | Scheduler evidence, not an inferred diagnosis; absence stays null |
+| `freshness: fresh` | Queries returned; empty rows still leave tasks `UNKNOWN` |
+| `freshness: partial` / `failed`, `errors` | Some or all evidence failed; retain known observations and report the query/transport error |
+| `freshness: stale` / `never` | Explicit cached read or no matching saved observation; never claim current state from these |
+| `last_observed` | Prior observation's state/time, explicitly stale after a failed refresh |
+
+Missing declared array tasks remain `UNKNOWN`; parent state never fabricates
+individual task completion, failure or reasons. `COMPLETED` means scheduler
+completion. Validate scientific outputs, shard compatibility and reducer results
+in the application. Do not trigger retries from state aggregation or log text.
+
+```sh
+asl status --bundle-file /absolute/saved/run.json --array
+asl inspect --receipt /absolute/local/receipt.json --json
+asl inspect --receipt /absolute/local/receipt.json --job shards --array-task 1 --log --refresh --tail 40
+asl inspect --receipt /absolute/local/receipt.json --cached --json
+```
+
+CLI status is fresh by default; remote log refresh requires `--refresh`. Python
+and ACP refresh remote logs when `include_logs=True, refresh=True` (the default
+refresh setting). With `refresh=False` / `--cached`, no cluster calls occur:
+remote excerpts are cached/stale or `not_cached`; local logs can still be read
+with their own observation time. Script-only CLI reads can use `--cached`.
+
+Logs use saved producing roots/cwd and exact job/task identities, including raw
+IDs for `%j`, and support `%x`, `%j`, `%A`, `%a`, `%%`. Unsupported placeholders
+or absent producing metadata produce explicit errors. An unsubmitted draft does
+not adopt a same-name log. Logs default to 40 lines, at most 64 KiB read per file
+and 20 files. Python/ACP accept `tail`, `max_log_bytes` (up to 1 MiB), `max_logs`
+(up to 100); omitted/truncated content is marked and full paths retained.
+Cached excerpts cannot reveal content that was never fetched. This is bounded
+context, not full artifact retrieval.
+
+`sync_machine` / `asl sync` remain broader profile-based storage operations:
+immutable existing job/script files are retained; logs refresh with checksum
+comparison, including append/replacement/truncation. Use exact run inspection
+for producing-run identity and custom logs. Sync does not fetch submission
+receipts or arbitrary application results.
 
 A fresh agent needs lane/interpreter/import/revision, machine/root, exact receipt
 path/submission ID and last recorded submission outcome, client input

@@ -74,6 +74,11 @@ receipt; never retry an uncertain submission automatically. A missing receipt
 does not prove rejection. The exact local setup is in
 `REFACTORING_DOCS/installation-register.md` in the development repository.
 
+MVP3 adds exact structured `inspect_bundle` / ACP `inspect_run` and local
+`list_runs` discovery. Retain timestamps, freshness, errors and task identity;
+use bounded selected logs. `refresh=False` performs no network calls and marks
+cached scheduler/remote evidence stale or absent. See the client recipe.
+
 Use prepared cluster software. Compute jobs do not install packages or update
 Git checkouts. Scientific validation, checkpoint meaning and compatibility of
 partial results remain the application's responsibility.

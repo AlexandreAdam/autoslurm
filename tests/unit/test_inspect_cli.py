@@ -1,288 +1,90 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from autoslurm.apps import inspect as inspect_app
-
-
-def test_inspect_bundle_defaults_to_status_view(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_jobs_context",
-        lambda bundle, date=None, **kwargs: (
-            "bundle_a 2025-01-01T00:00:00\n"
-            "Use --job <number|name> to inspect a job.\n"
-            "idx id name status\n"
-            "1   -  train RUNNING"
-        ),
-    )
-
-    inspect_app.main(["bundle_a"])
-    output = capsys.readouterr().out
-
-    assert "Bundle: bundle_a" in output
-    assert "bundle_a 2025-01-01T00:00:00" in output
-    assert "Use --job <number|name>" not in output
-    assert "idx id name status" in output
+import json
+import pytest
+from autoslurm.apps import inspect as cli
+from autoslurm.storage import out_dir, slurm_dir
+from autoslurm.utils import save_config
+from tests.inspection_helpers import saved_run, mock_scheduler
 
 
-def test_inspect_job_prints_latest_job_log(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "latest_log_context",
-        lambda bundle, date=None, job_name=None, array_task=None: f"log:{bundle}:{job_name}:{array_task}",
-    )
-
-    inspect_app.main(["bundle_a", "--job", "2"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "log:bundle_a:2:None"
+@pytest.fixture
+def run(monkeypatch):
+    save_config({"machines": {"local": {}}, "default_machine": "local", "bundle_filter_mode": "all"})
+    path = saved_run(jobs={"array": {"id": "101", "slurm": {"array": "0-2"}}})
+    (out_dir() / "array-101_1.out").write_text("first\nsecond\nlast\n")
+    (slurm_dir() / "array_20250101000000.sh").write_text("#!/bin/bash\necho scientific-script")
+    mock_scheduler(monkeypatch, accounting="101_0|COMPLETED|0:0|None|500\n101_1|FAILED|1:0|None|501")
+    return path
 
 
-def test_inspect_latest_defaults_to_latest_bundle_status(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_snapshots",
-        lambda desired_date=None: [{"bundle": "latest_bundle", "date": datetime(2025, 1, 1, 0, 0, 0)}],
-    )
-    monkeypatch.setattr(inspect_app, "bundle_jobs_context", lambda bundle, date=None, **kwargs: f"{bundle}\nidx id name status")
-
-    inspect_app.main(["--latest"])
-    output = capsys.readouterr().out.strip()
-
-    assert output.startswith("Bundle: latest_bundle")
+@pytest.mark.parametrize("selector", [["study"], ["--latest"], ["1"], ["--bundle-file", "PATH"]])
+def test_inspect_default_table_uses_shared_status(run, capsys, selector):
+    cli.main([str(run) if value == "PATH" else value for value in selector])
+    text = capsys.readouterr().out
+    assert "FAILED" in text and "array" in text
+    assert "Observation:" in text
 
 
-def test_inspect_bundle_index_uses_latest_first(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "older", "date": datetime(2025, 1, 1, 0, 0, 0)},
-            {"bundle": "newer", "date": datetime(2025, 1, 2, 0, 0, 0)},
-        ],
-    )
-    monkeypatch.setattr(inspect_app, "bundle_jobs_context", lambda bundle, date=None, **kwargs: f"{bundle}\nidx id name status")
-
-    inspect_app.main(["1"])
-    output = capsys.readouterr().out.strip()
-
-    assert output.startswith("Bundle: newer")
+@pytest.mark.parametrize("flag", ["--log", "--logs", "--list-files"])
+def test_log_aliases_resolve_saved_job_task_identity(run, capsys, flag):
+    cli.main(["study", "--job", "array", "--array-task", "1", flag, "--tail", "1"])
+    text = capsys.readouterr().out
+    assert "array-101_1.out" in text
+    if flag != "--list-files":
+        assert "last" in text and "first" not in text
 
 
-def test_inspect_supports_multiple_indices_and_range_for_status_view(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_snapshots",
-        lambda desired_date=None: [
-            {"bundle": "older", "date": datetime(2025, 1, 1, 0, 0, 0)},
-            {"bundle": "newer", "date": datetime(2025, 1, 2, 0, 0, 0)},
-            {"bundle": "latest", "date": datetime(2025, 1, 3, 0, 0, 0)},
-        ],
-    )
-    monkeypatch.setattr(inspect_app, "bundle_jobs_context", lambda bundle, date=None, **kwargs: f"{bundle}\nidx id name status")
-
-    inspect_app.main(["2", "1-2"])
-    output = capsys.readouterr().out
-
-    assert "Bundle: newer" in output
-    assert "Bundle: latest" in output
-    assert output.find("Bundle: newer") < output.find("Bundle: latest")
+def test_job_defaults_to_bounded_logs(run, capsys):
+    cli.main(["study", "--job", "array", "--array-task", "1"])
+    assert "last" in capsys.readouterr().out
 
 
-def test_inspect_script_prints_job_script(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "job_context",
-        lambda bundle, job, date=None, include_script=False, include_logs=False, include_status=True: (
-            f"script:{bundle}:{job}:{include_script}:{include_logs}:{include_status}"
-        ),
-    )
-
-    inspect_app.main(["bundle_a", "--job", "1", "--script"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "script:bundle_a:1:True:False:False"
+def test_array_display_index_selects_the_same_task_for_logs(run, capsys):
+    cli.main(["study", "--array", "--job", "2"])
+    assert "array-101_1.out" in capsys.readouterr().out
 
 
-def test_inspect_status_prints_job_status(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "job_context",
-        lambda bundle, job, date=None, include_script=False, include_logs=False, include_status=True: (
-            f"status:{bundle}:{job}:{include_script}:{include_logs}:{include_status}"
-        ),
-    )
-
-    inspect_app.main(["bundle_a", "--job", "1", "--status"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "status:bundle_a:1:False:False:True"
+def test_script_view_does_not_dump_logs(run, capsys):
+    cli.main(["study", "--job", "array", "--script", "--cached"])
+    text = capsys.readouterr().out
+    assert "scientific-script" in text
+    assert "last" not in text
 
 
-def test_inspect_logs_flag_aliases_log(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "latest_log_context",
-        lambda bundle, date=None, job_name=None, array_task=None: f"log:{bundle}:{job_name}:{array_task}",
-    )
-
-    inspect_app.main(["bundle_a", "--job", "2", "--logs"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "log:bundle_a:2:None"
+def test_status_view_keeps_all_declared_array_indices(run, capsys):
+    cli.main(["study", "--array", "--status"])
+    text = capsys.readouterr().out
+    assert "101_0" in text and "101_1" in text and "101_2" in text
+    assert "UNKNOWN" in text
 
 
-def test_inspect_array_task_passed_to_log_lookup(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "latest_log_context",
-        lambda bundle, date=None, job_name=None, array_task=None: f"log:{bundle}:{job_name}:{array_task}",
-    )
-
-    inspect_app.main(["bundle_a", "--job", "2", "--array-task", "3", "--log"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "log:bundle_a:2:3"
+def test_explicit_json_matches_job_and_task_identity(run, capsys):
+    cli.main(["--bundle-file", str(run), "--job", "array", "--array-task", "1", "--json"])
+    view = json.loads(capsys.readouterr().out)
+    assert view["logs"][0]["task_index"] == 1
+    assert view["jobs"][0]["tasks"][1]["job_id"] == "101_1"
 
 
-def test_inspect_array_mode_expands_bundle_view(monkeypatch, capsys):
-    captured = {"kwargs": None}
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_jobs_context",
-        lambda bundle, date=None, **kwargs: captured.__setitem__("kwargs", kwargs) or f"{bundle}\nidx id name status",
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_snapshots",
-        lambda desired_date=None: [{"bundle": "bundle_a", "date": datetime(2025, 1, 1, 0, 0, 0)}],
-    )
-
-    inspect_app.main(["bundle_a", "--array"])
-    output = capsys.readouterr().out.strip()
-
-    assert "Bundle: bundle_a" in output
-    assert captured["kwargs"] is not None
-    assert captured["kwargs"]["show_array_tasks"] is True
+def test_cached_view_never_contacts_scheduler(run, monkeypatch, capsys):
+    cli.main(["study", "--json"])
+    capsys.readouterr()
+    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: pytest.fail("Cached read made a command"))
+    cli.main(["study", "--cached", "--json"])
+    assert json.loads(capsys.readouterr().out)["freshness"] == "stale"
 
 
-def test_inspect_array_mode_job_index_resolves_to_job_log(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_snapshots",
-        lambda desired_date=None: [{"bundle": "bundle_a", "date": datetime(2025, 1, 1, 0, 0, 0)}],
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "job_a",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "1-4"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_job_rows_from_jobs",
-        lambda jobs, bundle_date, **kwargs: (
-            bundle_date,
-            [
-                {
-                    "index": "1",
-                    "job_id": "123_3",
-                    "job_id_raw": "123_3",
-                    "name": "job_a",
-                    "array": "3/4",
-                    "gpus": "1",
-                    "dependencies": "-",
-                    "time_remaining": "-",
-                    "raw_status": "RUNNING",
-                    "status_key": "RUNNING",
-                    "status": "RUNNING",
-                    "machine_name": "remote",
-                    "machine": "remote",
-                }
-            ],
-        ),
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "latest_log_context",
-        lambda bundle, date=None, job_name=None, array_task=None: f"log:{bundle}:{job_name}:{array_task}",
-    )
-
-    inspect_app.main(["bundle_a", "--job", "1", "--array", "--log"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "log:bundle_a:job_a:3"
+@pytest.mark.parametrize("args", [["--latest", "study"], ["study", "--cached", "--refresh"], ["study", "--array", "--job", "9"]])
+def test_conflicting_or_invalid_selectors_stop(run, args):
+    with pytest.raises(SystemExit):
+        cli.main(args)
 
 
-def test_inspect_array_mode_job_index_defaults_to_job_log(monkeypatch, capsys):
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_snapshots",
-        lambda desired_date=None: [{"bundle": "bundle_a", "date": datetime(2025, 1, 1, 0, 0, 0)}],
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "load_bundle",
-        lambda bundle_name, desired_date=None: (
-            [
-                {
-                    "name": "job_a",
-                    "id": "123",
-                    "machine": "remote",
-                    "slurm": {"array": "1-4"},
-                }
-            ],
-            {},
-            desired_date,
-        ),
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "bundle_job_rows_from_jobs",
-        lambda jobs, bundle_date, **kwargs: (
-            bundle_date,
-            [
-                {
-                    "index": "1",
-                    "job_id": "123_2",
-                    "job_id_raw": "123_2",
-                    "name": "job_a",
-                    "array": "2/4",
-                    "gpus": "1",
-                    "dependencies": "-",
-                    "time_remaining": "-",
-                    "raw_status": "RUNNING",
-                    "status_key": "RUNNING",
-                    "status": "RUNNING",
-                    "machine_name": "remote",
-                    "machine": "remote",
-                }
-            ],
-        ),
-    )
-    monkeypatch.setattr(
-        inspect_app,
-        "latest_log_context",
-        lambda bundle, date=None, job_name=None, array_task=None: f"log:{bundle}:{job_name}:{array_task}",
-    )
-
-    inspect_app.main(["bundle_a", "--job", "1", "--array"])
-    output = capsys.readouterr().out.strip()
-
-    assert output == "log:bundle_a:job_a:2"
+def test_inspect_clipboard_copies_the_same_rendered_output(run, monkeypatch, capsys):
+    captured = []
+    monkeypatch.setattr(cli, "_copy_to_clipboard", captured.append)
+    cli.main(["study", "--cached", "--clip"])
+    assert captured[0] == capsys.readouterr().out.rstrip("\n")
 
 
-def test_inspect_requires_bundle_or_latest(capsys):
-    inspect_app.main([])
+def test_inspect_without_selector_shows_help(capsys):
+    cli.main([])
     assert "usage:" in capsys.readouterr().out

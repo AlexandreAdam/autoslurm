@@ -104,7 +104,7 @@ def test_sync_remote_pulls_storage(tmp_path, monkeypatch):
         if cmd[0] == "ssh" and cmd[-1].startswith("test -d "):
             return MagicMock(returncode=0, stdout="", stderr="")
         if cmd[0] == "rsync":
-            assert "--ignore-existing" in cmd
+            assert ("--checksum" if "/out/" in cmd[-2] else "--ignore-existing") in cmd
             assert cmd[cmd.index("-e") + 1] == shlex.join(["ssh", "-i", "~/.ssh/id1_rsa"])
             assert cmd[-2] in {
                 "user1@machine.domain.com:/remote/autoslurm/jobs/",

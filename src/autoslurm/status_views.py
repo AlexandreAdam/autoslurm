@@ -40,17 +40,6 @@ def _dependencies_text(job: dict) -> str:
     return str(deps)
 
 
-def _colorize_state_text(state_text: str) -> str:
-    upper = state_text.upper()
-    if upper == "SUCCESS":
-        return f"{status_core.ANSI_GREEN}{state_text}{status_core.ANSI_RESET}"
-    if upper == "RUNNING":
-        return f"{status_core.ANSI_YELLOW}{state_text}{status_core.ANSI_RESET}"
-    if upper == "CANCELLED" or upper in status_core.FAILED_STATES:
-        return f"{status_core.ANSI_RED}{state_text}{status_core.ANSI_RESET}"
-    return state_text
-
-
 def _center_visible(text: str, width: int) -> str:
     pad = max(0, width - status_core._visible_len(text))
     left = pad // 2
@@ -82,292 +71,58 @@ def bundle_job_rows(
     )
 
 
-def bundle_job_rows_from_jobs(
-    jobs: list[dict],
-    bundle_date: datetime,
-    *,
-    name_contains: Optional[str] = None,
-    name_regex: Optional[str] = None,
-    ignore_case: bool = False,
-    status_predicate: Optional[Callable[[str], bool]] = None,
-    show_array_tasks: bool = False,
-    array_tasks: Optional[set[int]] = None,
-    machine_statuses_by_machine: Optional[dict[Optional[str], dict[str, str]]] = None,
-    machine_time_left_by_machine: Optional[dict[Optional[str], dict[str, str]]] = None,
-) -> tuple[datetime, list[dict]]:
-    compiled_regex = None
-    if name_regex:
-        flags = re.IGNORECASE if ignore_case else 0
-        compiled_regex = re.compile(name_regex, flags=flags)
-
-    rows: list[dict] = []
-    by_machine: dict[Optional[str], list[dict]] = {}
-    for job in jobs:
-        by_machine.setdefault(job.get("machine"), []).append(job)
-
-    display_index = 1
-    for machine_name, machine_jobs in by_machine.items():
-        job_ids = [str(job["id"]) for job in machine_jobs if job.get("id") is not None]
-        if machine_statuses_by_machine is not None and machine_name in machine_statuses_by_machine:
-            machine_statuses = machine_statuses_by_machine[machine_name]
-            raw_time_left = (
-                machine_time_left_by_machine[machine_name]
-                if machine_time_left_by_machine is not None and machine_name in machine_time_left_by_machine
-                else {}
-            )
-        else:
-            machine_statuses = {}
-            raw_time_left = {}
-            if job_ids:
-                try:
-                    machine_statuses, raw_time_left = status_core._fetch_statuses_and_time_left_for_job_ids(
-                        job_ids, machine_name
-                    )
-                except Exception:
-                    machine_statuses = {}
-                    raw_time_left = {}
-
-        machine_parent_statuses: dict[str, str] = {}
-        for job in machine_jobs:
-            job_id = job.get("id")
-            if job_id is None:
+def rows_from_resolved(jobs, resolved, *, name_contains=None, name_regex=None, ignore_case=False,
+                       status_predicate=None, show_array_tasks=False, array_tasks=None):
+    by_name = {job["name"]: job for job in jobs}
+    compiled = re.compile(name_regex, re.I if ignore_case else 0) if name_regex else None
+    rows = []
+    for view in resolved:
+        name = view["name"]
+        if name_contains and (name_contains.lower() if ignore_case else name_contains) not in (name.lower() if ignore_case else name):
+            continue
+        if compiled and not compiled.search(name):
+            continue
+        original = by_name[name]
+        items = view["tasks"] if show_array_tasks and view["is_array"] else [{"job_id": view["id"], "state": view["state"], "task_index": None, "time_remaining": view.get("time_remaining")}]
+        for task in items:
+            if array_tasks is not None and view["is_array"] and show_array_tasks and task["task_index"] not in array_tasks:
                 continue
-            job_name = str(job["name"])
-            job_id_text = str(job_id)
-            declared_total = status_core.declared_array_size((job.get("slurm") or {}).get("array"))
-            machine_parent_statuses[job_name] = status_core.status_for_job_id(
-                job_id_text,
-                machine_statuses,
-                declared_total=declared_total,
-            )
-        machine_remaining = {}
-        if raw_time_left:
-            for job in machine_jobs:
-                job_id = job.get("id")
-                if job_id is None:
-                    continue
-                job_name = str(job["name"])
-                job_id_text = str(job_id)
-                exact = raw_time_left.get(job_id_text)
-                if exact is not None:
-                    machine_remaining[job_name] = exact
-                    continue
-                prefix_underscore = f"{job_id_text}_"
-                prefix_dot = f"{job_id_text}."
-                for key, value in raw_time_left.items():
-                    if key.startswith(prefix_underscore) or key.startswith(prefix_dot):
-                        machine_remaining[job_name] = value
-                        break
-
-        for job in machine_jobs:
-            job_name = str(job["name"])
-            job_id = job.get("id")
-            job_id_text = None if job_id is None else str(job_id)
-            declared_total = status_core.declared_array_size((job.get("slurm") or {}).get("array"))
-
-            if job_id_text is None:
-                raw_status = "not_submitted"
-                status_key = raw_status.upper()
-                array_text = f"0/{declared_total}" if declared_total is not None else "-"
-                if status_predicate and not status_predicate(status_key):
-                    continue
-                if name_contains:
-                    haystack = job_name.lower() if ignore_case else job_name
-                    needle = name_contains.lower() if ignore_case else name_contains
-                    if needle not in haystack:
-                        continue
-                if compiled_regex and not compiled_regex.search(job_name):
-                    continue
-                rows.append(
-                    {
-                        "index": str(display_index),
-                        "job_id": "-",
-                        "job_id_raw": None,
-                        "name": job_name,
-                        "array": array_text,
-                        "gpus": _requested_gpus(job),
-                        "dependencies": _dependencies_text(job),
-                        "time_remaining": "-",
-                        "raw_status": raw_status,
-                        "status_key": status_key,
-                        "status": _colorize_state_text(raw_status),
-                        "machine_name": job.get("machine"),
-                        "machine": str(job.get("machine") or "local"),
-                    }
-                )
-                display_index += 1
+            state = task["state"]
+            if status_predicate and not status_predicate(state.upper()):
                 continue
+            rows.append({"index": str(len(rows) + 1), "job_id": task["job_id"] or "-", "job_id_raw": task["job_id"],
+                         "name": name, "task_index": task["task_index"], "array": f"{view['counts']['completed']}/{len(view['tasks'])}" if view["is_array"] else "-",
+                         "gpus": _requested_gpus(original), "dependencies": _dependencies_text(original),
+                         "time_remaining": task.get("time_remaining") or (_requested_time(original) if state == "PENDING" else "-"),
+                         "raw_status": state, "status_key": state.upper(),
+                         "status": status_core._colorize_state_text(status_core.display_state(state)),
+                         "machine_name": view["machine"], "machine": str(view["machine"] or "local"),
+                         "reason": task.get("reason") if show_array_tasks and view["is_array"] else view.get("reason"), "exit_code": task.get("exit_code") if show_array_tasks and view["is_array"] else view.get("exit_code")})
+    return rows
 
-            resolved_status = machine_parent_statuses.get(
-                job_name,
-                status_core.status_for_job_id(
-                    job_id_text,
-                    machine_statuses,
-                    declared_total=declared_total,
-                ),
-            )
-            is_array, array_completed, array_total = status_core.array_progress_for_job_id(
-                job_id_text,
-                machine_statuses,
-                declared_total=declared_total,
-            )
-            if declared_total is not None:
-                is_array = True
-                array_total = declared_total
-                if resolved_status.upper() == "COMPLETED":
-                    array_completed = declared_total
-                elif resolved_status.upper() in {"PENDING", "NOT_SUBMITTED"}:
-                    array_completed = 0
-                else:
-                    array_completed = min(array_completed, declared_total)
 
-            if name_contains:
-                haystack = job_name.lower() if ignore_case else job_name
-                needle = name_contains.lower() if ignore_case else name_contains
-                if needle not in haystack:
-                    continue
-            if compiled_regex and not compiled_regex.search(job_name):
+def bundle_job_rows_from_jobs(jobs, bundle_date, *, name_contains=None, name_regex=None, ignore_case=False,
+                              status_predicate=None, show_array_tasks=False, array_tasks=None,
+                              machine_statuses_by_machine=None, machine_time_left_by_machine=None):
+    from .inspection import resolve_jobs, producing_machine, _profiles
+    observations = None
+    if machine_statuses_by_machine is not None:
+        observations = {}
+        profiles, _ = _profiles(jobs)
+        for job in jobs:
+            try:
+                key, _ = producing_machine(job, profiles)
+            except ValueError:
                 continue
-
-            if show_array_tasks and (is_array or declared_total is not None):
-                task_entries = [
-                    (task_id, task_status)
-                    for task_id, task_status in machine_statuses.items()
-                    if status_core._array_task_index(job_id_text, task_id) is not None
-                ]
-                task_entries.sort(
-                    key=lambda item: (
-                        status_core._array_task_index(job_id_text, item[0])
-                        if status_core._array_task_index(job_id_text, item[0]) is not None
-                        else 10**9,
-                        item[0],
-                    )
-                )
-                if array_tasks is not None:
-                    task_entries = [
-                        item
-                        for item in task_entries
-                        if status_core._array_task_index(job_id_text, item[0]) in array_tasks
-                    ]
-                if task_entries:
-                    requested_time = _requested_time(job)
-                    for task_id, task_status in task_entries:
-                        status_key = task_status.upper()
-                        if status_predicate and not status_predicate(status_key):
-                            continue
-                        if status_key in {"PENDING", "NOT_SUBMITTED"}:
-                            time_remaining = requested_time
-                        elif status_key == "RUNNING":
-                            if raw_time_left is not None:
-                                time_remaining = raw_time_left.get(task_id, "-")
-                            else:
-                                time_remaining = status_core._fetch_time_left_for_job_ids(
-                                    [task_id], machine_name
-                                ).get(task_id, "-")
-                        elif status_key in TERMINAL_STATES:
-                            time_remaining = "-"
-                        else:
-                            time_remaining = "-"
-                        rows.append(
-                            {
-                                "index": str(display_index),
-                                "job_id": task_id,
-                                "job_id_raw": task_id,
-                                "name": job_name,
-                                "gpus": _requested_gpus(job),
-                                "dependencies": _dependencies_text(job),
-                                "time_remaining": time_remaining,
-                                "raw_status": task_status,
-                                "status_key": status_key,
-                                "status": _colorize_state_text(status_core.display_state(task_status)),
-                                "machine_name": job.get("machine"),
-                                "machine": str(job.get("machine") or "local"),
-                            }
-                        )
-                        display_index += 1
-                    continue
-
-                if (
-                    declared_total is not None
-                    and resolved_status.upper() not in status_core.FAILED_STATES
-                    and resolved_status.upper() != "CANCELLED"
-                ):
-                    requested_time = _requested_time(job)
-                    declared_indices = status_core.declared_array_indices((job.get("slurm") or {}).get("array"))
-                    if declared_indices is None:
-                        declared_indices = list(range(1, declared_total + 1))
-                    if array_tasks is not None:
-                        declared_indices = [index for index in declared_indices if index in array_tasks]
-                    for task_index in declared_indices:
-                        task_id = f"{job_id_text}_{task_index}"
-                        task_status = machine_statuses.get(task_id, resolved_status)
-                        status_key = task_status.upper()
-                        if status_predicate and not status_predicate(status_key):
-                            continue
-                        if status_key in {"PENDING", "NOT_SUBMITTED"}:
-                            time_remaining = requested_time
-                        elif status_key == "RUNNING":
-                            if raw_time_left is not None:
-                                time_remaining = raw_time_left.get(task_id, machine_remaining.get(job_name, "-"))
-                            else:
-                                time_remaining = machine_remaining.get(job_name, "-")
-                        elif status_key in TERMINAL_STATES:
-                            time_remaining = "-"
-                        else:
-                            time_remaining = "-"
-                        rows.append(
-                            {
-                                "index": str(display_index),
-                                "job_id": task_id,
-                                "job_id_raw": task_id,
-                                "name": job_name,
-                                "gpus": _requested_gpus(job),
-                                "dependencies": _dependencies_text(job),
-                                "time_remaining": time_remaining,
-                                "raw_status": task_status,
-                                "status_key": status_key,
-                                "status": _colorize_state_text(status_core.display_state(task_status)),
-                                "machine_name": job.get("machine"),
-                                "machine": str(job.get("machine") or "local"),
-                            }
-                        )
-                        display_index += 1
-                    continue
-
-            requested_time = _requested_time(job)
-            raw_status = resolved_status
-            status_key = raw_status.upper()
-            if status_predicate and not status_predicate(status_key):
-                continue
-            if status_key in {"PENDING", "NOT_SUBMITTED"}:
-                time_remaining = requested_time
-            elif status_key == "RUNNING":
-                time_remaining = machine_remaining.get(job_name, "-")
-            elif status_key in TERMINAL_STATES:
-                time_remaining = "-"
-            else:
-                time_remaining = "-"
-
-            array_text = f"{array_completed}/{array_total}" if is_array else "-"
-            rows.append(
-                {
-                    "index": str(display_index),
-                    "job_id": job_id_text,
-                    "job_id_raw": job_id_text,
-                    "name": job_name,
-                    "array": array_text,
-                    "gpus": _requested_gpus(job),
-                    "dependencies": _dependencies_text(job),
-                    "time_remaining": time_remaining,
-                    "raw_status": raw_status,
-                    "status_key": status_key,
-                    "status": _colorize_state_text(status_core.display_state(raw_status)),
-                    "machine_name": job.get("machine"),
-                    "machine": str(job.get("machine") or "local"),
-                }
-            )
-            display_index += 1
-    return bundle_date, rows
+            states = machine_statuses_by_machine.get(job.get("machine"), {})
+            times = (machine_time_left_by_machine or {}).get(job.get("machine"), {})
+            from .array_status import canonical_job_id
+            observations[key] = {"observed_at": None, "errors": [], "records": {
+                canonical_job_id(identity): {"state": state, "time_remaining": times.get(identity)}
+                for identity, state in states.items() if canonical_job_id(identity)}}
+    return bundle_date, rows_from_resolved(jobs, resolve_jobs(jobs, observations), name_contains=name_contains,
+        name_regex=name_regex, ignore_case=ignore_case, status_predicate=status_predicate,
+        show_array_tasks=show_array_tasks, array_tasks=array_tasks)
 
 
 def bundle_jobs_context(
@@ -479,4 +234,31 @@ def bundle_jobs_context_from_rows(
         elif row["status_key"] == "CANCELLED" or row["status_key"] in status_core.FAILED_STATES:
             row_text = f"{status_core.ANSI_RED}{row_text}{status_core.ANSI_RESET}"
         lines.append(row_text)
+        if row.get("reason") or row.get("exit_code"):
+            lines.append(f"  {row['job_id']} reason={row.get('reason') or '-'} exit={row.get('exit_code') or '-'}")
+    return "\n".join(lines)
+
+
+def summary_text(entries, views):
+    if not views:
+        return "No saved bundles found."
+    headers = ["idx", "bundle", "status", "saved", "jobs", "array", "pending", "running", "completed", "failed", "cancelled", "unknown", "observation"]
+    rows = []
+    for index, (entry, view) in enumerate(zip(entries, views), 1):
+        counts = {key: sum(job["counts"][key] for job in view["jobs"]) for key in ("pending", "running", "completed", "failed", "cancelled", "unknown")}
+        rows.append([str(index), str(entry["bundle"]), view["state"], view["saved_at"].replace("T", " "), str(len(view["jobs"])),
+                     str(sum(len(job["tasks"]) for job in view["jobs"] if job["is_array"])),
+                     *[str(counts[key]) for key in ("pending", "running", "completed", "failed", "cancelled", "unknown")], view["freshness"]])
+    widths = [max(len(header), *(len(row[index]) for row in rows)) for index, header in enumerate(headers)]
+    text = "\n".join("  ".join(value.ljust(width) for value, width in zip(row, widths)) for row in [headers, *rows])
+    errors = [f"{entry['bundle']}: {error['source']}: {error['message']}" for entry, view in zip(entries, views) for error in view["errors"]]
+    return "\n".join([text, *errors])
+
+
+def observation_text(view):
+    lines = [f"Run: {view['state']}", f"Observation: {view['freshness']} at {view['observed_at']}"]
+    for job in view["jobs"]:
+        if job["is_array"] and (job.get("reason") or job.get("exit_code")):
+            lines.append(f"Parent {job['id']}: {job['scheduler_state']} reason={job.get('reason') or '-'} exit={job.get('exit_code') or '-'}")
+    lines.extend(f"Observation error: {error['source']}: {error['message']}" for error in view["errors"])
     return "\n".join(lines)

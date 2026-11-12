@@ -21,12 +21,14 @@ def mock_save_load_config(monkeypatch, isolate_storage):
     yield
 
 
-def _create_job(bundle_name, job_name="acp-job"):
+def _create_job(bundle_name, job_name="acp-job", job_id=None):
     job = {
         "name": job_name,
         "script": "python train.py",
         "slurm": {"time": "00:05:00", "mem": "1G", "cpus_per_task": 1},
     }
+    if job_id is not None:
+        job["id"] = job_id
     schedule_job(job, bundle_name=bundle_name)
     return job
 
@@ -66,9 +68,11 @@ def test_execute_acp_list_returns_metadata():
     assert "first" in result[0]["jobs"] or "second" in result[0]["jobs"]
 
 
-def test_execute_acp_context_includes_out_log():
+def test_execute_acp_context_includes_out_log(monkeypatch):
+    from tests.inspection_helpers import mock_scheduler
+    mock_scheduler(monkeypatch, accounting="42|COMPLETED|0:0|None|42")
     bundle = "acp_context"
-    job = _create_job(bundle)
+    job = _create_job(bundle, job_id="42")
     log_path = out_dir() / f"{job['name']}-42.out"
     log_path.write_text("done")
 

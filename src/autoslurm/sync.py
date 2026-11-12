@@ -22,7 +22,7 @@ def _remote_ssh_command(machine: dict, machine_name: str, remote_command: str) -
     return ["ssh", *shlex.split(hostname), remote_command]
 
 
-def _rsync_command(remote_source: str, local_target: Path, key_path: str = "") -> list[str]:
+def _rsync_command(remote_source: str, local_target: Path, key_path: str = "", *, mutable=False) -> list[str]:
     ssh_parts = ["ssh"]
     if key_path:
         ssh_parts.extend(shlex.split(key_path))
@@ -30,7 +30,7 @@ def _rsync_command(remote_source: str, local_target: Path, key_path: str = "") -
     return [
         "rsync",
         "-a",
-        "--ignore-existing",
+        "--checksum" if mutable else "--ignore-existing",
         "-e",
         ssh_transport,
         remote_source,
@@ -67,7 +67,7 @@ def sync_machine(machine_name: Optional[str] = None) -> None:
             print(f"Skipping missing remote directory '{directory}' on '{resolved_name}'.")
             continue
         result = subprocess.run(
-            _rsync_command(f"{remote_target}:{remote_source}", local_target, key_path),
+            _rsync_command(f"{remote_target}:{remote_source}", local_target, key_path, mutable=directory == "out"),
             capture_output=True,
             text=True,
         )

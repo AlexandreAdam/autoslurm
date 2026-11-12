@@ -9,13 +9,14 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP2, safer submission; complete locally.
+- **Current milestone:** MVP3, trustworthy inspection; complete locally.
 - **Stage:** stable code remains pinned; development has isolated code,
   environment/state, a tested client recipe and single/array reference workloads.
-  Full offline suite: 295 passed. Incremental submission receipts, partial/unknown
-  outcomes and exact read-only recovery inspection are verified. No cluster
-  installation or promotion performed.
-- **Next task:** detail MVP3's shared task/status/log view and growing-log refresh.
+  Full offline suite: 313 passed. Shared task/status/log inspection, exact
+  rediscovery, explicit errors/staleness and bounded log refresh are verified.
+  No cluster installation or promotion performed.
+- **Next task:** choose optional MVP4 filtered result retrieval or a separately
+  authorized release-readiness/promotion step; no later milestone started.
 - **Last updated:** 2026-11-11.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -258,6 +259,20 @@ package-version enforcement are not release blockers.
 
 ## MVP3 Trustworthy inspection for agents
 
+Design: [MVP3 shared inspection](REFACTORING_DOCS/design/MVP3_shared_inspection.md).
+
+- [x] **MVP3.0 Bound the observation contract.** Exact saved-run selection,
+  one task view, explicit query errors/staleness, bounded logs and no recovery.
+- [x] **MVP3.1 Centralize task and scheduler evidence.** Share array parsing,
+  IDs and conservative aggregation. Query once per producing machine/operation;
+  retain timestamps, errors, reasons and exit evidence. Overlay submission receipts.
+- [x] **MVP3.2 Share inspection and log retrieval.** Python, ACP and terminal
+  consume one result; exact selectors and local rediscovery survive context loss.
+  Resolve bounded log reads from saved producing locations and update growing logs.
+- [x] **MVP3.3 Verify and publish.** Exercise a mixed-outcome scientific array,
+  missing/failed/stale observations, custom/raw-task logs and a second refresh;
+  count external queries, update minimal human/agent guides and close locally.
+
 **Outcome:** status, logs and agent inspection consume the same resolved job/task
 view and show the evidence needed to continue after a context reset.
 
@@ -359,6 +374,8 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-11 | Implement one execution context with project-relative inputs/cwd, results-relative outputs and saved producing roots | Same relative science definition works from unrelated directories under two profiles; remote submission resolves storage once and batches required-input checks; no input staging or broader recovery engine |
 | 2026-11-11 | Use the existing DAG driver for both lanes with incremental execution-side receipts; retire implicit legacy graph submission | Preserve accepted IDs before the next scheduler call, distinguish partial/unknown outcomes, and refresh exact evidence without any automatic resubmission or adoption |
 
+| 2026-11-11 | Consolidate inspection around exact saved paths, one scheduler/task view and producing-path log tails | Preserve missing/error/stale evidence, reduce duplicated queries, and give terminal/ACP/Python the same identity/state contract; no retry or scientific-success inference |
+
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
 or migration decision has already been accepted.
@@ -376,6 +393,7 @@ or migration decision has already been accepted.
 | 2026-11-11 | MVP0.3 Current client recipe and scientific reference workloads | 245 full offline tests pass; 13 focused client/context checks pass after final failure-case/documentation updates. Installed standalone application produces matching single/reduced summaries. Expected timestamp-collision warnings exercised by competing-draft tests. Task commit: `git log --grep '^MVP0.3:'`; local milestone tag `mvp0` at closure, without promotion |
 | 2026-11-11 | MVP1.0–MVP1.3 Shared paths, selection, saved execution and scientific integration | 270 full offline tests pass in 2.27 s; five expected timestamp-collision warnings. Two-profile array/reducer runs, nested cwd/space handling, activation failure, invalid/missing inputs before submission, one remote root probe plus batched preflight, and saved local/remote artifacts without current-profile discovery verified. Report: `.development/test-runs/mvp1-final.xml`. Guides/schema and examples updated. Task commit: `git log --grep '^MVP1.3:'`; local tag `mvp1` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 | 2026-11-11 | MVP2.0–MVP2.3 Safer submission, receipts and exact inspection | 295 offline tests pass in 2.62 s; 28 expected snapshot-collision warnings. Same-level/later rejection, interruption/malformed output, response loss after final and unfinished helper execution, persisted/in-memory accepted IDs on storage failure, capability/replay guards, read-only refresh with recorded transport, rejection of changed identities/IDs, protected cleanup, shell syntax and literal/runtime exports verified. Report: `.development/test-runs/mvp2-final.xml`. Task commit: `git log --grep '^MVP2.3:'`; local tag `mvp2` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
+| 2026-11-11 | MVP3.0–MVP3.3 Shared inspection and bounded log refresh | 313 offline tests pass in 3.87 s; 29 expected snapshot-collision warnings. Mixed scientific array, missing/failed/stale observations, queue/accounting conflicts/errors, raw/dot task IDs and excluded steps, saved transport after profile edits, exact receipt overlay without writes, remote second refresh, checksum log sync and cached no-network reads verified. Shared status/inspect/ACP evidence and task-context handoff checked. One scheduler SSH plus one selected-log SSH in the remote scenario; two local scheduler commands across multiple runs. Report: `.development/test-runs/mvp3-final.xml`. Task commit: `git log --grep '^MVP3.3:'`; local tag `mvp3` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 
 ## How we work
 

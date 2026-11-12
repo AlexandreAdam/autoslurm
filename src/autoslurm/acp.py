@@ -11,6 +11,7 @@ from .experiment_context import experiment_context
 from .save_load_jobs import list_saved_bundles, schedule_job
 from .storage import ensure_storage_dirs, jobs_dir
 from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
+from .inspection import inspect_bundle, list_runs
 
 ACTION_FILE = Path(__file__).resolve().parent / "acp_action.json"
 
@@ -75,7 +76,7 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
 
     The `acl` dict must include an `"action"` key (one of `inspect_experiments`,
     `list_experiments`, `schedule`, `gather_context`, `list_submissions`,
-    `inspect_submission`). Each action defines its
+    `inspect_submission`, `list_runs`, `inspect_run`). Each action defines its
     own parameters. The return value is a
     dict with keys `status` and either `result` or `message`.
     """
@@ -86,6 +87,13 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
     try:
         if action == "list_submissions":
             return {"status": "success", "result": list_submissions(acl.get("bundle"))}
+        if action == "list_runs":
+            return {"status": "success", "result": list_runs(acl.get("bundle"))}
+        if action == "inspect_run":
+            return {"status": "success", "result": inspect_bundle(acl.get("bundle_path"), receipt_path=acl.get("receipt_path"),
+                refresh=acl.get("refresh", True), include_logs=acl.get("include_logs", False),
+                job_name=acl.get("job_name"), task_index=acl.get("task_index"), tail=acl.get("tail", 40),
+                max_log_bytes=acl.get("max_log_bytes", 65536), max_logs=acl.get("max_logs", 20))}
         if action == "inspect_submission":
             reader = refresh_submission if acl.get("refresh", False) else load_submission
             return {"status": "success", "result": reader(acl["receipt_path"])}

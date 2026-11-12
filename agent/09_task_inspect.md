@@ -1,18 +1,34 @@
 # Task: Inspect Experiments
 
-Start with `00_operating_rules.md` and `01_client_workflow.md`. Establish which installation and machine
-own the selected run; distinguish missing observations from failed computation.
+Read `00_operating_rules.md` and `01_client_workflow.md` from the installation
+that owns the run. Development MVP3 supports the contract below; stable remains
+pinned to its earlier behavior.
 
-Agents that need to understand what a job bundle contains should focus on these sources:
+1. Discover local references with `list_runs(bundle_name=...)` or ACP
+   `{"action":"list_runs","bundle":"study"}`. Preserve exact `bundle_path`.
+   Use `list_submissions` when the handoff has a submission identity.
+2. Inspect with `inspect_bundle(bundle_path)` or
+   `inspect_bundle(receipt_path=...)`; ACP `inspect_run` takes the same selectors.
+   Default refresh queries the producing scheduler; `refresh: false` makes no
+   network calls and labels cached evidence stale/never.
+3. Read `freshness`, `errors`, `observed_at`, submission outcomes and each task's
+   state/source/reason/exit. Missing rows mean unknown. Parent failure does not
+   identify which missing task failed. Scheduler completion does not validate
+   scientific output.
+4. Request bounded logs only for relevant jobs/tasks using `include_logs`,
+   `job_name`, `task_index`, `tail`, `max_log_bytes`, `max_logs`. Keep full log
+   paths in the handoff; report missing, not_cached, omitted and error states.
+   Explicit refresh reads growing logs at recorded producing locations.
+5. Retain exact references, job/task IDs, last evidence/time/errors, actions
+   already taken and the next safe operation. Never retry an uncertain submit.
 
-- `03_experiment_context.md` explains `autoslurm-experiment-context` / `autoslurm.experiment_context.experiment_context(...)`, which emit (1) the saved bundle JSON, (2) the rendered SLURM scripts, and (3) the `.out` logs tied to each job. Running this tool with `--date` or passing `desired_date` lets you target a specific timestamped bundle.
-- In `04_project_map.md` the Python function is listed under “Python surface area,” and the generated scripts/logs are described near the section that covers `$AUTOSLURM/jobs`, `/slurm`, and `/out`. Use this to track where files live.
-- Reference `07_acp_actions.md` plus `acp_action.json` to find the `inspect_experiments` action, which requires `bundle` and optional `date`, and returns the same concatenated text.
-- When you need remote logs that may live on another machine, rely on the agent context helper for the ACP: `execute_acp({"action":"inspect_experiments", ...})` triggers the same fetch logic that the CLI uses.
+Terminal equivalents: `asl status --bundle-file PATH --array`,
+`asl inspect --receipt PATH --json`, and
+`asl inspect --receipt PATH --job JOB --log --refresh --tail 40`.
+Name/date/index conveniences resolve to an exact snapshot but can move between
+sessions; do not retain them as identity. Date selection is nearest-date.
 
-Quick summary:
-
-1. Prefetch docs with `autoslurm-agent-context` (or the `gather_context` ACP) so you know the bucket names and CLI semantics.
-2. Use `inspect_experiments` to read `jobs/<bundle>_YYYYMMDDHHMMSS.json`, the associated SLURM script, and `.out` logs all in one shot.
-3. If the job ran remotely, the ACP reruns `autoslurm-experiment-context` on the remote host via SSH and pulls the logs into `out/`, so rerunning the same `inspect_experiments` action later will reflect new outputs.
-4. Use `autoslurm-agent-context --sections 09_task_inspect.md 12_task_acp_reference.md` (or `execute_acp({"action":"gather_context","sections":["09_task_inspect.md","12_task_acp_reference.md"]})`) when you only need the inspect-relevant docs in your prompt; alternatively, pass `task: "inspect_experiments"` to `gather_context` so it selects the relevant sections automatically.
+`inspect_experiments` and `experiment_context` remain human renderers with
+scripts and bounded logs. Do not parse their Markdown as a programmatic API or
+run them remotely as an inspection fallback. `inspect_run` is the structured
+boundary. `gather_context` with `task: "inspect_run"` loads this contract.
