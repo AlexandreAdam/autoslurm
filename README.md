@@ -161,23 +161,29 @@ autoslurm-schedule my-script --submit --machine=machine\
 
 ### Inspect jobs and logs
 
-Use `autoslurm logs` to inspect scheduled bundles without dumping the full
-bundle JSON by default.
+Read execution logs with scheduler status, failure reasons and exit codes for
+one exact saved run:
 
-```bash
-autoslurm logs
-autoslurm logs my-bundle
-autoslurm logs my-bundle --job my-job --status
-autoslurm logs my-bundle --job my-job --logs
-autoslurm logs --latest --log
+```sh
+asl logs --bundle-file /absolute/saved/run.json --job my-job
+asl logs --receipt /absolute/local/receipt.json --job my-job --task 2 --stream stderr
+asl logs --bundle-file /absolute/saved/run.json --cached --json
 ```
 
-This prints compact bundle and job summaries, SLURM status for a selected job,
-or the newest `.out` log when you need to check a run quickly.
+```python
+from autoslurm import inspect_logs
+view = inspect_logs(receipt_path=receipt_path, job_name="my-job", task_index=2)
+```
+
+The default reads fresh status and bounded log excerpts. `--cached` reads only
+previously saved evidence, labelled stale. Missing, empty and unreadable logs are
+reported separately. Merged stdout/stderr stays labelled as both streams.
+AutoSlurm reads its recorded execution logs; applications own scientific results
+and datasets. See [execution logs](docs/logs.md) for bounds and failure handling.
 
 You can also submit the most recently saved bundle directly:
 
-```bash
+```sh
 autoslurm submit --latest
 ```
 

@@ -94,7 +94,8 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
             return {"status": "success", "result": inspect_bundle(acl.get("bundle_path"), receipt_path=acl.get("receipt_path"),
                 refresh=acl.get("refresh", True), include_logs=acl.get("include_logs", False),
                 job_name=acl.get("job_name"), task_index=acl.get("task_index"), tail=acl.get("tail", 40),
-                max_log_bytes=acl.get("max_log_bytes", 65536), max_logs=acl.get("max_logs", 20))}
+                max_log_bytes=acl.get("max_log_bytes", 65536), max_logs=acl.get("max_logs", 20),
+                stream=acl.get("stream", "both"))}
         if action == "inspect_submission":
             reader = refresh_submission if acl.get("refresh", False) else load_submission
             return {"status": "success", "result": reader(acl["receipt_path"])}

@@ -91,6 +91,7 @@ from .submission import (
 from .inspection import (
     inspect_bundle,
     inspect_bundles,
+    inspect_logs,
     list_runs,
 )
 from .software_manifest import attach_software_manifest, normalize_software_manifest, bundle_software_manifest
@@ -161,6 +162,7 @@ __all__ = [
     'refresh_submission',
     'inspect_bundle',
     'inspect_bundles',
+    'inspect_logs',
     'list_runs',
     'attach_software_manifest',
     'normalize_software_manifest',

@@ -87,6 +87,10 @@ operate from the workstation; compute nodes use already-prepared environments.
   readable. Never silently fall back to local execution or another profile.
 - Tests use temporary storage and fake external commands. Real cluster tests
   are separate and must not be triggered by the default test suite.
+- Retrieval covers AutoSlurm execution evidence only: recorded stdout/stderr,
+  Slurm output and status/reason/exit codes. Use `inspect_logs` / `asl logs` with
+  exact run selectors and bounded excerpts; cached means no scheduler/source-log
+  access locally or remotely. Scientific results/datasets remain application-owned.
 - Update human and agent documentation when public behavior changes.
 - Treat client integration guidance and durable agent handoff as interface
   requirements, not late documentation polish. Map each service to an interaction
@@ -95,7 +99,7 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP7.2e
+  [reference client](examples/reference_client/README.md) are the verified MVP8
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
 - [Software updates](agent/13_software_preparation.md) documents explicit

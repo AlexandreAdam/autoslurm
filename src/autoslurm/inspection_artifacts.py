@@ -17,6 +17,7 @@ class ArtifactRequest:
     max_log_bytes: int = 65536
     max_logs: int = 20
     refresh_logs: bool = False
+    stream: str = "both"
 
     def __post_init__(self):
         # Historical context helpers accept decimal task selectors as strings.
@@ -24,6 +25,8 @@ class ArtifactRequest:
             object.__setattr__(self, "task_index", int(self.task_index))
 
     def validate(self, run):
+        if not isinstance(self.stream, str) or self.stream not in {"both", "stdout", "stderr"}:
+            raise ValueError("Log stream must be both, stdout or stderr.")
         if self.include_logs:
             validate_log_bounds(self.tail, self.max_log_bytes, self.max_logs)
         if self.task_index is not None and (type(self.task_index) is not int or self.task_index < 0):
@@ -59,6 +62,7 @@ def attach_artifacts(view, run, request, *, profiles, root, cache):
             run.jobs, view["jobs"], job_name=request.job_name, task_index=request.task_index,
             tail=request.tail, max_bytes=request.max_log_bytes, max_logs=request.max_logs,
             refresh=request.refresh_logs, profiles=profiles, root=root, cache=cache,
+            stream=request.stream,
         )
     if request.include_script:
         view["scripts"], errors = _read_scripts(run.jobs, run.date, request.job_name, root)

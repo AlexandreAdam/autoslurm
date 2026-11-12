@@ -282,14 +282,14 @@ observations.
 MVP3 provides one structured observation pipeline for Python, ACP and terminal:
 
 ```python
-from autoslurm import list_runs, inspect_bundle
+from autoslurm import list_runs, inspect_bundle, inspect_logs
 
 runs = list_runs(bundle_name="study")  # Local discovery, no cluster calls.
 view = inspect_bundle(receipt_path=receipt_path)  # Exact tracking snapshot.
 failed = [task for job in view["jobs"] for task in job["tasks"]
           if task["state"] in {"FAILED", "TIMEOUT", "OUT_OF_MEMORY"}]
-detail = inspect_bundle(receipt_path=receipt_path, include_logs=True,
-                        job_name="shards", task_index=1, tail=40)
+detail = inspect_logs(receipt_path=receipt_path, job_name="shards",
+                      task_index=1, stream="both", tail=40)
 cached = inspect_bundle(receipt_path=receipt_path, refresh=False)
 ```
 
@@ -329,15 +329,19 @@ in the application. Do not trigger retries from state aggregation or log text.
 ```sh
 asl status --bundle-file /absolute/saved/run.json --array
 asl inspect --receipt /absolute/local/receipt.json --json
-asl inspect --receipt /absolute/local/receipt.json --job shards --array-task 1 --log --refresh --tail 40
+asl logs --receipt /absolute/local/receipt.json --job shards --task 1 --stream stderr --tail 40
 asl inspect --receipt /absolute/local/receipt.json --cached --json
 ```
 
-CLI status is fresh by default; remote log refresh requires `--refresh`. Python
-and ACP refresh remote logs when `include_logs=True, refresh=True` (the default
-refresh setting). With `refresh=False` / `--cached`, no cluster calls occur:
-remote excerpts are cached/stale or `not_cached`; local logs can still be read
-with their own observation time. Script-only CLI reads can use `--cached`.
+CLI/Python/ACP status and requested logs are fresh by default. `asl logs` reads
+logs immediately and requires one exact `--bundle-file` or `--receipt`; an empty
+command shows help. Legacy bundle/index navigation remains `asl inspect`.
+`inspect_logs` returns the same structured view as `inspect_bundle(include_logs=True)`.
+ACP `inspect_run` accepts `include_logs=True` and `stream` (`both`, `stdout`, `stderr`).
+With `refresh=False` / `--cached`, neither scheduler nor source logs are queried,
+locally or remotely. Available cached excerpts are stale; `not_cached` means no
+matching excerpt. Increasing limits cannot recover text never cached. Script-only
+CLI reads can use `--cached`; scripts are separate local artifacts.
 
 Logs use saved producing roots/cwd and exact job/task identities, including raw
 IDs for `%j`, and support `%x`, `%j`, `%A`, `%a`, `%%`. Unsupported placeholders
@@ -345,8 +349,16 @@ or absent producing metadata produce explicit errors. An unsubmitted draft does
 not adopt a same-name log. Logs default to 40 lines, at most 64 KiB read per file
 and 20 files. Python/ACP accept `tail`, `max_log_bytes` (up to 1 MiB), `max_logs`
 (up to 100); omitted/truncated content is marked and full paths retained.
-Cached excerpts cannot reveal content that was never fetched. This is bounded
-context, not full artifact retrieval.
+`asl logs` exposes these as `--tail`, `--max-bytes`, `--max-logs`. Filter by
+job/task/stream before applying file limits. Combined stdout/stderr is one entry
+with `streams: ["stdout", "stderr"]`; selecting stderr cannot separate mixed text.
+Available entries include `path`, `machine`, job/task identity, `observed_at`,
+`freshness`, `bytes_read`, `bytes_returned`, `empty`, `truncated` and
+`changed_during_read`. Empty differs from missing, error and not_cached. Permission
+and transport failures mean unavailable evidence. Concurrent change is flagged;
+refresh for a newer excerpt. Read only regular files, never scan directories or
+fetch scientific datasets/results. Cache errors retain live text with errors;
+inspect partial evidence before any diagnosis. Log text never authorizes retry.
 
 `sync_machine` / `asl sync` remain broader profile-based storage operations:
 immutable existing job/script files are retained; logs refresh with checksum

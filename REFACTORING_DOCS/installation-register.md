@@ -6,8 +6,8 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code includes MVP7.1b: locate it with
-`git log --grep '^MVP7.1b:'`; the last completed full milestone tag is `mvp6`.
+historical. Current tested code includes MVP8: locate it with
+`git log --grep '^MVP8:'`; the local milestone tag at closure is `mvp8`.
 No cluster installation or live
 job was changed.
 
@@ -248,3 +248,14 @@ machine. Store nonsecret paths/identities, never credential contents.
   now honors configured SSH sharing and uses short owned socket paths. No base
   reinstall, daily config mutation, cluster contact or rollback changes. Gaia's
   already committed main was pushed through ba97a0b; its working files preserved.
+
+- **MVP8, 2026-11-12:** 562 offline tests passed in 5.58 s, 38 expected warnings,
+  report `.development/test-runs/execution-logs-final.xml`. Clean temporary-source
+  wheel build/isolated target install and API/reader/entry-point/help checks passed;
+  `.development/artifacts/mvp8/autoslurm-0.1.0-py3-none-any.whl`, SHA256
+  `9b3e5c18e04f3964fdb8ff0c2eabe4e55e9682f449a23ebe099b0179d0c634d4`.
+  Base import still points at main; `asl logs --help` works without reinstall.
+  Existing standalone autoslurm-logs wrapper retains its former entry point until
+  an operator reinstalls; new wheels select apps.logs. No base install/state/config
+  mutation. Clean pinned rollback 33bcbd3 reverified. Scientific files remain
+  application-owned; no cluster contact, job, transfer or remote deployment.

@@ -9,18 +9,21 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP7; single-checkout software updates. The user has
+- **Current milestone:** MVP8 execution-log retrieval complete locally on dev.
+  MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 542 passed, 39 expected
+  rollback source remains unchanged. Full offline suite: 562 passed, 38 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.SSH.1 reuses configured shared SSH connections
-  without owning them and puts AutoSlurm-owned sockets under `/tmp` on POSIX.
-  Both submission adapters retain the same yielded-options interface.
-- **Next task:** resume saved MVP8 execution-log interface work. No actual cluster
-  contact is authorized; the user will verify a real submission.
+- **Latest completed task:** MVP8.1–MVP8.3 exposes `inspect_logs` / `asl logs`
+  through shared inspection and one bounded regular-file reader. Fresh/cached,
+  merged streams, missing/empty/errors and concurrent change are explicit.
+  FIX.SSH.1 was completed and pushed separately before this milestone.
+- **Next task:** no later implementation is scheduled. Application scientific
+  results/datasets remain outside AutoSlurm retrieval. Actual cluster submission
+  verification belongs to the user; no cluster contact was made in these tasks.
 - **Scope update:** local code/tests only, with temporary Git repositories and
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
@@ -72,7 +75,7 @@ Each row is incremental, not cumulative.
 | MVP5 | Separate inspection collection, state projection, caches and artifact reads | One to two days | Preserve public inspection results; no new index |
 | MVP6 | Separate bundle persistence/selection from transport and configuration helpers | One to two days | No storage migration or broad module renaming |
 | MVP7 | Prepare exact Git project revisions and verify isolated runtime installations for a bundle | Estimate after manifest contract | Login/preparation host only; never update code/environments used by existing jobs |
-| Optional result retrieval | Filtered retrieval for one declared result subtree | Half to one day | No general data-staging system or automatic scientific retry engine |
+| MVP8 | Clear bounded stdout/stderr inspection with failure evidence | Half to one day | Execution logs only; scientific results remain application-owned |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
 nine focused days with the stated scope; none requires completing later product
@@ -447,19 +450,28 @@ layer; scientific package/environment setup remains operator-managed.
   then run the full offline suite and update the SSH docs/Done log. No cluster
   commands; push the completed dev commit. Resume the separately saved MVP8 work.
 
-## Optional scientific result retrieval (formerly proposed MVP4)
+## MVP8 Robust execution-log retrieval
 
-Deferred behind the modularity increments requested on 2026-11-11.
+Design: [MVP8 execution logs](REFACTORING_DOCS/design/MVP8_execution_logs.md).
 
+The user explicitly narrowed retrieval to AutoSlurm execution evidence:
+stdout/stderr, Slurm `.out` files and scheduler status explaining job outcomes.
+Scientific datasets/results stay application-owned. No generic result downloader,
+file-type allowlist or recursive output-directory scan is included.
 
-**Outcome:** pull a declared results subtree with include/exclude filters, so
-merged summaries/figures can return without all large partial files.
-
-*Done when:* paths use MVP1's resolver and producing-run identity; an interrupted
-transfer is reported as retrieval failure without resubmitting compute; the
-reference client receives only selected files. Keep scientific validation in the
-client. Schedule this immediately after MVP2 if results retrieval blocks actual
-science; otherwise finish trustworthy inspection first.
+- [x] **MVP8.1 Clear log interface.** Expose `inspect_logs` and make `asl logs`
+  retrieve logs by default for one exact saved bundle/receipt. Support job, task,
+  stdout/stderr, existing tail/byte/file bounds and explicit cached inspection.
+  Reuse the inspection pipeline and keep producing paths/transport stable.
+- [x] **MVP8.2 Harden reads and evidence.** Share a bounded regular-file reader
+  between local and SSH paths; distinguish empty, missing, unreadable, transport
+  failure and cache absence/staleness. Detect concurrent changes, reject malformed
+  responses, deduplicate candidate reads and preserve partial evidence. No fallback
+  to another host or datasets, no job retry, no full-log mirroring.
+- [x] **MVP8.3 Verify and document.** Exercise array/custom/merged/separate logs,
+  failure and cache cases, exact SSH payload, CLI/Python parity and existing science
+  workflows. Update human/agent rules, full offline tests and package smoke; local
+  milestone tag at closure. Actual cluster access remains outside this task.
 
 ## Scientific reference case
 
@@ -504,7 +516,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | I02 client integration; I03 readiness; I04 definitions; I05 preview | MVP1 shared roots/selection, small reference client; MVP2 validation/env | L1 richer models; L2 full version checks |
 | I06 submission; I07 interruption | MVP2 known/partial/uncertain outcomes and receipts | L1 automated reconciliation and resume |
 | I08 rediscovery; I09 refresh; I10 inspect; I11 diagnosis; I16 handoff | MVP3 shared task view, bounded evidence and minimal structured interface | L1 persistent index and richer context |
-| I12 results | Optional result retrieval when needed | Broader artifact policies only when justified |
+| I12 results | Application-owned retrieval/validation; MVP8 retrieves execution logs only | Scientific data transfer stays outside AutoSlurm |
 | I13 cancellation; I15 cleanup | Retain working commands in their release lane; protect unknown work | Consolidate when touching their shared state; broader retention policies later |
 | I14 retry/downstream repair | Manual explicit recovery using recorded evidence | L2 automation and compatible-output rules |
 
@@ -512,6 +524,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-12 | Retrieval is limited to execution logs and scheduler evidence | User clarified scientific datasets/results belong to applications; MVP8 replaces the proposed generic result downloader |
 | 2026-11-09 | Follow Gaia's living plan, one-task workflow, completion criteria and task-ID commits | Keep work reviewable across sessions |
 | 2026-11-09 | Keep AutoSlurm's implementation; agents operate from the workstation and compute jobs use prepared environments | Fit the existing workflow without a platform migration |
 | 2026-11-09 | Map interactions and teach client software practices as well as operating commands | Reduce agent context gaps and fragile client integration |
@@ -575,6 +588,9 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP7.2a–d Usable application preparation and job selection | 596 offline tests passed in 16.13 s (39 expected collision warnings), report `.development/test-runs/software-prepare-final.xml`; 73 cases added over MVP7.1b. Real temporary Git/wheel/venv fixtures verified changing upstream commits, explicit pins, same-version old editable code versus new non-editable installations, separate helper/runtime interpreters, exact SSH stdin worker without installed AutoSlurm imports, dependency conflicts, old/new scripts and mocked submission snapshots. Additional checks cover durable IDs, lost responses/stale evidence, no replay, publication failures, constraints/markers/extras, altered code/base inventory and machine/request/runtime/path guards. Offline wheel build and isolated install/import/worker/help smoke passed; artifact SHA256 `0f8f0dad71f2a84200e47379b4069183070182e9c47601468b2d85c0ae8ff796`. Base Conda still imports main dev; clean rollback source remains `33bcbd3`. No cluster connection, fetch, install, job, profile mutation or baseline changes. Task commit: `git log --grep '^MVP7.2:'`; superseded by the single-copy requirement in MVP7.2e |
 | 2026-11-12 | MVP7.2e Single-checkout Git update and removal of duplicate-copy engines | 525 offline tests passed in 5.53 s (39 expected collision warnings); report `.development/test-runs/software-update-final.xml`. Removed source/cache/release/wheel/installation/record engines and job release selectors; 32 new checks replace obsolete copy-engine tests. Real temporary Git fixtures verify repeated in-place pulls, the exact SSH stdin payload, preserved dirty/untracked files and rejected divergent history. Mock checks cover missing/detached/upstream/path failures, before/after commits, unknown/lost/malformed outcomes without retries and no new code/record files. Clean temporary-source wheel build and isolated install/API/help smoke passed; retired modules absent, SHA256 `e43ec1dcaa52adabe467f4f8c65a385f75250cfecdb3051bedfdd306114377b0`. Main base import and clean rollback `33bcbd3` verified. Existing user files/operation evidence retained; no actual cluster contact, pull, install, cleanup, profile mutation or migration. Task commit: `git log --grep '^MVP7.2e:'`; local milestone tag `mvp7` at closure, no remote promotion |
 
+| 2026-11-12 | FIX.SSH.1 Submission connection ownership and macOS sockets | 542 offline tests passed in 5.64 s (39 expected collision warnings), report `.development/test-runs/ssh-session-final.xml`; 17 new cases. Both submit callers inherit configured sharing without Control overrides or explicit open/close; own-session short paths, failed/malformed config fallback, long TMPDIR, cleanup errors and local no-ops verified. User/agent SSH docs updated. No actual SSH, cluster changes or environment installation. Gaia main pushed through ba97a0b first, preserving dirty PDFs/data. Task commit: `git log --grep '^FIX.SSH.1:'`. Resume separately saved MVP8 log work. |
+| 2026-11-12 | MVP8.1–MVP8.3 Robust execution logs | 562 offline tests passed in 5.58 s (38 expected warnings), report `.development/test-runs/execution-logs-final.xml`; 20 net added cases after FIX.SSH.1. Public inspect_logs, direct asl logs and ACP stream selection share status/reasons/exit codes and bounded local/SSH excerpts. Verified exact SSH stdin reader, array/custom/merged/separate logs, stream-before-limit selection, empty/missing/permission/special files, sparse 1 GiB log bounded read, growth/rotation, malformed/oversized replies, cache failures and cached no-source/no-network reads. Clean-source offline wheel install/API/reader/entry-point/help smoke passed, SHA256 `9b3e5c18e04f3964fdb8ff0c2eabe4e55e9682f449a23ebe099b0179d0c634d4`. Main base import/help and clean rollback 33bcbd3 verified. Human/agent guidance and interaction scope updated; no scientific result transfers, base installs, daily config/state mutation, cluster contact or deployment. Task commit: `git log --grep '^MVP8:'`; local mvp8 tag at closure. |
+
 ## How we work
 
 Follow [WORKFLOW.md](WORKFLOW.md) for the task loop, test gates, operational
@@ -593,4 +609,3 @@ Commands: `python -m pip install -e '.[test]'`; fast tests:
 not application tests. Real cluster checks are explicit and separate from default
 tests. Planning does not authorize creating installations, submitting test jobs,
 changing the active environment, migrating records or publishing a release.
-| 2026-11-12 | FIX.SSH.1 Submission connection ownership and macOS sockets | 542 offline tests passed in 5.64 s (39 expected collision warnings), report `.development/test-runs/ssh-session-final.xml`; 17 new cases. Both submit callers inherit configured sharing without Control overrides or explicit open/close; own-session short paths, failed/malformed config fallback, long TMPDIR, cleanup errors and local no-ops verified. User/agent SSH docs updated. No actual SSH, cluster changes or environment installation. Gaia main pushed through ba97a0b first, preserving dirty PDFs/data. Task commit: `git log --grep '^FIX.SSH.1:'`. Resume separately saved MVP8 log work. |

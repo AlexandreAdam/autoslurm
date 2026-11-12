@@ -38,7 +38,7 @@ ACTION_HELP = {
     "software": "Pull updates into existing projects or inspect machine software.",
     "scan": "Scan and list your own package apps.",
     "inspect": "Inspect bundle jobs and output logs.",
-    "logs": "Inspect bundles and job logs.",
+    "logs": "Read stdout/stderr with job status and failure evidence.",
     "agent": "Print the agent documentation context.",
 }
 

@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shlex
 import subprocess
+import sys
 
 import pytest
 
@@ -101,9 +102,8 @@ def test_remote_logs_use_recorded_roots_and_refresh_custom_task_files(tmp_path, 
     def transport(command, **kwargs):
         assert command[0] == "ssh" and "producing-host" in command
         calls.append(command)
-        shell = shlex.split(command[-1])[-1]
-        if "tail -c" in shell:
-            return real_run(["bash", "-c", shell], capture_output=True, text=True)
+        if command[-1] == "python3 -B -":
+            return real_run([sys.executable, "-B", "-"], input=kwargs["input"], capture_output=True, text=True)
         return subprocess.CompletedProcess(command, 0, remote_observation("700_4|RUNNING|10:00|None", "700.2|FAILED|1:0|OutOfMemory|12345\n700_2.extern|COMPLETED|0:0|ignored|9"), "")
     monkeypatch.setattr("subprocess.run", transport)
     first = inspect_bundle(selected, include_logs=True, job_name="array", task_index=2, tail=1)

@@ -71,10 +71,19 @@ def remote_logs(monkeypatch, response=None):
     def transport(command, **kwargs):
         assert command[0] == "ssh"
         calls.append(command)
-        stdout = response if "tail -c" in command[-1] else remote_observation(accounting="101|FAILED|1:0|NonZeroExitCode|101")
+        stdout = response if command[-1] == "python3 -B -" else remote_observation(accounting="101|FAILED|1:0|NonZeroExitCode|101")
         return subprocess.CompletedProcess(command, 0, stdout, "")
     monkeypatch.setattr("subprocess.run", transport)
     return calls
+
+
+def test_remote_missing_log_keeps_its_observation_time(tmp_path, monkeypatch):
+    path = remote_run(tmp_path)
+    remote_logs(monkeypatch, "0|missing||")
+    entry = inspect_bundle(path, include_logs=True)["logs"][0]
+    assert entry["state"] == "missing"
+    assert entry["freshness"] == "fresh" and entry["observed_at"]
+    assert entry["path"] == "/logs/shared.out"
 
 
 @pytest.mark.parametrize("bad_cache", [[], None, {"jobs": []}])

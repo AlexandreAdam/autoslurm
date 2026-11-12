@@ -137,7 +137,7 @@ def main(argv=None):
     logs = args.log or args.list_files or (args.job is not None and not args.script and not args.status)
     views = inspect_bundles(paths, refresh=not args.cached, include_logs=logs, job_name=selected_name,
                             task_index=selected_task, tail=40 if args.tail is None else args.tail,
-                            include_script=args.script, refresh_logs=args.refresh and not args.cached)
+                            include_script=args.script, refresh_logs=not args.cached)
     if args.json:
         _emit(json.dumps(views[0] if len(views) == 1 else views, indent=2), args.clipboard)
         return

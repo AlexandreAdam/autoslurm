@@ -14,6 +14,7 @@ validation approach.
 | MVP5 Inspection boundaries | [MVP5_inspection_boundaries.md](MVP5_inspection_boundaries.md) | Complete locally on dev |
 | MVP6 Persistence and transport | [MVP6_persistence_and_transport.md](MVP6_persistence_and_transport.md) | Complete locally on dev |
 | MVP7 Single-checkout software updates | [MVP7_cluster_software_preparation.md](MVP7_cluster_software_preparation.md) | In-place pulls; prior copy/release design superseded |
+| MVP8 Execution logs | [MVP8_execution_logs.md](MVP8_execution_logs.md) | Bounded stdout/stderr and shared failure evidence |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |
 
 Coverage references include the [interaction map](../interaction-map.md),

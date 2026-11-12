@@ -13,7 +13,7 @@ tracking JSON directly. The pinned stable installation retains its earlier API.
 | Dispatch once | `submit_jobs(..., bundle_path=path)` | Receipt, or `SubmissionError.receipt` |
 | Rediscover | `list_runs`, `list_submissions` | Exact local run/receipt references |
 | Inspect acceptance | `load_submission`, explicit `refresh_submission` | Known accepted IDs, partial/rejected/uncertain outcomes |
-| Inspect execution | `inspect_bundle`, `inspect_bundles` | Shared tasks/state, source/time/errors and optional bounded logs |
+| Inspect execution | `inspect_bundle`, `inspect_bundles`, `inspect_logs` | Shared tasks/state, source/time/errors and optional bounded logs |
 | Locate results | `recorded_execution`, `resolve_results_path`, `path_exists` | Producing roots and paths after profile edits |
 | Agent tools | `execute_acp`, `action_definitions`, `agent_context` | Structured actions and current guidance |
 
@@ -53,7 +53,7 @@ Python / CLI / ACP -> inspection (coordinates explicit stages)
                        |-> inspection_collection -> files/profiles/scheduler
                        |-> inspection_state -> pure task/state projection
                        |-> inspection_cache -> observation/excerpt JSON
-                       |-> inspection_artifacts -> scripts / log_files
+                       |-> inspection_artifacts -> scripts / log_files -> log_probe
                                                           |-> local reads
                                                           |-> remote tail batch
                                                           |-> excerpt cache
@@ -65,7 +65,7 @@ caller data. Shared producing-machine interpretation lives in execution and
 is data-only. `inspection_collection` explicitly loads local evidence/profiles
 and batches valid IDs; malformed entries do not poison other jobs' observations.
 
-`inspection_cache` owns observation and remote excerpt cache I/O. Status evidence
+`inspection_cache` owns observation and local/remote excerpt cache I/O. Status evidence
 is saved before request-specific artifacts are attached, keeping those failure
 scopes distinct. Invalid cache shapes are unavailable evidence, while failed
 cache writes retain already collected observations/log text. `log_files` now
@@ -169,3 +169,9 @@ User and IdentityFile lookup to SSH. Legacy address/key parsing remains only to
 interpret older recorded transports and compatibility adapters, not as another
 configuration mode. Retired schedule flags are rejected before application
 argument discovery, preventing connection fields from leaking into science args.
+
+MVP8 keeps log selection/decoding/cache orchestration in `log_files` and shares
+one standard-library bounded regular-file reader in `log_probe` between local
+and SSH reads. Public clients use `inspect_logs`, CLI `asl logs`, or ACP
+`inspect_run(include_logs=True, stream=...)`; private storage/probe modules remain
+implementation details. Results/datasets are application-owned.

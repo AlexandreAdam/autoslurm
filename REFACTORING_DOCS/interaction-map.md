@@ -49,7 +49,7 @@ multi-machine orchestration is outside scope.
 | Discover and integrate | I01-I03 | The agent knows the supported interface, the application is runnable, and the cluster is ready |
 | Define and submit | I04-I07 | Work is validated and every accepted or uncertain submission is accounted for |
 | Return and understand | I08-I11 | A fresh session can find runs, refresh observations, inspect tasks, and diagnose failures |
-| Retrieve and recover | I12-I14 | Results return, cancellation is observed, and retries retain history |
+| Retrieve and recover | I12-I14 | Applications retrieve results; cancellation is observed and retries retain history |
 | Retain and hand off | I15-I16 | Cleanup preserves tracking and another session can continue from durable records |
 
 The sequence can branch. I07 handles a lost submission response before any
@@ -236,18 +236,19 @@ display row numbers and a moving `latest` selector are convenience inputs only.
   observation. Suggest a supported action and its preconditions; do not retry
   or alter resources automatically just because a log contains an error word.
 
-### I12 Retrieve and check declared results
+### I12 Retrieve and check declared results (application-owned)
 
-- **Intent:** bring useful scientific outputs back without copying every shard.
-- **Inputs:** exact run/artifact identity, declared result locations, include/
-  exclude rules, destination, and optional client validation.
-- **Outcome:** transfer selected files and report which are present, complete
-  according to the application contract, or still missing/in progress.
-- **Evidence:** retrieval report, producer attempt/task, result manifest or
-  completion marker when supplied, paths and optional content identity.
-- **Failure and next step:** transfer interruption or scheduler completion alone
-  does not establish valid results. Retrying a transfer does not rerun compute.
-  Scientific validation remains in the application.
+The user's MVP8 scope clarification leaves scientific transfer and validation in
+client software. AutoSlurm retrieves execution evidence through I10/I11 only.
+
+- **Intent:** the application brings useful scientific outputs back without
+  asking AutoSlurm to scan/copy its output directories.
+- **Inputs:** application-owned result locations, transfer policy and validation.
+- **Outcome/evidence:** the application records transfer/validation outcomes and
+  retains AutoSlurm's exact run/task identity and producing paths for provenance.
+- **Failure and next step:** interrupted transfer or scheduler completion alone
+  does not establish valid results. Application transfer retries never imply a
+  new compute submission. No generic result downloader is planned in AutoSlurm.
 
 ### I13 Cancel selected work
 
@@ -317,7 +318,7 @@ built, before it schedules its first expensive experiment.
 | Scientific metadata | Record parameters, random seeds, input identity, application revision, and result schema | Link client-supplied metadata to the immutable definition and each attempt |
 | Resume and retry | Declare whether rerunning is safe, how checkpoints are recognized, and when outputs may be reused | Preserve lineage and validate a retry plan instead of assuming idempotent computation |
 | Environment | Use an explicitly prepared cluster installation; distinguish requested and observed versions | Check/report mismatches and unknowns; never install or pull code inside a compute job |
-| Results | Provide a small manifest/summary and explicit merged/figure locations where useful | Retrieve selected artifacts and report missing files; scientific interpretation remains with the client |
+| Results | Provide a small manifest/summary and explicit merged/figure locations where useful | Expose producing run/path evidence and bounded execution logs; scientific result transfer and validation remain with the client |
 | Experiment records | Save returned stable run/attempt references in the client experiment record | Support rediscovery without reading private bundle/index files or editing Slurm scripts |
 
 ## Reliability traces for design and validation

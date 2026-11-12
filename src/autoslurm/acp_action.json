@@ -137,7 +137,8 @@
       "task_index": "Optional concrete declared/observed array index to restrict logs.",
       "tail": "Optional nonnegative integer, default 40 lines per log.",
       "max_log_bytes": "Optional bound per log read, 1..1048576, default 65536 bytes.",
-      "max_logs": "Optional file bound 1..100, default 20; omitted files are reported."
+      "max_logs": "Optional file bound 1..100, default 20; omitted files are reported.",
+      "stream": "Optional both/stdout/stderr selector, applied before log-file bounds. Merged output belongs to both streams."
     },
     "context_sections": [
       "00_operating_rules.md",

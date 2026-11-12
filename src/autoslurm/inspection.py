@@ -10,7 +10,7 @@ from .bundle_selection import list_saved_bundles
 from .storage import storage_root
 from .submission import load_submission
 
-__all__ = ["inspect_bundle", "inspect_bundles", "list_runs"]
+__all__ = ["inspect_bundle", "inspect_bundles", "inspect_logs", "list_runs"]
 
 
 def observe_job_statuses(jobs):
@@ -55,12 +55,13 @@ def _fresh_view(run, observations, profiles, profile_error, cache):
 
 def inspect_bundles(bundle_paths, *, refresh=True, include_logs=False, job_name=None,
                     task_index=None, tail=40, max_log_bytes=65536, max_logs=20,
-                    include_script=False, refresh_logs=None):
+                    include_script=False, refresh_logs=None, stream="both"):
     runs = [load_run(path) for path in bundle_paths]
     request = ArtifactRequest(
         include_logs=include_logs, include_script=include_script, job_name=job_name,
         task_index=task_index, tail=tail, max_log_bytes=max_log_bytes, max_logs=max_logs,
         refresh_logs=refresh and refresh_logs is not False,
+        stream=stream,
     )
     for run in runs:
         request.validate(run)
@@ -88,3 +89,15 @@ def inspect_bundle(bundle_path=None, *, receipt_path=None, **kwargs):
 def list_runs(bundle_name=None):
     return [{"bundle": entry["bundle"], "bundle_path": str(entry["path"]), "saved_at": entry["date"].isoformat()}
             for entry in list_saved_bundles(bundle_name=bundle_name)]
+
+
+def inspect_logs(bundle_path=None, *, receipt_path=None, job_name=None, task_index=None,
+                 stream="both", tail=40, max_log_bytes=65536, max_logs=20, refresh=True):
+    """Inspect stdout/stderr with scheduler evidence for one exact saved run.
+
+    Recorded producing paths/transport own the lookup. refresh=False reads only
+    cached evidence. This retrieves bounded excerpts, never application results.
+    """
+    return inspect_bundle(bundle_path, receipt_path=receipt_path, include_logs=True,
+        job_name=job_name, task_index=task_index, stream=stream, tail=tail,
+        max_log_bytes=max_log_bytes, max_logs=max_logs, refresh=refresh)
