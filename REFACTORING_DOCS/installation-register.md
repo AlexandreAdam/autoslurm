@@ -242,3 +242,9 @@ machine. Store nonsecret paths/identities, never credential contents.
   Existing untracked local `software_preparations/` evidence and user document
   edits were present before this task and retained unchanged. Local `mvp7` tag
   closes the revised scope; no remote promotion or automatic cleanup.
+
+- **FIX.SSH.1, 2026-11-12:** 542 offline tests passed in 5.64 s, 39 expected
+  warnings; `.development/test-runs/ssh-session-final.xml`. Main editable source
+  now honors configured SSH sharing and uses short owned socket paths. No base
+  reinstall, daily config mutation, cluster contact or rollback changes. Gaia's
+  already committed main was pushed through ba97a0b; its working files preserved.

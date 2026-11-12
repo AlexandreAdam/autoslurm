@@ -122,6 +122,7 @@ def test_alias_submission_session_reuses_the_alias_without_identity_options(monk
     monkeypatch.setattr("subprocess.run", lambda cmd, **kw: commands.append(cmd) or CompletedProcess(cmd, 0, "", ""))
     with ssh_submission_session({"ssh_alias": "research-gpu"}, "remote") as options:
         assert options
-    assert len(commands) == 2
+    assert len(commands) == 3
     assert all(cmd[-1] == "research-gpu" and "-i" not in cmd for cmd in commands)
-    assert "-MNf" in commands[0] and "exit" in commands[1]
+    assert "-G" in commands[0]
+    assert "-MNf" in commands[1] and "exit" in commands[2]

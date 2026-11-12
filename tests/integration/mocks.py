@@ -123,6 +123,10 @@ def setup_mock_subprocess_run() -> Callable:
         if isinstance(cmd, list) and cmd:
             if cmd[0] == "bash" and cmd[1:] == ["-n"]:
                 return subprocess.CompletedProcess(cmd, 0, "", "")
+            if cmd[0] == "ssh" and "-G" in cmd:
+                return subprocess.CompletedProcess(
+                    cmd, 0, "controlmaster no\ncontrolpath none\ncontrolpersist no\n", ""
+                )
             if cmd[0] == "ssh" and "--capabilities" in cmd[-1]:
                 return subprocess.CompletedProcess(cmd, 0, '{"submission_protocol": 1}', "")
             if cmd[0] == "scp":

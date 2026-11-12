@@ -134,3 +134,25 @@ Base Conda still imports main dev; clean pinned rollback source/import was
 verified at `33bcbd3`. Existing local operation evidence and user edits were
 preserved. No cluster contact/update/install/cleanup or daily config mutation
 was performed. Task prefix `MVP7.2e:`, local milestone tag `mvp7`; no deployment.
+
+## Submission SSH ownership fix (FIX.SSH.1)
+
+The user requested this narrow fix before MVP8: submission must honor configured
+connection sharing and avoid macOS's long TMPDIR socket paths. The shared
+transport builds a non-connecting `ssh -G` observation. A non-none ControlPath
+with automatic ControlMaster or enabled ControlPersist yields an empty options
+list: both sbatch and the bulk driver inherit SSH configuration, and AutoSlurm
+never explicitly opens/closes the user's master. Local sessions still yield None.
+
+Otherwise the existing owned-master lifecycle remains, using
+`/tmp/asl-ssh-*/cm-%C` on POSIX; the default temp directory is used if `/tmp` is
+absent. Failed/malformed configuration inspection falls back once. No settings,
+credentials or config writes are added. Cleanup cannot erase an observed receipt
+or a body exception. Verification is offline with fake subprocess commands;
+actual submission remains the user's check.
+
+Final verification: 542 offline tests passed in 5.64 s, 39 expected warnings;
+report `.development/test-runs/ssh-session-final.xml`. Seventeen new cases cover
+both submit adapters, auto/autoask/persistence, malformed/failed observations,
+short sockets under long TMPDIR, cleanup failure and local no-ops. The existing
+submission/job-runner/alias/persistence suites passed. No real SSH was invoked.

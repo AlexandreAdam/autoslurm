@@ -14,15 +14,13 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 525 passed, 39 expected
+  rollback source remains unchanged. Full offline suite: 542 passed, 39 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP7.2e replaces all clone/cache/source/release/install/record
-  creation with `update_software` / `asl software update`: an explicit
-  `git pull --ff-only` in the existing checkout. Submission uses the configured
-  environment and never updates code. Existing local evidence is retained.
-- **Next task:** no further software deployment layer. Optional result retrieval
-  or documentation/distribution work can be selected separately; this layer
-  does not include broader deployment/runtime management.
+- **Latest completed task:** FIX.SSH.1 reuses configured shared SSH connections
+  without owning them and puts AutoSlurm-owned sockets under `/tmp` on POSIX.
+  Both submission adapters retain the same yielded-options interface.
+- **Next task:** resume saved MVP8 execution-log interface work. No actual cluster
+  contact is authorized; the user will verify a real submission.
 - **Scope update:** local code/tests only, with temporary Git repositories and
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
@@ -436,6 +434,19 @@ not automatically deleted: actual cluster cleanup is a separate operator action.
 There is no broader deployment/ACP preparation/runtime manager planned in this
 layer; scientific package/environment setup remains operator-managed.
 
+## FIX.SSH.1 Submission connection ownership
+
+- [x] Inspect effective settings using non-connecting `ssh -G` through the shared
+  adapter. With a configured ControlPath and automatic master/persistence, yield
+  no overrides and never explicitly open/close the user's connection.
+- [x] Otherwise retain an owned session with a short `/tmp/asl-ssh-*/cm-%C` path
+  on POSIX, falling back to the default temp directory if `/tmp` is absent.
+  Failed/malformed configuration inspection falls back once. Local sessions
+  remain no-ops; no new settings, keys, passphrase handling or SSH config edits.
+- [x] Verify ownership/options, long TMPDIR, fallback and both submit callers,
+  then run the full offline suite and update the SSH docs/Done log. No cluster
+  commands; push the completed dev commit. Resume the separately saved MVP8 work.
+
 ## Optional scientific result retrieval (formerly proposed MVP4)
 
 Deferred behind the modularity increments requested on 2026-11-11.
@@ -582,3 +593,4 @@ Commands: `python -m pip install -e '.[test]'`; fast tests:
 not application tests. Real cluster checks are explicit and separate from default
 tests. Planning does not authorize creating installations, submitting test jobs,
 changing the active environment, migrating records or publishing a release.
+| 2026-11-12 | FIX.SSH.1 Submission connection ownership and macOS sockets | 542 offline tests passed in 5.64 s (39 expected collision warnings), report `.development/test-runs/ssh-session-final.xml`; 17 new cases. Both submit callers inherit configured sharing without Control overrides or explicit open/close; own-session short paths, failed/malformed config fallback, long TMPDIR, cleanup errors and local no-ops verified. User/agent SSH docs updated. No actual SSH, cluster changes or environment installation. Gaia main pushed through ba97a0b first, preserving dirty PDFs/data. Task commit: `git log --grep '^FIX.SSH.1:'`. Resume separately saved MVP8 log work. |

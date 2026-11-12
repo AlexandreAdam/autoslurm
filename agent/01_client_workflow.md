@@ -69,6 +69,12 @@ settings (replace them with its real isolated locations):
 
 Remote profiles use only `ssh_alias`, the `Host` name in SSH config. HostName, User,
 IdentityFile and other connection options are owned by SSH, not AutoSlurm.
+Submission reads effective settings with non-connecting `ssh -G`: a configured
+ControlPath plus automatic sharing/persistence is reused without Control options
+or explicit open/close commands. Otherwise AutoSlurm owns a temporary master
+under `/tmp/asl-ssh-*/cm-%C` on POSIX (default temp directory if `/tmp` is absent).
+Failed/unreadable settings fall back once to that owned session. Never edit SSH
+config or handle keys/passphrases to work around submission in a client agent.
 Local profiles omit SSH identity and use the process's selected storage root;
 legacy local `path` does not override that selection. Set profile roots through
 `asl config --interactive` or the public configuration API. For an existing profile:

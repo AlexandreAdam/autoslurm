@@ -74,14 +74,41 @@ def run_slurm_remotely(
     return get_job_id_from_sbatch_output(output)
 
 
+def _configured_shared_connection(machine_config, machine_name):
+    """Inspect effective SSH settings without opening/managing a connection."""
+    try:
+        result = subprocess.run(
+            ssh_command(machine_config, machine_name, options=["-G"]),
+            capture_output=True, text=True, timeout=10,
+        )
+        if result.returncode or not isinstance(result.stdout, str):
+            return False
+        settings = {}
+        for line in result.stdout.splitlines():
+            fields = line.split(None, 1)
+            if len(fields) == 2:
+                settings[fields[0].lower()] = fields[1].strip().lower()
+        path = settings.get("controlpath", "none")
+        persist = settings.get("controlpersist", "no")
+        # ssh -G normalizes a duration to seconds; arbitrary text is not proof
+        # that persistence was configured successfully.
+        persistent = persist == "yes" or re.fullmatch(r"[1-9][0-9]*", persist) is not None
+        return path not in {"", "none"} and (
+            settings.get("controlmaster") in {"auto", "autoask"}
+            or persistent
+        )
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError, AttributeError, UnicodeError):
+        return False  # Configuration inspection failure is not a submit failure.
+
+
 @contextmanager
 def ssh_submission_session(
     machine_config: Optional[dict],
     machine_name: Optional[str] = None,
 ):
     """
-    Provide SSH options that reuse a single multiplexed connection for repeated submits.
-    Falls back to no-op when no remote host is configured.
+    Reuse configured SSH sharing; otherwise own one short-path master session.
+    User-managed connections are never opened/closed explicitly by AutoSlurm.
     """
     if machine_config is None:
         yield None
@@ -90,7 +117,14 @@ def ssh_submission_session(
         yield None
         return
 
-    tmpdir = tempfile.mkdtemp(prefix="autoslurm-ssh-")
+    if _configured_shared_connection(machine_config, machine_name):
+        yield []
+        return
+
+    # macOS TMPDIR is often too long for Unix-domain sockets after OpenSSH's
+    # %C hash and creation suffix. Keep our owned socket's literal path short.
+    temporary_base = "/tmp" if os.name == "posix" and os.path.isdir("/tmp") else None
+    tmpdir = tempfile.mkdtemp(prefix="asl-ssh-", dir=temporary_base)
     control_path = os.path.join(tmpdir, "cm-%C")
     ssh_options = [
         "-o",
