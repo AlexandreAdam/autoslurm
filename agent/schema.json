@@ -10,6 +10,8 @@
         "path_args": {"type": "array", "items": {"type": "string"}},
         "input_args": {"type": "array", "items": {"type": "string"}},
         "working_directory": {"type": "string"},
+        "environment": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
+        "runtime_environment": {"type": "object", "additionalProperties": {"type": "string"}},
         "dependencies": {
           "type": "array",
           "items": {"type": "string"}

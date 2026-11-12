@@ -54,6 +54,8 @@ def test_documented_client_workflow(fixture, science_client, monkeypatch):
     real_run = subprocess.run
 
     def fake_sbatch(command, *args, **kwargs):
+        if command[0] == "bash":
+            return real_run(command, *args, **kwargs)
         assert command[0] == "sbatch", command
         script = Path(command[-1])
         text = script.read_text()

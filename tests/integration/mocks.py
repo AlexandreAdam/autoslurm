@@ -5,6 +5,7 @@ from typing import Callable
 
 import pytest
 from unittest.mock import MagicMock
+from tests.submission_helpers import accepted_receipt
 
 mock_job_name = "Test_Job"
 mock_jobs = {
@@ -93,12 +94,14 @@ mock_machine_config_local = {
 }
 
 mock_machine_config1 = {
+    "venv_path": "/path/to/remote/venv",
     "hostname": "remote",
     "env_command": "source /path/to/remote/venv/bin/activate",
     "path": "/path/to/remote",
 }
 
 mock_machine_config2 = {
+    "venv_path": "/path/to/remote/venv",
     "hosturl": "remote.host.com",
     "username": "user",
     "key_path": "/path/to/key",
@@ -107,6 +110,7 @@ mock_machine_config2 = {
 }
 
 mock_machine_config3 = {
+    "venv_path": "/path/to/remote/venv",
     "hosturl": "remote.host.com",
     "username": "user",
     "env_command": "source /path/to/remote/venv/bin/activate",
@@ -120,6 +124,10 @@ def setup_mock_subprocess_run() -> Callable:
 
     def mock_run(cmd, *args, **kwargs):
         if isinstance(cmd, list) and cmd:
+            if cmd[0] == "bash" and cmd[1:] == ["-n"]:
+                return subprocess.CompletedProcess(cmd, 0, "", "")
+            if cmd[0] == "ssh" and "--capabilities" in cmd[-1]:
+                return subprocess.CompletedProcess(cmd, 0, '{"submission_protocol": 1}', "")
             if cmd[0] == "scp":
                 mock_run_instance.return_value.stdout = ""
                 mock_run_instance.return_value.returncode = 0
@@ -135,13 +143,14 @@ def setup_mock_subprocess_run() -> Callable:
             if (
                 cmd[0] == "ssh"
                 and isinstance(cmd[-1], str)
-                and "python -m autoslurm.apps.bulk_submit_driver" in cmd[-1]
+                and "autoslurm.apps.bulk_submit_driver" in cmd[-1]
             ):
                 body = {
                     "ok": True,
                     "job_ids": mock_job_ids,
                     "levels": [["JobA"], ["JobB"], ["JobC"]],
                     "round_trips": 3,
+                    "receipt": accepted_receipt(json.loads(kwargs["input"]), mock_job_ids),
                 }
                 mock_run_instance.return_value.stdout = json.dumps(body)
                 mock_run_instance.return_value.returncode = 0

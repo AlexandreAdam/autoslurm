@@ -115,8 +115,9 @@ required to complete a small reliability MVP.
   leave a remote helper running; no blind submit fallback or resubmission.
 - Document only implemented operations and known limits. MVP0.2 implements an
   explicit root selector in development; the stable baseline does not have it.
-  Durable incremental receipts, unified status/logs and automatic recovery remain
-  planned. A passing mock helper check is not evidence about a real installation.
+  Development MVP2 adds incremental submission receipts and exact read-only
+  refresh; unified status/logs and automatic recovery remain planned. A passing
+  mock helper check is not evidence about a real installation.
 - Update the small integration/operate/diagnose recipe in the same task as a
   changed public behavior. Include the source of evidence, unknown state and a
   supported next step. Human examples use the same supported operations.

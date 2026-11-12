@@ -31,6 +31,9 @@ def activation_command_from_config(machine_config: dict) -> str:
 
 def name_slurm_script(job: dict, date: datetime):
     name = job["name"]
+    identity = job.get("_autoslurm_submission", {}).get("submission_id")
+    if identity:
+        return f"{name}_{identity}.sh"
     return f"{name}_{date.strftime(DATE_FORMAT)}.sh"
 
 

@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP1. The pinned
+Use this recipe with the development installation including MVP2. The pinned
 stable installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
 differ. Current repository work is local only: submissions are tested with
@@ -115,37 +115,108 @@ submitting. A remote preview still contacts the configured machine for root
 discovery and batched input validation. Under this repository's local-only scope,
 remote interactions must be mocked.
 
+## Control application threads
+
+Use job `environment` for literal scalar exports, applied after activation.
+Values are shell-quoted: `$HOME` and `$(...)` stay literal. Use
+`runtime_environment` for values supplied at job execution; each value names
+one shell variable, without `$`, braces or expressions. An unset/empty runtime
+source stops the job before the application runs. For example:
+
+```json
+{
+  "environment": {"OPENBLAS_NUM_THREADS": "1"},
+  "runtime_environment": {"OMP_NUM_THREADS": "SLURM_CPUS_PER_TASK"}
+}
+```
+
+Set the corresponding Slurm CPU request explicitly; applications still own
+worker/process counts and scientific parallelism. Environment names must be
+valid shell identifiers; literal and runtime mappings cannot define the same
+name. AutoSlurm does not evaluate arbitrary shell interpolation.
+
 ## Submit once and retain evidence
 
 For an already authorized operation in the selected lane, or a mocked test:
 
 ```python
-from autoslurm import submit_jobs, list_saved_bundles, load_bundle_from_path
+from autoslurm import submit_jobs, SubmissionError
 
-submit_jobs(bundle_name, machine="target", bundle_path=planned_path)
-observed = []
-for entry in list_saved_bundles(bundle_name=bundle_name):
-    saved_jobs, _, _ = load_bundle_from_path(entry["path"])
-    ids = {job["name"]: job["id"] for job in saved_jobs if job.get("id")}
-    if ids:
-        observed.append({"path": str(entry["path"]), "date": entry["date"].isoformat(), "ids": ids})
+try:
+    receipt = submit_jobs(bundle_name, machine="target", bundle_path=planned_path)
+except SubmissionError as error:
+    receipt = error.receipt
+    print(receipt["receipt_path"])  # Retain this exact reference in the handoff.
+    raise  # Stop; inspect this operation rather than submitting it again.
+
+submission_path = receipt["bundle_path"]
+submission_id = receipt["submission_id"]
+accepted_ids = {name: job["id"] for name, job in receipt["jobs"].items() if job.get("id")}
 ```
 
-Use a unique bundle name and one writer for this bounded recipe. Submission
-imports the selected definition into a new tracking snapshot. Record both the
-planned reference and actual submission path/date/IDs. `submit_jobs` returns
-`None`, not a receipt. Records remain mutable; timestamps have one-second
-resolution. Keep the client's own definition/evidence record. This recipe does
-not support concurrent writers or provide an immutable attempt store.
+Submission always creates a new exact tracking snapshot and random submission
+identity; it leaves the selected definition unchanged. The receipt records
+planned/tracking paths, machine, producing receipt location, per-job state/IDs,
+errors and update time. Execution persists each accepted ID before another
+scheduler call. IDs are also mirrored into the existing tracking snapshot.
+Save the exact receipt path in the client handoff; do not reconstruct filenames.
+Definition/readiness errors before receipt creation raise ordinary validation
+errors and submit nothing; once the operation exists, submission errors carry
+its receipt, including any tracking/storage error.
+This is incremental submission evidence, not an immutable scientific attempt
+store or a guarantee against every concurrent writer or scheduler crash.
+
+| Receipt state | Interpretation |
+|---|---|
+| `submitted` | Every job has a known accepted scheduler ID; computation may still fail |
+| `rejected` | No known accepted jobs; preparation or submission stopped with a known rejection |
+| `partial` | Some jobs accepted; a later rejection stopped the remaining graph |
+| `uncertain` | Some execution-side outcomes are unobserved; preserve any known IDs |
+| `prepared` / `submitting` | Last recorded intermediate evidence; no final outcome, no proof the helper is still alive |
+
+Per-job `blocked` means execution deliberately did not submit a dependent after
+an upstream submission stopped. Unrelated jobs left untouched are
+`not_submitted`. On response loss, unobserved jobs are `uncertain`, not assumed
+rejected or blocked: the remote helper may still be submitting them.
 
 The CLI equivalent is `asl submit NAME --bundle-file PATH --machine PROFILE`.
 Outside mocked tests it creates real scheduler effects. ACP supports scheduling,
-listing, inspection and context gathering; it has no submit action.
+listing, receipt inspection and context gathering; it has no submit action.
 
 An exception or absent ID does not prove rejection. Remote bulk-to-legacy
-fallback and incomplete partial-failure records remain until MVP2. Never
-automatically retry, erase IDs or resubmit a saved submission. Preserve errors
-and known IDs; stop for outcome reconciliation in the same installation.
+fallback is removed in MVP2. The legacy graph driver is retired. A prepared
+remote `venv_path` with a receipt-capable matching helper is required; capability
+failure stops before dispatch, without an automatic install or alternate submit.
+All generated scripts receive shell syntax checks before the first submission.
+
+Never automatically retry, erase IDs or resubmit a saved submission snapshot.
+AutoSlurm refuses receipt-bearing/submitted snapshots and helper identity replay.
+Submitting the original draft again would create a new operation; do that only
+as an explicit, reconciled decision. There is no exactly-once guarantee across
+the gap between scheduler acceptance and receipt persistence.
+
+## Rediscover and inspect submission evidence
+
+`list_submissions(bundle_name=...)` lists receipts in the selected local
+installation. `load_submission(receipt_path)` reads one exact local record
+without network or scheduler queries. `refresh_submission(receipt_path)` fetches
+only that execution receipt using its recorded transport/root, then mirrors known
+IDs into the original tracking snapshot. Profile edits do not redirect it.
+Remote refresh may contact the cluster; it never submits, cancels, adopts or
+retries work. A missing or unfinished execution receipt remains unknown. A
+refresh error preserves known IDs and carries `observation_error` evidence.
+
+```sh
+asl submission --bundle STUDY
+asl submission /absolute/local/receipt.json --json
+asl submission /absolute/local/receipt.json --refresh --json
+```
+
+ACP `list_submissions` accepts an optional `bundle`; `inspect_submission` requires
+`receipt_path` and accepts explicit `refresh: true`. Both expose the same plain
+receipt. Reading a partial/uncertain receipt can succeed as an inspection; check
+its state rather than treating a successful read as accepted compute. Ordinary
+cleanup retains receipt-bearing tracking snapshots, including ones without IDs.
 
 ## Inspect and hand off
 
@@ -168,7 +239,8 @@ neighbor. These commands can query/fetch from the cluster. `sync` currently
 skips existing files; do not assume growing logs refreshed. Unified evidence
 and refresh fixes remain MVP3.
 
-A fresh agent needs lane/interpreter/import/revision, machine/root, client input
+A fresh agent needs lane/interpreter/import/revision, machine/root, exact receipt
+path/submission ID and last recorded submission outcome, client input
 and output namespace, exact planned and submission references, job/task IDs,
 actions already taken, observation time/errors and next safe action. Missing
 accounting rows/logs mean unknown evidence, not successful science. Keep excerpts

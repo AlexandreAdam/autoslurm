@@ -71,9 +71,9 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP1
-  integration boundary. Keep their path bases, preflight, saved evidence and
-  known submission/inspection limits accurate.
+  [reference client](examples/reference_client/README.md) are the verified MVP2
+  integration boundary. Keep path bases, preflight, incremental receipts,
+  uncertainty/recovery inspection and known status/log limits accurate.
 - Keep development installation working and use a narrow artifact smoke check
   before promotion. Complete packaged agent resources, public index release,
   broad compatibility matrices and polished documentation are later layers.

@@ -3,6 +3,15 @@
 First read `00_operating_rules.md` and `01_client_workflow.md` for installation identity, stable/development
 ownership, durable handoff references and handling uncertain submissions.
 
+Development MVP2 returns a receipt from `submit_jobs`; preserve
+`SubmissionError.receipt` on failure. Use `list_submissions` and exact
+`load_submission`/`refresh_submission`, or `asl submission`, to inspect accepted,
+rejected, blocked and unknown outcomes. ACP exposes `list_submissions` and
+`inspect_submission` with the same evidence. Refresh may contact the producing
+machine, but never submits again. A `submitted` receipt means scheduler
+acceptance, not scientific completion. See the client recipe for exact fields
+and the distinction between blocked dependents and unobserved remote work.
+
 When it’s time to execute scheduled jobs and watch their logs, these references help:
 
 - `04_project_map.md` and `03_experiment_context.md` note the submission flow: `autoslurm-submit <bundle>` invokes `submit_jobs`, which renders scripts, transfers them if remote, calls `sbatch`, and updates the bundle with job IDs.

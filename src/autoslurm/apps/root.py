@@ -18,6 +18,7 @@ from . import (
     schedule,
     status,
     submit,
+    submission,
     sync,
 )
 
@@ -26,6 +27,7 @@ ACTION_HELP = {
     "configuration": "Configure machines and storage.",
     "schedule": "Schedule a job or append it to a bundle.",
     "submit": "Submit an existing bundle.",
+    "submission": "Inspect submission receipts without submitting jobs.",
     "cancel": "Preview and cancel jobs in a saved bundle.",
     "clean": "Preview/remove stale bundle snapshots with no submitted jobs.",
     "filter": "Set global bundle visibility filter (active/all).",
@@ -42,6 +44,7 @@ ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
     "configuration": configuration.main,
     "schedule": schedule.main,
     "submit": submit.main,
+    "submission": submission.main,
     "cancel": cancel.main,
     "clean": clean.main,
     "filter": filter_app.main,

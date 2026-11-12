@@ -5,6 +5,7 @@ from ..utils import machine_config
 from ..save_load_jobs import bundle_snapshot_state, select_bundle_snapshot
 from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs
+from ..submission import SubmissionError
 
 
 def parse_args(argv=None):
@@ -123,10 +124,13 @@ def main(argv=None):
         )
 
     machine_name, config = machine_config(args)
-    submit_jobs(
-        args.name,
-        machine=machine_name,
-        machine_overrides=config,
-        bundle_path=args.bundle_file,
-        context=resolve_execution_context(machine_name, config),
-    )
+    try:
+        submit_jobs(
+            args.name,
+            machine=machine_name,
+            machine_overrides=config,
+            bundle_path=args.bundle_file,
+            context=resolve_execution_context(machine_name, config),
+        )
+    except SubmissionError as exc:
+        raise SystemExit(str(exc)) from exc

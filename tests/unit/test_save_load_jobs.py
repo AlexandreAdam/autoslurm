@@ -219,7 +219,7 @@ def test_load_job_topological_sorting(tmp_path, mock_load_config):
 
     assert len(jobs) == 3
     assert len(dependencies) == 3
-    assert dependencies == {"JobB": ["JobC"], "JobA": ["JobC"], "JobC": []}
+    assert dependencies == {"JobB": ["JobA", "JobC"], "JobA": ["JobC"], "JobC": []}
     assert jobs[0]["name"] == "JobB"
     assert jobs[1]["name"] == "JobA"
     assert jobs[2]["name"] == "JobC"

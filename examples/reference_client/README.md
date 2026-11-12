@@ -32,6 +32,7 @@ From the development checkout:
 ```sh
 ../python -m pytest -q tests/integration/test_reference_client.py
 ../python -m pytest -q tests/integration/test_execution_paths.py
+../python -m pytest -q tests/integration/test_submission_safety.py tests/integration/test_job_environment.py
 ```
 
 Tests create a temporary console launcher equivalent to the installed entry
@@ -60,6 +61,13 @@ directory, including paths with spaces and activation that changes directory.
 They compare preview, execution and saved paths, check failures before submission,
 and recover artifacts using saved roots after a profile edit. Mocked remote
 tests check one root probe and one batched input check, including missing inputs.
+
+MVP2 adds receipt tests around the same submission boundary: first-job acceptance
+survives a second-job rejection, response loss never dispatches again, exact
+refresh recovers execution-side IDs, and unfinished helpers leave unobserved work
+uncertain. Per-job environment tests check literal exports and runtime CPU/thread
+variables. Scheduler acceptance and a successful scientific summary are separate
+checks; AutoSlurm does not infer scientific validity from an ID.
 
 Read the [current client recipe](../../agent/01_client_workflow.md) for exact
 selection, installation ownership, operations and failure handling. This example

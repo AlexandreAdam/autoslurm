@@ -209,7 +209,7 @@ def _analyze_bundle_file(filename: Path) -> dict:
         "path": filename,
         "job_count": len(payload),
         "submitted_count": submitted_count,
-        "state": "active" if (snapshot_kind == "submission" and submitted_count > 0) else "ready_to_go",
+        "state": "active" if (snapshot_kind == "submission" and (submitted_count > 0 or any(job.get("_autoslurm_submission") for job in payload.values()))) else "ready_to_go",
         "snapshot_kind": snapshot_kind,
     }
 
@@ -352,14 +352,18 @@ def save_bundle(
         except FileNotFoundError:
             pass
         ensure_storage_dirs()
-        date = date.strftime(DATE_FORMAT)
-        file_path = jobs_dir() / f"{name}_{date}.json"
         # Make sure every job has a name
         for job_name, job in bundle.items():
             job["name"] = _effective_job_name(job, job_name)
         bundle = _ensure_snapshot_kind(bundle, kind="draft")
-        with open(file_path, "w") as file:
-            json.dump(bundle, file, indent=4)
+        while True:
+            file_path = jobs_dir() / f"{name}_{date.strftime(DATE_FORMAT)}.json"
+            try:
+                with open(file_path, "x") as file:
+                    json.dump(bundle, file, indent=4)
+                break
+            except FileExistsError:
+                date += timedelta(seconds=1)
     print(f"Saved bundle {name} to {file_path}")
     return file_path
 

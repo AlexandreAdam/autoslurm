@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import pytest
+from autoslurm.storage import slurm_dir
 
 from autoslurm.apps import bulk_submit_driver as app
 
@@ -9,9 +11,10 @@ def test_bulk_submit_driver_app_reads_payload_file_and_prints_json(
     tmp_path, monkeypatch, capsys
 ):
     payload = {
+        "receipt": {"submission_id": "a" * 32},
         "children_by_job": {"A": []},
         "slurm_names": {"A": "A.sh"},
-        "slurm_dir": "/remote/slurm",
+        "slurm_dir": str(slurm_dir()),
     }
     payload_file = tmp_path / "payload.json"
     payload_file.write_text(json.dumps(payload))
@@ -41,9 +44,10 @@ def test_bulk_submit_driver_app_reports_error(monkeypatch, capsys):
             {
                 "read": lambda self: json.dumps(
                     {
+                        "receipt": {"submission_id": "a" * 32},
                         "children_by_job": {"A": []},
                         "slurm_names": {"A": "A.sh"},
-                        "slurm_dir": "/remote/slurm",
+                        "slurm_dir": str(slurm_dir()),
                     }
                 )
             },
@@ -61,3 +65,18 @@ def test_bulk_submit_driver_app_reports_error(monkeypatch, capsys):
     output = json.loads(capsys.readouterr().out.strip())
     assert output["ok"] is False
     assert "boom" in output["error"]
+
+
+def test_capabilities_never_reads_or_submits(monkeypatch, capsys):
+    monkeypatch.setattr(app, "submit_payload", lambda *args: pytest.fail("Capability query submitted work"))
+    app.main(["--capabilities"])
+    assert json.loads(capsys.readouterr().out) == {"submission_protocol": 1}
+
+
+def test_helper_rejects_untracked_payload_before_scheduler(tmp_path, monkeypatch, capsys):
+    payload = tmp_path / "untracked.json"
+    payload.write_text(json.dumps({"children_by_job": {"A": []}, "slurm_names": {"A": "A.sh"}, "slurm_dir": str(slurm_dir())}))
+    monkeypatch.setattr(app, "submit_payload", lambda *args: pytest.fail("Untracked helper call reached submission"))
+    with pytest.raises(SystemExit):
+        app.main(["--payload-file", str(payload)])
+    assert "receipt is required" in json.loads(capsys.readouterr().out)["error"]

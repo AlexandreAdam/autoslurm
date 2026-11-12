@@ -10,6 +10,7 @@ from .context import agent_context
 from .experiment_context import experiment_context
 from .save_load_jobs import list_saved_bundles, schedule_job
 from .storage import ensure_storage_dirs, jobs_dir
+from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
 
 ACTION_FILE = Path(__file__).resolve().parent / "acp_action.json"
 
@@ -73,7 +74,8 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
     Execute an Agent Communication Protocol request.
 
     The `acl` dict must include an `"action"` key (one of `inspect_experiments`,
-    `list_experiments`, `schedule`, `gather_context`). Each action defines its
+    `list_experiments`, `schedule`, `gather_context`, `list_submissions`,
+    `inspect_submission`). Each action defines its
     own parameters. The return value is a
     dict with keys `status` and either `result` or `message`.
     """
@@ -82,6 +84,11 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
         return {"status": "error", "message": "Missing action"}
 
     try:
+        if action == "list_submissions":
+            return {"status": "success", "result": list_submissions(acl.get("bundle"))}
+        if action == "inspect_submission":
+            reader = refresh_submission if acl.get("refresh", False) else load_submission
+            return {"status": "success", "result": reader(acl["receipt_path"])}
         if action == "inspect_experiments":
             bundle = acl["bundle"]
             date = _parse_date(acl.get("date"))
@@ -113,6 +120,8 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
                 },
             }
         return {"status": "error", "message": f"Unknown action '{action}'"}
+    except SubmissionError as exc:
+        return {"status": "error", "message": str(exc), "result": exc.receipt}
     except Exception as exc:  # pragma: no cover - bubble up errors
         return {"status": "error", "message": str(exc)}
 

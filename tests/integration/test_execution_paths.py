@@ -12,6 +12,7 @@ from autoslurm import resolve_results_path, path_exists, recorded_execution
 from autoslurm.storage import storage_root, slurm_dir
 from autoslurm.utils import save_config
 from tests.integration.test_reference_client import science_client, EXAMPLE
+from tests.submission_helpers import accepted_receipt
 
 
 @pytest.mark.local_processes
@@ -36,6 +37,8 @@ def test_relative_science_under_two_profiles_from_unrelated_directory(profile, t
     calls = []
 
     def mock_scheduler(command, **kwargs):
+        if command[0] == "bash":
+            return real_run(command, **kwargs)
         if command[0] == "test":
             return subprocess.CompletedProcess(command, 0 if Path(command[-1]).exists() else 1, "", "")
         assert command[0] == "sbatch", command
@@ -121,15 +124,19 @@ def test_remote_operation_discovers_root_once_and_batches_input_validation(tmp_p
     selected = save_bundle(definitions, "remote-study")
     calls = []
     def fake_remote(command, **kwargs):
+        if command[0] == "bash":
+            return subprocess.CompletedProcess(command, 0, "", "")
         calls.append(command)
         if command[0] == "ssh" and command[-1].startswith("bash -lc "):
             return subprocess.CompletedProcess(command, 0, "/remote/development\n", "")
         if command[0] == "ssh" and command[-1].startswith("test ") and missing_input:
             return subprocess.CompletedProcess(command, 1, "", "Required input input_file is unavailable: /remote/project/data/measurements.json")
         if command[0] == "ssh" and "autoslurm.apps.bulk_submit_driver" in command[-1]:
+            if "--capabilities" in command[-1]:
+                return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1}', "")
             payload = json.loads(kwargs["input"])
             assert payload["slurm_dir"] == "/remote/development/slurm"
-            return subprocess.CompletedProcess(command, 0, json.dumps({"ok": True, "job_ids": {"shards": "201", "reduce": "202"}}), "")
+            return subprocess.CompletedProcess(command, 0, json.dumps({"ok": True, "receipt": accepted_receipt(payload, {"shards": "201", "reduce": "202"})}), "")
         assert command[0] in {"ssh", "scp"}
         return subprocess.CompletedProcess(command, 0, "", "")
     monkeypatch.setattr("subprocess.run", fake_remote)

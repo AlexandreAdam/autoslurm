@@ -1,6 +1,4 @@
-import os
 from typing import Union
-from collections import defaultdict
 from .storage import ensure_storage_dirs, slurm_dir
 
 __all__ = ["dependency_graph", "update_slurm_with_dependencies"]
@@ -22,16 +20,18 @@ def dependency_graph(jobs):
                 "JobC": []
             }
     """
-    dependency_graph = defaultdict(list)
-    names = set()
+    dependency_graph = {name: [] for name in jobs}
     for job_name, job in jobs.items():
-        if job_name in names:
-            raise ValueError("Duplicate job: {}".format(job_name))
-        names.add(job_name)
-        dependency_graph[job_name] = []
+        if not isinstance(job_name, str) or not job_name.strip() or job.get("name", job_name) not in (None, job_name):
+            raise ValueError("Job names must match their nonempty bundle keys.")
+        if not isinstance(job.get("dependencies") or [], (list, tuple)):
+            raise ValueError(f"Dependencies for {job_name!r} must be a list.")
         if job.get("dependencies") is not None:  # avoid case where dependencies is None
             for dep in job.get("dependencies", []):
-                dependency_graph[dep].append(job_name)
+                if not isinstance(dep, str) or dep not in jobs:
+                    raise ValueError(f"Unknown dependency {dep!r} for {job_name!r}.")
+                if job_name not in dependency_graph[dep]:
+                    dependency_graph[dep].append(job_name)
     return dependency_graph
 
 

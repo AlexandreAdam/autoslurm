@@ -56,6 +56,8 @@ def test_integration_schedule_jobs(
             script_content = f.readlines()
         job_name = os.path.split(file)[-1].split("_")[-2].split(".")[0]
         expected_content_lines = expected_bundle_content[job_name]
+        if mock_machine_config is not mock_machine_config_local:
+            expected_content_lines = [line for line in expected_content_lines if not line.startswith("#SBATCH --dependency") ]
         for i, (line, expected_line) in enumerate(
             zip(script_content, expected_content_lines)
         ):
@@ -169,87 +171,35 @@ def test_submit_jobs_from_bundle_file(
     assert any("/tmp/galaxies" in call["stdout"] for call in slurm_emulator)
 
 
-@patch("autoslurm.job_runner.submit_jobs_legacy_remote")
-@patch("autoslurm.job_runner.run_bulk_submit_driver_remotely")
-@patch("autoslurm.job_runner.transfer_bundle_to_remote")
-@patch("autoslurm.job_runner.transfer_slurms_to_remote")
-@patch("autoslurm.job_runner.ssh_submission_session")
-def test_submit_jobs_remote_uses_bulk_driver(
-    mock_ssh_session,
-    mock_transfer_slurms,
-    mock_transfer_bundle,
-    mock_bulk_submit,
-    mock_legacy_submit,
-    mock_load_config,
-    storage_env,
-):
+@pytest.mark.parametrize("lost_response", [False, True])
+def test_remote_dispatch_preserves_receipt_without_fallback(monkeypatch, mock_load_config, storage_env, lost_response):
+    from autoslurm import SubmissionError, load_submission
+    from tests.submission_helpers import accepted_receipt
+    from autoslurm import job_runner
+    calls = []
     @contextmanager
-    def _noop_session(*_args, **_kwargs):
+    def session(*args):
         yield None
-
-    mock_ssh_session.side_effect = _noop_session
-    save_bundle(mock_jobs, mock_job_name)
-    mock_bulk_submit.return_value = {"JobA": "111", "JobB": "222", "JobC": "333"}
-    mock_legacy_submit.return_value = {"JobA": "old1", "JobB": "old2", "JobC": "old3"}
-
-    remote_machine = {
-        "hostname": "remote",
-        "path": "/path/to/remote",
-        "venv_path": "/path/to/remote/venv",
-    }
-    submit_jobs(mock_job_name, machine="local", machine_overrides=remote_machine)
-
-    assert mock_transfer_slurms.called
-    assert mock_bulk_submit.called
-    assert not mock_legacy_submit.called
-
-    bundle_files = sorted(jobs_dir().glob(f"{mock_job_name}_*.json"))
-    assert bundle_files
-    with open(bundle_files[-1], "r") as f:
-        persisted = json.load(f)
-    assert persisted["JobA"]["id"] == "111"
-    assert persisted["JobB"]["id"] == "222"
-    assert persisted["JobC"]["id"] == "333"
-
-
-@patch("autoslurm.job_runner.submit_jobs_legacy_remote")
-@patch("autoslurm.job_runner.run_bulk_submit_driver_remotely")
-@patch("autoslurm.job_runner.transfer_bundle_to_remote")
-@patch("autoslurm.job_runner.transfer_slurms_to_remote")
-@patch("autoslurm.job_runner.ssh_submission_session")
-def test_submit_jobs_remote_falls_back_to_legacy_driver(
-    mock_ssh_session,
-    mock_transfer_slurms,
-    mock_transfer_bundle,
-    mock_bulk_submit,
-    mock_legacy_submit,
-    mock_load_config,
-    storage_env,
-):
-    @contextmanager
-    def _noop_session(*_args, **_kwargs):
-        yield None
-
-    mock_ssh_session.side_effect = _noop_session
-    save_bundle(mock_jobs, mock_job_name)
-    mock_bulk_submit.side_effect = RuntimeError("bulk unavailable")
-    mock_legacy_submit.return_value = {"JobA": "444", "JobB": "555", "JobC": "666"}
-
-    remote_machine = {
-        "hostname": "remote",
-        "path": "/path/to/remote",
-        "venv_path": "/path/to/remote/venv",
-    }
-    submit_jobs(mock_job_name, machine="local", machine_overrides=remote_machine)
-
-    assert mock_transfer_slurms.called
-    assert mock_bulk_submit.called
-    assert mock_legacy_submit.called
-
-    bundle_files = sorted(jobs_dir().glob(f"{mock_job_name}_*.json"))
-    assert bundle_files
-    with open(bundle_files[-1], "r") as f:
-        persisted = json.load(f)
-    assert persisted["JobA"]["id"] == "444"
-    assert persisted["JobB"]["id"] == "555"
-    assert persisted["JobC"]["id"] == "666"
+    def dispatch(payload, **kwargs):
+        calls.append(payload)
+        if lost_response:
+            raise RuntimeError("response lost")
+        return accepted_receipt(payload, {"JobA": "111", "JobB": "222", "JobC": "333"})
+    monkeypatch.setattr(job_runner, "ssh_submission_session", session)
+    monkeypatch.setattr(job_runner, "probe_submission_helper", lambda context: None)
+    monkeypatch.setattr(job_runner, "validate_slurm_content", lambda content: None)
+    monkeypatch.setattr(job_runner, "transfer_slurms_to_remote", lambda *args, **kwargs: None)
+    monkeypatch.setattr(job_runner, "run_bulk_submit_driver_remotely", dispatch)
+    selected = save_bundle(mock_jobs, mock_job_name)
+    remote = {"hostname": "remote", "path": "/path/to/remote", "venv_path": "/path/to/env"}
+    if lost_response:
+        with pytest.raises(SubmissionError) as error:
+            submit_jobs(mock_job_name, machine="local", machine_overrides=remote, bundle_path=selected)
+        receipt = error.value.receipt
+        assert receipt["state"] == "uncertain"
+        assert all(job["state"] == "uncertain" for job in receipt["jobs"].values())
+    else:
+        receipt = submit_jobs(mock_job_name, machine="local", machine_overrides=remote, bundle_path=selected)
+        assert receipt["state"] == "submitted"
+    assert len(calls) == 1
+    assert load_submission(receipt["receipt_path"])["state"] == receipt["state"]

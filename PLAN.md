@@ -9,13 +9,13 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP1, predictable paths and shared rules; complete locally.
+- **Current milestone:** MVP2, safer submission; complete locally.
 - **Stage:** stable code remains pinned; development has isolated code,
   environment/state, a tested client recipe and single/array reference workloads.
-  Full offline suite: 270 passed. Shared paths, preview/preflight and producing-run
-  artifact lookup are verified. No cluster installation or promotion performed.
-- **Next task:** detail MVP2's bounded submission-safety increment: remove unsafe
-  fallback, retain accepted IDs and report partial/uncertain outcomes.
+  Full offline suite: 295 passed. Incremental submission receipts, partial/unknown
+  outcomes and exact read-only recovery inspection are verified. No cluster
+  installation or promotion performed.
+- **Next task:** detail MVP3's shared task/status/log view and growing-log refresh.
 - **Last updated:** 2026-11-11.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -214,6 +214,20 @@ No large package reorganization is needed to complete the local increment.
 
 ## MVP2 Safer submission
 
+Design: [MVP2 submission safety](REFACTORING_DOCS/design/MVP2_submission_safety.md).
+
+- [x] **MVP2.0 Scope the submission contract.** Retain bundle files; add a small
+  submission receipt, explicit outcomes and read-only refresh. Local-only tests.
+- [x] **MVP2.1 Preserve execution evidence.** Validate the entire graph/scripts;
+  save submission identity and each accepted ID on the execution side before
+  continuing. Stop on rejection or uncertainty; no implicit alternative submits.
+- [x] **MVP2.2 Connect clients and recovery inspection.** Return a plain receipt,
+  attach it to submission errors, mirror known IDs, and expose exact local reads
+  and explicit remote refresh without resubmitting. Protect uncertain records.
+- [x] **MVP2.3 Validate and document.** Mock partial failures/response loss and
+  duplicate helper invocation, exercise literal/runtime environment exports,
+  update client guides and close the offline milestone with a local tag.
+
 **Outcome:** a failed command or connection cannot trigger the current blanket
 retry, and known accepted job IDs remain discoverable.
 
@@ -343,6 +357,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-11 | Publish a current client recipe in task-specific agent context; validate with an independent installed application | Teach scientific software boundaries, actual relative-path bases, exact selection and evidence handoff before broader refactoring |
 | 2026-11-11 | Pull a narrow exact-file submission fix forward from MVP1 | The reference test showed an imported definition could reload a neighboring draft; return the saved path and load it directly, retaining timestamp identity independently of mtime |
 | 2026-11-11 | Implement one execution context with project-relative inputs/cwd, results-relative outputs and saved producing roots | Same relative science definition works from unrelated directories under two profiles; remote submission resolves storage once and batches required-input checks; no input staging or broader recovery engine |
+| 2026-11-11 | Use the existing DAG driver for both lanes with incremental execution-side receipts; retire implicit legacy graph submission | Preserve accepted IDs before the next scheduler call, distinguish partial/unknown outcomes, and refresh exact evidence without any automatic resubmission or adoption |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -360,6 +375,7 @@ or migration decision has already been accepted.
 | 2026-11-10 | MVP0.2 Local isolation and explicit storage selection | 238 full offline tests pass, including 18 new root/isolation cases; editable development install and fresh-process discovery verified. Stable source remains unchanged at detached baseline HEAD. Task commit: `git log --grep '^MVP0.2:'` on `codex/mvp0-isolation`; no push, promotion or remote operations |
 | 2026-11-11 | MVP0.3 Current client recipe and scientific reference workloads | 245 full offline tests pass; 13 focused client/context checks pass after final failure-case/documentation updates. Installed standalone application produces matching single/reduced summaries. Expected timestamp-collision warnings exercised by competing-draft tests. Task commit: `git log --grep '^MVP0.3:'`; local milestone tag `mvp0` at closure, without promotion |
 | 2026-11-11 | MVP1.0–MVP1.3 Shared paths, selection, saved execution and scientific integration | 270 full offline tests pass in 2.27 s; five expected timestamp-collision warnings. Two-profile array/reducer runs, nested cwd/space handling, activation failure, invalid/missing inputs before submission, one remote root probe plus batched preflight, and saved local/remote artifacts without current-profile discovery verified. Report: `.development/test-runs/mvp1-final.xml`. Guides/schema and examples updated. Task commit: `git log --grep '^MVP1.3:'`; local tag `mvp1` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
+| 2026-11-11 | MVP2.0–MVP2.3 Safer submission, receipts and exact inspection | 295 offline tests pass in 2.62 s; 28 expected snapshot-collision warnings. Same-level/later rejection, interruption/malformed output, response loss after final and unfinished helper execution, persisted/in-memory accepted IDs on storage failure, capability/replay guards, read-only refresh with recorded transport, rejection of changed identities/IDs, protected cleanup, shell syntax and literal/runtime exports verified. Report: `.development/test-runs/mvp2-final.xml`. Task commit: `git log --grep '^MVP2.3:'`; local tag `mvp2` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 
 ## How we work
 

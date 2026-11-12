@@ -1,31 +1,7 @@
-from __future__ import annotations
+"""Retired untracked graph submission path; stable retains its pinned version."""
 
-from typing import Optional
-
-from .run_slurm import run_slurm_remotely
-
-__all__ = ["submit_jobs_legacy_remote"]
+__all__ = []
 
 
-def submit_jobs_legacy_remote(
-    jobs: list[dict],
-    slurm_names: dict[str, str],
-    machine_config: dict,
-    ssh_options: Optional[list[str]] = None,
-    *, context=None,
-) -> dict[str, str]:
-    """
-    Legacy fallback path: submit one remote sbatch per job.
-    """
-    job_ids: dict[str, str] = {}
-    for job in jobs:
-        job_name = job["name"]
-        slurm_name = slurm_names[job_name]
-        job_id = run_slurm_remotely(
-            slurm_name,
-            machine_config=machine_config,
-            ssh_options=ssh_options,
-            **({"context": context} if context is not None else {}),
-        )
-        job_ids[job_name] = job_id
-    return job_ids
+def submit_jobs_legacy_remote(*args, **kwargs):
+    raise RuntimeError("Legacy graph submission is retired; use submit_jobs with a receipt-capable prepared helper.")

@@ -1,31 +1,34 @@
 from typing import Optional
+import copy
+import re
+from uuid import uuid4
 from datetime import datetime
-import json
 from pathlib import Path
 from io import StringIO
-from .job_to_slurm import create_slurm_script
-from .job_to_slurm import write_slurm_content
+from .job_to_slurm import write_slurm_content, validate_slurm_content
 from .execution import resolve_execution_context, EXECUTION_METADATA_KEY
-from .legacy_submit_driver import submit_jobs_legacy_remote
-from .job_dependency import update_slurm_with_dependencies
 from .run_slurm import (
-    run_slurm_locally,
     ssh_submission_session,
     run_bulk_submit_driver_remotely,
+    probe_submission_helper,
 )
 from .save_load_jobs import (
-    load_bundle,
     load_bundle_from_path,
     save_bundle,
-    transfer_bundle_to_remote,
     transfer_slurms_to_remote,
     SNAPSHOT_KIND_KEY,
+    select_bundle_snapshot,
 )
 from .utils import (
     machine_config as resolve_machine_config,
-    update_job_info_with_id,
-    update_job_metadata,
     remote_storage_root_from_config,
+)
+
+from .bulk_submit_driver import BulkSubmitPayload, submit_payload
+from .storage import storage_root, slurm_dir
+from .submission import (
+    SubmissionError, SUBMISSION_METADATA_KEY, SUBMISSION_PROTOCOL,
+    write_receipt, project_receipt, mark_unobserved,
 )
 
 __all__ = ["submit_jobs", "preview_bundle"]
@@ -47,6 +50,7 @@ def preview_bundle(bundle_path, *, machine=None, machine_overrides=None):
     for job in jobs:
         output = StringIO()
         write_slurm_content(output, job, config, context=context)
+        validate_slurm_content(output.getvalue())
         rendered[job["name"]] = {**context.resolve_job(job), "script": output.getvalue()}
     return {"machine": machine, "bundle_path": str(Path(bundle_path).resolve()), "jobs": rendered}
 
@@ -59,117 +63,111 @@ def submit_jobs(
     bundle_path: Optional[str | Path] = None,
     *, context=None,
 ):
-    """
-    Run a job with SLURM either locally or on a remote machine. This is the main function of the scheduler module.
-    It assumes the job configuration is stored in a JSON file. The logic to save jobs to a JSON file is implemented in the "save_load_jobs" module.
+    """Submit once, returning a receipt; SubmissionError carries partial evidence."""
 
-    Parameters:
-        - name (str): The name of the job bundle to be scheduled.
-        - machine (Optional[str]): Name of the configured machine to use (defaults to the configured default).
-        - machine_overrides (Optional[dict]): Overrides applied on top of the selected machine configuration.
-        - date (Optional[datetime]): Select the nearest saved definition timestamp when bundle_path is absent.
-        - bundle_path (Optional[str | Path]): Exact saved definition to import into a new submission snapshot.
-
-    Raises:
-        - EnvironmentError: If no configuration is found for the specified machine.
-
-    """
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
+        raise ValueError("Bundle name must be a simple nonempty name without path separators.")
     if context is None:
-        machine, machine_config = resolve_machine_config(args=None, machine=machine, overrides=machine_overrides)
-        context = resolve_execution_context(machine, machine_config, root_resolver=remote_storage_root_from_config)
+        machine, config = resolve_machine_config(args=None, machine=machine, overrides=machine_overrides)
+        context = resolve_execution_context(machine, config, root_resolver=remote_storage_root_from_config)
     else:
         if machine is not None and machine != context.machine_name:
             raise ValueError("Selected machine conflicts with the supplied execution context.")
         if machine_overrides is not None and machine_overrides != context.config:
             raise ValueError("Machine overrides conflict with the supplied execution context.")
-        machine, machine_config = context.machine_name, context.config
-    if "hostname" not in machine_config and "hosturl" not in machine_config:
-        host = "localhost"
-    else:
-        host = machine_config.get("hostname", machine_config.get("hosturl"))
-
-    if bundle_path is None:
-        jobs, dependencies, date = load_bundle(name, date)
-        context.validate_jobs(jobs)
-    else:
-        jobs, _, _ = load_bundle_from_path(bundle_path)
-        context.validate_jobs(jobs)
-        with open(bundle_path, "r") as file:
-            bundle = json.load(file)
-        if isinstance(bundle, dict):
-            for job in bundle.values():
-                if isinstance(job, dict):
-                    job[SNAPSHOT_KIND_KEY] = "submission"
-        submission_path = save_bundle(bundle, name)
-        jobs, dependencies, date = load_bundle_from_path(submission_path)
-
-    # Mark the persisted snapshot as a submission artifact.
+        machine, config = context.machine_name, context.config
+    selected = select_bundle_snapshot(name, bundle_path=bundle_path, desired_date=date, prefer_draft=False)
+    planned_path = Path(selected["path"]).resolve()
+    jobs, dependencies, _ = load_bundle_from_path(planned_path)
+    if not jobs:
+        raise ValueError("Cannot submit an empty bundle.")
+    if any(job.get("id") or job.get(SUBMISSION_METADATA_KEY) or job.get(SNAPSHOT_KIND_KEY) == "submission" for job in jobs):
+        raise ValueError("Refusing to resubmit a submission snapshot; inspect its receipt and prepare a new definition explicitly.")
+    context.validate_jobs(jobs)
+    # Render the entire graph before creating scripts, receipts or scheduler effects.
+    rendered = {}
     for job in jobs:
-        update_job_metadata(name, date, job["name"], {
-            SNAPSHOT_KIND_KEY: "submission", "machine": machine,
-            EXECUTION_METADATA_KEY: context.resolve_job(job),
-        })
+        if not isinstance(job.get("script"), str) or not job["script"].strip():
+            raise ValueError("Every job needs a nonempty application command.")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", job["name"]):
+            raise ValueError("Job names must be simple names without path separators.")
+        if job["slurm"].get("dependency") is not None:
+            raise ValueError("Declare dependencies in the job graph, not Slurm options.")
+        output = StringIO()
+        write_slurm_content(output, job, config, context=context)
+        rendered[job["name"]] = output.getvalue()
+    for content in rendered.values():
+        validate_slurm_content(content)
+    if context.is_remote:
+        probe_submission_helper(context)
+    submission_id = uuid4().hex
+    receipt_path = storage_root() / "submissions" / (submission_id + ".json")
+    execution_root = context.storage_root if context.is_remote else str(storage_root())
+    execution_receipt_path = str(Path(execution_root) / "submissions" / (submission_id + ".json"))
+    snapshot = {job["name"]: copy.deepcopy(job) for job in jobs}
+    for job in snapshot.values():
+        job.update({SNAPSHOT_KIND_KEY: "submission", "machine": machine,
+                    EXECUTION_METADATA_KEY: context.resolve_job(job),
+                    SUBMISSION_METADATA_KEY: {"submission_id": submission_id, "receipt_path": str(receipt_path), "state": "not_submitted"}})
+    submission_path = save_bundle(snapshot, name).resolve()
+    receipt = {
+        "protocol": SUBMISSION_PROTOCOL, "submission_id": submission_id, "bundle": name,
+        "planned_path": str(planned_path), "bundle_path": str(submission_path),
+        "receipt_path": str(receipt_path), "execution_receipt_path": execution_receipt_path,
+        "machine": machine, "execution": context.resolve_job(jobs[0]),
+        "state": "prepared", "execution_finished": False,
+        "jobs": {job["name"]: {"state": "not_submitted", "dependencies": job.get("dependencies") or []} for job in jobs},
+    }
+    write_receipt(receipt_path, receipt)
     slurm_names = {}
-    for job in jobs:
-        if job.get("script", None) is None:
-            raise ValueError(
-                "'script' entry is missing from one of the jobs in the configuration file {job_name}"
-            )
-        elif job.get("name", None) is None:
-            raise ValueError(
-                "'name' entry is missing from one of the jobs in the configuration file {job_name}"
-            )
-        slurm_name = create_slurm_script(job, date, machine_config, context=context)
-        slurm_names[job["name"]] = slurm_name
-
-    is_remote = context.is_remote
-    if is_remote:
-        transfer_slurm_to_remote(list(slurm_names.values()), machine_config=machine_config, context=context)
-
-    with ssh_submission_session(machine_config, machine) as ssh_options:
-        if is_remote:
-            remote_root = context.storage_root
-            payload = {
-                "children_by_job": dependencies,
-                "slurm_names": slurm_names,
-                "slurm_dir": f"{remote_root.rstrip('/')}/slurm",
-            }
-            try:
-                job_ids = run_bulk_submit_driver_remotely(
-                    payload,
-                    machine_config=machine_config,
-                    ssh_options=ssh_options,
-                    context=context,
+    dispatched = False
+    observed_final = False
+    try:
+        # Unique identity also prevents script collisions across concurrent bundles.
+        for job_name, content in rendered.items():
+            script_name = f"{job_name}_{submission_id}.sh"
+            (slurm_dir() / script_name).write_text(content)
+            slurm_names[job_name] = script_name
+        if context.is_remote:
+            transfer_slurm_to_remote(list(slurm_names.values()), machine_config=config, context=context)
+            with ssh_submission_session(config, machine) as ssh_options:
+                receipt["state"] = "submitting"
+                write_receipt(receipt_path, receipt)
+                dispatched = True
+                receipt = run_bulk_submit_driver_remotely(
+                    {"children_by_job": dependencies, "slurm_names": slurm_names,
+                     "slurm_dir": str(Path(execution_root) / "slurm"), "receipt": receipt},
+                    machine_config=config, ssh_options=ssh_options, context=context,
                 )
-            except Exception:
-                # Fallback path preserves legacy behavior if driver unavailable.
-                job_ids = submit_jobs_legacy_remote(
-                    jobs,
-                    slurm_names,
-                    machine_config,
-                    ssh_options=ssh_options,
-                    context=context,
-                )
-            for job in jobs:
-                job_name = job["name"]
-                job_id = job_ids[job_name]
-                print(f"Submitted job {job_name} with ID {job_id} at {host}")
-                job_metadata = {"machine": machine}
-                update_job_metadata(name, date, job_name, job_metadata)
-                for dependent_job_name in dependencies.get(job_name, []):
-                    update_slurm_with_dependencies(slurm_names[dependent_job_name], job_id)
-                update_job_info_with_id(name, date, job_name, job_id)
+                observed_final = True
         else:
-            for job in jobs:
-                slurm_name = slurm_names[job["name"]]
-                job_id = run_slurm_locally(slurm_name)
-                print(f"Submitted job {job['name']} with ID {job_id} locally")
-
-                job_metadata = {"machine": machine}
-                update_job_metadata(name, date, job["name"], job_metadata)
-                for dependent_job_name in dependencies.get(job["name"], []):
-                    update_slurm_with_dependencies(slurm_names[dependent_job_name], job_id)
-                update_job_info_with_id(name, date, job["name"], job_id)
-
-    if is_remote:
-        transfer_bundle_to_remote(name, date, machine_config=machine_config, context=context)
+            dispatched = True
+            receipt = submit_payload(BulkSubmitPayload(dependencies, slurm_names, str(slurm_dir()), receipt, parsable=False)).receipt
+            observed_final = True
+    except (Exception, KeyboardInterrupt) as exc:
+        if isinstance(exc, SubmissionError):
+            receipt = exc.receipt
+            if context.is_remote and not receipt["execution_finished"]:
+                mark_unobserved(receipt, str(exc))
+        elif dispatched and not observed_final:
+            mark_unobserved(receipt, str(exc) or type(exc).__name__)
+        else:
+            receipt["error"] = str(exc) or type(exc).__name__
+            if not observed_final:
+                receipt.update(state="rejected", execution_finished=True)
+        try:
+            write_receipt(receipt_path, receipt)
+            project_receipt(receipt)
+        except Exception as storage_error:
+            receipt["tracking_error"] = str(storage_error)
+        raise SubmissionError(f"Submission {receipt['state']}; receipt {receipt_path}: {exc}", receipt) from exc
+    try:
+        write_receipt(receipt_path, receipt)
+        project_receipt(receipt)
+    except Exception as exc:
+        receipt["tracking_error"] = str(exc)
+        raise SubmissionError(f"Submission evidence could not be mirrored; receipt {receipt_path}: {exc}", receipt) from exc
+    for job_name, outcome in receipt["jobs"].items():
+        print(f"Submitted job {job_name} with ID {outcome['id']} at {machine}")
+    print(f"Submission receipt: {receipt_path}")
+    return receipt

@@ -171,6 +171,13 @@ def main(argv: list[str] | None = None) -> None:
     for item in selected:
         path = Path(item["path"])
         if path.exists():
+            try:
+                if '"_autoslurm_submission"' in path.read_text():
+                    print(f"Retained submission evidence: {path}")
+                    continue
+            except OSError:
+                print(f"Retained unreadable evidence: {path}")
+                continue
             path.unlink()
             removed += 1
     print(f"\nRemoved {removed} bundle file(s).")

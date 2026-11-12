@@ -13,6 +13,7 @@ from .utils import (
     remote_storage_root_from_config,
 )
 from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
+from .submission import SubmissionError, SUBMISSION_PROTOCOL, validate_receipt
 
 __all__ = [
     "get_job_id_from_sbatch_output",
@@ -20,6 +21,7 @@ __all__ = [
     "run_slurm_locally",
     "ssh_submission_session",
     "run_bulk_submit_driver_remotely",
+    "probe_submission_helper",
 ]
 
 
@@ -118,8 +120,12 @@ def ssh_submission_session(
         yield ssh_options
     finally:
         close_command = ["ssh", *ssh_options, "-O", "exit", *shlex.split(hostname)]
-        subprocess.run(close_command, capture_output=True, text=True)
-        shutil.rmtree(tmpdir, ignore_errors=True)
+        try:
+            subprocess.run(close_command, capture_output=True, text=True)
+        except Exception:
+            pass  # Connection cleanup must not erase an already observed receipt.
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def run_slurm_locally(slurm_name):
@@ -159,7 +165,7 @@ def run_bulk_submit_driver_remotely(
             "Bulk remote submission requires 'venv_path' in machine configuration."
         )
     python_executable = f"{venv_path.rstrip('/')}/bin/python"
-    if "storage_root" in machine_config:
+    if context is not None or "storage_root" in machine_config:
         remote_root = context.storage_root if context else remote_storage_root_from_config(machine_config, machine)
         if payload.get("slurm_dir") != f"{remote_root.rstrip('/')}/slurm":
             raise ValueError("Bulk payload script directory does not match the selected storage root.")
@@ -176,17 +182,38 @@ def run_bulk_submit_driver_remotely(
         capture_output=True,
         text=True,
     )
-    if result.returncode != 0:
-        message = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(f"Remote bulk submit driver failed: {message}")
     try:
         response = json.loads(result.stdout.strip() or "{}")
     except json.JSONDecodeError as exc:
         raise RuntimeError(
             f"Remote bulk submit driver returned invalid JSON: {result.stdout!r}"
         ) from exc
-    if not response.get("ok", False):
+    if payload.get("receipt") is not None:
+        receipt = validate_receipt(response.get("receipt"), payload["receipt"])
+        if result.returncode != 0 or not response.get("ok"):
+            raise SubmissionError(response.get("error") or "Remote submission stopped.", receipt)
+        if receipt.get("state") != "submitted" or not receipt.get("execution_finished"):
+            raise SubmissionError("Remote submission did not report a final acceptance outcome.", receipt)
+        return receipt
+    if result.returncode != 0 or not response.get("ok", False):
         raise RuntimeError(response.get("error", "Remote bulk submit failed."))
     if "job_ids" not in response:
         raise RuntimeError("Remote bulk submit response missing 'job_ids'.")
     return response["job_ids"]
+
+
+def probe_submission_helper(context):
+    """Fail before dispatch if the prepared helper cannot persist receipts."""
+    config = context.config
+    venv = config.get("venv_path")
+    if not isinstance(venv, str) or not venv.strip():
+        raise RuntimeError("Receipt-capable remote submission requires a prepared venv_path.")
+    host = ssh_host_from_config(config, context.machine_name)
+    command = shlex.join(["env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={context.storage_root}", venv.rstrip("/") + "/bin/python", "-m", "autoslurm.apps.bulk_submit_driver", "--capabilities"])
+    result = subprocess.run(["ssh", *shlex.split(host), command], capture_output=True, text=True)
+    try:
+        capable = result.returncode == 0 and json.loads(result.stdout).get("submission_protocol") == SUBMISSION_PROTOCOL
+    except (ValueError, AttributeError):
+        capable = False
+    if not capable:
+        raise RuntimeError("Remote helper does not support submission receipts; prepare the matching helper before submitting.")

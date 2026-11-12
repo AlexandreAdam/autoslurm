@@ -72,5 +72,40 @@
       "context",
       "gather"
     ]
+  },
+  {
+    "name": "list_submissions",
+    "description": "List local submission receipts without querying or submitting scheduler work.",
+    "parameters": {
+      "bundle": "Optional exact bundle-name filter."
+    },
+    "context_sections": [
+      "00_operating_rules.md",
+      "01_client_workflow.md",
+      "11_task_submit_monitor.md",
+      "12_task_acp_reference.md"
+    ],
+    "keywords": [
+      "submission",
+      "receipt"
+    ]
+  },
+  {
+    "name": "inspect_submission",
+    "description": "Read an exact local receipt; explicit refresh fetches only its execution-side receipt, never resubmitting.",
+    "parameters": {
+      "receipt_path": "Required exact local receipt path returned by submit_jobs or list_submissions.",
+      "refresh": "Optional boolean, default false. True may contact the recorded producing machine."
+    },
+    "context_sections": [
+      "00_operating_rules.md",
+      "01_client_workflow.md",
+      "11_task_submit_monitor.md",
+      "12_task_acp_reference.md"
+    ],
+    "keywords": [
+      "submission",
+      "receipt"
+    ]
   }
 ]

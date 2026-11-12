@@ -67,9 +67,11 @@ stop the operation. Remote checks are mocked under the current project scope.
 
 Storage selection does not install software, copy application inputs or rewrite
 explicit application output paths. Keep declared `results_root`, custom Slurm
-outputs and application-owned paths separate from stable outputs. Existing
-submission fallback/uncertainty limitations remain until MVP2; never retry an
-uncertain submission automatically. The exact local setup is in
+outputs and application-owned paths separate from stable outputs. Development
+MVP2 returns durable submission receipts and removes automatic
+bulk fallback. Preserve `SubmissionError.receipt` and inspect/refresh that exact
+receipt; never retry an uncertain submission automatically. A missing receipt
+does not prove rejection. The exact local setup is in
 `REFACTORING_DOCS/installation-register.md` in the development repository.
 
 Use prepared cluster software. Compute jobs do not install packages or update

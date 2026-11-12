@@ -28,6 +28,13 @@ The same relative workload can run under different machine profiles without
 changing the application. Preview checks paths before submission; saved execution
 locations let an agent find a run's results after a profile changes.
 
+MVP2 records accepted job IDs as submission progresses and stops safely on
+rejection or an uncertain response. `submit_jobs` returns a receipt;
+`SubmissionError.receipt` preserves partial evidence. Use `asl submission` to
+list receipts or inspect an exact receipt, with explicit `--refresh` to retrieve
+remote execution evidence. Refresh never submits work again. Submission success
+means Slurm accepted the jobs; the application still validates scientific results.
+
 Scientific software owns computation, input/output validation and task reduction.
 AutoSlurm owns machine mapping, submission and tracking; agents use its public
 interface and detailed operating guide. The pinned stable installation keeps its

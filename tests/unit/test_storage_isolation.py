@@ -7,6 +7,7 @@ from subprocess import CompletedProcess
 import sys
 
 import pytest
+from tests.submission_helpers import accepted_receipt
 
 from autoslurm import save_bundle, submit_jobs, storage
 from autoslurm.apps import bulk_submit_driver
@@ -31,6 +32,8 @@ def test_selected_root_agrees_across_submit_sync_and_results(monkeypatch, isolat
     calls = []
 
     def fake_run(command, **kwargs):
+        if command[0] == "bash":
+            return CompletedProcess(command, 0, "", "")
         calls.append(command)
         text = " ".join(command)
         assert "/remote/stable" not in text
@@ -40,11 +43,13 @@ def test_selected_root_agrees_across_submit_sync_and_results(monkeypatch, isolat
             assert "STORAGE_ROOT_ENVIRONMENT_VARIABLE" in shell
             return CompletedProcess(command, 0, cfg["storage_root"] + "\n", "")
         if command[0] == "ssh" and "autoslurm.apps.bulk_submit_driver" in command[-1]:
+            if "--capabilities" in command[-1]:
+                return CompletedProcess(command, 0, '{"submission_protocol": 1}', "")
             helper = shlex.split(command[-1])
             assert helper[:3] == ["env", "AUTOSLURM_STORAGE_ROOT=" + cfg["storage_root"], cfg["venv_path"] + "/bin/python"]
             payload = json.loads(kwargs["input"])
             assert payload["slurm_dir"] == cfg["storage_root"] + "/slurm"
-            return CompletedProcess(command, 0, json.dumps({"ok": True, "job_ids": {"prepare": "101", "analyze": "102"}}), "")
+            return CompletedProcess(command, 0, json.dumps({"ok": True, "receipt": accepted_receipt(payload, {"prepare": "101", "analyze": "102"})}), "")
         if command[0] == "rsync":
             target = Path(command[-1])
             assert target.is_relative_to(isolate_storage)
@@ -64,8 +69,8 @@ def test_selected_root_agrees_across_submit_sync_and_results(monkeypatch, isolat
         for name, dependencies in [("prepare", []), ("analyze", ["prepare"]) ]
     }
     save_bundle(jobs, "study")
-    submit_jobs("study", machine="mock")
-    saved = json.loads(next(storage.jobs_dir().glob("*.json")).read_text())
+    receipt = submit_jobs("study", machine="mock")
+    saved = json.loads(Path(receipt["bundle_path"]).read_text())
     assert saved["prepare"]["id"] == "101"
     assert saved["analyze"]["id"] == "102"
     for script in storage.slurm_dir().glob("*.sh"):
@@ -167,6 +172,10 @@ def test_real_helper_module_uses_selected_root_with_fake_slurm(tmp_path):
     fake_sbatch.chmod(0o755)
     env = dict(os.environ, AUTOSLURM_STORAGE_ROOT=str(root), PATH=str(fake_bin), PYTHONDONTWRITEBYTECODE="1")
     payload = {"children_by_job": {"a": []}, "slurm_names": {"a": "a.sh"}, "slurm_dir": str(root / "slurm")}
+    payload["receipt"] = {"protocol": 1, "submission_id": "a" * 32,
+                          "state": "prepared", "execution_finished": False,
+                          "execution_receipt_path": str(root / "submissions" / ("a" * 32 + ".json")),
+                          "jobs": {"a": {"state": "not_submitted"}}}
     command = [sys.executable, "-B", "-m", "autoslurm.apps.bulk_submit_driver"]
     result = subprocess.run(command, input=json.dumps(payload), env=env, cwd=tmp_path, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
