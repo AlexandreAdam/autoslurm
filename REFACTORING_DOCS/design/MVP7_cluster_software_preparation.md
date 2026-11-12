@@ -293,6 +293,127 @@ Cluster compatibility remains unverified until a separately authorized live test
 | 2026-11-12 | MVP7.1 shared manifest and current-host Git source engine implemented; 485 offline tests passed, including real Git against temporary local remotes; environments and execution remain planned |
 | 2026-11-12 | MVP7.1b read-only software status and major dependency/application metadata comparisons implemented; 523 offline tests pass; authorized live rusty observations found matching Gaia dependency ranges but different local/remote code revisions |
 
+## Proposed next delivery: remote application updates (2026-11-12)
+
+This is the implementation proposal requested after the live status demonstration.
+The following commands and runtime mechanics are not implemented or accepted
+technical decisions yet. D5–D8 remain the accepted source/dependency requirements.
+
+The next delivery should prepare an installation that a bundle can actually use.
+Keep source resolution and status code; add installation, remote orchestration
+and the smallest execution binding together. Do not call this workflow complete
+when only a fetched source directory or an environment exists without job routing.
+
+### Proposed user interface
+
+```sh
+# Bundle software manifest drives a project set and logical runtime.
+asl software prepare --machine rusty --bundle-file /absolute/local/study.json
+
+# Convenience for an application checkout: infer its Git origin and name.
+# Omitted revision resolves latest remote default-branch tip.
+asl software prepare --machine rusty --local-project /absolute/local/science
+asl software prepare --machine rusty --local-project /absolute/local/science --revision FULL_COMMIT_ID
+
+# Inspect the exact installation, including after an interrupted connection.
+asl software status --machine rusty --release RELEASE_ID --json
+
+# Bind new work explicitly; never change an existing machine profile implicitly.
+asl submit study --bundle-file /absolute/local/study.json --machine rusty --software-release RELEASE_ID
+```
+
+Preparation returns a request/release ID, requested/resolved repositories,
+installed distributions, base interpreter/environment identity, dependency
+checks, exact ready-runtime locations and bounded errors. Terminal presentation
+and JSON/Python results share that evidence. Exact status must distinguish a
+managed installation from the old manual checkout so an unchanged manual clone
+does not look like a failed managed update.
+
+`--local-project` here is a convenience request constructor. It does not upload
+working files, push Git, pin to local HEAD by default, or transfer the laptop's
+installed environment. Explicit branch/tag/commit selection has the same meaning
+as the bundle manifest; source-only and convenience requests use one backend.
+If the local default-branch tip has not been pushed, it cannot be prepared from
+the remote repository. Multiple projects continue to use the bundle form.
+
+### Proposed runtime policy for the first usable slice
+
+Use the machine's explicitly selected existing scientific environment as an
+unchanged dependency base. Install only the requested application distributions
+into a new, non-editable, release-specific location. A mismatch in JAX/NumPy/Torch
+or another required dependency produces a preparation error and the status report;
+it does not authorize upgrading the base stack. Checking only the focused status
+list cannot satisfy an installer's complete declared-dependency consistency gate.
+Build requirements and transitive dependencies must likewise have an explicit
+machine policy; missing prerequisites cannot trigger a hidden install into the base.
+
+The configuration contract separates helper/bootstrap, scientific dependency
+base and prepared application identity, without adding another scientific root.
+The existing environment may serve as helper and dependency base while remaining
+unchanged, but each job records its exact application release independently.
+Managed locations stay below software_root and scientific data stays in
+results_root. Bundle requests contain logical runtime names, not host paths.
+
+The concrete mechanism needs a focused prototype in MVP7.2a: for example, an
+isolated application installation and launch environment layered on the selected
+Python, with verified import and distribution precedence. A nested venv with
+system-site-packages does not automatically expose packages installed into its
+creating venv; test the actual visible stack instead of assuming inheritance.
+If a venv is chosen, create it at its final unique path because interpreter and
+entry-point paths can be embedded. Never rename a prepared venv and assume it
+remains valid. Build artifacts and installation must reference fixed source sets.
+
+This first policy isolates application updates, not an independently reconstructed
+copy of every scientific dependency. The base environment's continued stability
+is an explicit operator-owned condition. Record its identity/version inventory
+and revalidate it before new dispatch; never claim immutable dependency isolation
+from a mutable base. A fully separate dependency stack remains a later runtime
+policy when genuinely needed. No automatic garbage collection is introduced.
+
+### Implementation slices and completion gates
+
+1. **MVP7.2a Contract and runtime prototype.** Specify machine policy, helper/
+   application roles, artifact layout, request/release identity and environment
+   visibility. Prove a requested application can override an old editable install
+   without importing code from its checkout, while the selected scientific base
+   remains visible and unchanged. Keep an ambiguous result unready.
+2. **MVP7.2b Installation and verification.** Reuse `software_manifest`,
+   `git_projects` and `software_sources`; add `python_environments` for build/install
+   effects and `software_releases` for stage ordering/publication. Publish ready
+   only after all requested projects, installation origins/versions/commits,
+   interpreter, dependencies and entry points verify outside source directories.
+   Preserve the full installed dependency inventory, even though the human status
+   summary focuses on major libraries. Conflicts/missing inputs/install failures
+   submit zero jobs and leave earlier releases/base environments unchanged.
+3. **MVP7.2c Remote operation and diagnostics.** Add prepare CLI/Python and
+   exact-release status through the existing SSH adapter. Deliver a versioned
+   preparation worker independently of the old remote AutoSlurm installation;
+   do not update the environment executing the worker. Create request identity
+   before dispatch and retain execution-side stage/error evidence. Suggested
+   stages: preparing_sources, building, installing, verifying, ready, failed.
+   Connection loss is client uncertainty; inspect the exact request rather than
+   blindly restarting. Concurrent requests cannot write one installation, and
+   an exact repeated request must not create an untracked duplicate attempt.
+4. **MVP7.2d Job binding.** Add an exact ready-release selector to preview and
+   submission, pass it through existing execution context/script rendering, and
+   include its source/runtime evidence in snapshots and receipts. The submission
+   helper keeps its own environment; only the scientific job uses the selected
+   application release. A selected release must satisfy the bundle's resolved
+   source/runtime contract. Bind recorded commits, not latest again during submit.
+   With no explicit revision, preparing a new release resolves latest; submitting
+   that selected ready release retains its recorded commits. Require explicit
+   selection initially; no surprise default switch or automatic preparation inside
+   submission. Legacy opt-out stays usable.
+
+Verify with local fake SSH, temporary Git remotes, wheel/install fixtures and
+fake Slurm. Cover latest/pinned commits, multiple projects, an old editable copy
+on the base environment, install origin/path precedence, major/dependency conflicts,
+missing build requirements, wrong interpreter, partial installs, interruption/
+connection loss, identity collisions and concurrent preparation. Two jobs bound
+to different releases must keep their original code after subsequent preparation.
+No Git/pip/install work may enter compute scripts. Real remote preparation remains
+outside the read-only exception until a concrete demonstration is authorized.
+
 ## MVP7.1b read-only inspection boundary
 
 `asl software status --machine NAME` shows current Git evidence under the
