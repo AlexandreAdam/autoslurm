@@ -1,99 +1,60 @@
-# Prepare application code for scientific jobs
+# Update the existing project checkout
 
-AutoSlurm can prepare a fresh application installation on a cluster's login
-host before you submit jobs. Each release records the source commits and its
-own installed application files. Updating creates another release, so an older
-job script continues to use its selected application code.
-
-The machine supplies an existing scientific Python environment. AutoSlurm keeps
-its NumPy/JAX/PyTorch stack unchanged and installs the requested applications in
-a separate location under `software_root`. Inputs, working directories and outputs
-continue to use `results_root`. Compute nodes need no internet access.
-
-## Prepare and use an update
-
-Start with a configured SSH alias, `software_root`, `results_root` and `venv_path`.
-The login host needs Git, system python3, and a selected application Python 3.11+
-with pip and the project's build tools already installed. Git authentication
-belongs to your existing SSH/Git configuration.
+AutoSlurm can send a Git pull to a configured machine. The software layer keeps
+one existing checkout per project and creates no clones, caches, release copies,
+installations or preparation records. This keeps the cluster's file usage small.
 
 ```sh
-asl software prepare --machine cluster --local-project /path/to/science
+asl software update --machine cluster --project gaia-asteroseismology
 ```
 
-This reads the local project's name and Git origin, then prepares the latest
-upstream default-branch commit on the selected machine. Local edits are not sent.
-Use `--revision FULL_COMMIT`, a branch or a tag to choose another revision.
-For a bundle declaring several software projects, use this instead:
+The project path is relative to the machine's `software_root`. Its existing
+branch and configured upstream determine what gets updated. The command runs
+`git pull --ff-only` and prints the before/after commits, or says it is already
+up to date. Use `--json` for structured results. Empty software commands show help.
+
+The checkout must already exist and be clean. Local changes, untracked files,
+a detached HEAD, an absent upstream or diverged history produce a clear error.
+AutoSlurm does not stash changes, reset branches, merge history or clone a
+missing project. Git authentication belongs to your existing Git/SSH setup;
+the machine profile selects only an SSH alias.
+
+Inspect the project independently:
 
 ```sh
-asl software prepare --machine cluster --bundle-file /path/to/study.json
+asl software status --machine cluster --project gaia-asteroseismology
+asl software status --machine cluster --project gaia-asteroseismology --local-project /path/to/local/project
 ```
 
-The command prints a release ID before connecting and reports ready or the
-failed stage when it finishes. Keep that ID:
+The second form also compares important declared dependencies and the expected
+application version/commit with metadata from the configured environment.
+A pull changes source files, while package/environment installation stays
+operator-managed. An editable installation can use updated source; a non-editable
+installation needs its own installation step. This layer never runs pip.
 
-```sh
-asl software status --release RELEASE_ID --verify
-asl submit --bundle-file /path/to/study.json --software-release RELEASE_ID
-```
-
-Your application should expose an installed command, or use
-`python -m application.module`. Paths to source scripts are rejected for managed
-releases. Python callers pass `software_release=ID` to `preview_bundle` and
-`submit_jobs`; the [agent recipe](../agent/13_software_preparation.md) gives a
-complete example and evidence contract.
-
-Release status inspects that installation. Ordinary
-`asl software status --machine cluster --project science --local-project PATH`
-continues to describe the existing checkout/base environment, which preparation
-does not update. Empty software commands show help.
-
-## Dependencies and machine policy
-
-Preparation builds non-editable application wheels without downloading dependencies
-or changing the scientific environment. It checks all declared dependency
-requirements against packages actually visible to the selected interpreter.
-If a requirement conflicts, preparation fails; arrange a compatible scientific
-base separately, then prepare another release. The lighter project-status report
-focuses on major dependencies and is not a readiness certificate.
-
-By default the application uses `venv_path/bin/python`. If its interpreter needs
-to differ from the AutoSlurm helper, edit machine policy through the public API:
+Python callers use:
 
 ```python
-from autoslurm import load_config, save_config
+from autoslurm import update_software, SoftwareUpdateError
 
-config = load_config()
-config["machines"]["cluster"]["software_runtimes"] = {
-    "default": {"python": "/cluster/scientific-env/bin/python",
-                "constraints": "/cluster/policy/scientific-constraints.txt"}
-}
-save_config(config)
+try:
+    result = update_software(machine="cluster", project="gaia-asteroseismology")
+except SoftwareUpdateError as error:
+    result = error.evidence
 ```
 
-The optional constraints file lives on the target machine and contains plain
-package requirements, without include files or installer options. Bundles select
-only a logical runtime name. They do not carry laptop environment freezes.
+Success states are `updated` and `up_to_date`. Errors report `failed` or `unknown`
+and include the available before/after commit evidence. No update records are
+saved by this layer. If a connection is lost, the pull may have completed: inspect
+the current project status before trying again. There is no automatic retry.
 
-## Interpret failures and recover
+Submission continues to use your configured environment. Updating code is an
+explicit action, separate from job submission; coordinate its timing for jobs
+sharing the checkout. Compute jobs never run Git or package installation.
 
-A failed source fetch/build/install/dependency check retains the release ID,
-failed stage and partial evidence. A lost connection is **unknown**, because the
-remote operation may continue. Inspect the same ID; do not automatically prepare
-again. An unavailable observation reports saved state as potentially stale.
-A missing remote record does not rule out a request still arriving.
-
-Ready releases are checked again before new submission. Changed installation
-files, base package inventory or constraints block dispatch. Existing jobs keep
-their selected application installation; keep the underlying scientific base
-stable for their lifetime. AutoSlurm does not clone that base or make drivers,
-external data and library contents immutable.
-
-Checks use metadata and import origins without loading scientific packages.
-They do not establish GPU availability or scientific correctness. Retain an
-application smoke command and validate outputs. Builds currently require existing
-build tools; relocated wheel data/scripts, Git submodules and LFS are unsupported.
-There is no automatic cleanup, interrupted-operation resume, dependency upgrade
-or cluster helper deployment. Live cluster preparation has not been exercised;
-tests use temporary local repositories/package builds and mocked SSH/Slurm.
+The earlier release-copy mechanism and its prepare/release selectors have been
+removed. Existing records/directories are retained without automatic cleanup;
+`software_runtimes` is no longer used for job runtime selection. The
+[agent recipe](../agent/13_software_preparation.md) records the interface boundary.
+Development validation uses temporary local repositories and mocked SSH/Slurm;
+no live cluster update was performed during this implementation.

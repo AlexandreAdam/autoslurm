@@ -63,6 +63,13 @@ operate from the workstation; compute nodes use already-prepared environments.
   and an agreed import/migration policy, not a migration framework in advance.
 - Distinguish absent, stale, failed, and unknown observations. Never blindly
   retry a submission whose scheduler outcome may already have taken effect.
+- **Single-copy software policy (2026-11-12):** the software layer only runs
+  `git pull --ff-only` in an existing project checkout under `software_root`.
+  Never create clones, Git mirrors, worktrees, release copies, wheel installs,
+  environments or preparation/release records. `update_software` / `asl software
+  update` are explicit operations separate from submission; compute jobs never
+  update code. The operator coordinates update timing for jobs using the shared
+  checkout. Do not restore the superseded source/release preparation engine.
 - No package installation, checkout changes, or Git/network preparation inside
   compute jobs. Automatic deployment is outside the initial refactor.
 - Client application paths use the shared `results_root` base for inputs, cwd
@@ -88,13 +95,13 @@ operate from the workstation; compute nodes use already-prepared environments.
   failure interpretation. Agents use supported programmatic contracts; private
   backend modules and storage files remain implementation details.
 - [The current client recipe](agent/01_client_workflow.md) and
-  [reference client](examples/reference_client/README.md) are the verified MVP7.1b
+  [reference client](examples/reference_client/README.md) are the verified MVP7.2e
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
-- [Software source preparation](agent/13_software_preparation.md) documents the
-  current-host Git engine. Source preparation is not runtime readiness; managed
-  requests stay blocked from submission until environment/execution wiring exists.
-  Do not infer authorization to run it on a real cluster from its availability.
+- [Software updates](agent/13_software_preparation.md) documents explicit
+  single-checkout pulls and the retained read-only status surface. Source/release
+  preparation has been removed. Do not infer authorization to update an actual
+  cluster from the command's availability during local-only development.
   `asl software status` provides read-only Git and selected-environment metadata
   comparisons against local declared major dependencies/application identity. It
   reports mismatch/unknown; it does not establish runtime readiness or update code.
@@ -104,8 +111,8 @@ operate from the workstation; compute nodes use already-prepared environments.
 - Daily local commands follow `dev` in the main checkout, as explicitly requested.
   Keep test configuration/tracking/output separate through the test wrapper and
   temporary fixtures. Remote installations remain unchanged and must be mocked.
-  Preserve pinned rollback source and historical evidence. Never update source
-  or environments referenced by queued/running scientific jobs in place.
+  Preserve pinned rollback source and historical evidence. The user's single-copy
+  policy above supersedes the earlier isolated application-release design.
 - Until the actual installations and isolation are verified, perform only
   documentation and read-only discovery. Do not install dependencies into an
   unidentified environment or run commands/tests with unreviewed side effects.

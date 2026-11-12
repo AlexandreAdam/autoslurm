@@ -9,26 +9,24 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP7; config, source/status and MVP7.2a–d application
-  preparation/verification/explicit job selection are implemented and tested locally.
-  ACP preparation and broader runtime policies remain later layers.
-- **Stage:** main checkout is active on `dev`, explicitly selected by the user
-  on 2026-11-12. Base Conda imports it; tests use the same source with isolated
-  environment/state. Baseline rollback source remains in `.development/stable`.
-  Full offline suite: 596 passed (39 expected collision warnings).
-  Evidence is recorded in the MVP7.2 Done entry below.
-  Local daily-use activation is unchanged; no cluster installation changed.
-- **Latest completed task:** MVP7.2 usable software preparation: isolated
-  non-editable application wheels over an unchanged machine-owned scientific base,
-  portable remote worker, durable exact-ID recovery and explicit job binding.
-- **Next task:** MVP7.3 convenience/ACP and broader runtime policies, if selected.
-  Live preparation validation remains a separate explicitly authorized operation.
-  `asl software prepare` and exact release status are implemented; empty software
-  commands now show help. Existing operator-prepared bundles remain usable.
-- **Scope update:** all implementation tests use temporary local Git repositories,
-  package builds/environments and mocked SSH/Slurm. No live Git fetch, installation,
-  configuration change or job was performed on rusty. Applications remain isolated
-  from older releases; keeping the shared scientific base stable is operator-owned.
+- **Current milestone:** MVP7; single-checkout software updates. The user has
+  superseded the source-copy/installed-release architecture because cluster file
+  limits require one existing checkout per project.
+- **Stage:** main checkout remains active on `dev` through base Conda's editable
+  install; tests use `.development/python` and separate temporary state. Pinned
+  rollback source remains unchanged. Full offline suite: 525 passed, 39 expected
+  collision warnings. Historical MVP7.2 test evidence describes the removed design.
+- **Latest completed task:** MVP7.2e replaces all clone/cache/source/release/install/record
+  creation with `update_software` / `asl software update`: an explicit
+  `git pull --ff-only` in the existing checkout. Submission uses the configured
+  environment and never updates code. Existing local evidence is retained.
+- **Next task:** no further software deployment layer. Optional result retrieval
+  or documentation/distribution work can be selected separately; this layer
+  does not include broader deployment/runtime management.
+- **Scope update:** local code/tests only, with temporary Git repositories and
+  mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
+  Source is intentionally shared/mutable under the single-copy requirement;
+  the operator coordinates update timing for jobs using it.
 - **Last updated:** 2026-11-12.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
@@ -391,101 +389,52 @@ configuration and bundle updates use the shared local record writer, transfers
 have a dedicated adapter, and internal callers depend on their owning services.
 No multi-writer locking, migration, retries or deployment framework was introduced.
 
-## MVP7 Bundle-driven cluster software preparation
+## MVP7 Software status and single-checkout Git updates
 
-Design: [MVP7 cluster software preparation](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
+Design: [MVP7 software updates](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
 
-**Outcome:** a bundle requests Git projects and a verified prepared runtime.
-Omitted revisions resolve the current remote default-branch tip during preparation;
-explicit revisions remain supported. Record exact resolved commits for each release.
-The target machine owns dependency setup; a workstation/package lockfile is not
-required. Resolve/fetch/install on the login/preparation host; compute jobs use
-ready isolated releases. Existing jobs keep their code/environment. First-time
-preparation clones missing repositories; managed code/environments use a separate
-configurable `software_root` from the shared input/output `results_root`.
+**Outcome:** explicitly pull the latest upstream changes into the existing
+project checkout selected relative to `software_root`. One source copy per
+project. This layer creates no clones, Git mirrors/worktrees, source sets,
+application installations, environments or preparation/release records.
+Submission and compute jobs stay independent and use configured environments.
 
-- [x] **MVP7.0a Confirm source/dependency defaults.** Record latest-by-default
-  Git selection, exact resolved evidence and target-machine dependency ownership.
-  Planning only; remaining MVP7.0 format/API/environment-role decisions stay open.
+The user's 2026-11-12 clarification supersedes the earlier immutable-release and
+source-pin strategy. Update the current branch's configured upstream with
+`git pull --ff-only`; do not guess or switch branches. No installer is included.
 
-- [x] **MVP7.0b Confirm cloning and filesystem separation.** Record first-time
-  clone support and independent code/results locations. The initial separate
-  project root was superseded by the user's two-root choice in MVP7.0c.
+- [x] **MVP7.0a/b Initial source/dependency/clone planning.** Historical decisions;
+  clone/source-copy requirements are superseded by MVP7.2e. Dependencies remain
+  machine-owned; optional first-clone and revision deployment are out of scope.
+- [x] **MVP7.0c Simplify config and application roots.** Canonical `config`,
+  `software_root`, shared inputs/cwd/outputs under `results_root`, historical paths.
+- [x] **MVP7.0d Use SSH config aliases only.** SSH owns host/user/key settings.
+- [x] **MVP7.1 Source/manifest engine.** Delivered then superseded: copy-producing
+  source/cache engine is removed by MVP7.2e. Pure historical manifest validation
+  remains; runtime requests do not select an installation.
+- [x] **MVP7.1b Inspect software/environment compatibility.** Existing read-only
+  Git and selected-interpreter metadata comparisons remain supported. Status does
+  not fetch, update code or establish scientific correctness.
+- [x] **MVP7.2a–d Installed releases and job selection.** Delivered then superseded:
+  release/wheel/installation/record machinery and job release selectors are removed
+  by MVP7.2e. Historical operation evidence is retained without migration/deletion.
+- [x] **MVP7.2e Replace preparation with one-checkout updates.** Remove all active
+  duplicate-copy and installation paths. Expose `asl software update --machine
+  NAME --project PATH` and `update_software`, pulling an existing clean tracking
+  branch once with fast-forward only. Return before/after commit evidence; keep
+  local changes and fail detached/missing/untracked/diverged branch cases. Lost
+  responses/timeouts are unknown, without retry or local fallback. Use existing
+  SSH/profile/status owners and create no additional files outside normal Git
+  metadata/working-tree changes. Preserve configured job execution and saved data.
+  Verify with mocks and real temporary local Git repositories, full offline tests,
+  accurate human/agent documentation and artifact/help smoke. No live cluster work.
 
-- [x] **MVP7.0c Simplify config and application roots.** Make `config` canonical,
-  expose `software_root`, merge inputs/cwd/outputs under `results_root` and retain
-  recorded historical paths. Reject conflicting old profiles; mock all effects.
-
-- [x] **MVP7.0d Use SSH config aliases only.** Remove hostname/user/key fields
-  from current configuration and CLI; save alias-only transport for new work,
-  preserve historical transports and update the existing local profile safely.
-
-- [x] **MVP7.1 Implement source and manifest primitives.** Pure shared `software`
-  requests on existing job definitions, credential-free repository identities,
-  current upstream resolution, managed bare caches and fresh detached checkouts.
-  Keep exact source/failure evidence and old sources unchanged; reject ambiguous
-  selectors, unmanaged caches, unsafe paths, unsupported submodules and concurrent
-  cache writers. Verify with fake remotes and a temporary local Git fixture.
-
-- [x] **MVP7.1b Inspect software and environment compatibility.** Add
-  `asl software status`, preserving one SSH alias/transport owner and requiring
-  no remote package upgrade. Compare important declared dependencies and desired
-  application version/commit against the configured environment's metadata;
-  report mismatch/unknown separately. Verify with mocks and temporary local
-  Git/venv fixtures, then try the authorized read-only check on `rusty`.
-  Completed: Git status, selected environment metadata and declared major
-  constraints; no scientific imports, installs or automatic dispatch validation.
-
-- [x] **MVP7.2a Runtime and preparation contract (remaining MVP7.0 roles).**
-  Separate AutoSlurm helper/bootstrap from the application release. Implemented first
-  policy uses an explicitly selected, unchanged target environment for Python/
-  scientific dependencies, and installs application distributions into a release-
-  specific location. Validate which packages/imports are visible; do not assume a
-  nested venv inherits the creating venv's packages. Machine policy owns dependency
-  constraints/build inputs; bundles own repositories/revisions and logical runtime.
-  Settle request/release identity, readiness/evidence and exact client selectors.
-- [x] **MVP7.2b Build/install/verify application releases.** Reuse Git source
-  preparation; build fixed-source distributions without editing the helper/base
-  environment, install the requested project set non-editably into an isolated
-  release and check exact installation origins/versions/commits, entry points,
-  Python and declared dependencies outside source directories. Preserve the
-  existing scientific stack; conflicts stop with evidence rather than upgrading
-  it. Installation/build dependencies must not silently mutate the base. Create
-  any path-sensitive runtime at its final unique path; publish readiness last.
-- [x] **MVP7.2c Expose remote prepare and exact inspection.** Canonical
-  command `asl software prepare --machine NAME --bundle-file PATH`; terminal
-  convenience `--local-project PATH [--revision REF]` infers a credential-free
-  origin and makes the same request. Omitted revisions resolve latest upstream,
-  never uncommitted local files or an implicit local HEAD. Run a versioned worker
-  through the shared SSH adapter on the preparation host, with durable request/
-  release evidence. Exact release inspection reconciles a lost connection;
-  client uncertainty never triggers a blind second install. Verified with the exact
-  SSH payload against a temporary local interpreter, never a live cluster.
-- [x] **MVP7.2d Make prepared releases usable by jobs.** Explicit
-  `--software-release ID` selects a verified ready release for preview/submission.
-  A software request requires a matching machine/runtime/commit set. Keep the
-  helper on its original environment, render the application's release-specific
-  command/environment into every job, and save producing release evidence.
-  Updating prepares a new release; old queued/running jobs and results stay
-  untouched. Existing bundles retain operator-prepared behavior. This minimal
-  execution binding belongs in the first usable update delivery.
-- [ ] **MVP7.3 Convenience and broader runtime management.** ACP preparation,
-  richer reuse/selection and additional dependency-environment policies can follow
-  the usable prepare/install/select workflow. No automatic release cleanup or
-  implicit deployment/default-profile changes are introduced.
-
-The current-host `prepare_software_sources` Python operation is source-only.
-`sources_prepared` never means runtime-ready; preview/submission require explicit
-selection of a matching freshly verified release for opted-in requests. Existing operator-prepared bundles
-remain usable. Detailed cases are in the design. Live cluster operations remain
-outside the current local-only scope.
-
-**Implemented first usable checkpoint:** source resolution, verified application
-installation, remote preparation/inspection and explicit job selection must all
-work together. A command returning only checkouts is not completion of this
-update workflow. Full scientific dependency-stack construction is a later policy;
-the first release records its unchanged base dependency environment, whose
-continued immutability remains operator-owned.
+The [agent recipe](agent/13_software_preparation.md) is the current integration
+boundary. `prepare_software_sources`, `prepare_software`, `inspect_software_release`
+and release selectors are removed. Existing source/release copies and records are
+not automatically deleted: actual cluster cleanup is a separate operator action.
+There is no broader deployment/ACP preparation/runtime manager planned in this
+layer; scientific package/environment setup remains operator-managed.
 
 ## Optional scientific result retrieval (formerly proposed MVP4)
 
@@ -578,6 +527,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-12 | Delegate remote connection details to SSH config; store only ssh_alias in current profiles/new transports | User always uses SSH config and wants to remove hostname/username/key duplication. Preserve historical transport interpretation while rejecting obsolete new CLI fields |
 | 2026-11-12 | Implement source preparation before environment creation, preserving the existing job dictionary | Shared per-job software requests are normalized and checked for equality; explicit current-host preparation produces source evidence only. Runtime opt-in fails closed until installation/execution are implemented; no changes to GitHub settings |
 | 2026-11-12 | Pull read-only remote software/environment inspection forward before installation | User requested a visible CLI and potential-problem report for important dependencies and installed application identity. Compare declared ranges against the selected remote interpreter; allow compatible stricter pins, expose unknown source identity and avoid full workstation freezes. Read-only rusty inspection is explicitly authorized; remote writes remain out of scope |
+| 2026-11-12 | Restrict the software layer to one existing checkout per project, updated only by git pull | User explicitly requires no duplicate code because of cluster file limits. Supersedes source copies, cloned caches, installed releases, package installation and release records; keep updates explicit and job submission independent |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -611,6 +561,9 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP7.1b Read-only software status and compatibility | 523 offline tests passed in 6.19 s (39 expected warnings); report `.development/test-runs/software-status-final.xml`. Added 38 checks for focused constraints, target markers, selected-interpreter identity, missing/unknown/mismatched metadata, clean/dirty/invalid Git paths, malformed SSH responses and CLI failure reporting. A temporary Git/venv fixture exercised the exact standalone SSH payload without installing AutoSlurm or scientific packages in that venv. Live read-only rusty checks succeeded: AutoSlurm dev 213de79 and Gaia main d21f04d were clean and used by editable installs; Gaia major requirements satisfied but expected local commit 0155e17 differed. Reports `.development/test-runs/rusty-software-status.json` and `rusty-gaia-software-status.json`. No cluster writes/install/fetch/jobs or base environment changes. Task commit: `git log --grep '^MVP7.1b:'` |
 | 2026-11-12 | MVP7.2-plan Remote application update delivery | Reviewed source, status, SSH, execution and script-generation boundaries. Proposed four slices covering runtime policy, verified application installation, remote CLI/evidence and explicit job binding; reuse the cluster dependency base without updating it. Recorded proposed CLI examples and failure gates in the MVP7 design. Documentation/link checks only; no implementation, live SSH or remote changes. Task commit: `git log --grep '^MVP7.2-plan:'` |
 
+| 2026-11-12 | MVP7.2a–d Usable application preparation and job selection | 596 offline tests passed in 16.13 s (39 expected collision warnings), report `.development/test-runs/software-prepare-final.xml`; 73 cases added over MVP7.1b. Real temporary Git/wheel/venv fixtures verified changing upstream commits, explicit pins, same-version old editable code versus new non-editable installations, separate helper/runtime interpreters, exact SSH stdin worker without installed AutoSlurm imports, dependency conflicts, old/new scripts and mocked submission snapshots. Additional checks cover durable IDs, lost responses/stale evidence, no replay, publication failures, constraints/markers/extras, altered code/base inventory and machine/request/runtime/path guards. Offline wheel build and isolated install/import/worker/help smoke passed; artifact SHA256 `0f8f0dad71f2a84200e47379b4069183070182e9c47601468b2d85c0ae8ff796`. Base Conda still imports main dev; clean rollback source remains `33bcbd3`. No cluster connection, fetch, install, job, profile mutation or baseline changes. Task commit: `git log --grep '^MVP7.2:'`; superseded by the single-copy requirement in MVP7.2e |
+| 2026-11-12 | MVP7.2e Single-checkout Git update and removal of duplicate-copy engines | 525 offline tests passed in 5.53 s (39 expected collision warnings); report `.development/test-runs/software-update-final.xml`. Removed source/cache/release/wheel/installation/record engines and job release selectors; 32 new checks replace obsolete copy-engine tests. Real temporary Git fixtures verify repeated in-place pulls, the exact SSH stdin payload, preserved dirty/untracked files and rejected divergent history. Mock checks cover missing/detached/upstream/path failures, before/after commits, unknown/lost/malformed outcomes without retries and no new code/record files. Clean temporary-source wheel build and isolated install/API/help smoke passed; retired modules absent, SHA256 `e43ec1dcaa52adabe467f4f8c65a385f75250cfecdb3051bedfdd306114377b0`. Main base import and clean rollback `33bcbd3` verified. Existing user files/operation evidence retained; no actual cluster contact, pull, install, cleanup, profile mutation or migration. Task commit: `git log --grep '^MVP7.2e:'`; local milestone tag `mvp7` at closure, no remote promotion |
+
 ## How we work
 
 Follow [WORKFLOW.md](WORKFLOW.md) for the task loop, test gates, operational
@@ -629,4 +582,3 @@ Commands: `python -m pip install -e '.[test]'`; fast tests:
 not application tests. Real cluster checks are explicit and separate from default
 tests. Planning does not authorize creating installations, submitting test jobs,
 changing the active environment, migrating records or publishing a release.
-| 2026-11-12 | MVP7.2a–d Usable application preparation and job selection | 596 offline tests passed in 16.13 s (39 expected collision warnings), report `.development/test-runs/software-prepare-final.xml`; 73 cases added over MVP7.1b. Real temporary Git/wheel/venv fixtures verified changing upstream commits, explicit pins, same-version old editable code versus new non-editable installations, separate helper/runtime interpreters, exact SSH stdin worker without installed AutoSlurm imports, dependency conflicts, old/new scripts and mocked submission snapshots. Additional checks cover durable IDs, lost responses/stale evidence, no replay, publication failures, constraints/markers/extras, altered code/base inventory and machine/request/runtime/path guards. Offline wheel build and isolated install/import/worker/help smoke passed; artifact SHA256 `0f8f0dad71f2a84200e47379b4069183070182e9c47601468b2d85c0ae8ff796`. Base Conda still imports main dev; clean rollback source remains `33bcbd3`. No cluster connection, fetch, install, job, profile mutation or baseline changes. Task commit: `git log --grep '^MVP7.2:'`; broader MVP7.3 remains open |

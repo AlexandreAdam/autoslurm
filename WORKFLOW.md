@@ -71,8 +71,14 @@ They do not advertise implemented capabilities or expand the current task.
 - Until isolation is verified, limit work to documentation and read-only
   discovery. Do not run scheduling/configuration commands or a test suite whose
   file/remote side effects have not been inspected.
-- Never update a shared scientific application environment or checkout referenced
-  by queued/running jobs. Test processes must not write daily records/outputs.
+- **Application software policy amended 2026-11-12:** the user requires one
+  existing checkout per project because cluster files are limited. The explicit
+  software update command pulls in place; it creates no additional code copies,
+  installations or release records. The operator coordinates update timing for
+  jobs sharing that checkout. Preparation never occurs inside submission/jobs.
+  This supersedes the earlier immutable application-release design; preserve
+  historical evidence and the local rollback baseline. Test processes must not
+  write daily records/outputs.
   Daily commands use the main root unless the operator explicitly selects another
   storage root; no records are implicitly copied between roots.
 - Do not put private keys, tokens or credential contents in the register, plan,

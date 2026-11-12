@@ -32,15 +32,13 @@ a copy failure is reported separately and never triggers another job submission.
 
 A machine profile maps two locations: software/code and shared scientific data
 (inputs, working directories and results). Use `asl config` to set `software_root`
-and `results_root`. The first software layer can now clone or fetch Git projects
-and create a new set of exact-commit checkouts on the preparation host. Omitting
-a revision means resolving the current upstream version each time. Older source
-sets remain unchanged. `asl software prepare` builds and installs applications
-in a separate release location over the machine's unchanged scientific Python
-environment. Select its exact ID through `--software-release` when submitting.
-A source checkout alone cannot be submitted as a managed runtime. The
-[walkthrough](software.md) and [agent recipe](../agent/13_software_preparation.md)
-document the interface and evidence.
+and `results_root`. `asl software update --machine NAME --project PROJECT`
+runs `git pull --ff-only` in the one existing checkout under `software_root`.
+Its current tracking branch determines what gets updated. Local changes and
+non-fast-forward history block the pull; there are no clones, source caches,
+application installations or release records. Submission stays independent and
+uses the configured environment. The [walkthrough](software.md) and
+[agent recipe](../agent/13_software_preparation.md) document the interface.
 
 Before choosing a run, `asl software status --machine NAME` shows the machine's
 project branches, commits and local changes. Add `--local-project PATH` to compare

@@ -1,4 +1,8 @@
-"""Pure contracts for optional bundle software requests; no machine discovery."""
+"""Retained pure validation of historical software-intent metadata.
+
+These utilities neither deploy code nor select runtimes. New jobs use the
+configured environment; software updates explicitly pull existing checkouts.
+"""
 
 import copy
 from pathlib import PurePosixPath
@@ -32,9 +36,9 @@ def _repository(value):
 
 
 def normalize_software_manifest(manifest):
-    """Return a copied JSON request. Omitted revision means fresh upstream HEAD.
+    """Return a copied historical request, without interpreting deployment intent.
 
-    Runtime names select machine-owned policy, never a workstation environment.
+    Runtime names and revisions remain data; they do not select an environment.
     Explicit revisions are full commit IDs or branch/tag names (optionally with
     refs/heads/ or refs/tags/). Installation paths stay repository-relative.
     """

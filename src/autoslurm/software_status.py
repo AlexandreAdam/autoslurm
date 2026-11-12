@@ -9,6 +9,7 @@ from .software_probe import inspect_software_root
 from .software_requirements import compare_environment
 from .storage import storage_root
 from .transport import ssh_command
+from .software_update_probe import relative_project_path
 
 
 def _validate_result(result, root, limit):
@@ -48,10 +49,8 @@ def inspect_software(*, machine=None, project=None, limit=20, expectations=None)
     The result describes Git evidence, never environment readiness or latest Git
     upstream state. An unavailable observation must not become a clean checkout.
     """
-    if (project is not None and (not isinstance(project, str) or not project
-            or PurePosixPath(project).is_absolute() or ".." in PurePosixPath(project).parts
-            or "\\" in project or any(ord(c) < 32 for c in project))):
-        raise ValueError("project must be relative to software_root without traversal.")
+    if project is not None:
+        project = relative_project_path(project)
     if type(limit) is not int or not 1 <= limit <= 100:
         raise ValueError("limit must be between 1 and 100.")
     config = load_config()

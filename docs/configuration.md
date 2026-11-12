@@ -1,7 +1,7 @@
 # Config
 
 Use `asl config` to manage machine profiles. Each machine has two scientific
-locations: `software_root` for repositories/prepared environments and
+locations: `software_root` for existing project checkouts and
 `results_root` for inputs, working directories and outputs. They can live on
 different cluster filesystems. Application definitions keep relative paths.
 
@@ -49,9 +49,9 @@ Legacy unrooted jobs with no input/cwd declarations retain their old behavior.
 and caches. Local configuration is `<storage_root>/config.json`, selected through
 `AUTOSLURM_STORAGE_ROOT` or the process root selector. Configuration writes are
 atomic; saving roots does not move files, clone repositories or install software.
-`asl software prepare` explicitly clones/builds/installs a new application release;
-saving configuration alone does none of these. See [software preparation](software.md)
-for the unchanged dependency base and optional machine runtime policy.
+`asl software update` explicitly pulls an existing checkout under `software_root`;
+saving configuration never pulls code. See [software updates](software.md).
+Environment/package installation remains operator-managed.
 
 An old `project_root` alone becomes `results_root`; equal old roots are coalesced.
 Different old project/result roots need an explicit choice with `--results-root`.

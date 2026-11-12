@@ -1,7 +1,7 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP7.2 (verified
-application preparation and explicit managed-runtime selection). As of
+Use this recipe with the development installation including MVP7.2e (single-
+checkout Git updates; no managed application releases). As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -19,10 +19,12 @@ Use `AUTOSLURM_STORAGE_ROOT` for every development process. Keep its config,
 tracking, logs and results separate from stable storage. Prepared environments
 are operator-owned; compute jobs do not install packages, pull Git repositories
 or change shared code. One bundle targets one machine. The
-[software recipe](13_software_preparation.md) documents shared requests,
-`prepare_software`, exact release inspection and explicit `software_release=ID`
-selection for preview/submission. Source preparation alone cannot submit managed
-software requests. Retain the selected ID in the client handoff.
+[software recipe](13_software_preparation.md) documents explicit `update_software`
+and `asl software update`: pull the existing checkout before submission, with
+before/after commit evidence. The layer never clones, installs or selects a
+runtime. Keep one checkout per project; the operator owns environment setup.
+Historical software-manifest helpers remain pure data utilities; new runs use
+the configured environment without a `software` runtime request.
 
 ## Adapt scientific software
 
@@ -77,8 +79,8 @@ asl config --summary
 ```
 
 Root-setting flags only save local configuration; they do not contact a cluster
-or move files. `prepare_software` separately dispatches preparation to the selected
-machine, installs applications under `software_root` and preserves existing releases.
+or move files. `update_software` separately pulls the existing project on the selected
+machine. It creates no code copies or release records.
 Both inputs and outputs live under `results_root`; the data root
 and required working directories/inputs must already exist before preview.
 The two roots default to `<storage_root>/software` and `<storage_root>/results`.

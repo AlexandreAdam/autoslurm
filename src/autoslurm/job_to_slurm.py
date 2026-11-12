@@ -8,7 +8,6 @@ from .storage import ensure_storage_dirs, slurm_dir
 from .config import activation_command_from_config
 from .transport import remote_storage_root_from_config
 from .execution import resolve_execution_context
-from .software_execution import runtime_shell, validate_managed_job
 
 
 __all__ = ["create_slurm_script"]
@@ -70,11 +69,7 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict, *,
     """
     context = context or resolve_execution_context(machine_config=machine_config, root_resolver=remote_storage_root_from_config)
     machine_config = context.config
-    env_command = (runtime_shell(context.software_release) if context.software_release is not None
-                   else activation_command_from_config(machine_config))
-    script = (validate_managed_job(job, context.software_release) if context.software_release is not None else job['script'])
-    if context.software_release is not None and ' -P -m ' not in script:
-        script = shlex.quote(script)
+    env_command = activation_command_from_config(machine_config)
     slurm_account = machine_config.get("slurm_account", "")
     resolved = context.resolve_job(job) if resolved is None else resolved
     exports = []
@@ -119,7 +114,7 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict, *,
     file.writelines(exports)
     lines = _format_script_args(resolved["script_args"], set(resolved["resolved_paths"]))
     if lines:
-        file.write(f"{script} \\\n")
+        file.write(f"{job['script']} \\\n")
         _write_script_args(file, lines)
     else:
-        file.write(f"{script}\n")
+        file.write(f"{job['script']}\n")

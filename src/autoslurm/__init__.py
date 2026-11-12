@@ -94,9 +94,8 @@ from .inspection import (
     list_runs,
 )
 from .software_manifest import attach_software_manifest, normalize_software_manifest, bundle_software_manifest
-from .software_sources import prepare_software_sources, SoftwarePreparationError
 from .software_status import inspect_software
-from .software_preparation import prepare_software, inspect_software_release
+from .software_update import update_software, SoftwareUpdateError
 from .software_requirements import software_expectations
 
 __all__ = [
@@ -166,10 +165,8 @@ __all__ = [
     'attach_software_manifest',
     'normalize_software_manifest',
     'bundle_software_manifest',
-    'prepare_software_sources',
-    'SoftwarePreparationError',
     'inspect_software',
-    'prepare_software',
-    'inspect_software_release',
+    'update_software',
+    'SoftwareUpdateError',
     'software_expectations',
 ]

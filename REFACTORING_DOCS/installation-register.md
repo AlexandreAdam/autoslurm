@@ -225,3 +225,20 @@ machine. Store nonsecret paths/identities, never credential contents.
   main checkout; rollback import/clean HEAD `33bcbd3` reverified. Actual cluster
   source, helper, environments and running/queued jobs were not changed or queried.
   Real remote preparation remains unverified; no release was promoted remotely.
+
+- **MVP7.2e, 2026-11-12:** user superseded the isolated release design with one
+  existing checkout per project, explicitly pulled in place. Source/cache/release/
+  wheel/install/record engines and job selectors removed. `update_software` and
+  `asl software update` run Git only; environment setup remains operator-owned.
+  Full suite: 525 passed in 5.53 s, 39 expected collision warnings, report
+  `.development/test-runs/software-update-final.xml`. A real temporary local Git
+  fixture verified one working copy, repeated fast-forward pulls, fake SSH stdin
+  execution and preservation/rejection of dirty/divergent histories.
+  Clean temporary-source wheel/isolated install/API/help smoke passed; old modules
+  absent. Artifact `.development/artifacts/mvp7.2e/autoslurm-0.1.0-py3-none-any.whl`,
+  SHA256 `e43ec1dcaa52adabe467f4f8c65a385f75250cfecdb3051bedfdd306114377b0`.
+  Main/base import and clean baseline HEAD/import `33bcbd3` reverified. No actual
+  cluster commands, cleanup, installation, daily config change or migration.
+  Existing untracked local `software_preparations/` evidence and user document
+  edits were present before this task and retained unchanged. Local `mvp7` tag
+  closes the revised scope; no remote promotion or automatic cleanup.

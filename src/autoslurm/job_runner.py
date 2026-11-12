@@ -13,7 +13,6 @@ from .bundle_selection import select_bundle_snapshot
 from .submission_operation import execute_prepared_bundle
 from .config import machine_config as resolve_machine_config
 from .transport import remote_storage_root_from_config
-from .software_execution import select_software_release
 
 __all__ = ["submit_jobs", "preview_bundle"]
 
@@ -36,12 +35,9 @@ def _prepare_selected_bundle(path, context):
     return prepared
 
 
-def preview_bundle(bundle_path, *, machine=None, machine_overrides=None, software_release=None):
+def preview_bundle(bundle_path, *, machine=None, machine_overrides=None):
     """Validate/render an exact definition with the same rules as submission."""
     context = _select_context(machine, machine_overrides)
-    selected_release = software_release or (context.software_release or {}).get('release_id')
-    if selected_release is not None:
-        context = select_software_release(context, selected_release)
     prepared = _prepare_selected_bundle(bundle_path, context)
     return {
         "machine": context.machine_name,
@@ -56,15 +52,12 @@ def submit_jobs(
     machine_overrides: Optional[dict] = None,
     date: Optional[datetime] = None,
     bundle_path: Optional[str | Path] = None,
-    *, context=None, software_release=None,
+    *, context=None,
 ):
     """Submit once, returning a receipt; SubmissionError carries partial evidence."""
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
         raise ValueError("Bundle name must be a simple nonempty name without path separators.")
     context = _select_context(machine, machine_overrides, context)
-    selected_release = software_release or (context.software_release or {}).get('release_id')
-    if selected_release is not None:
-        context = select_software_release(context, selected_release)
     selected = select_bundle_snapshot(name, bundle_path=bundle_path, desired_date=date, prefer_draft=False)
     planned_path = Path(selected["path"]).resolve()
     prepared = _prepare_selected_bundle(planned_path, context)

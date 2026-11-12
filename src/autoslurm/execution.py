@@ -31,7 +31,6 @@ class ExecutionContext:
     results_root: str
     is_remote: bool
     software_root: str | None = None
-    software_release: dict | None = None
 
     def resolve_path(self, value, base="results", *, relative_only=False):
         if not isinstance(value, str) or not value.strip():
@@ -82,7 +81,7 @@ class ExecutionContext:
             if path.is_absolute() or ".." in path.parts:
                 raise ValueError("Slurm output paths must be relative without traversal.")
             log_pattern = str(PurePosixPath(working_directory) / path)
-        execution = {
+        return {
             "machine": self.machine_name, "storage_root": self.storage_root,
             "results_root": self.results_root,
             "software_root": self.software_root,
@@ -93,11 +92,6 @@ class ExecutionContext:
             "log_pattern": log_pattern,
             "transport": transport, "is_remote": self.is_remote,
         }
-        if self.software_release is not None:
-            from .software_execution import release_evidence, validate_managed_paths
-            validate_managed_paths(execution, self.software_release)
-            execution['software_release'] = release_evidence(self.software_release)
-        return execution
 
     def validate_jobs(self, jobs):
         self.validate_resolved_jobs([self.resolve_job(job) for job in jobs])
@@ -167,7 +161,6 @@ def execution_context_from_snapshot(bundle_path, job_name=None):
         evidence["machine"], dict(evidence["transport"]),
         evidence["storage_root"], evidence.get("project_root", evidence["results_root"]), evidence["results_root"], evidence["is_remote"],
         evidence.get("software_root"),
-        evidence.get("software_release"),
     )
 
 

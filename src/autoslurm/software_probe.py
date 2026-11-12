@@ -57,7 +57,7 @@ def _project_status(root, path, name):
 
 
 def inspect_software_root(root_path, project=None, limit=20, python_path=None, environment_script=None):
-    """Read immediate repositories and managed source sets; never fetch or write."""
+    """Read immediate existing repositories; never fetch or write."""
     root = Path(root_path)
     result = {"version": 1, "software_root": str(root), "state": "observed",
               "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -98,18 +98,6 @@ def inspect_software_root(root_path, project=None, limit=20, python_path=None, e
             for entry in sorted(root.iterdir()):
                 if (entry / ".git").exists():
                     candidates.append((entry, entry.name))
-            sources = root / "sources"
-            if sources.is_dir() and not sources.is_symlink():
-                for source_set in sorted(sources.iterdir()):
-                    if not source_set.is_dir() or source_set.is_symlink():
-                        continue
-                    for entry in sorted(source_set.iterdir()):
-                        if (entry / ".git").exists():
-                            candidates.append((entry, str(entry.relative_to(root))))
-                            if len(candidates) > limit:
-                                break
-                    if len(candidates) > limit:
-                        break
         result["truncated"] = len(candidates) > limit
         for path, name in candidates[:limit]:
             if time.monotonic() - started > 35:

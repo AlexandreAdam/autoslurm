@@ -1,623 +1,136 @@
-# MVP7 Bundle-driven cluster software preparation
+# MVP7 Software status and single-checkout Git updates
 
 ## Status
 
-In progress, 2026-11-12. The user requested Git-based preparation of several projects
-and verification that the bundle's required versions are installed in its Python
-environment. Configuration slices MVP7.0c/MVP7.0d and MVP7.1 source preparation
-and MVP7.1b read-only status are implemented. MVP7.2a–d now add isolated
-application installation, readiness verification, remote preparation/inspection
-and explicit job binding over an unchanged scientific dependency base. Default tests remain local/mocked;
-the Git engine is verified with fake remotes and temporary local repositories.
-The user authorized read-only project/environment status on rusty, verified below.
-No remote installation, source update or live Slurm operation has been performed.
+The user's 2026-11-12 clarification supersedes the earlier source/release
+preparation design: cluster file limits require **one existing checkout per
+project**, updated in place. This layer's sole mutation is `git pull --ff-only`.
+MVP7.2e removes the source/cache/wheel/release engines and their job selectors.
+The prior implementation and design remain in Git history and the PLAN Done log;
+they are not supported executable alternatives.
 
-## Problem and concepts
+Development remains local only. Test remote behavior through mocks and temporary
+local repositories. The earlier read-only rusty status exception does not
+authorize live pulls, installations or cleanup. Existing historical evidence,
+local rollback source and remote files must remain untouched by this task.
 
-Agents currently depend on manually updating cluster checkouts/environments.
-A version string or Git tag in JSON records intent but cannot establish that
-installed code matches it. Pulling into a shared home checkout would change code
-for queued/running jobs. Compute nodes have no internet; all preparation must
-finish on a login/preparation host before submitting any compute.
+## User-confirmed decisions
 
-Keep four concepts distinct:
+- **Single copy — accepted, 2026-11-12.** Never create project clones, bare Git
+  caches, detached source sets, worktrees, releases, application installations,
+  environments, or preparation/release records in this layer.
+- **Existing branch, latest upstream.** Pull the existing checkout's configured
+  tracking branch with `--ff-only`. Do not guess/switch the branch, pin an older
+  commit, stash changes, reset history or merge divergence. Earlier fresh-default-
+  branch/source-pin proposals are superseded for this update-only layer.
+- **Two scientific roots remain.** `software_root` locates existing checkouts;
+  `results_root` owns relative inputs/cwd/results. Application path resolution
+  and historical producing paths stay unchanged.
+- **SSH config ownership remains.** Use only `ssh_alias`, through the shared
+  adapter. Operator Git/SSH configuration owns repository authentication.
+- **Dependencies remain machine-owned.** Existing read-only dependency/application
+  metadata checks remain useful. Updates run no installer, and jobs use their
+  configured environment. Environment construction and revision-managed execution
+  are outside this layer.
+- **Explicit update.** Submission/preview/compute scripts never pull code.
+  The operator coordinates update timing for jobs sharing mutable source.
 
-1. **Requested software:** repositories, requested revisions and install targets.
-2. **Resolved software:** exact commit IDs, target-machine dependency policy and
-   actual installed dependency/interpreter/platform identities selected for the run.
-3. **Prepared release:** isolated checkout(s) and an environment verified against
-   that resolved manifest. Existing releases remain unchanged while referenced.
-4. **Execution evidence:** which prepared release each job used; its readiness or
-   preparation error is separate from scheduler acceptance and job success.
-
-There is an existing conceptual collision: profile `venv_path` selects both the
-AutoSlurm submission helper and the application's activation. The preparation
-contract must separate helper/bootstrap and application-runtime roles explicitly;
-never update a helper environment while using it to submit another run.
-
-## Module boundaries
-
-| Module | Responsibility |
-|---|---|
-| `software_manifest` | Pure validation/normalization of requested and resolved project/environment specifications |
-| `git_projects` | Clone missing repositories, resolve refs, fetch managed caches and materialize exact commits; no mutation of active release checkouts |
-| `software_sources` | Implemented current-host source orchestration and exact preparation/failure evidence; no runtime readiness |
-| `software_status` / `software_probe` | Implemented selected-machine read-only Git observations through the shared SSH adapter; portable probe needs no remote AutoSlurm upgrade |
-| `software_requirements` / `environment_probe` | Implemented local declared expectations, selected-interpreter distribution/source metadata and pure compatibility comparison; no scientific imports |
-| `python_environments` | Build fixed-source wheels and install only applications into a new location through the selected Python |
-| `release_verification` | Inspect installed origins, entry points, Python and the complete declared dependency closure |
-| `software_policy` / `machine_paths` | Machine-owned runtime selection and shared pure infrastructure-path normalization |
-| `software_preparation` / `software_worker` | Workstation coordination, durable identity and portable in-memory SSH worker |
-| `software_execution` | Pure bundle/runtime matching, pinned job environment and explicit fresh release selection |
-| `software_releases` | Stage ordering, exclusive identity publication, readiness evidence and exact inspection; no automatic reuse/resume |
-
-These modules are implemented and use the existing JSON, Git and SSH owners. Extract existing machine/transport policy rather than
-adding another SSH implementation. Keep side effects behind adapters and make
-pure manifest/fingerprint decisions testable without Git, pip or a filesystem.
-
-## Bundle contract to settle first
-
-Current bundle JSON is a dictionary of jobs, with no top-level metadata envelope.
-MVP7.1 attaches an optional shared `software` request to every job, normalized
-and compared by one manifest owner. `attach_software_manifest` copies/attaches
-the request; no top-level metadata is interpreted as a job. Existing containers
-remain dictionaries of jobs, and bundles without software retain current behavior.
-Manifest version 1 is new metadata, not a new bundle-container version.
-
-The implemented request contains named repository identities, optional revisions,
-repository-relative install `subdirectory` and an optional logical `runtime`
-name (default `default`). Distribution/import/entry-point checks are performed
-during installation verification; unsupported fields fail rather than being ignored.
-Infrastructure roots/interpreters and dependency sources belong to that machine's
-profile; application manifests must not embed machine-specific absolute paths.
-Support one prepared application environment for the selected bundle initially.
-
-## User-confirmed defaults (2026-11-12)
-
-- **D5 Latest source when revision is omitted — accepted.** Resolve the current
-  tip of the remote repository's default branch during each new preparation.
-  Explicit branches/tags resolve once in the same way; explicit commits remain
-  exact requests. Record both the requested selector and resolved full commit IDs.
-  Determine these identities before release selection/reuse. Do not choose an
-  older cached setup because a revision was omitted. If current remote resolution
-  fails, report preparation failure rather than silently falling back to a cache.
-  Inspecting an existing preparation or submitting its selected ready release
-  retains its recorded commits; it does not resolve latest again. Updating means
-  preparing a new release. Default-branch tip is the proposed precise meaning of
-  latest; it does not guess the newest tag, release version or workstation state.
-- **D6 Dependencies belong to the target machine — accepted.** The selected
-  machine/runtime policy owns Python selection, requirements/constraints or
-  lockfiles, package indexes/wheelhouses and installation options. A workstation
-  dependency freeze or a package-owned lockfile is not required. Different
-  machines may prepare the same source commits with different dependency sets.
-  Package-declared compatibility requirements still apply; installation checks
-  must expose conflicts rather than bypass them. A project lockfile can be used
-  when explicitly selected by the machine policy, but is not the default contract.
-
-- **D7 Separate software and result locations — accepted requirement.** Machine
-  configuration must independently locate managed repositories/prepared software
-  and scientific results, so they can use different cluster filesystems. The
-  field is `software_root`. **Amended by the user in MVP7.0c:** merge project and
-  results into one `results_root` for inputs/working directories/outputs. Only two
-  scientific roots are configured. `config` is the canonical command/module;
-  expose both roots in its editor, summary and direct root-setting flags.
-- **D8 First-time clone — accepted requirement.** Preparation can start from a
-  repository identity without an existing cluster checkout. Clone missing repos
-  into the managed cache, fetch updates there and create isolated releases. Do
-  not require a manual clone or repurpose/mutate an unrelated user's checkout.
-  Clone/fetch failures are preparation failures and submit zero jobs.
-
-Keep the default client request small: repository identities, optional revisions
-and, only if needed, a logical runtime name. Detailed environment rules are
-configured once for the machine. Preserve the existing operator-prepared runtime
-path for bundles that do not opt into software preparation. Helper/bootstrap and
-scientific runtime roles use separate selection: helper configuration stays unchanged,
-while optional machine runtime policy chooses the application interpreter.
-
-A package version string alone never proves VCS/install identity. Record actual
-installed dependencies even when no lockfile is supplied. For unlocked dependency
-inputs, a matching source/configuration fingerprint does not establish that an
-old environment satisfies a fresh resolution: make dependency refresh/reuse an
-explicit machine policy and do not silently claim reproducibility or freshness.
-No dependency solver framework is required for this MVP.
-
-## SSH alias ownership (MVP7.0d, accepted and implemented)
-
-Remote configuration uses one `ssh_alias` that selects the operator's SSH config
-Host entry. No hostname/hosturl/username/key_path setup, key handling or connection
-mode choice belongs in current AutoSlurm profiles. `config --ssh-alias` edits the
-selection without connecting; submit/schedule have the same override. Local
-profiles omit the alias. New run transport evidence stores only the alias, and
-all SSH/copy/session adapters use it without identity flags.
-
-Old hostname aliases normalize to ssh_alias on read/save and obsolete fields are
-dropped. Old explicit host/user profiles need an explicit alias selection; no
-inferred user@host fallback for new preparation. Existing saved job/receipt
-transports retain their old address/key interpretation for historical management.
-A recorded alias does not freeze the server behind an SSH config entry. Future
-release identity must not claim endpoint immutability from an alias string alone.
-
-## Software, input and output locations
-
-Configure these infrastructure paths once per target machine; application
-manifests continue to name repositories and logical runtimes, not absolute paths.
-The two root names and configuration/path behavior are implemented in MVP7.0c;
-managed caches/checkouts are implemented in MVP7.1; application release readiness
-and remote preparation commands are implemented in MVP7.2.
-
-```json
-{
-  "ssh_alias": "research-cluster",
-  "software_root": "/home/scientist/autoslurm-software",
-  "results_root": "/scratch/scientist/studies"
-}
-```
-
-| Root | Responsibility |
-|---|---|
-| `software_root` | Managed repositories, isolated source sets and installed application releases |
-| `results_root` | Shared base for application inputs, working directories and scientific outputs |
-
-`storage_root` remains the internal AutoSlurm state location; it is not another
-scientific directory to organize. No separate project root is required.
-
-A possible managed layout is `software_root/repositories/<repository-id>` and
-`software_root/releases/<release-id>/{projects,environment}`. There is one
-software root per selected machine initially; it can serve multiple Git projects.
-Omitted roots default to `<storage_root>/software` and `<storage_root>/results`.
-Summary displays symbolic defaults without a remote probe; execution saves actual
-resolved values. Configured roots are absolute infrastructure paths. Application
-jobs keep relative inputs/working directories/output paths, all under
-`results_root`, independently of source release location. Configured data roots
-and required inputs/working directories must already exist before preview; future
-output subdirectories need not exist yet. Legacy unrooted jobs with no input/cwd
-declarations retain their absolute-output/current-directory behavior.
-
-Do not change cwd to a cloned package directory. Installed commands run from the
-application's declared data working directory; package resources and scientific
-inputs are distinct. New machine profiles have no independent `project_root`.
-Old project-only/equal-root profiles coalesce to results_root, while conflicting
-old roots require an explicit data-root choice before new work. Root-setting flags
-remove the retired profile setting without moving files; saved old execution paths
-retain their original meanings. Do not put results into managed code releases,
-copy them during Git updates, or attempt to track them with Git. Validate declared
-paths against managed release locations before dispatch to prevent writable
-working/output targets from corrupting prepared software.
-
-Record the selected software root, actual project checkout/environment paths,
-input/working paths and resolved result paths with each run. Agents retrieve
-these through preparation/execution inspection rather than constructing paths or
-remembering the current profile. Profile edits cannot redirect historical jobs.
-Required runtime/code/input/result paths must be available to the compute nodes;
-node-local scratch staging and result transfer remain separate capabilities.
-Preparation only publishes readiness; environment creation/publication must keep
-its interpreter and entry-point paths valid rather than assuming venv directories
-can be moved freely between staging and final locations.
-
-## Preparation and submission behavior
-
-- Perform Git/network/install operations on the login/preparation host, before
-  dispatch. Compute jobs only activate a ready environment and run their command.
-- Use operator-configured Git access. Do not store credentials in manifests,
-  receipts or logs, or make agents manage private keys.
-- Clone missing repositories and fetch updates under the selected software root
-  on the preparation host; no manual initial checkout is required.
-- Materialize exact revisions in managed release directories. Do not `git pull`
-  active scientific checkouts or rewrite a shared environment. An update creates
-  a new release; running/queued jobs retain their producing release.
-- Key reuse by resolved commits, installation specification, target machine/runtime
-  dependency policy and content identities, interpreter/platform identity and
-  verified resolved dependencies. Include lockfile content when used. Respect
-  dependency refresh policy for unlocked inputs. Concurrent preparation must not
-  publish partial environments or permit two writers to corrupt one release.
-- Use the chosen environment's `python -m pip`, with the target machine's
-  dependency policy (requirements/constraints, optional lockfile, wheelhouse or
-  permitted preparation-host index access). Do not automatically copy the local
-  environment or upgrade every dependency. No dependency resolution on compute
-  nodes. Missing network/dependencies or incompatibilities stop before submission.
-- Verify Git commits and the installed distributions/import origins/entry points
-  from outside source directories. Check the full requested dependency closure;
-  avoid unrelated base-environment conflicts in a global `pip check`. Install from fixed sources
-  rather than editable links to mutable home checkouts. Package checks establish
-  installation consistency, not scientific correctness.
-- Persist bounded preparation evidence: requested/resolved manifest, release
-  roots, selected machine/runtime dependency policy, actual installed dependencies,
-  interpreter/environment identity, verification results and errors.
-  Save the ready release in job execution evidence and agent handoffs.
-- A preparation failure submits zero jobs. A ready release can be reused after
-  verification; do not couple preparation retries to scheduler retries.
-- Preparation should be a public explicit operation usable before submission;
-  decide separately whether an opted-in bundle can request it during submit.
-  Unspecified software retains the existing operator-prepared environment path.
-
-## Tasks and completion criteria
-
-- [x] **MVP7.0d Use SSH config aliases only.** Current config and CLI use
-  ssh_alias, adapters share selection and new evidence stores no duplicate user/
-  host/key settings. Historical transports remain readable. Update the user's
-  existing local profile with a backup; verify all cluster effects through mocks.
-
-- [x] **MVP7.0c Simplify config and application roots.** Canonical config modules/
-  command, software_root and shared results_root, explicit old-profile root edits,
-  recorded historical paths and local-only verification. This implements the
-  configuration slice, not the remaining manifest/environment/release operations.
-
-- [x] **MVP7.0 Manifest and environment roles.** Shared per-job requests,
-  latest/pinned sources, two roots and machine-owned dependency policy implemented
-  across MVP7.1/MVP7.2. Helper and application interpreters are independently
-  selectable. No broader dependency solver/lockfile policy is implied.
-- [x] **MVP7.1 Implement source and manifest primitives.** Resolve exact commits,
-  materialize isolated project sets and return structured preparation evidence;
-  mock fetch/transport, and test omitted revisions resolving current upstream,
-  default-branch changes despite a cached release, first-time cloning into a
-  distinct software root, clone/fetch failure with no stale fallback, unavailable
-  commits and dirty/shared checkout protection.
-- [x] **MVP7.1b Read-only status and dependency checks.** CLI/Python reports
-  Git state and configured environment metadata, checks important declared
-  dependency constraints and desired application version/commit, and reports
-  known mismatches/unknowns separately. Verify the standalone transport with
-  local fixtures, then the explicitly authorized read-only rusty demonstration.
-
-- [x] **MVP7.2a–d Usable prepare/install/inspect/select workflow.** The active
-  checklist is in [PLAN.md](../../PLAN.md). Fixed-source wheels, separate
-  application installations, unchanged dependency base, exact-ID recovery,
-  verification and producing job evidence are implemented and verified offline.
-- [ ] **MVP7.3 Convenience and broader runtime policies.** ACP preparation,
-  richer reuse and additional dependency-environment policies remain deferred.
-
-## Non-goals and limits
-
-No arbitrary remote shell deployment scripts, credentials service, Git push of
-uncommitted workstation changes, automatic mutation of existing environments,
-scientific retry engine, generalized multi-machine orchestration, environment
-solver framework or automatic release garbage collection. Start with Git
-projects and Python virtual environments; Conda environments, binaries/modules,
-containers and offline artifact shipping can be separate increments if needed.
-Cluster compatibility remains unverified until a separately authorized live test.
-
-## Log
-
-| Date | Event |
-|---|---|
-| 2026-11-12 | User requested a dedicated MVP for Git project versions and verified bundle-specified installations; scoped as MVP7 |
-| 2026-11-12 | MVP7.0a user confirmed omitted revisions mean latest source and dependency setup belongs to the target machine; recorded D5/D6 and associated failure checks; no implementation started |
-| 2026-11-12 | MVP7.0b user requested first-time Git cloning and independent package/results locations; recorded initial D7/D8, superseded the proposed third project root in MVP7.0c |
-| 2026-11-12 | MVP7.0c config/two-root slice implemented; 405 offline tests passed, software preparation remains planned |
-| 2026-11-12 | MVP7.0d SSH config aliases replace current host/user/key fields; 427 offline tests passed; local rusty profile updated with backup, no live cluster operations |
-| 2026-11-12 | MVP7.1 shared manifest and current-host Git source engine implemented; 485 offline tests passed, including real Git against temporary local remotes; environments and execution remain planned |
-| 2026-11-12 | MVP7.1b read-only software status and major dependency/application metadata comparisons implemented; 523 offline tests pass; authorized live rusty observations found matching Gaia dependency ranges but different local/remote code revisions |
-
-## Delivery proposal retained for rationale (2026-11-12)
-
-This is the implementation proposal requested after the live status demonstration.
-The proposal below preceded implementation. The MVP7.2 implementation record
-below supersedes its future-tense status; this does not mark unimplemented
-broader runtime policies as accepted. D5–D8 remain the accepted source/dependency requirements.
-
-The next delivery should prepare an installation that a bundle can actually use.
-Keep source resolution and status code; add installation, remote orchestration
-and the smallest execution binding together. Do not call this workflow complete
-when only a fetched source directory or an environment exists without job routing.
-
-### Proposed user interface
+## Public interface
 
 ```sh
-# Bundle software manifest drives a project set and logical runtime.
-asl software prepare --machine rusty --bundle-file /absolute/local/study.json
-
-# Convenience for an application checkout: infer its Git origin and name.
-# Omitted revision resolves latest remote default-branch tip.
-asl software prepare --machine rusty --local-project /absolute/local/science
-asl software prepare --machine rusty --local-project /absolute/local/science --revision FULL_COMMIT_ID
-
-# Inspect the exact installation, including after an interrupted connection.
-asl software status --machine rusty --release RELEASE_ID --json
-
-# Bind new work explicitly; never change an existing machine profile implicitly.
-asl submit study --bundle-file /absolute/local/study.json --machine rusty --software-release RELEASE_ID
+asl software update --machine cluster --project gaia-asteroseismology
+asl software update --machine cluster --project gaia-asteroseismology --json
+asl software status --machine cluster --project gaia-asteroseismology
 ```
 
-Preparation returns a request/release ID, requested/resolved repositories,
-installed distributions, base interpreter/environment identity, dependency
-checks, exact ready-runtime locations and bounded errors. Terminal presentation
-and JSON/Python results share that evidence. Exact status must distinguish a
-managed installation from the old manual checkout so an unchanged manual clone
-does not look like a failed managed update.
+`--project` is relative to software_root and selects the repository's actual
+checkout root. A missing project is an error, not an instruction to clone.
+Empty software/update/status commands show help without machine discovery.
 
-`--local-project` here is a convenience request constructor. It does not upload
-working files, push Git, pin to local HEAD by default, or transfer the laptop's
-installed environment. Explicit branch/tag/commit selection has the same meaning
-as the bundle manifest; source-only and convenience requests use one backend.
-If the local default-branch tip has not been pushed, it cannot be prepared from
-the remote repository. Multiple projects continue to use the bundle form.
+```python
+from autoslurm import update_software, SoftwareUpdateError
+result = update_software(machine="cluster", project="gaia-asteroseismology")
+```
 
-### Proposed runtime policy for the first usable slice
+Failures raise `SoftwareUpdateError` carrying `.evidence`. The result reports
+version 1, machine/root/project/path, current branch/upstream, before/after
+commits, stage, state, timestamp and any bounded error. States `updated` and
+`up_to_date` mean a successful pull with readable commits. `failed` describes a
+known rejection/failure; `unknown` means effects may have occurred without a
+complete observation. No new persistent record format or migration is needed.
 
-Use the machine's explicitly selected existing scientific environment as an
-unchanged dependency base. Install only the requested application distributions
-into a new, non-editable, release-specific location. A mismatch in JAX/NumPy/Torch
-or another required dependency produces a preparation error and the status report;
-it does not authorize upgrading the base stack. Checking only the focused status
-list cannot satisfy an installer's complete declared-dependency consistency gate.
-Build requirements and transitive dependencies must likewise have an explicit
-machine policy; missing prerequisites cannot trigger a hidden install into the base.
+## Responsibilities
 
-The configuration contract separates helper/bootstrap, scientific dependency
-base and prepared application identity, without adding another scientific root.
-The existing environment may serve as helper and dependency base while remaining
-unchanged, but each job records its exact application release independently.
-Managed locations stay below software_root and scientific data stays in
-results_root. Bundle requests contain logical runtime names, not host paths.
+| Owner | Responsibility |
+|---|---|
+| `software_update` | Select one machine/profile, send the stdin probe through shared SSH, validate its response and expose available evidence |
+| `software_update_probe` | Pure relative-project selector plus existing-checkout preflight, one Git pull and before/after observation; standard library only |
+| `apps/software` | Help, text/JSON output and exit status |
+| `software_status` / `software_probe` | Existing read-only Git inspection; status never pulls |
+| `software_requirements` / `environment_probe` | Existing focused metadata/dependency/source comparisons without scientific imports |
+| `transport`, `config`, `machine_paths` | Existing shared SSH/profile/root normalization |
 
-The concrete mechanism needs a focused prototype in MVP7.2a: for example, an
-isolated application installation and launch environment layered on the selected
-Python, with verified import and distribution precedence. A nested venv with
-system-site-packages does not automatically expose packages installed into its
-creating venv; test the actual visible stack instead of assuming inheritance.
-If a venv is chosen, create it at its final unique path because interpreter and
-entry-point paths can be embedded. Never rename a prepared venv and assume it
-remains valid. Build artifacts and installation must reference fixed source sets.
+The same updater executes locally or travels over SSH through stdin. Nothing is
+copied/installed on the target, and installed remote AutoSlurm is not imported.
+Git's own working tree and normal metadata are the only writes requested by the
+updater; there is no additional state engine. Git's own index/ref locks handle
+competing operations; no AutoSlurm lock/record file is introduced.
 
-This first policy isolates application updates, not an independently reconstructed
-copy of every scientific dependency. The base environment's continued stability
-is an explicit operator-owned condition. Record its identity/version inventory
-and revalidate it before new dispatch; never claim immutable dependency isolation
-from a mutable base. A fully separate dependency stack remains a later runtime
-policy when genuinely needed. No automatic garbage collection is introduced.
+Preflight checks a real existing repository root inside software_root, a readable
+HEAD, attached branch/upstream and a clean tracked/untracked tree. Pull disables
+recursive submodule updates, rebase and automatic stashing. It uses no reset or
+force option. Raw Git diagnostics are not returned because they may contain
+credentials; recognized authentication/divergence failures have bounded messages.
 
-### Implementation slices and completion gates
+A lost connection, Git timeout or unreadable post-pull HEAD produces unknown
+rather than invented success or an automatic retry. Inspect current Git status
+through the existing public status operation. There is no release identity to
+recover or background retry/resume service. A reported failed pull may still have
+updated Git metadata; retain any observed commit evidence.
 
-1. **MVP7.2a Contract and runtime prototype.** Specify machine policy, helper/
-   application roles, artifact layout, request/release identity and environment
-   visibility. Prove a requested application can override an old editable install
-   without importing code from its checkout, while the selected scientific base
-   remains visible and unchanged. Keep an ambiguous result unready.
-2. **MVP7.2b Installation and verification.** Reuse `software_manifest`,
-   `git_projects` and `software_sources`; add `python_environments` for build/install
-   effects and `software_releases` for stage ordering/publication. Publish ready
-   only after all requested projects, installation origins/versions/commits,
-   interpreter, dependencies and entry points verify outside source directories.
-   Preserve the full installed dependency inventory, even though the human status
-   summary focuses on major libraries. Conflicts/missing inputs/install failures
-   submit zero jobs and leave earlier releases/base environments unchanged.
-3. **MVP7.2c Remote operation and diagnostics.** Add prepare CLI/Python and
-   exact-release status through the existing SSH adapter. Deliver a versioned
-   preparation worker independently of the old remote AutoSlurm installation;
-   do not update the environment executing the worker. Create request identity
-   before dispatch and retain execution-side stage/error evidence. Suggested
-   stages: preparing_sources, building, installing, verifying, ready, failed.
-   Connection loss is client uncertainty; inspect the exact request rather than
-   blindly restarting. Concurrent requests cannot write one installation, and
-   an exact repeated request must not create an untracked duplicate attempt.
-4. **MVP7.2d Job binding.** Add an exact ready-release selector to preview and
-   submission, pass it through existing execution context/script rendering, and
-   include its source/runtime evidence in snapshots and receipts. The submission
-   helper keeps its own environment; only the scientific job uses the selected
-   application release. A selected release must satisfy the bundle's resolved
-   source/runtime contract. Bind recorded commits, not latest again during submit.
-   With no explicit revision, preparing a new release resolves latest; submitting
-   that selected ready release retains its recorded commits. Require explicit
-   selection initially; no surprise default switch or automatic preparation inside
-   submission. Legacy opt-out stays usable.
+## Removed interfaces and retained data
 
-Verify with local fake SSH, temporary Git remotes, wheel/install fixtures and
-fake Slurm. Cover latest/pinned commits, multiple projects, an old editable copy
-on the base environment, install origin/path precedence, major/dependency conflicts,
-missing build requirements, wrong interpreter, partial installs, interruption/
-connection loss, identity collisions and concurrent preparation. Two jobs bound
-to different releases must keep their original code after subsequent preparation.
-No Git/pip/install work may enter compute scripts. Real remote preparation remains
-outside the read-only exception until a concrete demonstration is authorized.
+Remove source/release preparation modules and their copy-producing tests;
+replace them with focused single-checkout safety tests. Remove public
+`prepare_software_sources`, `SoftwarePreparationError`, `prepare_software`,
+`inspect_software_release`, software prepare/release CLI flags, and
+`software_release` selection in preview/submission/execution context.
 
-## MVP7.1b read-only inspection boundary
+Historical pure manifest normalization remains for reading/validation. Managed
+bundle runtime requests are rejected explicitly; new bundles use configured
+operator-prepared environments. Existing snapshot/receipt inspection remains
+readable without migrating or rewriting stored metadata. Old release paths
+inside already-created scripts remain literal historical evidence.
 
-`asl software status --machine NAME` shows current Git evidence under the
-configured software_root, including immediate projects and managed source sets.
-`--project` narrows that relative location; limits/timeouts and omitted-project
-indicators bound discovery. Unknown/missing state is never labeled clean.
+Do not delete existing local or remote operation evidence/copies automatically.
+Any actual cluster cleanup is a separate operator operation, outside this task's
+local-only scope. Base Conda continues importing main dev; the pinned rollback
+checkout remains unchanged. Old `software_runtimes` config fields are retained
+as data but no longer interpreted.
 
-`--local-project` reads local pyproject.toml and optional requirements.txt;
-`--requirements` selects another file. Focus on NumPy/JAX/JAXlib/PyTorch/SciPy
-unless `--dependency` adds another library. Requirements are PEP 508/440 declarations
-evaluated against target Python/platform markers; requires-python checks the
-selected interpreter version and compatible stricter target dependency pins
-pass. Unsupported directives, unconstrained dependencies or unverified evidence
-stay unknown. `packaging` and older-Python `tomli` are declared client dependencies;
-both active local interpreters already had the required runtime support, so no
-base/test package installation was performed for this change.
+## Verification
 
-The selected profile's venv_path/bin/python reads distribution metadata, which
-establishes availability/version and, where recorded, VCS identity. Editable
-installs also expose source HEAD/changes; immutable VCS installs use direct-url
-commit metadata. User/local-declared versions or commits are compared separately.
-Absence of required commit evidence cannot become a version-based identity pass.
-Markers use target information; missing target markers cannot fall back to laptop
-values. A missing/wrong environment is unknown with no system-Python fallback.
-The portable probes use standard libraries, suppress bytecode/Git index writes,
-and do not import AutoSlurm or scientific applications in the target environment.
+Task MVP7.2e in [PLAN.md](../../PLAN.md) owns completion. Required cases include
+one checkout through repeated updates, no duplicate/install/record operations,
+changed/up-to-date commits, clean/dirty/untracked/diverged/detached/missing branches,
+missing/unsafe paths, exact SSH stdin execution, malformed/lost responses with
+no retry/fallback, and existing scientific/submission/status behavior.
+**Final:** 525 offline tests passed in 5.53 s, 39 expected collision warnings;
+report `.development/test-runs/software-update-final.xml`. Thirty-two new cases
+replace the retired copy-engine tests. The Git fixture proves repeated updates
+use the same working copy, then executes the exact SSH payload through fake
+transport and rejects divergence without resetting local work. Mocked tests
+cover missing/unsafe paths, dirty/untracked/detached/unconfigured branches,
+commit reporting, authentication/fast-forward failures, timeouts/malformed/lost
+responses without retry, unchanged storage files and useful CLI help/output.
+Existing science, submission, inspection and metadata comparisons still pass.
 
-The result is observation evidence, not runtime readiness or a mandatory
-submission gate. It does not verify imports, ABI/CUDA/GPU availability, transitive
-packages, future queue-time immutability or latest upstream state. Exit 1 signals
-failed/missing inspection or requested mismatch/unknown compatibility; JSON retains
-individual checks. Installation, remote preparation writes and dispatch integration
-remain open tasks. No GitHub repository settings were touched.
-
-Verification: 38 added checks, 523 full offline tests passed in 6.19 s, 39 expected
-collision warnings, report `.development/test-runs/software-status-final.xml`.
-The local fixture exercises the exact SSH stdin payload against a temporary Git
-repo and virtual environment containing only fixture metadata. It checks real
-constraint comparisons, interpreter identity, editable install subdirectories,
-application commits and unchanged
-Git index mtime. Additional tests cover pure comparisons, malformed transport,
-credential-bearing requirement URLs, missing markers and CLI reporting.
-
-The user-authorized live read-only checks on rusty observed clean AutoSlurm dev
-213de79 and Gaia main d21f04d, with matching editable installation paths/commits
-in `/mnt/home/aadam/envs/python3.11`. Installed NumPy 2.2.4, SciPy 1.15.2, JAX
-0.10.2 and Astropy 7.0.1 satisfy the selected local Gaia declarations; its local
-HEAD 0155e17 differed from the installed d21f04d, so the report correctly flags
-`potential_problem` despite equal package version 0.1.0. Local uncommitted work
-was reported separately. Snapshot reports are retained under `.development/test-runs/`
-as `rusty-software-status.json` and `rusty-gaia-software-status.json`. These are
-timestamped observations, not a guarantee about later installs/commits. No remote
-files, installed packages, Git refs or jobs were changed.
-
-## Historical MVP7.1 boundary and verification
-
-Public operations: `normalize_software_manifest`, `attach_software_manifest`,
-`bundle_software_manifest`, `prepare_software_sources` and
-`SoftwarePreparationError.evidence`. The [agent recipe](../../agent/13_software_preparation.md)
-contains omitted/pinned source examples, role boundaries and failure/handoff rules.
-Runtime names are logical; they do not select an installed environment yet.
-The existing helper/operator `venv_path` behavior is unchanged. A managed software
-request is rejected by preview/submission before script/tracking/scheduler effects.
-
-The host-side engine uses `software_root/repositories/<repository-hash>.git`,
-`software_root/sources/<preparation-id>/<project-name>` and exact preparation
-records under `software_root/source_preparations`. These are internal layouts,
-not client path-construction contracts. Each invocation resolves upstream before
-materializing its sources and makes a fresh set. Source evidence has state
-`sources_prepared`, never runtime `ready`. Old source sets and scientific data
-are not edited. Git/network effects live behind `GitCommands`; source orchestration
-uses the existing atomic JSON owner. No new SSH implementation was introduced.
-
-Repository caches carry ownership markers and locks; unsafe paths, wrong origins
-and unmanaged caches fail before modification. Omitted/branch/tag requests require
-upstream resolution even with a cache. Exact pins are fetched and verified as
-commits. Clone/fetch/checkout failures, interrupted preparation and record failures
-produce failed/partial evidence; raw Git errors are not recorded because they can
-contain operator credentials. A killed process may leave a cache lock needing
-operator inspection. Incomplete source directories remain inspectable. Reuse,
-cleanup, automatic recovery, submodules and LFS are outside this source increment;
-submodules are explicitly rejected. Root setup failure can occur before a tracking
-record exists, while later record failures retain in-memory evidence.
-
-Baseline: 427 offline tests passed in 3.16 s. Final: 485 passed in 4.86 s with
-38 expected collision warnings. Report `.development/test-runs/software-sources-final.xml`.
-The 58 added checks cover normalization/copying/shared requests, Git adapter
-boundaries, latest changes/default-branch changes, exact pins/annotated tags,
-unavailable/ambiguous/malformed refs, no stale fallback, checkout/object verification,
-distinct roots/checkouts, subdirectory containment, cache ownership/origin/locking,
-partial progress, interruption/tracking failures, evidence-collision protection and saved-bundle submission guards.
-The executable fixture creates only temporary local Git remotes and checkouts;
-it performs no internet or cluster operations. Existing science/CLI/ACP checks pass.
-Task commit: `git log --grep '^MVP7.1:'`; no full `mvp7` completion tag.
-
-## Implemented configuration/path slice (MVP7.0c)
-
-The user requested renaming configuration to config and only two scientific roots.
-Implemented locally on `dev`: `asl config` canonical action and `config` owner
-modules, `software_root` editor/summary/settings, shared results-relative input/cwd/
-output mapping and producing evidence. Historical `configuration` commands/modules
-remain aliases. New installs gain `autoslurm-config`; current base commands can
-use `asl config` without reinstalling entry points.
-
-Root-only flags (`--machine NAME --software-root PATH --results-root PATH`) edit
-local configuration without probes. They also permit an explicit merged root
-choice for old conflicting profiles, without moving data. Configured data roots
-require relative application paths, including results-only profiles that formerly
-allowed absolute output overrides. New execution records save software/results
-roots; old records with separate project/results fields remain readable. The
-context's project_root slot remains solely for historical input-base interpretation.
-The current venv_path continues to select operator-prepared software; a software_root
-setting alone does not move/install code or implement release preparation.
-
-Baseline: 392 offline tests passed in 3.33 s (38 collision warnings). Nine new
-checks initially failed and the historical-path check passed; after implementation,
-405 tests pass in 3.22 s (39 expected warnings), including three additional root-edit/
-identity checks. Report `.development/test-runs/config-reviewed.xml`. Scientific
-fixtures now stage inputs and outputs under temporary shared data roots; existing
-array/reducer, submission, inspection and CLI/ACP checks remain passing. No real
-cluster commands, base reinstall, runtime data migration or code preparation.
-Task commit: `git log --grep '^MVP7.0c:'`. No `mvp7` completion tag: remaining
-software-manifest/helper/runtime/source/environment tasks are still open.
-
-## MVP7.0d verification
-
-Baseline: 405 offline tests passed in 3.32 s. Fourteen new checks initially failed;
-one historical explicit-transport check already passed. Final suite: 427 passed
-in 3.23 s, 39 expected collision warnings. Report
-`.development/test-runs/ssh-alias-final.xml`. Twenty-two added cases cover alias
-validation before discovery, no local fallback, canonical profile serialization,
-local-only alias edits, simple editor/summary, SSH/SCP/rsync/session arguments,
-saved-alias stability, old explicit transports and retired CLI flags stopping
-before application argument discovery. All prior scientific/receipt/CLI/ACP
-workflows remain covered.
-
-At the user's request, main's existing rusty profile now selects ssh_alias rusty.
-The prior hostname contained a username, while local SSH config defines Host rusty.
-Only connection settings changed; all non-connection values were verified equal.
-Backup `.development/backups/pre-ssh-alias-20261112-121325/config.json`; SSH config
-was not modified. No cluster connection, job submission or dependency installation.
-Task commit: `git log --grep '^MVP7.0d:'`; full software-preparation MVP stays open.
-
-## MVP7.2 implementation and verification
-
-Implemented at the user's request to execute the preceding proposal. PLAN tasks
-7.2a–d form one usable delivery; no wider solver/reuse/ACP policy is accepted or
-implemented by implication.
-
-`software_preparation` owns workstation selection and durable request IDs before
-remote effects. `software_worker` sends protocol-1 shared module sources and
-pure-Python verification tools in memory through the existing SSH adapter. The
-chosen runtime executes that worker; installed remote AutoSlurm is not imported
-or upgraded. Exact inspection uploads no files and performs no prepare effects.
-Records live in the existing selected storage root locally and the managed
-software root on the preparation host; original aliases/roots survive profile
-edits. Lost responses stay unknown; a repeat of an existing remote identity only
-observes its state. Interrupted stages have no automatic replay or resume.
-
-`software_releases` orders source/build/install/verify/publication with the
-existing atomic JSON owner. It reuses `software_sources` and `GitCommands`;
-`python_environments` builds wheels with the selected Python's existing tools,
-no dependency resolution/download or build-isolation install, and installs only
-the requested wheels into their final unique release location. Installed code
-must match wheel content; the record binds wheel hashes to resolved source
-commits. Previous source/release directories and the base environment are not
-updated. Relocated wheel data/scripts, submodules and LFS are unsupported.
-
-`release_verification` inventories visible distributions without importing the
-applications/scientific libraries. It checks distribution versions and origins,
-module origins, entry-point metadata/files, Python and the complete declared
-requirements closure, including extras and target markers. Machine constraints
-are plain requirements from an optional target-machine file. This scoped check
-replaces global `pip check`, which could reject unrelated packages in a large
-scientific environment. It does not test entry-point callables, imports, ABI/GPU
-availability or scientific output validity. Installed-content hashes and the
-base inventory/constraint hash are rechecked before each new submission.
-
-The scientific base is shared, operator-managed and must stay stable for running
-and queued jobs. Its version/location inventory is recorded; individual library
-bytes, editable dependency source contents, drivers and external data are not
-made immutable. A nested venv is not used to pretend to inherit an existing
-venv's scientific stack. Application isolation uses a release-specific installed
-site directory with explicit Python/import/entry-point selection. Helper
-`venv_path` stays unchanged; optional `software_runtimes` selects a different
-application Python and constraints. Worker/application preparation requires
-Python 3.11+; broader packaging compatibility remains a later layer.
-
-`software_execution` validates exact machine/root/transport and bundle request
-matching. Preview/submission freshly verify selected release IDs even when a
-context already carries software evidence. The pure preparation path validates
-installed-command/`python -m` use, prevents overriding runtime variables, and
-keeps declared data/cwd/log paths out of managed storage. Generated jobs contain
-no Git/pip preparation. Snapshots and receipts retain producing release commits,
-installation hashes and base identity; another preparation does not redirect old
-scripts. Existing operator-prepared bundles keep their path.
-
-Verification: **596 offline tests passed in 16.13 s**, 39 expected snapshot
-collision warnings. Report `.development/test-runs/software-prepare-final.xml`.
-The 73 added cases include real temporary upstream Git commits, offline wheels,
-a temporary scientific base with an older editable application of the same
-version, target imports that reject installed AutoSlurm, the exact SSH stdin
-worker with fake transport, two runnable releases and mocked scheduler receipts.
-Failure coverage includes incompatible dependencies, transitive extras/markers,
-missing/source-unknown dependencies, installation tampering/base changes,
-publication failures, durable unknown IDs, stale/missing observations,
-concurrent/repeated identities, release mismatch and runtime/path override guards.
-The final wheel built offline and passed isolated target installation plus API,
-worker construction and CLI help checks. Artifact SHA256:
-`0f8f0dad71f2a84200e47379b4069183070182e9c47601468b2d85c0ae8ff796`.
-Base Conda still imports main dev; pinned clean rollback HEAD remains `33bcbd3`.
-No live SSH, cluster update/installation, job or profile change occurred.
+The wheel was built from clean temporary sources to exclude stale build-cache
+copies of removed modules. An isolated target installation passed public API,
+absence-of-old-API and update-help smoke checks. Artifact:
+`.development/artifacts/mvp7.2e/autoslurm-0.1.0-py3-none-any.whl`, SHA256
+`e43ec1dcaa52adabe467f4f8c65a385f75250cfecdb3051bedfdd306114377b0`.
+Base Conda still imports main dev; clean pinned rollback source/import was
+verified at `33bcbd3`. Existing local operation evidence and user edits were
+preserved. No cluster contact/update/install/cleanup or daily config mutation
+was performed. Task prefix `MVP7.2e:`, local milestone tag `mvp7`; no deployment.

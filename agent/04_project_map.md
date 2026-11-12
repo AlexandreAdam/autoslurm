@@ -1,14 +1,13 @@
 # Public workflow map
 
-The development MVP7.1b boundary is `01_client_workflow.md`. Public Python imports
+The development MVP7.2e boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
 | Stage | Supported surface | Durable result |
 |---|---|---|
 | Describe work | `save_bundle`, `schedule_job` | Exact planned path and saved job names |
-| Declare software | `attach_software_manifest`, `bundle_software_manifest`, `normalize_software_manifest` | One shared request; machine-owned runtime name |
-| Prepare source on the current host | `prepare_software_sources` | Exact Git commits/checkouts or `SoftwarePreparationError.evidence`; no runtime readiness |
+| Update software explicitly | `update_software`, `asl software update` | Existing checkout pulled once, before/after commits or `SoftwareUpdateError.evidence`; no files tracked by this layer |
 | Inspect software | `inspect_software`, `software_expectations`, `asl software status` | Read-only Git/selected-environment evidence and focused compatibility checks |
 | Check paths/scripts | `preview_bundle(path, machine=...)` | Resolved producing paths and script text; no submission |
 | Dispatch once | `submit_jobs(..., bundle_path=path)` | Receipt, or `SubmissionError.receipt` |
@@ -33,12 +32,12 @@ work. Use fresh output namespaces and keep scientific validation application-own
 
 ## Ownership inside AutoSlurm
 
-Source preparation has a separate dependency flow:
-`software_sources` coordinates tracking and calls `git_projects` for managed
-cache/checkout effects; `software_manifest` owns pure request validation.
-`GitCommands` owns Git process effects for source preparation. `record_files` remains the shared
-JSON publication owner. Runtime installation and execution wiring remain planned;
-no new SSH or scheduler implementation was added.
+Software updates use `software_update` for selected-machine orchestration and
+`software_update_probe` for one existing checkout's Git preflight/pull. The
+standard-library probe travels over the existing SSH adapter through stdin;
+remote AutoSlurm installation is unnecessary. It creates no source copies,
+installations or records. `software_manifest` retains pure historical request
+validation only; it never updates code or selects job runtimes.
 
 Read-only inspection uses `software_status` for selected-machine orchestration
 through the existing SSH adapter, `software_probe` for filesystem/Git observations
@@ -160,7 +159,8 @@ Explicit root-setting flags resolve an old split without moving files or invokin
 SSH. New execution evidence saves the two roots; historical execution contexts
 still read the older separate project/result fields. The context's internal
 `project_root` field is a compatibility input-base slot, never a third configurable
-root for new work. Software cloning/install/release management remain planned.
+root for new work. Software updates only pull existing checkouts; cloning,
+installation and release management are outside this layer.
 
 MVP7.0d centralizes SSH alias validation and transport evidence in config/transport.
 Current profiles normalize to `ssh_alias`; new execution/receipt metadata stores

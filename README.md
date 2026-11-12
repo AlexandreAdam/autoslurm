@@ -64,34 +64,26 @@ used by base Conda's editable installation. Tests use isolated state and mocked
 Slurm; the earlier baseline remains available in a rollback checkout. Cluster
 installations have not been changed.
 
-MVP7.1 adds the first Git software layer: shared bundle requests, fresh upstream
-revision resolution, first-time cloning and isolated exact-commit source sets.
-MVP7.2 adds verified application installations, remote preparation and explicit
-release selection for jobs. See the [software preparation recipe](agent/13_software_preparation.md)
-and [software preparation scope](REFACTORING_DOCS/design/MVP7_cluster_software_preparation.md).
-
-`asl software status --machine NAME` now inspects existing Git projects locally
-or over SSH. Add `--local-project PATH` to compare declared major dependencies
-and the application's version/Git identity with the selected machine environment.
-`--json` returns compatible/mismatch/unknown evidence. The read-only probe works
-with existing cluster installations and performs no update or package installation.
-
-Prepare an update on the login host, then select its returned release ID:
+Update the one existing project checkout on a configured machine:
 
 ```sh
-asl software prepare --machine cluster --local-project /path/to/application
-asl software status --release RELEASE_ID --verify
-asl submit --bundle-file /path/to/bundle.json --software-release RELEASE_ID
+asl software update --machine cluster --project gaia-asteroseismology
 ```
 
-Omitting `--revision` prepares the current upstream default-branch tip. Add a
-commit, branch or tag to select another version; local edits are not uploaded.
-Each preparation installs application wheels in a new location. Existing source
-and scientific dependencies stay unchanged; incompatible requirements stop the
-preparation. Compute jobs use the selected installation without Git or downloads.
-The [human walkthrough](docs/software.md) explains setup, recovery and limits.
-This workflow is verified offline with mocked SSH/Slurm and local package builds;
-live cluster preparation has not been exercised.
+This runs `git pull --ff-only` in the project under `software_root`, using its
+current branch and configured upstream. It reports before/after commits and
+refuses to hide local changes or merge diverged history. The software layer
+creates no extra checkouts, mirrors, installations or release records. Package
+and environment setup stays operator-managed; jobs use the configured environment.
+
+`asl software status --machine NAME` inspects existing Git projects locally or
+through SSH. Add `--local-project PATH` to compare declared major dependencies
+and the application's version/Git identity with the configured environment.
+`--json` returns structured evidence. The read-only status command never pulls.
+See the [human walkthrough](docs/software.md) and
+[agent recipe](agent/13_software_preparation.md) for use and failure interpretation.
+Development tests use local repositories and mocked SSH/Slurm; no live cluster
+update was performed during this implementation.
 
 ## Installation
 
