@@ -1,6 +1,6 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP3. The pinned
+Use this recipe with the development installation including MVP4. The pinned
 stable installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
 differ. Current repository work is local only: submissions are tested with
@@ -112,7 +112,15 @@ saved snapshots.
 
 Before submission, `preview_bundle(planned_path, machine="target")` validates and
 returns plain resolved paths and rendered script text without writing scripts or
-submitting. A remote preview still contacts the configured machine for root
+submitting. MVP4 shares the same definition validation and script preparation
+between preview and submit. Empty, invalid or already-submitted definitions are
+rejected by both; use inspection for existing submissions. Mapping fields such
+as application arguments and environment exports must contain mappings.
+Prepared scripts remain unchanged through submission; AutoSlurm passes resolved
+dependency IDs as Slurm command arguments. Preview checks are point-in-time and
+do not freeze inputs, environments or scheduler availability.
+
+A remote preview still contacts the configured machine for root
 discovery and batched input validation. Under this repository's local-only scope,
 remote interactions must be mocked.
 
@@ -163,7 +171,9 @@ scheduler call. IDs are also mirrored into the existing tracking snapshot.
 Save the exact receipt path in the client handoff; do not reconstruct filenames.
 Definition/readiness errors before receipt creation raise ordinary validation
 errors and submit nothing; once the operation exists, submission errors carry
-its receipt, including any tracking/storage error.
+its receipt, including any tracking/storage error. Initial receipt-write failures
+also carry in-memory evidence and stop before dispatch. An interruption while
+persisting an accepted ID preserves that ID and stops further submissions.
 This is incremental submission evidence, not an immutable scientific attempt
 store or a guarantee against every concurrent writer or scheduler crash.
 

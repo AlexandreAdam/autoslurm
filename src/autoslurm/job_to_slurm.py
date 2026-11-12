@@ -62,7 +62,7 @@ def _write_script_args(file: TextIOWrapper, job_args: list[str]) -> None:
         file.write(line + suffix)
 
 
-def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict, *, context=None) -> None:
+def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict, *, context=None, resolved=None) -> None:
     """
     Writes the content of the SLURM script with formatted arguments, handling list arguments differently based on their type.
     """
@@ -70,7 +70,7 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict, *,
     machine_config = context.config
     env_command = activation_command_from_config(machine_config)
     slurm_account = machine_config.get("slurm_account", "")
-    resolved = context.resolve_job(job)
+    resolved = context.resolve_job(job) if resolved is None else resolved
     exports = []
     literal = job.get("environment") or {}
     runtime = job.get("runtime_environment") or {}

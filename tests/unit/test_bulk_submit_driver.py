@@ -19,11 +19,13 @@ def test_parse_job_id_from_parsable_invalid():
         parse_job_id_from_parsable("Submitted batch job 12345")
 
 
-def test_submit_payload_wide_graph_uses_dependency_flags():
+@pytest.mark.parametrize("parsable", [False, True])
+def test_submit_payload_wide_graph_uses_dependency_flags(parsable):
     payload = BulkSubmitPayload(
         children_by_job={"A": ["C"], "B": ["C"], "C": []},
         slurm_names={"A": "A.sh", "B": "B.sh", "C": "C.sh"},
         slurm_dir="/remote/autoslurm/slurm",
+        parsable=parsable,
     )
     calls: list[list[str]] = []
     ids = {"A.sh": "101", "B.sh": "102", "C.sh": "103"}
@@ -31,7 +33,7 @@ def test_submit_payload_wide_graph_uses_dependency_flags():
     def fake_run(cmd, capture_output=True, text=True):
         calls.append(cmd)
         script = cmd[-1].split("/")[-1]
-        return SimpleNamespace(returncode=0, stdout=f"{ids[script]}\n", stderr="")
+        return SimpleNamespace(returncode=0, stdout=f"{ids[script]}\n" if parsable else f"Submitted batch job {ids[script]}\n", stderr="")
 
     result = submit_payload(payload, run_command=fake_run)
 

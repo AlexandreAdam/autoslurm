@@ -9,14 +9,17 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP3, trustworthy inspection; complete locally.
+- **Current milestone:** MVP4, submission responsibility boundaries; complete locally.
 - **Stage:** stable code remains pinned; development has isolated code,
   environment/state, a tested client recipe and single/array reference workloads.
-  Full offline suite: 313 passed. Shared task/status/log inspection, exact
-  rediscovery, explicit errors/staleness and bounded log refresh are verified.
+  Full offline suite: 333 passed. Shared preview/submit preparation, explicit
+  submission stages, unchanged prepared scripts and accepted-ID preservation
+  through persistence interruption are verified alongside MVP1–MVP3 behavior.
   No cluster installation or promotion performed.
-- **Next task:** choose optional MVP4 filtered result retrieval or a separately
-  authorized release-readiness/promotion step; no later milestone started.
+- **Next task:** MVP5, inspection responsibility boundaries; not started.
+- **Scope update:** prioritize implementation modularity after MVP3. Result
+  retrieval remains optional; MVP5 inspection and MVP6 persistence boundaries
+  follow as separately bounded increments.
 - **Last updated:** 2026-11-11.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Installation evidence:** [installation register](REFACTORING_DOCS/installation-register.md)
@@ -56,7 +59,10 @@ Each row is incremental, not cumulative.
 | MVP1 | Relative application paths work predictably; machine/path/selection rules have one owner | One to two days | Existing bundle layout retained; no general filesystem abstraction |
 | MVP2 | Unsafe fallback removed; known submitted jobs survive partial failure; uncertain outcomes are explicit | One to three days | No automatic recovery/resubmission of uncertain acceptances |
 | MVP3 | Agent and terminal agree on tasks/status/logs; growing logs update; a new agent can rediscover work | Two to three days | Reuse current queries/storage; no complete offline-index redesign |
-| MVP4 optional | Filtered result retrieval for one declared result subtree | Half to one day | No general data-staging system or automatic scientific retry engine |
+| MVP4 | Shared preparation and explicit submission lifecycle/dispatch boundaries | One to two days | Existing receipt format and failure guarantees; no retry engine |
+| MVP5 | Separate inspection collection, state projection, caches and artifact reads | One to two days | Preserve public inspection results; no new index |
+| MVP6 | Separate bundle persistence/selection from transport and configuration helpers | One to two days | No storage migration or broad module renaming |
+| Optional result retrieval | Filtered retrieval for one declared result subtree | Half to one day | No general data-staging system or automatic scientific retry engine |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
 nine focused days with the stated scope; none requires completing later product
@@ -297,7 +303,46 @@ existing log. Compare external-command counts for the exercised workflow to
 catch duplicated cluster work. Do not promise a numeric speedup without a
 measurement, or infer success because accounting returned no rows.
 
-## MVP4 Optional scientific result retrieval
+## MVP4 Submission responsibility boundaries
+
+Design: [MVP4 submission boundaries](REFACTORING_DOCS/design/MVP4_submission_boundaries.md).
+
+- [x] **MVP4.0 Review brittle concepts and bound this increment.** Shared preview/
+  submit preparation, stable prepared scripts, explicit dispatch/evidence stages.
+- [x] **MVP4.1 Extract preparation.** One validated/rendered in-memory bundle;
+  separate data preparation from path preflight and shell checks. Preview and
+  submission reject the same invalid definitions without scheduler effects.
+- [x] **MVP4.2 Separate operation stages.** Public submission coordinates small
+  record creation, script staging, dispatch and outcome persistence operations.
+  Pass dependency IDs as scheduler arguments in both lanes; never edit prepared
+  scripts during submission. Preserve partial/uncertain evidence on every failure.
+- [x] **MVP4.3 Validate boundaries and close.** Exercise preparation parity,
+  unchanged rendered scripts, pre/post-dispatch/storage failures and offline
+  science runs. Record structure changes and full-suite results, then tag locally.
+
+**Outcome:** changing validation or rendering has one owner; tracking failures
+cannot accidentally turn into a second submission or erase known IDs. This is
+implementation modularity, developed locally with mocked Slurm/transport.
+
+## MVP5 Inspection responsibility boundaries
+
+Separate observation collection from pure task/state projection, observation
+cache storage and artifact attachment. Make calls that can contact machines
+explicit. Replace the large inspection/log functions incrementally; preserve
+exact identity, bounds, errors and stale evidence. Add failure-focused tests at
+the boundaries rather than testing private call sequences. Not started.
+
+## MVP6 Persistence and transport boundaries
+
+Extract file transfer from bundle storage, consolidate configuration/transport
+helpers, and make public exports explicit. Keep one active implementation per
+concern and existing JSON records. Start with mechanical extraction before
+changing behavior. No migration or module tree redesign required. Not started.
+
+## Optional scientific result retrieval (formerly proposed MVP4)
+
+Deferred behind the modularity increments requested on 2026-11-11.
+
 
 **Outcome:** pull a declared results subtree with include/exclude filters, so
 merged summaries/figures can return without all large partial files.
@@ -351,7 +396,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | I02 client integration; I03 readiness; I04 definitions; I05 preview | MVP1 shared roots/selection, small reference client; MVP2 validation/env | L1 richer models; L2 full version checks |
 | I06 submission; I07 interruption | MVP2 known/partial/uncertain outcomes and receipts | L1 automated reconciliation and resume |
 | I08 rediscovery; I09 refresh; I10 inspect; I11 diagnosis; I16 handoff | MVP3 shared task view, bounded evidence and minimal structured interface | L1 persistent index and richer context |
-| I12 results | MVP4 if needed | Broader artifact policies only when justified |
+| I12 results | Optional result retrieval when needed | Broader artifact policies only when justified |
 | I13 cancellation; I15 cleanup | Retain working commands in their release lane; protect unknown work | Consolidate when touching their shared state; broader retention policies later |
 | I14 retry/downstream repair | Manual explicit recovery using recorded evidence | L2 automation and compatible-output rules |
 
@@ -376,6 +421,8 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | 2026-11-11 | Consolidate inspection around exact saved paths, one scheduler/task view and producing-path log tails | Preserve missing/error/stale evidence, reduce duplicated queries, and give terminal/ACP/Python the same identity/state contract; no retry or scientific-success inference |
 
+| 2026-11-11 | Prioritize small modularity MVPs: submission, then inspection, then persistence/transport | User requested careful decomposition of brittle concepts and overloaded functions; defer optional result retrieval and preserve existing records/failure guarantees |
+
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
 or migration decision has already been accepted.
@@ -394,6 +441,7 @@ or migration decision has already been accepted.
 | 2026-11-11 | MVP1.0–MVP1.3 Shared paths, selection, saved execution and scientific integration | 270 full offline tests pass in 2.27 s; five expected timestamp-collision warnings. Two-profile array/reducer runs, nested cwd/space handling, activation failure, invalid/missing inputs before submission, one remote root probe plus batched preflight, and saved local/remote artifacts without current-profile discovery verified. Report: `.development/test-runs/mvp1-final.xml`. Guides/schema and examples updated. Task commit: `git log --grep '^MVP1.3:'`; local tag `mvp1` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 | 2026-11-11 | MVP2.0–MVP2.3 Safer submission, receipts and exact inspection | 295 offline tests pass in 2.62 s; 28 expected snapshot-collision warnings. Same-level/later rejection, interruption/malformed output, response loss after final and unfinished helper execution, persisted/in-memory accepted IDs on storage failure, capability/replay guards, read-only refresh with recorded transport, rejection of changed identities/IDs, protected cleanup, shell syntax and literal/runtime exports verified. Report: `.development/test-runs/mvp2-final.xml`. Task commit: `git log --grep '^MVP2.3:'`; local tag `mvp2` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
 | 2026-11-11 | MVP3.0–MVP3.3 Shared inspection and bounded log refresh | 313 offline tests pass in 3.87 s; 29 expected snapshot-collision warnings. Mixed scientific array, missing/failed/stale observations, queue/accounting conflicts/errors, raw/dot task IDs and excluded steps, saved transport after profile edits, exact receipt overlay without writes, remote second refresh, checksum log sync and cached no-network reads verified. Shared status/inspect/ACP evidence and task-context handoff checked. One scheduler SSH plus one selected-log SSH in the remote scenario; two local scheduler commands across multiple runs. Report: `.development/test-runs/mvp3-final.xml`. Task commit: `git log --grep '^MVP3.3:'`; local tag `mvp3` at closure. Stable source/runtime unchanged; no push, cluster access or promotion |
+| 2026-11-11 | MVP4.0–MVP4.3 Shared preparation and submission responsibility boundaries | 333 offline tests pass in 3.22 s; 39 expected snapshot-collision warnings. Four preview/submit inconsistencies and accepted-ID loss on receipt-write interruption reproduced and fixed. Pure preparation, copied values, exact preview/script/path parity, dependency flags for both lanes, initial/staging/transport/session/response/final-tracking failures and known-ID retention verified. `submit_jobs`: 116 to 20 lines; preparation, preflight, record/staging/dispatch/outcome persistence have explicit owners. Report: `.development/test-runs/mvp4-review.xml`. Task commit: `git log --grep '^MVP4.3:'`; local tag `mvp4` at closure. Stable code/import/runtime unchanged; development-only changes, no push, cluster access or promotion |
 
 ## How we work
 

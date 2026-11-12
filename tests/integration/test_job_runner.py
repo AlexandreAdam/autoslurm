@@ -56,8 +56,7 @@ def test_integration_schedule_jobs(
             script_content = f.readlines()
         job_name = os.path.split(file)[-1].split("_")[-2].split(".")[0]
         expected_content_lines = expected_bundle_content[job_name]
-        if mock_machine_config is not mock_machine_config_local:
-            expected_content_lines = [line for line in expected_content_lines if not line.startswith("#SBATCH --dependency") ]
+        expected_content_lines = [line for line in expected_content_lines if not line.startswith("#SBATCH --dependency")]
         for i, (line, expected_line) in enumerate(
             zip(script_content, expected_content_lines)
         ):
@@ -185,11 +184,11 @@ def test_remote_dispatch_preserves_receipt_without_fallback(monkeypatch, mock_lo
         if lost_response:
             raise RuntimeError("response lost")
         return accepted_receipt(payload, {"JobA": "111", "JobB": "222", "JobC": "333"})
-    monkeypatch.setattr(job_runner, "ssh_submission_session", session)
+    monkeypatch.setattr("autoslurm.submission_operation.ssh_submission_session", session)
     monkeypatch.setattr(job_runner, "probe_submission_helper", lambda context: None)
-    monkeypatch.setattr(job_runner, "validate_slurm_content", lambda content: None)
-    monkeypatch.setattr(job_runner, "transfer_slurms_to_remote", lambda *args, **kwargs: None)
-    monkeypatch.setattr(job_runner, "run_bulk_submit_driver_remotely", dispatch)
+    monkeypatch.setattr("autoslurm.bundle_preparation.validate_slurm_content", lambda content: None)
+    monkeypatch.setattr("autoslurm.submission_operation.transfer_slurms_to_remote", lambda *args, **kwargs: None)
+    monkeypatch.setattr("autoslurm.submission_operation.run_bulk_submit_driver_remotely", dispatch)
     selected = save_bundle(mock_jobs, mock_job_name)
     remote = {"hostname": "remote", "path": "/path/to/remote", "venv_path": "/path/to/env"}
     if lost_response:

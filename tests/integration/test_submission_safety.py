@@ -19,7 +19,7 @@ from autoslurm.submission import write_receipt
 @pytest.fixture(autouse=True)
 def mocked_shell_syntax(monkeypatch):
     # Shell syntax is exercised with real bash in test_job_environment.py.
-    monkeypatch.setattr("autoslurm.job_runner.validate_slurm_content", lambda content: None)
+    monkeypatch.setattr("autoslurm.bundle_preparation.validate_slurm_content", lambda content: None)
 
 
 def prepare(remote=None):
@@ -47,7 +47,7 @@ def test_local_partial_failure_keeps_first_id_and_blocks_descendants(monkeypatch
         assert name == "B"
         receipt = list_submissions("study")[0]
         assert receipt["jobs"]["A"]["id"] == "101"  # Durable before B starts.
-        assert "--dependency=afterok:101" in Path(command[-1]).read_text()
+        assert command[command.index("--dependency") + 1] == "afterok:101"
         if failure == "interrupt":
             raise KeyboardInterrupt()
         return subprocess.CompletedProcess(command, 1 if failure == "reject" else 0, "garbled", "account denied")
@@ -173,14 +173,15 @@ def test_invalid_later_job_stops_before_any_scheduler_effect(problem, monkeypatc
     assert not list(slurm_dir().glob("*.sh"))
 
 
-def test_receipt_write_failure_after_acceptance_preserves_in_memory_id_and_stops(monkeypatch):
+@pytest.mark.parametrize("storage_error", [OSError, KeyboardInterrupt])
+def test_receipt_write_failure_after_acceptance_preserves_in_memory_id_and_stops(monkeypatch, storage_error):
     from autoslurm import bulk_submit_driver as driver
     selected = prepare()
     real_write = driver.write_receipt
     accepted = []
     def failing_write(path, receipt):
         if receipt["jobs"]["A"].get("id"):
-            raise OSError("disk full")
+            raise storage_error("receipt write interrupted")
         real_write(path, receipt)
     def scheduler(command, **kwargs):
         accepted.append(command)

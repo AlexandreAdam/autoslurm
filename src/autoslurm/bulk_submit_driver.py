@@ -11,7 +11,6 @@ from typing import Callable, Optional
 from .bulk_submit import SubmissionRequest, submit_dag_by_levels
 from .submission import SubmissionError, validate_receipt, write_receipt
 from .run_slurm import get_job_id_from_sbatch_output
-from .job_dependency import update_slurm_with_dependencies
 
 __all__ = [
     "BulkSubmitPayload",
@@ -68,10 +67,7 @@ def _submit_one(
     script_path = f"{slurm_dir.rstrip('/')}/{request.slurm_name}"
     command = ["sbatch", "--parsable"] if parsable else ["sbatch"]
     if request.dependency_ids:
-        if parsable:
-            command.extend(["--dependency", f"afterok:{':'.join(request.dependency_ids)}"])
-        else:
-            update_slurm_with_dependencies(request.slurm_name, request.dependency_ids)
+        command.extend(["--dependency", f"afterok:{':'.join(request.dependency_ids)}"])
     command.append(script_path)
     result = run_command(command, capture_output=True, text=True)
     if result.returncode < 0:
@@ -129,7 +125,7 @@ def submit_payload(
         if receipt is not None:
             try:
                 write_receipt(receipt_path, receipt)
-            except Exception as exc:
+            except (Exception, KeyboardInterrupt) as exc:
                 receipt.update(state="uncertain", error=f"Submission receipt storage failed: {exc}", execution_finished=False)
                 raise SubmissionError(receipt["error"], receipt) from exc
 

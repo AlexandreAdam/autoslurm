@@ -222,7 +222,7 @@ def test_receipt_overlay_preserves_partial_submission_outcome(monkeypatch):
     # persisted before a tracking mirror could be updated.
     draft = saved_run(jobs={"sample": {}})
     save_config({"machines": {"mock": {"env_command": "true", "slurm_account": "mock"}}, "default_machine": "mock"})
-    monkeypatch.setattr("autoslurm.job_runner.validate_slurm_content", lambda content: None)
+    monkeypatch.setattr("autoslurm.bundle_preparation.validate_slurm_content", lambda content: None)
     monkeypatch.setattr("subprocess.run", lambda command, **kwargs: subprocess.CompletedProcess(command, 0, "Submitted batch job 101", ""))
     receipt = submit_jobs("study", bundle_path=draft)
     receipt["state"] = "uncertain"

@@ -1,6 +1,6 @@
 # Public workflow map
 
-The development MVP3 boundary is `01_client_workflow.md`. Public Python imports
+The development MVP4 boundary is `01_client_workflow.md`. Public Python imports
 come from `autoslurm`; do not integrate through private backend modules or write
 tracking JSON directly. The pinned stable installation retains its earlier API.
 
@@ -41,7 +41,34 @@ Python / CLI / ACP -> inspection -> scheduler (queue/accounting)
                     status_views / human context
 ```
 
-Submission remains owned by job_runner and the shared bulk submission driver.
+Submission now follows explicit responsibilities:
+
+```text
+job_runner -> bundle_preparation -> PreparedBundle (definitions, paths, scripts)
+           -> path/shell preflight
+           -> submission_operation
+                create records -> stage exact scripts -> dispatch -> persist evidence
+                                                        |
+                                                        v
+                                           shared bulk_submit_driver
+```
+
+`bundle_preparation.prepare_bundle` is an internal in-memory transformation;
+preflight has explicit filesystem/process/remote effects. Preview and submission
+use the same prepared values and validation path. `submission_operation` separates
+record creation, script writes, dispatch, failure classification and persistence.
+Its transient dispatch phase distinguishes not-started, started and observed
+outcomes; it is separate from durable per-job receipts and scheduler task state.
+The graph driver still owns per-job acceptance/persistence ordering. Dependencies
+are command arguments in both lanes; prepared scripts are never edited by it.
+These are internal boundaries, not new client APIs.
+
+Inspection still combines collection/projection/cache/artifact coordination;
+MVP5 will separate those effects. Bundle storage still contains transfer helpers;
+MVP6 will extract that boundary and review configuration/exports. Receipt state
+transitions and shell argument representation remain further review points.
+
+
 Execution context owns path mapping and saved producing metadata; storage owns
 the selected lane root. Inspection writes only observation caches, never saved
 run definitions or receipts. Status/context wrappers render shared evidence;

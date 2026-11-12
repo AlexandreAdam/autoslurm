@@ -5,7 +5,7 @@ the computation, resources and dependencies; AutoSlurm resolves machine paths,
 prepares scripts, submits the jobs and exposes evidence about what happened.
 Your application remains responsible for the science and its results.
 
-This page describes the development MVP3 workflow. The daily-use installation
+This page describes the development MVP4 workflow. The daily-use installation
 remains pinned to its earlier revision; the new workflow is tested locally with
 mocked Slurm/SSH and has not been promoted or validated on a real cluster.
 
@@ -28,6 +28,10 @@ A machine profile maps project, results and prepared environment locations.
 Application definitions keep relative paths, so they do not branch on machine
 names or embed cluster filesystem prefixes. Compute nodes use prepared software;
 they do not need Git access or package downloads inside jobs.
+
+Preview and submission now share the same preparation checks. Preview rejects
+invalid or already-submitted work; existing runs use inspection. Submission stages
+the prepared script unchanged and supplies dependencies directly to Slurm.
 
 A saved definition describes intended work. A submission receipt records what
 Slurm accepted, rejected or left uncertain. An observation records what queue

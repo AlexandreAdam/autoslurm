@@ -10,6 +10,7 @@ validation approach.
 | MVP1 Paths and selection | [MVP1_paths_and_selection.md](MVP1_paths_and_selection.md) | Complete locally; no promotion |
 | MVP2 Submission safety | [MVP2_submission_safety.md](MVP2_submission_safety.md) | Complete locally; no promotion |
 | MVP3 Shared inspection | [MVP3_shared_inspection.md](MVP3_shared_inspection.md) | Complete locally; no promotion |
+| MVP4 Submission boundaries | [MVP4_submission_boundaries.md](MVP4_submission_boundaries.md) | Complete locally; no promotion |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |
 
 Coverage references include the [interaction map](../interaction-map.md),

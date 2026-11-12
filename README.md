@@ -42,6 +42,10 @@ bounded logs, retain query errors and unknown tasks, and label cached evidence
 stale. Remote log refresh uses recorded producing paths; broader sync refreshes
 growing/replaced logs while preserving existing definitions.
 
+MVP4 makes preview and submission share one preparation path and separates
+submission records, script staging, dispatch and evidence persistence. Validated
+scripts stay unchanged; local and remote dependencies use scheduler arguments.
+
 Scientific software owns computation, input/output validation and task reduction.
 AutoSlurm owns machine mapping, submission and tracking; agents use its public
 interface and detailed operating guide. The pinned stable installation keeps its

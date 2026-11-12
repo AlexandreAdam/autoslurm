@@ -63,7 +63,7 @@ def test_documented_client_workflow(fixture, science_client, monkeypatch):
         assert job_name != other_name
         job_id = str(100 + len(calls))
         if job_name == "reduce":
-            assert "#SBATCH --dependency=afterok:100" in text
+            assert command[command.index("--dependency") + 1] == "afterok:100"
         array = re.search(r"^#SBATCH --array=(\d+)-(\d+)$", text, re.M)
         indices = range(int(array[1]), int(array[2]) + 1) if array else [None]
         for index in indices:

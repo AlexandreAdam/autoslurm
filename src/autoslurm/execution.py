@@ -100,11 +100,14 @@ class ExecutionContext:
         }
 
     def validate_jobs(self, jobs):
+        self.validate_resolved_jobs([self.resolve_job(job) for job in jobs])
+
+    def validate_resolved_jobs(self, executions):
+        """Preflight prepared paths without resolving the definitions again."""
         checks = set()
         if self.project_root is not None:
             checks.add(("-d", self.project_root, "Project root"))
-        for job in jobs:
-            resolved = self.resolve_job(job)
+        for resolved in executions:
             if resolved["working_directory"]:
                 checks.add(("-d", resolved["working_directory"], "Working directory"))
             for name in resolved["input_args"]:

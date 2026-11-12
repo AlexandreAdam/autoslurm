@@ -46,7 +46,7 @@ def test_relative_science_under_two_profiles_from_unrelated_directory(profile, t
         job_name = "reduce" if "--job-name=reduce\n" in script.read_text() else "shards"
         job_id = str(101 + len(calls))
         if job_name == "reduce":
-            assert "--dependency=afterok:101" in script.read_text()
+            assert command[command.index("--dependency") + 1] == "afterok:101"
         for index in range(4) if job_name == "shards" else [None]:
             env = dict(os.environ)
             if index is not None:
