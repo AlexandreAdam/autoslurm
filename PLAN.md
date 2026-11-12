@@ -20,7 +20,8 @@ This file is the source of truth for active scope, task order and progress.
   Local daily-use activation completed; no cluster installation changed.
 - **Next task:** MVP7 manifest attachment and helper/runtime environment separation;
   implementation has not started. Latest-source defaults and machine-owned dependency
-  setup are user-confirmed; read the design before adding software preparation.
+  setup, first-time cloning and independent software/results locations are confirmed;
+  read the design before adding software preparation.
 - **Scope update:** MVP4–MVP6 modularity increments are complete locally. MVP7
   covers bundle-driven Git project/environment preparation on the login/preparation
   host, with mocked cluster interactions under the current scope. Result retrieval
@@ -392,11 +393,17 @@ Omitted revisions resolve the current remote default-branch tip during preparati
 explicit revisions remain supported. Record exact resolved commits for each release.
 The target machine owns dependency setup; a workstation/package lockfile is not
 required. Resolve/fetch/install on the login/preparation host; compute jobs use
-ready isolated releases. Existing jobs keep their code/environment.
+ready isolated releases. Existing jobs keep their code/environment. First-time
+preparation clones missing repositories; managed code/environments use a separate
+configurable root from scientific inputs and results (proposed `software_root`).
 
 - [x] **MVP7.0a Confirm source/dependency defaults.** Record latest-by-default
   Git selection, exact resolved evidence and target-machine dependency ownership.
   Planning only; remaining MVP7.0 format/API/environment-role decisions stay open.
+
+- [x] **MVP7.0b Confirm cloning and filesystem separation.** Record first-time
+  clone support and independent code/results locations, preserving project-relative
+  inputs/cwd. Naming/layout/configuration changes remain planned.
 
 Start with the manifest attachment and helper/runtime environment separation;
 then implement source materialization, installation checks, release readiness
@@ -490,6 +497,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | 2026-11-12 | Split inspection into explicit collection, pure projection, cache storage and artifact retrieval | Remove hidden scheduler/config reads, isolate malformed records and make cache/artifact failures unable to erase or contaminate scheduler evidence |
 | 2026-11-12 | Separate local record/selection/configuration/transport owners, share atomic publication and explicit exports | Mechanical extraction retained all 366 existing tests; seven reproduced bugs motivated scoped fixes without changing JSON shapes or submission uncertainty rules |
 | 2026-11-12 | MVP7 omitted revisions resolve latest upstream; dependency setup belongs to the selected machine | User requested less friction and different dependency sets for local and cluster use; resolved commits and actual installations remain recorded, with no silent stale-source fallback |
+| 2026-11-12 | MVP7 prepares missing Git repositories and separates managed software from input/result filesystems | User needs first-time cloning and independent package/results placement; preserve existing path bases and record producing paths so agents can locate both |
 
 Technical details of lane setup and promotion are proposed in MVP0. The user's
 priority change accepts the smaller scope; it does not mean every future schema
@@ -515,6 +523,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP6.0–MVP6.1 Boundaries and mechanical extraction | 366 existing offline tests pass in 3.52 s, 39 expected warnings. Configuration/transport/file transfer/selection now have dedicated owners, with historical import aliases. No behavior fixes yet. Task commit: `git log --grep '^MVP6.1:'` |
 | 2026-11-12 | MVP6.2–MVP6.3 Persistence hardening and closure | 392 offline tests pass in 3.27 s, 39 expected warnings; 26 added checks. Reproduced and fixed serialization corruption, partial new files, timestamp clobbering, explicit-profile replacement, key-path splitting and sync transport failure presented as success. Verified interruption/publication failures, exclusive collision races, atomic batch append, staging/copy failures, no hidden process in local operations, pure SSH construction, exports and all prior scientific/CLI/ACP/receipt cases. Report `.development/test-runs/mvp6-final-reviewed.xml`. Task commit: `git log --grep '^MVP6.3:'`; local tag `mvp6` at closure. Base import/help verified; baseline source and all persistent runtime roots unchanged; no cluster/dependency/migration/push operations |
 | 2026-11-12 | MVP7.0a Source and dependency defaults | User-confirmed design refinement: optional revisions resolve latest remote default-branch commit per new preparation; target-machine dependency policy replaces mandatory package/local locks. Planning text and failure criteria reviewed; no code changes or application tests. MVP7 implementation and remaining contract decisions remain open |
+| 2026-11-12 | MVP7.0b Cloning and filesystem separation | User-confirmed requirements recorded with proposed software_root, first-clone/fetch behavior, independent input/result locations, configuration visibility and producing-path evidence. Reviewed local path/configuration implementation and design links; documentation only, no application tests or cluster operations |
 
 ## How we work
 

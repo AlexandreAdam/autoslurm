@@ -37,7 +37,7 @@ never update a helper environment while using it to submit another run.
 | Module | Responsibility |
 |---|---|
 | `software_manifest` | Pure validation/normalization of requested and resolved project/environment specifications |
-| `git_projects` | Resolve refs, fetch into managed repository caches and materialize exact commits; no mutation of active release checkouts |
+| `git_projects` | Clone missing repositories, resolve refs, fetch managed caches and materialize exact commits; no mutation of active release checkouts |
 | `python_environments` | Prepare an isolated environment, install specified projects through its own interpreter and verify installations |
 | `software_releases` | Coordinate staging, readiness checks, locking, publication/reuse and preparation evidence |
 
@@ -81,6 +81,19 @@ Support one prepared application environment for the selected bundle initially.
   must expose conflicts rather than bypass them. A project lockfile can be used
   when explicitly selected by the machine policy, but is not the default contract.
 
+- **D7 Separate software and result locations — accepted requirement.** Machine
+  configuration must independently locate managed repositories/prepared software
+  and scientific results, so they can use different cluster filesystems. The
+  proposed new field is `software_root`; preserve existing `project_root` for
+  application inputs/working directories and `results_root` for outputs. This
+  does not redefine either existing path base. Expose software/project/results
+  roots in the configuration editor and summary, not only through manual JSON.
+- **D8 First-time clone — accepted requirement.** Preparation can start from a
+  repository identity without an existing cluster checkout. Clone missing repos
+  into the managed cache, fetch updates there and create isolated releases. Do
+  not require a manual clone or repurpose/mutate an unrelated user's checkout.
+  Clone/fetch failures are preparation failures and submit zero jobs.
+
 Keep the default client request small: repository identities, optional revisions
 and, only if needed, a logical runtime name. Detailed environment rules are
 configured once for the machine. Preserve the existing operator-prepared runtime
@@ -94,12 +107,63 @@ old environment satisfies a fresh resolution: make dependency refresh/reuse an
 explicit machine policy and do not silently claim reproducibility or freshness.
 No dependency solver framework is required for this MVP.
 
+## Software, input and output locations
+
+Configure these infrastructure paths once per target machine; application
+manifests continue to name repositories and logical runtimes, not absolute paths.
+The names/layout below are proposed; filesystem separation and cloning are the
+user-confirmed requirements.
+
+```json
+{
+  "software_root": "/home/scientist/autoslurm-software",
+  "project_root": "/project/scientist/study-inputs",
+  "results_root": "/scratch/scientist/studies"
+}
+```
+
+| Root | Responsibility |
+|---|---|
+| `software_root` (new) | Managed Git cache, fixed source releases and prepared scientific environments |
+| `project_root` (existing) | Relative application inputs and working directories; may be on another filesystem |
+| `results_root` (existing) | Relative scientific output paths; independent of package/source location |
+| `storage_root` (existing) | AutoSlurm definitions, receipts, scripts and observation evidence |
+
+A possible managed layout is `software_root/repositories/<repository-id>` and
+`software_root/releases/<release-id>/{projects,environment}`. There is one
+software root per selected machine initially; it can serve multiple Git projects.
+For minimal configuration, an omitted software root may default to
+`<storage_root>/software`; this default is proposed and must be shown in resolved
+configuration. Configured roots are absolute infrastructure paths. Application
+jobs keep relative paths such as `script_args.output_dir = "study-42/summary"`,
+which resolve only under `results_root`, regardless of source release location.
+
+Do not automatically change `project_root`/cwd to a cloned package directory:
+that would silently change the meaning of existing relative inputs. Installed
+commands run from the application's declared working directory; package resources
+and scientific inputs are distinct. Do not put results into managed code releases,
+copy them during Git updates, or attempt to track them with Git. Validate declared
+paths against managed release locations before dispatch to prevent writable
+working/output targets from corrupting prepared software.
+
+Record the selected software root, actual project checkout/environment paths,
+input/working paths and resolved result paths with each run. Agents retrieve
+these through preparation/execution inspection rather than constructing paths or
+remembering the current profile. Profile edits cannot redirect historical jobs.
+Required runtime/code/input/result paths must be available to the compute nodes;
+node-local scratch staging and result transfer remain separate capabilities.
+Preparation only publishes readiness; environment creation/publication must keep
+its interpreter and entry-point paths valid rather than assuming venv directories
+can be moved freely between staging and final locations.
+
 ## Preparation and submission behavior
 
 - Perform Git/network/install operations on the login/preparation host, before
   dispatch. Compute jobs only activate a ready environment and run their command.
 - Use operator-configured Git access. Do not store credentials in manifests,
   receipts or logs, or make agents manage private keys.
+- Clone missing repositories and fetch updates under the selected software root
+  on the preparation host; no manual initial checkout is required.
 - Materialize exact revisions in managed release directories. Do not `git pull`
   active scientific checkouts or rewrite a shared environment. An update creates
   a new release; running/queued jobs retain their producing release.
@@ -131,14 +195,16 @@ No dependency solver framework is required for this MVP.
 
 - [ ] **MVP7.0 Settle the manifest and environment roles.** Concrete bundle
   examples with omitted and pinned revisions, machine-owned dependency policy,
-  helper/runtime separation, ownership, readiness/errors and bounded client
-  operations. Defaults D5/D6 are confirmed; container/API details remain proposed.
+  helper/runtime separation, independent software/input/results roots, ownership,
+  readiness/errors and bounded client operations. Requirements D5–D8 are confirmed;
+  field/layout/container/API details remain proposed.
   Record the implemented boundary before changing formats.
 - [ ] **MVP7.1 Implement source and manifest primitives.** Resolve exact commits,
   materialize isolated project sets and return structured preparation evidence;
   mock fetch/transport, and test omitted revisions resolving current upstream,
-  default-branch changes despite a cached release, failed latest resolution with
-  no stale fallback, unavailable commits and dirty/shared checkout protection.
+  default-branch changes despite a cached release, first-time cloning into a
+  distinct software root, clone/fetch failure with no stale fallback, unavailable
+  commits and dirty/shared checkout protection.
 - [ ] **MVP7.2 Implement environment preparation/verification.** Install the
   project set into a staged environment, check the actual selected interpreter,
   versions/import paths/dependencies/entry points and publish readiness only when
@@ -149,7 +215,10 @@ No dependency solver framework is required for this MVP.
 - [ ] **MVP7.3 Wire bundle execution and handoff.** Select ready release paths
   through the existing execution context, preserve legacy opt-out behavior, and
   verify two requested software revisions never change each other's queued job
-  code/environment. Expose exact prepare/inspect evidence to terminal/Python/ACP.
+  code/environment. Verify code, inputs and results on separate roots, unchanged
+  relative-path semantics, configuration editor/summary retention, rejection of
+  writable targets inside releases, and lookup after profile edits. Expose exact
+  prepare/inspect evidence to terminal/Python/ACP.
 
 ## Non-goals and limits
 
@@ -167,3 +236,4 @@ Cluster compatibility remains unverified until a separately authorized live test
 |---|---|
 | 2026-11-12 | User requested a dedicated MVP for Git project versions and verified bundle-specified installations; scoped as MVP7 |
 | 2026-11-12 | MVP7.0a user confirmed omitted revisions mean latest source and dependency setup belongs to the target machine; recorded D5/D6 and associated failure checks; no implementation started |
+| 2026-11-12 | MVP7.0b user requested first-time Git cloning and independent package/results locations; recorded D7/D8, proposed software_root and preserved input/cwd semantics; no implementation started |
