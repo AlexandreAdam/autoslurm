@@ -36,6 +36,13 @@ def recorded_transport(config):
 def normalize_machine_profile(profile):
     """Use two scientific roots; reject ambiguous old input/output configurations."""
     profile = dict(profile)
+    account = profile.get("slurm_account")
+    if account is None or (isinstance(account, str) and not account.strip()):
+        profile.pop("slurm_account", None)
+    elif isinstance(account, str):
+        profile["slurm_account"] = account.strip()
+    else:
+        raise ValueError("slurm_account must be a string or unset.")
     alias = profile.get("ssh_alias", profile.get("hostname"))
     if "ssh_alias" in profile or profile.get("hostname") is not None:
         profile["ssh_alias"] = validate_ssh_alias(alias)
@@ -161,12 +168,17 @@ def load_config() -> dict:
     return _normalize_config(_read_config())
 
 
-def set_machine_settings(machine=None, *, software_root=None, results_root=None, ssh_alias=None):
-    """Save selected roots/alias, preserving other fields and historical run evidence."""
-    roots = {key: value for key, value in (("software_root", software_root), ("results_root", results_root), ("ssh_alias", ssh_alias)) if value is not None}
-    if not roots:
-        raise ValueError("Provide software_root, results_root or ssh_alias.")
-    config = _normalize_config(_read_config(), profile_overrides=roots, machine=machine)
+def set_machine_settings(machine=None, *, software_root=None, results_root=None, ssh_alias=None,
+                         slurm_account=None, clear_slurm_account=False):
+    """Save profile settings without connecting; None keeps the existing account."""
+    if clear_slurm_account and slurm_account is not None:
+        raise ValueError("Set or clear slurm_account, not both.")
+    settings = {key: value for key, value in (("software_root", software_root), ("results_root", results_root), ("ssh_alias", ssh_alias), ("slurm_account", slurm_account)) if value is not None}
+    if clear_slurm_account:
+        settings["slurm_account"] = None
+    if not settings:
+        raise ValueError("Provide software_root, results_root, ssh_alias or an account update.")
+    config = _normalize_config(_read_config(), profile_overrides=settings, machine=machine)
     save_config(config)
     return machine or config["default_machine"]
 
@@ -199,10 +211,6 @@ def machine_config(
     machine_config_ = dict(machines.get(machine_name, {}))
     machine_config_.update(final_overrides)
     machine_config_ = normalize_machine_profile(machine_config_)
-    if machine_config_.get("slurm_account") is None:
-        raise AttributeError(
-            "'slurm_account' account must be provided. Rerun with --slurm_account option or rerun asl config to edit the configuration for the machine."
-        )
     if not activation_command_from_config(machine_config_):
         raise AttributeError(
             "Either 'venv_path' or legacy 'env_command' must be provided. "

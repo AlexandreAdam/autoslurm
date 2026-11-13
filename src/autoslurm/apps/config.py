@@ -93,8 +93,15 @@ def _validate_machine_selection(config: Dict):
 
 def _prompt_text(prompt: str, default: Optional[str] = None, required: bool = False) -> str:
     suffix = f" [{default}]" if default else ""
+    if not required:
+        suffix += " (optional; '-' clears, Enter keeps current value)"
     while True:
         value = input(f"{prompt}{suffix}: ").strip()
+        if value == "-":
+            if required:
+                print("This field is required and cannot be cleared.")
+                continue
+            return ""
         if value:
             return value
         if default:
@@ -142,9 +149,8 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
         required=True,
     )
     slurm_account = _prompt_text(
-        "SLURM account (value used for #SBATCH --account)",
+        "SLURM account (omit #SBATCH --account when unset)",
         existing.get("slurm_account"),
-        required=True,
     )
     remote_default = is_remote_machine(existing)
     is_remote = _prompt_yes_no("Is this a remote machine?", default="y" if remote_default else "n")
@@ -321,7 +327,7 @@ def display_config_summary():
     print("machine type default ssh_alias slurm_account venv_path software_root results_root")
     for name, machine in config["machines"].items():
         machine_type = "remote" if is_remote_machine(machine) else "local"
-        slurm_account = machine.get("slurm_account", "")
+        slurm_account = machine.get("slurm_account", "-")
         default_marker = "yes" if name == config["default_machine"] else "no"
         venv_path = machine.get("venv_path", "")
         alias = machine.get("ssh_alias", "-")
@@ -361,6 +367,9 @@ def _main(argv: list[str] | None = None):
     parser.add_argument("--machine", help="Machine to update (default: configured default).")
     parser.add_argument("--software-root", help="Set the absolute software directory without connecting to the machine.")
     parser.add_argument("--results-root", help="Set the absolute shared input/output directory; merges an old project_root setting.")
+    account = parser.add_mutually_exclusive_group()
+    account.add_argument("--slurm-account", help="Set the optional #SBATCH --account value without connecting to the machine.")
+    account.add_argument("--clear-slurm-account", action="store_true", help="Remove the configured account; omit its #SBATCH --account directive.")
     if argv is None:
         argv = sys.argv[1:]
     if not argv:
@@ -368,14 +377,15 @@ def _main(argv: list[str] | None = None):
         return
     args = parser.parse_args(argv)
 
-    if args.software_root is not None or args.results_root is not None or args.ssh_alias is not None:
+    if any(value is not None for value in (args.software_root, args.results_root, args.ssh_alias, args.slurm_account)) or args.clear_slurm_account:
         if args.view or args.summary or args.interactive or args.set_default:
             parser.error("Profile updates cannot be combined with view, summary, interactive or set-default.")
-        selected = set_machine_settings(args.machine, software_root=args.software_root, results_root=args.results_root, ssh_alias=args.ssh_alias)
+        selected = set_machine_settings(args.machine, software_root=args.software_root, results_root=args.results_root, ssh_alias=args.ssh_alias,
+                                        slurm_account=args.slurm_account, clear_slurm_account=args.clear_slurm_account)
         print(f"Saved settings for machine '{selected}'.")
         return
     if args.machine is not None:
-        parser.error("--machine requires --ssh-alias, --software-root or --results-root.")
+        parser.error("--machine requires --ssh-alias, --software-root, --results-root, --slurm-account or --clear-slurm-account.")
 
     if args.view:
         display_config()

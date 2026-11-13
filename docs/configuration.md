@@ -15,12 +15,32 @@ The interactive editor creates profiles and supports editing, adding, renaming,
 choosing the default and explicit validation. Adding/editing a machine retains
 its environment/connectivity validation behavior, including remote SSH checks.
 The default machine is used when an operation omits its machine selection.
-To update only the two roots of an existing profile without remote commands:
+In text prompts, Enter keeps the current value and `-` clears an optional field
+(account or either root). Required fields such as the environment and SSH alias
+cannot be cleared. Clearing a root restores its default location for future runs.
+To update the roots or alias of an existing profile without remote commands:
 
 ```sh
 asl config --machine cluster --ssh-alias research-cluster --software-root /home/user/software --results-root /scratch/user/studies
 asl config --set-default cluster
 ```
+
+The Slurm account is **optional**. Remove it for a cluster that should receive no
+account directive, or set it explicitly where required:
+
+```sh
+asl config --machine rusty --clear-slurm-account
+asl config --machine cluster --slurm-account research-account
+```
+
+These flags only edit local configuration and do not run SSH or environment
+checks. Omit `--machine` to edit the default profile. Clearing removes
+`slurm_account` from the JSON; missing, `null`, empty and whitespace-only values
+also mean unset. `--summary` shows `-` for an unset account. AutoSlurm then emits
+no profile `#SBATCH --account` directive and leaves account selection to Slurm/site
+policy. A job's explicit `slurm.account` remains a Slurm directive: remove that
+too if no account should be sent. Existing scripts and submission records are
+unchanged; the setting applies to newly rendered scripts.
 
 Remote profiles select one `ssh_alias`, matching a `Host` entry in SSH config.
 AutoSlurm does not configure hostname, username or keys. To change only the alias:
@@ -61,7 +81,7 @@ New profiles with configured roots require relative application paths; absolute
 output overrides previously allowed by results-only profiles are rejected.
 
 `configuration` and the existing `autoslurm-configuration` command remain aliases.
-The alias/root flags only save settings; they do not validate a live connection.
+The alias/root/account flags only save settings; they do not validate a live connection.
 The interactive editor retains connection/environment validation.
 New installations also expose `autoslurm-config`; the existing editable installation
 can use `asl config` immediately without reinstalling console scripts.

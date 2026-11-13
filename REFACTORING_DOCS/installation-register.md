@@ -12,6 +12,15 @@ is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
+FIX.CONFIG.1 (2026-11-13): 593 full offline tests passed (41 expected collision
+warnings), report `.development/test-runs/optional-account.xml`; clean wheel
+config set/clear and account-free render smoke passed. Base Conda still imports
+main source; no environment installation or rollback change. At the user's
+request, its local `rusty` profile now omits `slurm_account`, with all other
+settings verified unchanged and a backup at
+`.development/backups/optional-account-iym80kt7/config.json`. No cluster contact
+or historical script/receipt edits were performed.
+
 MVP7.1 validation: 485 full offline tests passed (38 expected warnings), report
 `.development/test-runs/software-sources-final.xml`. Git source preparation was
 exercised through mocks and temporary local bare repositories only. Base editable

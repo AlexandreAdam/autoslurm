@@ -112,6 +112,10 @@ operate from the workstation; compute nodes use already-prepared environments.
   Do not manage HostName, User, IdentityFile or keys in AutoSlurm profiles. New
   run transports store the alias alone; historical recorded transports remain
   readable. Never silently fall back to local execution or another profile.
+- `slurm_account` is optional. An unset profile account emits no account
+  directive; do not invent one in clients. `asl config --clear-slurm-account`
+  removes it locally. Explicit job `slurm.account` values remain authoritative
+  Slurm options and must also be omitted when the cluster needs no account.
 - Tests use temporary storage and fake external commands. Real cluster tests
   are separate and must not be triggered by the default test suite.
 - Retrieval covers AutoSlurm execution evidence only: recorded stdout/stderr,

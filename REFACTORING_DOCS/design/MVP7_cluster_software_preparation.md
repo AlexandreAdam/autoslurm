@@ -2,6 +2,10 @@
 
 ## Status
 
+FIX.CONFIG.1 (2026-11-13) amends machine configuration: the user requires an
+optional Slurm account and a way to clear it. See the account amendment below;
+this is separate from the proposed command/job interface investigation.
+
 The user's 2026-11-12 clarification supersedes the earlier source/release
 preparation design: cluster file limits require **one existing checkout per
 project**, updated in place. MVP7.2f amends the original pull-only behavior with
@@ -198,3 +202,39 @@ Base editable source import/help and clean rollback source 33bcbd3 reverified.
 No base install, actual cluster contact, cluster package/Git update, daily config
 or tracking mutation. Push the completed task commit to origin/dev; existing
 milestone tags and rollback source are not advanced by this amendment.
+
+## Optional account amendment (FIX.CONFIG.1, 2026-11-13)
+
+The user requires clusters to work without an explicit account directive. Profile
+selection no longer requires `slurm_account`. Shared profile normalization treats
+missing/null/empty/whitespace-only accounts as absent and removes the key on save;
+nonempty string accounts remain supported. The existing renderer already emits a
+profile account directive conditionally, so no parallel rendering policy is added.
+Explicit job `slurm.account` options still render and must also be omitted if the
+operator wants no account directive. Historical scripts/receipts are not rewritten.
+
+`asl config --machine NAME --clear-slurm-account` removes the account;
+`--slurm-account ACCOUNT` sets it. The flags are mutually exclusive, use the shared
+settings writer, preserve other settings and never probe a machine. Omitting
+`--machine` selects the default profile. Summary uses `-` for no account. The
+interactive editor accepts `-` to clear optional account/software/results fields;
+Enter keeps existing values. Required fields cannot be cleared. Existing
+interactive post-save validation remains; it is mocked in tests. Clearing a
+root restores its ordinary default for future execution, not a move of old data.
+
+Verification: 593 full offline tests passed in 10.57 s, 41 expected bundle-name
+collision warnings; `.development/test-runs/optional-account.xml`. Seventeen new
+cases plus the replaced mandatory-account expectation cover normalization,
+set/clear persistence, default/explicit selection, invalid edits without writes,
+interactive creation/editing, config aliases, in-memory overrides, remote-context
+rendering and preview/mock submission agreement, including retained explicit
+accounts/partitions. No SSH or scheduler was contacted.
+
+Clean temporary-source wheel install/config/render smoke passed; artifact
+`.development/artifacts/optional-account/autoslurm-0.1.0-py3-none-any.whl`, SHA256
+`491f184730042a666b49b448edb66be6a691296821a74de557da8a18ad7d3046`.
+Base Conda's editable source was verified and its config handler cleared the local
+rusty account; every other configuration setting was compared and preserved.
+Backup: `.development/backups/optional-account-iym80kt7/config.json`.
+No base package installation, cluster change, historical record change or pinned
+rollback source change. The DOCS.3 command/argument proposals remain unimplemented.

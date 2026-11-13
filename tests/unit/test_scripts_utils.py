@@ -149,8 +149,9 @@ def test_missing_slurm_account(args, mock_load_config):
     }
     mock_load_config.return_value = mock_config
 
-    with pytest.raises(AttributeError, match="slurm_account"):
-        machine_config(args)
+    name, result = machine_config(args)
+    assert name == "local"
+    assert "slurm_account" not in result
 
 
 def test_missing_path(args, mock_load_config):

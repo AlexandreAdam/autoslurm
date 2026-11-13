@@ -142,6 +142,16 @@ settings (replace them with its real isolated locations):
 }
 ```
 
+`slurm_account` is optional infrastructure configuration. Missing/null/blank
+means no profile `#SBATCH --account` directive. Use
+`asl config --machine cluster --clear-slurm-account` to remove it locally without
+SSH, or `--slurm-account ACCOUNT` to set it. The interactive editor accepts `-`
+to clear optional fields; Enter keeps the current value. Do not invent an account
+for a cluster that does not need one. Explicit job `slurm.account` values are
+still rendered; omit those too when no account should be sent. This changes
+future scripts, not historical scripts/receipts, and does not establish whether
+Slurm will accept a particular account/partition combination.
+
 Remote profiles use only `ssh_alias`, the `Host` name in SSH config. HostName, User,
 IdentityFile and other connection options are owned by SSH, not AutoSlurm.
 Submission reads effective settings with non-connecting `ssh -G`: a configured
