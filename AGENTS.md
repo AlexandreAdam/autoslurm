@@ -90,13 +90,18 @@ operate from the workstation; compute nodes use already-prepared environments.
 - **Single-copy software policy (2026-11-12):** the software layer runs
   `git pull --ff-only` in one existing checkout under `software_root`, then refreshes
   its editable installation with the configured venv_path/bin/python, even if HEAD
-  is unchanged (user amendment MVP7.2f). No dependency upgrades/downloads; machine
-  dependencies/build tools remain operator-owned. Verify interpreter prefix first.
+  is unchanged (user amendment MVP7.2f). Use --no-deps and normal pip build
+  isolation: FIX.SOFTWARE.1 allows temporary build environments and downloaded
+  build requirements on the login host. Scientific dependencies in the selected
+  venv stay operator-owned; its build backend need not be installed there.
+  Verify interpreter prefix first.
   Never create clones, Git mirrors, worktrees, release copies, additional
-  environments or preparation/release records. `update_software` / `asl software
+  persistent environments or preparation/release records. `update_software` / `asl software
   update` are explicit operations separate from submission; compute jobs never
   update code. The operator coordinates update timing for jobs using the shared
   checkout. Do not restore the superseded source/release preparation engine.
+- With both profile settings present, env_command runs before activation of
+  venv_path. Use it for module loads; updates still use venv_path/bin/python.
 - No package installation, checkout changes, or Git/network preparation inside
   compute jobs. Automatic deployment is outside the initial refactor.
 - Client application paths use the shared `results_root` base for inputs, cwd

@@ -72,13 +72,12 @@ def is_remote_machine(config):
 
 def activation_command_from_config(machine_config: dict) -> str:
     """Return environment activation command from structured machine config."""
+    env_command = machine_config.get("env_command", "")
+    commands = [env_command.strip()] if isinstance(env_command, str) and env_command.strip() else []
     venv_path = machine_config.get("venv_path")
     if isinstance(venv_path, str) and venv_path.strip():
-        return f"source {shlex.quote(venv_path)}/bin/activate"
-    env_command = machine_config.get("env_command", "")
-    if isinstance(env_command, str):
-        return env_command.strip()
-    return ""
+        commands.append(f"source {shlex.quote(venv_path)}/bin/activate")
+    return " && ".join(commands)
 
 
 def _normalize_config(raw: dict, *, profile_overrides=None, machine=None) -> dict:

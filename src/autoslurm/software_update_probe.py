@@ -53,16 +53,24 @@ def _environment_python(venv_path):
 
 
 def _install_editable(python, path):
-    # Ignore installer redirection/index settings. Only the local project changes;
-    # build requirements and scientific dependencies belong to the machine.
+    # Only install the project into the selected environment. Pip manages its
+    # build requirements in a temporary isolated environment, using its index.
     environment = {key: value for key, value in os.environ.items() if not key.startswith('PIP_')}
     environment.update(PIP_CONFIG_FILE=os.devnull, PYTHONNOUSERSITE='1', PYTHONDONTWRITEBYTECODE='1')
     return subprocess.run(
         [python, '-I', '-B', '-m', 'pip', '--disable-pip-version-check', '--no-input',
-         'install', '--no-deps', '--no-build-isolation', '--no-cache-dir', '--no-index',
+         'install', '--no-deps', '--no-cache-dir',
          '--editable', str(path)],
         cwd=str(path), capture_output=True, text=True, timeout=120, env=environment,
     )
+
+
+def _pip_output_tail(result):
+    """Keep useful bounded build diagnostics without URL credentials."""
+    output = '\n'.join(part for part in (result.stdout, result.stderr) if part)
+    lines = [line for line in output.splitlines()[-20:]
+             if not re.search(r'\b[a-zA-Z][a-zA-Z0-9+.-]*://[^\s/]*@', line)]
+    return '\n'.join(lines).encode('utf-8', errors='replace')[-4096:].decode('utf-8', errors='replace')
 
 
 def update_checkout(software_root, project, venv_path=None):
@@ -125,9 +133,12 @@ def update_checkout(software_root, project, venv_path=None):
         result['installation'].update(state='installed' if installation.returncode == 0 else 'failed',
                                       returncode=installation.returncode)
         if installation.returncode:
+            tail = _pip_output_tail(installation)
+            result['installation']['output_tail'] = tail
             raise ValueError(f'Editable installation failed (exit {installation.returncode}); '
                              'the checkout was pulled but the environment may be partially changed. '
-                             'Check pip/build requirements in the configured environment before running jobs.')
+                             'Check pip/build requirements before running jobs.'
+                             + (f'\nPip output (tail):\n{tail}' if tail else ''))
         result.update(state='updated' if result['after_commit'] != result['before_commit'] else 'up_to_date', stage='complete')
     except ValueError as error:
         result['error'] = str(error)

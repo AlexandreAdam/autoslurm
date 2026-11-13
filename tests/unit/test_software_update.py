@@ -38,6 +38,8 @@ class Git:
         self.advance = True
         self.install_exit = 0
         self.install_timeout = False
+        self.install_stdout = ''
+        self.install_stderr = 'build backend could not build the editable wheel'
         self.prefix = str(path.parent.parent / 'environment')
 
     def __call__(self, command, **options):
@@ -47,14 +49,14 @@ class Git:
             if '-c' in command:
                 return CompletedProcess(command, 0, json.dumps({'prefix': self.prefix}), '')
             assert command[-2:] == ['--editable', str(self.path)]
-            assert '--no-deps' in command and '--no-build-isolation' in command
-            assert '--no-cache-dir' in command and '--no-index' in command
+            assert '--no-deps' in command and '--no-cache-dir' in command
+            assert '--no-build-isolation' not in command and '--no-index' not in command
             assert options['cwd'] == str(self.path)
             assert options['env']['PIP_CONFIG_FILE'] == os.devnull
             assert 'PIP_TARGET' not in options['env']
             if self.install_timeout:
                 raise TimeoutExpired(command, 120)
-            return CompletedProcess(command, self.install_exit, '', 'private installer diagnostic')
+            return CompletedProcess(command, self.install_exit, self.install_stdout, self.install_stderr)
         assert command[:3] == ['git', '-C', str(self.path)]
         assert options['env']['GIT_TERMINAL_PROMPT'] == '0'
         args = command[3:]
@@ -300,7 +302,8 @@ def test_install_failure_retains_successful_pull_evidence(checkout, monkeypatch,
     assert result['after_commit'] == (FIRST if unchanged else SECOND)
     assert result['installation']['state'] == 'failed'
     assert result['installation']['returncode'] == 1
-    assert 'private installer diagnostic' not in json.dumps(result)
+    assert git.install_stderr == result['installation']['output_tail']
+    assert git.install_stderr in str(caught.value)
     assert sum('pull' in call for call in git.calls) == 1
     assert sum('install' in call for call in git.calls) == 1
 
@@ -316,6 +319,51 @@ def test_install_timeout_retains_pulled_commit_and_does_not_retry(checkout, monk
     assert result['state'] == 'unknown' and result['stage'] == 'install'
     assert result['after_commit'] == SECOND and result['installation']['state'] == 'unknown'
     assert sum('install' in call for call in git.calls) == 1
+
+
+def test_pip_failure_carries_last_twenty_lines_and_omits_credential_urls(checkout, monkeypatch):
+    _, path = checkout
+    git = Git(path)
+    git.install_exit = 1
+    git.install_stdout = '\n'.join(f'build line {index}' for index in range(30))
+    git.install_stderr = 'Downloading https://name:secret@example.invalid/backend\nsetuptools_scm.integration has no attribute infer_version'
+    monkeypatch.setattr('subprocess.run', git)
+    with pytest.raises(SoftwareUpdateError) as caught:
+        update_software(project='science')
+    evidence = caught.value.evidence
+    tail = evidence['installation']['output_tail']
+    assert tail.splitlines() == [f'build line {index}' for index in range(12, 30)] + [git.install_stderr.splitlines()[-1]]
+    assert 'infer_version' in str(caught.value)
+    assert 'secret' not in json.dumps(evidence) and 'secret' not in str(caught.value)
+    assert evidence['stage'] == 'install' and evidence['after_commit'] == SECOND
+
+
+def test_pip_failure_tail_is_byte_bounded(checkout, monkeypatch):
+    _, path = checkout
+    git = Git(path)
+    git.install_exit = 1
+    git.install_stderr = 'x' * 100000 + '\nlast build error'
+    monkeypatch.setattr('subprocess.run', git)
+    with pytest.raises(SoftwareUpdateError) as caught:
+        update_software(project='science')
+    tail = caught.value.evidence['installation']['output_tail']
+    assert len(tail.encode('utf-8')) <= 4096 and tail.endswith('last build error')
+    assert len(json.dumps(caught.value.evidence)) < 65536
+
+
+@pytest.mark.parametrize('as_json', [False, True])
+def test_cli_exposes_pip_build_failure_tail(checkout, monkeypatch, capsys, as_json):
+    _, path = checkout
+    git = Git(path)
+    git.install_exit = 1
+    git.install_stderr = 'BackendUnavailable: cannot import build backend'
+    monkeypatch.setattr('subprocess.run', git)
+    with pytest.raises(SystemExit) as caught:
+        software.main(['update', '--project', 'science'] + (['--json'] if as_json else []))
+    output = capsys.readouterr().out
+    assert caught.value.code == 1 and 'BackendUnavailable' in output
+    if as_json:
+        assert json.loads(output)['installation']['output_tail'] == git.install_stderr
 
 
 @pytest.mark.parametrize('failure', ['wrong-prefix', 'malformed', 'timeout', 'missing-python'])

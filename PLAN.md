@@ -11,20 +11,21 @@ This file is the source of truth for active scope, task order and progress.
 
 - **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
+  FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
   MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 623 passed, 40 expected
+  rollback source remains unchanged. Full offline suite: 634 passed, 41 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.LOGS.1 adds status-compatible bundle/job/array
-  row navigation to `asl logs`, plus names/ranges/latest/history and listing.
-  Shares inspect selection and filters array logs before file limits. Exact
-  paths remain available for agent handoffs. Full suite and clean wheel smoke
-  passed; no cluster contact or daily config/tracking changes.
-- **Next task:** MVP9.1, a narrow shared command-argument contract and reference
-  client proof. MVP9 implements readable command integration; MVP10 follows with
+- **Latest completed task:** FIX.SOFTWARE.1 restores normal pip build isolation
+  with no-deps, includes a bounded pip output tail on failed installs, and runs
+  env_command before venv activation. The real offline fixture proves isolated
+  builds and unchanged non-project installed distributions; module setup is retained
+  by the config editor. Full suite/package smoke passed; no cluster/daily state edits.
+- **Next task:** MVP9.1, a narrow shared command-argument contract and reference client proof.
+  MVP9 implements readable command integration; MVP10 follows with
   an API-wide error review and dedicated shared error module. MVP10 now starts
   with a complete interface/failure inventory before migrating operation boundaries;
   the stale-venv case is one regression among many. Planning only so far; module
@@ -552,6 +553,20 @@ Design: [readable command/job pattern](REFACTORING_DOCS/design/job_command_patte
 - [x] Add offline navigation/identity/invalid-selection regressions, run the full
   suite and update terminal/agent examples, design and verification evidence.
 
+## FIX.SOFTWARE.1 Plain isolated editable install and composed activation
+
+- [x] Remove no-build-isolation/no-index from editable reinstall; retain no-deps,
+  selected interpreter, cache/redirection guards and existing update semantics.
+  Temporary pip build environments/downloaded build requirements are allowed on
+  the login host; scientific dependencies and persistent environments stay unchanged.
+- [x] Include a bounded last-20-line pip output tail in failed install evidence
+  and messages, omitting credential-bearing URL lines. Preserve pulled commit,
+  failed/unknown states and no-retry behavior; the broad MVP10 remains separate.
+- [x] Compose env_command then venv activation, retaining single-setting behavior.
+  Verify scripts and local shell execution plus real offline isolated editable
+  installation through the local/fake-SSH fixture. Update docs/rules, full offline
+  checks and package smoke; no cluster operation or daily environment/config edit.
+
 ## MVP9 Readable command arguments without duplicated client plumbing
 
 Design: [command/job pattern and MVP9 scope](REFACTORING_DOCS/design/job_command_pattern.md#mvp9-delivery-scope-planned).
@@ -789,6 +804,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | FIX.LOGS.1 Status-compatible log navigation | 623 full offline tests passed in 10.38 s (40 expected collision warnings), report `.development/test-runs/log-navigation.xml`. Thirty new checks verify bundle/job/expanded-array identity, sparse task indices, filters before bounds, conflicting selectors, batched multi-run queries, cached no-contact navigation and shared inspect behavior. Clean wheel indexed/cached navigation smoke passed; SHA256 `af7088345b15a3205eb6d9e723f39a0ca960e5aadda11862f8453c7e97693e43`. Human/agent examples, design and installation register updated. No cluster contact, daily state edits, base installation or rollback change. Task commit: `git log --grep '^FIX.LOGS.1:'`; push completed dev commit. |
 | 2026-11-13 | PLAN.1 Scope command arguments and actionable-error MVPs | Read DOCS.3, current updater/probe/CLI and missing-Python regressions. Confirmed broad preflight catch erases missing-executable detail and attempted Python is assigned only after probe success. Scheduled MVP9.1–3 then MVP10.1–3; wrote the bounded delivery/error contracts, failure matrix and client ownership limits. Reviewed documentation links/diff. No runtime/config/client change or cluster contact; full-suite baseline remains 623 passing tests from FIX.LOGS.1, not rerun for this planning task. Task commit: `git log --grep '^PLAN.1:'`; push completed dev commit. |
 | 2026-11-13 | PLAN.2 API-wide modular error-handling scope | User explicitly broadened MVP10. Reviewed exported Python APIs, CLI actions/aliases, ACP and representative config/persistence/path/transport/software/submission/inspection/lifecycle errors. Documented dedicated error-module ownership, strategic translation boundaries, failure families and full-API coverage gates; expanded MVP10 to nine slices. Initial map is a seed, not a completed per-callable audit. Documentation links/diff checked; no runtime/client/config edits, cluster contact or test rerun. Baseline stays 623 passing offline tests. Task commit: `git log --grep '^PLAN.2:'`; push completed dev commit. |
+| 2026-11-13 | FIX.SOFTWARE.1 Plain isolated editable builds and setup before venv activation | 634 full offline tests passed in 9.16 s (41 expected collision warnings), report `.development/test-runs/plain-editable.xml`; 11 added cases plus updated command/script expectations. Real local/fake-SSH Git/venv fixture uses a no-download standard-library backend and a conflicting runtime package to prove build isolation, same/new-commit CLI refresh, single checkout and unchanged non-project distributions. Pip failures expose last 20 lines/about 4 KiB with URL-userinfo lines omitted; shell tests verify setup precedes activation and failure stops rooted jobs. Config editor preserves setup; single-setting behavior retained. Clean wheel smoke and guidance checks passed. No actual cluster contact, network build, daily config/venv install or rollback edit. Broad MVP10 remains planned. Task commit: `git log --grep '^FIX.SOFTWARE.1:'`; push completed dev commit. |
 
 ## How we work
 

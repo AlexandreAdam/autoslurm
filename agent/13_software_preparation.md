@@ -3,7 +3,7 @@
 The software layer pulls the one existing checkout per project, then refreshes
 its editable installation in the configured existing environment. This refreshes
 new CLI entry points even when the Git commit is unchanged. Cluster file limits
-rule out cloned caches, source sets, release copies and additional environments. The earlier preparation/release engine has
+rule out cloned caches, source sets, release copies and additional persistent environments. The earlier preparation/release engine has
 been removed. Compute jobs never update code. Current development tests mock
 SSH/Slurm and use temporary local Git repositories; they do not update a cluster.
 
@@ -72,10 +72,12 @@ The checkout must already exist, be clean and have an attached branch with a
 configured upstream. The operation verifies `venv_path/bin/python` belongs to the
 selected environment before pulling, then runs `git pull --ff-only` once on that
 branch. After every successful pull, including unchanged HEAD, that interpreter
-runs pip install --editable against the same checkout with --no-deps,
---no-build-isolation, --no-cache-dir and --no-index. Dependencies/build tools stay
-machine-owned; installer redirection/index configuration is ignored. No Python
-fallback, package download, new source copy or environment creation is requested.
+runs the equivalent of `python -m pip install --no-deps -e .` from that checkout.
+Normal pip build isolation downloads build requirements into a temporary build
+environment on the login host; the selected venv need not contain setuptools or
+the project's backend. Scientific dependencies stay machine-owned. Cache,
+version checks, prompts and installer redirection/configuration remain disabled.
+No Python fallback, new source copy or persistent environment is created.
 It does not switch branches, resolve the newest tag or select a different default
 branch. Use the operator-configured branch; there is no revision selector.
 
@@ -120,8 +122,9 @@ asl software status --machine cluster --project gaia-asteroseismology --json
 This reads the current checkout; no operation ID or release record is required.
 Unavailable status remains unavailable evidence. Do not automatically retry a pull
 because the response was lost. SSH sends a standard-library probe through stdin;
-no remote AutoSlurm upgrade or copied worker files are needed. An existing
-configured environment with pip and the project's build backend is required.
+no remote AutoSlurm upgrade or copied worker files are needed. The existing
+configured environment needs pip; build backends are obtained in pip's
+temporary build environment, with index/network access on the login host.
 
 ## Job and installation boundary
 
@@ -134,6 +137,9 @@ must ignore those generated files to keep future Git preflight clean.
 Use existing software status with expected dependencies/commit to inspect the
 configured installation separately. Coordinate update timing for jobs sharing the
 checkout/environment; source and installation are mutable, not pinned per job.
+When `env_command` and `venv_path` are both set, jobs run the setup command first
+(for example a module load), then source the venv activation script using `&&`.
+Updates select the interpreter directly; they do not run that job setup command.
 
 The removed surfaces are `prepare_software_sources`, `prepare_software`,
 `inspect_software_release`, `SoftwarePreparationError`, `asl software prepare`,

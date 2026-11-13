@@ -6,6 +6,11 @@ FIX.CONFIG.1 (2026-11-13) amends machine configuration: the user requires an
 optional Slurm account and a way to clear it. See the account amendment below;
 this is separate from the proposed command/job interface investigation.
 
+FIX.SOFTWARE.1 (2026-11-13) restores normal pip build isolation and composes
+env_command setup before venv activation; it supersedes the MVP7.2f no-index/
+no-build-isolation requirements below. Temporary build environments are permitted;
+no additional persistent project/runtime environment is created.
+
 The user's 2026-11-12 clarification supersedes the earlier source/release
 preparation design: cluster file limits require **one existing checkout per
 project**, updated in place. MVP7.2f amends the original pull-only behavior with
@@ -22,7 +27,7 @@ local rollback source and remote files must remain untouched by this task.
 ## User-confirmed decisions
 
 - **Single copy — accepted, 2026-11-12.** Never create project clones, bare Git
-  caches, detached source sets, worktrees, releases, additional environments or
+  caches, detached source sets, worktrees, releases, additional persistent environments or
   preparation/release records. MVP7.2f refreshes an existing editable install.
 - **Existing branch, latest upstream.** Pull the existing checkout's configured
   tracking branch with `--ff-only`. Do not guess/switch the branch, pin an older
@@ -35,8 +40,8 @@ local rollback source and remote files must remain untouched by this task.
   adapter. Operator Git/SSH configuration owns repository authentication.
 - **Dependencies remain machine-owned.** Existing read-only dependency/application
   metadata checks remain useful. Updates reinstall the project editable with
-  --no-deps/--no-build-isolation/--no-index, keeping scientific dependencies and
-  build tools operator-managed. Jobs use their configured environment; environment
+  --no-deps with normal build isolation. Build requirements may be downloaded
+  temporarily; scientific runtime dependencies remain operator-managed. Jobs use their configured environment; environment
   construction and revision-managed execution remain outside this layer.
 - **Explicit update.** Submission/preview/compute scripts never pull code.
   The operator coordinates update timing for jobs sharing mutable source.
@@ -238,3 +243,48 @@ rusty account; every other configuration setting was compared and preserved.
 Backup: `.development/backups/optional-account-iym80kt7/config.json`.
 No base package installation, cluster change, historical record change or pinned
 rollback source change. The DOCS.3 command/argument proposals remain unimplemented.
+
+## Plain editable build and activation amendment (FIX.SOFTWARE.1, 2026-11-13)
+
+The user requires editable reinstalls to behave like `pip install --no-deps -e .`.
+Removed --no-build-isolation and --no-index from the selected interpreter's pip
+command. Default build isolation may download requirements declared by the
+project into disposable build environments on the login host. The selected venv
+needs pip, not a preinstalled setuptools/backend. Keep --no-deps, cache/version/
+prompt controls and existing installer redirection guards. Only the project's
+editable install changes in that persistent environment; scientific dependencies
+are operator-managed. This explicitly supersedes MVP7.2f's offline/backend policy;
+development tests still perform no downloads or cluster commands.
+
+On nonzero pip exit, retain the pulled commit, failed installation state and exit
+code. Add installation.output_tail: last 20 stdout/stderr lines, bounded to about
+4 KiB, with credential-bearing URL lines omitted. Include the same tail in the
+existing error message so Python, human CLI and JSON consumers can diagnose the
+build. No retry, rollback or new saved record. Timeout/lost-response uncertainty
+is unchanged. This tactical diagnosis is not completion of the broader MVP10.
+
+Shared activation now composes env_command followed by the quoted venv activation
+with `&&`; either setting alone keeps its behavior. Module loads can precede
+activation without modifying the venv's bin/activate. Jobs and config validation
+use that same function; the editor retains an existing env_command when editing
+other profile fields. CLI help now describes the setup role. Software updates
+continue to use venv_path/bin/python directly, without running the job preamble.
+Existing profiles with both settings now intentionally execute both, including
+redundant legacy activation commands. No daily profile was edited by this task.
+
+Verification: 634 full offline tests passed in 9.16 s, 41 expected collision
+warnings; `.development/test-runs/plain-editable.xml`. Eleven new cases cover
+bounded/redacted pip tails and human/JSON visibility, composed/single activation,
+editor retention and successful/failing local shell execution. The real Git/venv
+fixture uses an in-project standard-library editable backend with no downloaded
+requirements, confirms a conflicting runtime package is hidden during the build,
+and verifies only the project is added to installed distributions. Actual local
+and exact fake-SSH payload updates still refresh old/new CLI entry points at the
+same version and preserve one source checkout. Three old integration script
+expectations were updated for the deliberate both-settings activation behavior.
+
+Clean temporary-source wheel install/flags/output-tail/activation smoke passed.
+Artifact `.development/artifacts/plain-editable/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `afb047beeba30dc7ba3c512bb5cfc8c7420d5abda2f5dfd21870d479aea071b3`.
+No network dependency download in tests, base Conda install, cluster contact,
+daily configuration/tracking mutation or pinned rollback source change.

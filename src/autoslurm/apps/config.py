@@ -155,6 +155,8 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
     remote_default = is_remote_machine(existing)
     is_remote = _prompt_yes_no("Is this a remote machine?", default="y" if remote_default else "n")
     machine = {"venv_path": venv_path, "slurm_account": slurm_account}
+    if "env_command" in existing:
+        machine["env_command"] = existing["env_command"]
     software_root = _prompt_text(
         "Software root (optional absolute directory for repositories and prepared environments)",
         existing.get("software_root"),

@@ -12,6 +12,13 @@ is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
+FIX.SOFTWARE.1 (2026-11-13): 634 full offline tests passed (41 expected collision
+warnings), report `.development/test-runs/plain-editable.xml`; clean wheel pip
+flags/failure-tail/composed-activation smoke passed. Real temporary local/fake-SSH
+updates verified pip build isolation without downloads and unchanged non-project
+distributions. Base editable source stays active without reinstall. No daily
+config/tracking/environment change, cluster contact or rollback source edit.
+
 FIX.LOGS.1 (2026-11-13): 623 full offline tests passed (40 expected collision
 warnings), report `.development/test-runs/log-navigation.xml`; clean wheel
 indexed/expanded-array/cached logs navigation smoke passed. The existing base

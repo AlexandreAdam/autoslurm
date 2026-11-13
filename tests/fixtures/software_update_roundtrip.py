@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import sysconfig
 import venv
 
 from autoslurm import update_software, SoftwareUpdateError, save_config, storage
@@ -26,26 +25,53 @@ git('init', '-b', 'main', author)
 git('-C', author, 'remote', 'add', 'origin', upstream)
 (author / '.gitignore').write_text('__pycache__/\n*.egg-info/\nbuild/\n')
 
-# Disposable environment only. Reuse the already-installed test build tools via
-# a search-path entry; never download/install them or mutate the test/base env.
+# Disposable runtime only; a standard-library backend needs no downloads and
+# must not see the conflicting package deliberately placed in this venv.
 environment = root / 'environment with spaces'
 venv.EnvBuilder(with_pip=True).create(environment)
 site = environment / 'lib' / f'python{sys.version_info.major}.{sys.version_info.minor}' / 'site-packages'
-(site / 'fixture-build-tools.pth').write_text(sysconfig.get_path('purelib') + '\n')
+(site / 'autoslurm_build_poison.py').write_text('raise RuntimeError("runtime package leaked into build")\n')
 python = str(environment / 'bin/python')
+
+backend = '''from pathlib import Path
+import importlib.util
+import zipfile
+
+def build_editable(wheel_directory, config_settings=None, metadata_directory=None):
+    assert importlib.util.find_spec("autoslurm_build_poison") is None, "build was not isolated"
+    name = "autoslurm_update_fixture"
+    info = name + "-0.1.0.dist-info/"
+    wheel = Path(wheel_directory) / (name + "-0.1.0-py3-none-any.whl")
+    entries = "[console_scripts]\\nscience-fixture = science:main\\n"
+    if "science-new-fixture" in Path("pyproject.toml").read_text():
+        entries += "science-new-fixture = science:main\\n"
+    files = {
+        name + ".pth": str(Path.cwd()) + "\\n",
+        info + "METADATA": "Metadata-Version: 2.1\\nName: autoslurm-update-fixture\\nVersion: 0.1.0\\nRequires-Dist: must-not-install-fixture>=1\\n",
+        info + "WHEEL": "Wheel-Version: 1.0\\nGenerator: offline-fixture\\nRoot-Is-Purelib: true\\nTag: py3-none-any\\n",
+        info + "entry_points.txt": entries,
+    }
+    files[info + "RECORD"] = "".join(path + ",,\\n" for path in [*files, info + "RECORD"])
+    with zipfile.ZipFile(wheel, "w") as archive:
+        for path, text in files.items():
+            archive.writestr(path, text)
+    return wheel.name
+'''
 
 def commit(value):
     (author / 'science.py').write_text(f'def main():\n    print({value!r})\n')
     extra = '\nscience-new-fixture = "science:main"' if value in {'THIRD', 'FOURTH'} else ''
     (author / 'pyproject.toml').write_text('''[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = []
+build-backend = "fixture_backend"
+backend-path = ["."]
 [project]
 name = "autoslurm-update-fixture"
 version = "0.1.0"
 [project.scripts]
 science-fixture = "science:main"''' + extra + '\n')
-    git('-C', author, 'add', 'science.py', 'pyproject.toml', '.gitignore')
+    (author / 'fixture_backend.py').write_text(backend)
+    git('-C', author, 'add', 'science.py', 'pyproject.toml', '.gitignore', 'fixture_backend.py')
     git('-C', author, 'commit', '-m', value)
     git('-C', author, 'push', 'origin', 'main')
     return git('-C', author, 'rev-parse', 'HEAD')
@@ -64,10 +90,20 @@ save_config({'default_machine': 'fixture', 'machines': {'fixture': {
 tracking_before = sorted(str(item.relative_to(tracking)) for item in tracking.rglob('*'))
 
 real_run = subprocess.run
+def installed_names():
+    response = real_run([python, '-I', '-B', '-c',
+                         'import importlib.metadata as m, json; print(json.dumps(sorted(d.metadata["Name"] for d in m.distributions())))'],
+                        capture_output=True, text=True, check=True)
+    return set(json.loads(response.stdout))
+
+original_distributions = installed_names()
 commands = []
 def record(command, **kwargs):
     commands.append(command)
     assert command[0] != 'git' or not set(command) & {'clone', 'worktree', 'checkout', 'reset', 'stash'}
+    if 'pip' in command:
+        assert '--no-deps' in command
+        assert '--no-build-isolation' not in command and '--no-index' not in command
     if command[0] == 'ssh':
         assert command[-2:] == ['offline-alias', 'python3 -B -']
         command = [sys.executable, '-B', '-']
@@ -114,6 +150,7 @@ origin = real_run([python, '-I', '-B', '-c', 'import science; print(science.__fi
                   capture_output=True, text=True, check=True).stdout.strip()
 assert Path(origin).resolve() == (checkout / 'science.py').resolve()
 assert not (site / 'science.py').exists()  # editable link, not another source copy
+assert installed_names() == original_distributions | {'autoslurm-update-fixture'}
 assert list(software_root.iterdir()) == [checkout]
 assert sum(command[0] == 'ssh' for command in commands) == 1
 

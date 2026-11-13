@@ -79,6 +79,11 @@ They do not advertise implemented capabilities or expand the current task.
   pull, refreshing command-line entry points without changing machine-owned
   dependencies. The operator coordinates updates for jobs sharing that checkout
   or environment. Preparation never occurs inside submission/jobs.
+  **FIX.SOFTWARE.1 amendment (2026-11-13):** normal pip build isolation may
+  download build requirements into disposable temporary build environments on
+  the login host. `--no-deps` still leaves scientific dependencies unchanged;
+  no additional persistent environment is created. Module setup in env_command
+  precedes venv activation in jobs. Development tests remain entirely offline.
   This supersedes the earlier immutable application-release design; preserve
   historical evidence and the local rollback baseline. Test processes must not
   write daily records/outputs.

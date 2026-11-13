@@ -22,8 +22,10 @@ or change shared code. One bundle targets one machine. The
 [software recipe](13_software_preparation.md) documents explicit `update_software`
 and `asl software update`: pull the existing checkout and refresh its editable
 install in the configured environment before submission, with commit/install
-evidence. Keep one checkout per project; the operator owns dependencies/build
-tools and environment creation. Updates do not create/select release runtimes.
+evidence. Keep one checkout per project; the operator owns scientific dependencies
+and persistent environment creation. Editable updates use pip's temporary build
+isolation and may download build requirements on the login host; --no-deps keeps
+runtime dependencies unchanged. Updates do not create/select release runtimes.
 Historical software-manifest helpers remain pure data utilities; new runs use
 the configured environment without a `software` runtime request.
 

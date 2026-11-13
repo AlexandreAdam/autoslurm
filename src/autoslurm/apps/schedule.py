@@ -126,7 +126,7 @@ def _build_parser() -> argparse.ArgumentParser:
     machine_config.add_argument('--machine', required=False, help='Machine name to run the jobs (e.g., local, remote_1).')
     machine_config.add_argument('--ssh-alias', help='SSH config Host alias for the selected machine.')
     machine_config.add_argument('--venv_path', required=False, help='Path to the virtualenv root; autoslurm renders source <venv>/bin/activate.')
-    machine_config.add_argument('--env_command', required=False, help='Command to activate the environment on the remote machine.')
+    machine_config.add_argument('--env_command', required=False, help='Shell setup before venv activation (for example module load); also works without --venv_path.')
     machine_config.add_argument('--slurm_account', required=False, help='SLURM account to use for job submission.')
     return parser
 

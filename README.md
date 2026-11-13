@@ -73,9 +73,10 @@ asl software update --machine cluster --project gaia-asteroseismology
 This runs `git pull --ff-only` in the project under `software_root`, then
 refreshes its editable install using the configured `venv_path/bin/python`.
 Installation also runs when Git is already current, so new command-line tools
-are available. Machine-specific dependencies/build tools stay in place; the
-install requests no dependency updates or downloads. No extra checkout,
-environment or release record is created. Both the pull and installation must
+are available. `--no-deps` leaves scientific runtime dependencies unchanged;
+normal pip build isolation may download build requirements into a temporary
+environment on the login host. No extra checkout, persistent environment or
+release record is created. Both the pull and installation must
 succeed; failures retain any observed commit evidence. See [software updates](docs/software.md).
 
 `asl software status --machine NAME` inspects existing Git projects locally or

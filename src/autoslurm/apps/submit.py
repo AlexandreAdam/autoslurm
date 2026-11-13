@@ -39,7 +39,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--env_command",
         required=False,
-        help="Legacy command to activate environment (deprecated; prefer --venv_path).",
+        help="Shell setup before venv activation (for example module load); also works without --venv_path.",
     )
     parser.add_argument(
         "--slurm_account",
@@ -76,7 +76,7 @@ def main(argv=None):
         parser.add_argument("--machine", required=False, help="Machine name to run the jobs (e.g., local, remote_1)")
         parser.add_argument("--ssh-alias", help="SSH config Host alias for the selected machine.")
         parser.add_argument("--venv_path", required=False, help="Path to the virtualenv root; autoslurm renders source <venv>/bin/activate.")
-        parser.add_argument("--env_command", required=False, help="Legacy command to activate environment (deprecated; prefer --venv_path).")
+        parser.add_argument("--env_command", required=False, help="Shell setup before venv activation (for example module load); also works without --venv_path.")
         parser.add_argument("--slurm_account", required=False, help="SLURM account to use for job submission")
         parser.add_argument("--bundle-file", required=False, type=Path, help="Explicit path to a JSON bundle file to submit instead of loading from AutoSlurm storage.")
         parser.add_argument("--latest", action="store_true", help="Submit the latest scheduled bundle from AutoSlurm storage.")
