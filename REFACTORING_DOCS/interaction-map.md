@@ -531,3 +531,14 @@ rediscovery; refresh and evidence; recovery and result retrieval.
 
 No module tree, class hierarchy, or protocol name is accepted by this map.
 Each MVP's changes must show which bounded interactions they serve.
+
+### Planned status and reusable workflow coverage (PLAN.3)
+
+[MVP11](design/MVP11_status_explanations.md) targets I09–I11 with readable waiting
+reasons alongside unchanged scheduler evidence. [MVP12](design/MVP12_reusable_workflows.md)
+targets I02–I06 resource/offline/review workflows, I08/I16 named-run handoff and
+I14 explicit retry planning, with an optional scheduler-free task runtime.
+These are planned capabilities, not additional installed actions. Every delivered
+slice includes its public operation, evidence/failure contract, discoverable agent
+recipe, human example and behavior checks. Scientific-result transfer stays
+application-owned unless the separate fetch scope decision changes that boundary.

@@ -20,13 +20,14 @@ This file is the source of truth for active scope, task order and progress.
   install; tests use `.development/python` and separate temporary state. Pinned
   rollback source remains unchanged. Full offline suite: 674 passed, 42 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP9.1 adds experimental in-memory command contracts
-  and a narrow optional Typer adapter, plus a reference command using one typed
-  declaration for CLI/default-filled named jobs. Validation is pure and pre-save;
-  saved JSON/rendering/public exports remain unchanged. Full suite and wheel smoke
-  passed. No cluster, daily state or external scientific-client changes.
-- **Next task:** record the user's status-display MVP and newly supplied Gaia
-  reusable-workflow proposal as separate planned work, then continue MVP9.2.
+- **Latest completed task:** PLAN.3 schedules MVP11 readable status reasons and
+  MVP12 reusable scientific-workflow services from the supplied Gaia proposal.
+  Public API, CLI/agent discovery, human examples and outcome contracts are
+  completion requirements for each workflow slice. Planning only; implementation
+  remains at MVP9.1's experimental typed-command proof. No runtime/client change.
+- **Next task:** continue MVP9.2's shared argument compiler. MVP11 and MVP12 are
+  separately scoped, unimplemented milestones; their numbers do not require a
+  single large combined release. Their API/record details remain proposals.
   MVP9 implements readable command integration; MVP10 follows with
   an API-wide error review and dedicated shared error module. MVP10 now starts
   with a complete interface/failure inventory before migrating operation boundaries;
@@ -89,6 +90,8 @@ Each row is incremental, not cumulative.
 | MVP8 | Clear bounded stdout/stderr inspection with failure evidence | Half to one day | Execution logs only; scientific results remain application-owned |
 | MVP9 | Declare command options once; validate readable job arguments and render the same invocation | Two to three focused days for the narrow profile | Static scalar options first; no remote Python launcher or universal CLI adapter |
 | MVP10 | Consistent actionable diagnostics across the public API, backed by an isolated error module | Multi-slice milestone; estimate after the API audit | Audit all Python/CLI/ACP boundaries; migrate deliberately without flattening partial/unknown outcomes |
+| MVP11 | Readable status reasons in the job row, including named dependency waits | Three bounded slices; estimate after the reason/projection contract | Reuse observations; no queue ETA, extra queries or automatic recovery |
+| MVP12 | Reusable resource/review/run/retry workflows, with an optional task runtime | Layered milestone; estimate each slice before implementation | Public API and agent/human adoption per slice; runtime packaging and scientific-result fetching have separate decision gates |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
 nine focused days with the stated scope; none requires completing later product
@@ -663,6 +666,79 @@ duplicate catch-all handling. The stale-venv case must name the attempted path,
 but that fix alone does not close MVP10. No environment auto-switch/repair,
 tracking database, automatic recovery or resubmission is included.
 
+## MVP11 Readable dependency-aware status
+
+Design: [status explanations](REFACTORING_DOCS/design/MVP11_status_explanations.md).
+Requested after MVP9.1; this section plans behavior, not an implemented command.
+
+- [ ] **MVP11.1 Reason contract and classification.** Define normalized waiting
+  categories beside unchanged scheduler state/raw reason; distinguish dependency,
+  priority, resources, array limits, holds, policy limits and unknowns. Settle
+  structured-field/cache compatibility and freshness rules; pure shared owner,
+  no extra scheduler calls. Include impossible dependencies as attention cases.
+- [ ] **MVP11.2 Dependency-aware projection.** Explain outstanding direct
+  dependencies using exact bundle names, accepted IDs and complete array evidence.
+  Qualify stale/unknown parents; preserve actual dependency conditions. Summarize
+  mixed arrays without losing per-index reasons or status/log selection parity.
+- [ ] **MVP11.3 Table and public adoption.** Put concise reasons in normal rows;
+  retain full raw/exit evidence through supported details/JSON. Verify narrow/wide
+  ANSI-safe output, no ordinary second-line clutter, and correct walltime labels.
+  Align Python/CLI/ACP views and human/agent examples; run offline regressions.
+
+Completion includes the reported graph: merge waits for shards; summary waits
+for merge when set has freshly completed. Priority/resources are distinct reasons,
+not invented new scheduler states or estimates of when a job will start.
+
+## MVP12 Reusable scientific workflow services
+
+Design: [reusable workflows](REFACTORING_DOCS/design/MVP12_reusable_workflows.md).
+Source: [user-supplied Gaia proposal](REFACTORING_DOCS/proposal-generic-workflow-from-gaia.md),
+reference commit `8eaffec`. Reimplement generic behavior around existing services;
+keep science/project layout in clients. Each task is a separate usable increment.
+
+- [ ] **MVP12.1 Resource summary.** Pure bundle rows/totals for arrays, concurrency,
+  CPU/GPU/memory/walltime and dependencies; share existing parsers and label unknown
+  or partial totals. Expose a public Python operation and readable CLI preview.
+- [ ] **MVP12.2 Truly offline planning.** Validate/save logical bundles and context
+  without SSH/transfer/Git/network discovery. Expose unchecked/unresolved remote
+  paths; explicit readiness remains separate. Verify no-contact public routes.
+- [ ] **MVP12.3 Review-before-effects workflow.** Show context, resources, machine
+  and intended preparation before confirmation. Decline performs no remote/update/
+  submit effects. Define non-interactive authorization and context publication;
+  compose existing services without adding implicit pulls/prompts to submit_jobs.
+- [ ] **MVP12.4 Named run records and rediscovery.** Link exact plans, context,
+  attempts/receipts, updates and warnings through public create/load/list routes.
+  Reuse current outcomes; settle small record/retention/release boundaries first.
+  A new agent finds the run without reading private storage.
+- [ ] **MVP12.5 Preparation evidence and dependency-change stop.** Extend the
+  existing updater with declared-dependency comparison and planned/before/after
+  revision evidence. Warn about known local dirty/unpushed state; stop clearly on
+  dependency changes without changing machine-owned packages. Preserve effects
+  of an already completed pull and define explicit acknowledgement/resume.
+- [ ] **MVP12.6 Safe retry-plan builder.** Pure failed/never-submitted index and
+  downstream selection, original array identity, compatible-output checks and
+  explicit lineage/reasons. Unknown/live/uncertain work blocks unsafe retries.
+  Preview/review first; any execution reuses existing submission/receipt services.
+- [ ] **MVP12.7 Task-runtime contract proof.** Use Gaia-shaped and independent
+  second-client fixtures to settle scheduler-free imports/packaging, shared MVP9
+  option semantics and a plain Run/Stage-to-bundle bridge. No new framework is
+  required for ordinary command authoring; CLI/science integrations stay optional.
+- [ ] **MVP12.8 Optional runtime services.** Implement the agreed registry,
+  per-index execution, atomic matching markers, bounded provenance and reducer
+  completeness checks. Test changed code/options/partial outputs and clean-artifact
+  import isolation. Generated CLI and bridge keep every job argument readable.
+- [ ] **MVP12.9 Combined adoption gate.** Verify the reference workflow through
+  supported APIs, CLI and documented agent context. Every preceding slice must
+  already include exports, discoverable help/recipes, human examples, structured
+  outcomes and failure checks; do not defer these to this final task. Run offline
+  and packaged-resource checks. Real Gaia migration is a separately scoped task.
+
+Overlap is owned elsewhere: argument contracts/compiler by MVP9, shared diagnostics
+by MVP10, waiting explanations by MVP11; log inspection and plain isolated editable
+builds already exist. Optional scientific-result fetching remains decision-gated
+because the earlier user instruction limits retrieval to AutoSlurm logs/evidence.
+No recursive result mirror or automatic retry/deployment is included.
+
 ## PLAN.1 Schedule the next two reliability MVPs
 
 - [x] Trace the reported preflight failure and current argument design; schedule
@@ -678,6 +754,14 @@ tracking database, automatic recovery or resubmission is included.
   and remove the obsolete one-to-two-day estimate. Planning only; runtime baseline
   and MVP9 ordering remain unchanged.
 
+## PLAN.3 Schedule status explanations and reusable Gaia workflows
+
+- [x] Preserve/read the supplied proposal, compare representative source with
+  existing/planned owners, and scope MVP11/12 in independently deliverable tasks.
+  Require public API exposure, CLI/agent discovery and human examples per slice;
+  identify offline planning, runtime import and result-fetch scope boundaries.
+  Review links/diff. Planning only; no status/workflow implementation or Gaia edit.
+
 ## Scientific reference case
 
 Use a cheap application with an installed command, relative inputs/outputs,
@@ -691,7 +775,8 @@ to a four-task array plus a reducer with one deliberately failing task. Verify:
   do not become evidence that the whole study succeeded.
 - Existing array/dependency primitives remain sufficient for initial map/reduce.
   A retry with changed code/inputs must not silently merge incompatible results;
-  automated retry and downstream repair remain deferred.
+  MVP12.6 later adds an explicit reviewed retry plan; automatic recovery remains
+  deferred and output compatibility must stay explicit.
 
 ## Later product layers
 
@@ -701,7 +786,7 @@ only when its user benefit justifies the next increment.
 | Layer | Work deliberately deferred |
 |---|---|
 | L1 Richer tracking and recovery | Full versioned definition/run/attempt model, persistent offline index, automatic interrupted-submission reconciliation/resume, historical import/migration |
-| L2 Scientific workflow conveniences | Failed-shard retry automation, reducer replacement/repair, map/reduce helper, stronger provenance/version checks and optional completion manifests |
+| L2 Scientific workflow conveniences | MVP12 now scopes reviewed retry plans, workflow helpers and an optional task runtime; automatic recovery and live reducer replacement remain deferred |
 | L3 Complete distribution and documentation | Public index release, broad wheel/source/Python/OS matrices, polished/versioned human site, complete installed agent resource delivery, upgrade automation |
 
 Keep basic development installation and accurate minimal guides working in each
@@ -718,17 +803,18 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 | Interactions | First useful delivery | Later depth |
 |---|---|---|
 | I00 installation; I01 context | MVP0 recipe and promotion smoke check | L3 public distribution and complete capability/docs packaging |
-| I02 client integration; I03 readiness; I04 definitions; I05 preview | MVP1 shared roots/selection, small reference client; MVP2 validation/env | L1 richer models; L2 full version checks |
+| I02 client integration; I03 readiness; I04 definitions; I05 preview | MVP1 shared roots/selection, small reference client; MVP2 validation/env | MVP9 command contract; MVP12 resource/offline/review/preparation services |
 | I06 submission; I07 interruption | MVP2 known/partial/uncertain outcomes and receipts | L1 automated reconciliation and resume |
-| I08 rediscovery; I09 refresh; I10 inspect; I11 diagnosis; I16 handoff | MVP3 shared task view, bounded evidence and minimal structured interface | L1 persistent index and richer context |
-| I12 results | Application-owned retrieval/validation; MVP8 retrieves execution logs only | Scientific data transfer stays outside AutoSlurm |
+| I08 rediscovery; I09 refresh; I10 inspect; I11 diagnosis; I16 handoff | MVP3 shared task view, bounded evidence and minimal structured interface | MVP11 reasons; MVP12 named run grouping; L1 richer index |
+| I12 results | Application-owned retrieval/validation; MVP8 retrieves execution logs only | Gaia fetch proposal is decision-gated; no scope expansion yet |
 | I13 cancellation; I15 cleanup | Retain working commands in their release lane; protect unknown work | Consolidate when touching their shared state; broader retention policies later |
-| I14 retry/downstream repair | Manual explicit recovery using recorded evidence | L2 automation and compatible-output rules |
+| I14 retry/downstream repair | Manual explicit recovery using recorded evidence | MVP12.6 reviewed retry planning; automatic recovery remains deferred |
 
 ## Decisions log
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-13 | Schedule readable status reasons and reusable Gaia workflow services | User requested same-row pending explanations and generic Gaia behavior in supported APIs with everyday human/agent documentation. PLAN.3 scopes MVP11/12; exact APIs, data and runtime packaging remain proposed, existing retrieval/update boundaries retained |
 | 2026-11-13 | Expand MVP10 to full API failure review, a dedicated error module and strategic integration across all public operations | User rejected a narrow message/updater fix; shared error ownership and complete failure contracts must be independently maintainable. Exact error API details remain proposed; implementation follows MVP9 |
 | 2026-11-13 | Investigate a concrete low-friction pattern while preserving human-readable cluster execution | User prioritized readable settings/scripts and less agent integration glue. DOCS.3 records a proposed single-declaration builder/command pattern with experiment evidence; no architecture or argument-policy change is accepted yet |
 | 2026-11-13 | Map all job/script interfaces before selecting an argument or execution refactor | User requested a general working principle spanning terminal, Python and saved JSON. Current routes are audited; recommendations remain proposals, with no change to accepted argument preferences |
@@ -808,6 +894,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | PLAN.2 API-wide modular error-handling scope | User explicitly broadened MVP10. Reviewed exported Python APIs, CLI actions/aliases, ACP and representative config/persistence/path/transport/software/submission/inspection/lifecycle errors. Documented dedicated error-module ownership, strategic translation boundaries, failure families and full-API coverage gates; expanded MVP10 to nine slices. Initial map is a seed, not a completed per-callable audit. Documentation links/diff checked; no runtime/client/config edits, cluster contact or test rerun. Baseline stays 623 passing offline tests. Task commit: `git log --grep '^PLAN.2:'`; push completed dev commit. |
 | 2026-11-13 | FIX.SOFTWARE.1 Plain isolated editable builds and setup before venv activation | 634 full offline tests passed in 9.16 s (41 expected collision warnings), report `.development/test-runs/plain-editable.xml`; 11 added cases plus updated command/script expectations. Real local/fake-SSH Git/venv fixture uses a no-download standard-library backend and a conflicting runtime package to prove build isolation, same/new-commit CLI refresh, single checkout and unchanged non-project distributions. Pip failures expose last 20 lines/about 4 KiB with URL-userinfo lines omitted; shell tests verify setup precedes activation and failure stops rooted jobs. Config editor preserves setup; single-setting behavior retained. Clean wheel smoke and guidance checks passed. No actual cluster contact, network build, daily config/venv install or rollback edit. Broad MVP10 remains planned. Task commit: `git log --grep '^FIX.SOFTWARE.1:'`; push completed dev commit. |
 | 2026-11-13 | MVP9.1 Single-declaration command proof | 674 full offline tests passed in 10.53 s (42 expected collision warnings), report `.development/test-runs/command-proof.xml`; 40 new cases. Experimental command-contract/optional Typer 0.27 adapter derives scalar options/defaults/ranges, rejects unsupported side-effectful/dynamic semantics before discovery, and builds current readable jobs. Reference CLI/parser/native-value round-trips, invalid options without writes, preview/mock submission identity and actual local science output passed. No contract serialized or top-level public API added. Clean wheel optional-dependency/contract/JSON smoke passed, SHA256 `17e2ab6c8a97b16a9eea104285a80082280f680e490b84750babb13171db9221`. Docs and links reviewed; no cluster, base install, daily state, external application or rollback changes. User's status/workflow planning requests remain next. Task commit: `git log --grep '^MVP9.1:'`; push completed dev commit. |
+| 2026-11-13 | PLAN.3 Status explanations and reusable Gaia workflow roadmap | Preserved the supplied proposal unchanged; read representative Gaia bundle/command/registry/run code at `8eaffec` without executing it. Scheduled MVP11 reason/projection/table slices and MVP12 resource/offline/review/run/preparation/retry/optional-runtime services with per-slice public API, CLI/agent discovery, evidence and human examples. Mapped MVP9/10/11 and completed-update overlaps; retained separate fetch/runtime/data decisions and low-level submit boundaries. Reviewed diff, relative links and task references; documentation-only, no test rerun. Existing baseline remains 674 passing offline tests from MVP9.1. No cluster, config/state, external client, installation or rollback changes. Task commit: `git log --grep '^PLAN.3:'`; push completed dev commit. |
 
 ## How we work
 

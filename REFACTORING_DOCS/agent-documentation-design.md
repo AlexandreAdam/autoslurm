@@ -35,6 +35,16 @@ renderer/validator or saved data. Other proposed designs below remain proposals.
 
 ### Context discovery
 
+PLAN.3 adds a per-slice adoption requirement for
+[MVP12's reusable workflow services](design/MVP12_reusable_workflows.md#public-adoption-gate-for-every-slice).
+Resource views, offline planning, review, run grouping and retry/runtime helpers
+must become discoverable through supported API/help/context routes as each ships.
+Recipes state inputs, effects, outcomes, evidence and safe follow-up; a private
+module or a link to the Gaia source is not sufficient. Keep planned operations in
+design documents until implemented, then update version-matched human examples
+and the public capability inventory in the same task. Existing context/ACP
+limitations must be explicit where a capability uses Python or CLI instead.
+
 An agent starts with a short orientation: what AutoSlurm owns, capability and
 version discovery, the choice between integrating an application and operating
 a run, and how to request the next recipe. Do not make a full source-code map
