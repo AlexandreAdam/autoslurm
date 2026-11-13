@@ -25,8 +25,10 @@ This file is the source of truth for active scope, task order and progress.
   passed; no cluster contact or daily config/tracking changes.
 - **Next task:** MVP9.1, a narrow shared command-argument contract and reference
   client proof. MVP9 implements readable command integration; MVP10 follows with
-  actionable errors, starting with the reported stale-venv failure. This turn
-  schedules both; no runtime implementation started. API details remain proposed.
+  an API-wide error review and dedicated shared error module. MVP10 now starts
+  with a complete interface/failure inventory before migrating operation boundaries;
+  the stale-venv case is one regression among many. Planning only so far; module
+  implementation and error API details remain pending.
   Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
@@ -83,7 +85,7 @@ Each row is incremental, not cumulative.
 | MVP7 | Update one checkout and refresh its editable project install | Delivered in small slices | Operator-managed existing environment/dependencies; update timing coordinated for shared jobs |
 | MVP8 | Clear bounded stdout/stderr inspection with failure evidence | Half to one day | Execution logs only; scientific results remain application-owned |
 | MVP9 | Declare command options once; validate readable job arguments and render the same invocation | Two to three focused days for the narrow profile | Static scalar options first; no remote Python launcher or universal CLI adapter |
-| MVP10 | Errors identify the failed check, selected resource, observed effects and safe next step | One to two focused days for priority boundaries | Updater first, then shared public boundaries; no automatic repair/retry framework |
+| MVP10 | Consistent actionable diagnostics across the public API, backed by an isolated error module | Multi-slice milestone; estimate after the API audit | Audit all Python/CLI/ACP boundaries; migrate deliberately without flattening partial/unknown outcomes |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
 nine focused days with the stated scope; none requires completing later product
@@ -586,28 +588,63 @@ styles are later slices; no per-job style switches are adopted by this plan.
 
 Design: [error handling](REFACTORING_DOCS/design/MVP10_actionable_errors.md).
 
-- [ ] **MVP10.1 Diagnose updater preflight.** Retain the attempted Python path
-  before launching it. Distinguish missing/nonexecutable interpreter, wrong venv,
-  malformed probe, nonzero probe and timeout from checkout/Git failures. Include
-  selected machine/project/config field, failed check and a specific correction.
-  Preserve evidence that pull/install were not started, without raw credential-
-  bearing Git output. Reproduce the user's stale-venv case with fake commands.
-- [ ] **MVP10.2 Shared failure presentation.** Define a small plain-data error
-  contract and one renderer, starting with software update then config/argument
-  preparation, submission and logs. Keep operation/stage/cause distinct; report
-  observed side effects and known/unknown outcomes. Expected CLI failures print a
-  concise explanation and nonzero exit; unexpected bugs retain debug tracebacks.
-  Preserve existing SoftwareUpdateError evidence and SubmissionError receipts.
-- [ ] **MVP10.3 Client handoff and regression gates.** Give embedding clients a
-  recipe and reference example that preserves diagnosis instead of replacing it
-  with generic 'pull failed' or an unhandled traceback. Verify human/JSON/Python
-  parity, bounded safe diagnostics, partial/unknown outcomes and no retry/fallback.
-  Document config correction and explicit recheck; run full offline/package checks.
+The user's PLAN.2 amendment expands this from selected message fixes into a
+full public-interface reliability milestone. The initial failure/placement map
+is in the design; every callable/action and its outcome contract must be reviewed.
 
-Completion: the stale-venv failure names the actual attempted executable and
-how to fix its selected profile; post-pull/install/submission uncertainty never
-gets reduced to 'nothing happened'. No environment discovery/auto-switch, package
-repair, new tracking database or automatic resubmission is included.
+- [ ] **MVP10.1 API and failure inventory.** Account for every supported Python
+  export, CLI action/alias/standalone entry point and ACP action. For each record
+  inputs, failure types, effect boundaries, current exception/returned-error shape,
+  translation owner, desired diagnostic, next action and regression evidence.
+  Identify broad catches, swallowed causes, false 'missing' results, inconsistent
+  exit behavior and loss of partial success; finalize the coverage register.
+- [ ] **MVP10.2 Dedicated error module.** Add one dependency-light owner for error
+  codes/categories, structured diagnostics, context/cause preservation, named
+  diagnostic constructors and safe serialization. Keep CLI rendering in a thin
+  presentation adapter using those same diagnostics. Isolate unit tests; do not
+  import backends, run commands or decide recovery in this module. Preserve public
+  exception/receipt contracts and settle additive data/debug/exit-code conventions.
+- [ ] **MVP10.3 Configuration, authoring and persistence.** Integrate at config,
+  selector, command/argument/path validation, bundle graph/render/preflight and
+  local record publication boundaries. Distinguish invalid/missing/inaccessible/
+  corrupt data and before-vs-after-publication failures. Show exact fields, named
+  job options and logical/resolved paths without altering historical evidence.
+- [ ] **MVP10.4 Transport, readiness and software.** Classify process launch,
+  SSH/session/helper/protocol/transfer and environment/Git/pip failures at adapters
+  with operation context. Reproduce the stale-venv case with its attempted Python
+  path and correction. Preserve probe/status unknowns and partial pull/install
+  effects; do not infer auth causes without evidence or fall back to another host.
+- [ ] **MVP10.5 Submission and recovery evidence.** Apply the module through
+  preparation/staging/session/dispatch/scheduler-response/receipt-persistence
+  failures and interruption. Preserve accepted IDs, partial results, original
+  causes and receipt references; secondary cleanup/tracking errors cannot mask
+  them. Rejection differs from unobserved acceptance; no blind retry.
+- [ ] **MVP10.6 Inspection, logs and cached evidence.** Integrate scheduler query,
+  path lookup, log reads, response decoding, cache and artifact failures. Distinguish
+  absent/empty/not-cached/stale/failed/unknown and per-item vs operation failures;
+  retain good evidence when another item fails. An SSH failure is not path absence
+  or job failure. Bounds and timestamps remain visible.
+- [ ] **MVP10.7 Cancellation, cleanup and sync.** Review destructive and partial
+  operations, selection/config failures, changed files, denied writes and lost
+  responses. Report each known/unknown effect; scancel acceptance is not observed
+  cancellation. Keep existing preview/confirmation rules, no added retries or
+  automatic deletion/rollback. Include discovery/context helper failures too.
+- [ ] **MVP10.8 Python, CLI, ACP and client integration.** Make all public routes
+  expose equivalent diagnostics/evidence, with expected failures rendered once
+  and unexpected bugs debuggable. Exercise root and standalone CLIs, aliases and
+  embedded clients; ACP must not flatten bugs/partial data into generic messages.
+  Publish the agent contract, human diagnosis guide and reference-client pattern.
+- [ ] **MVP10.9 Systematic failure gates and closure.** Close every audited row
+  with a verified handler/observation policy and meaningful regression; no silent
+  omissions. Cover phase-specific effects, interrupts, secondary failures,
+  diagnostic serialization/bounds and old records. Run full offline/package and
+  reference-client checks; record any intentionally changed API/data boundary.
+
+Completion: every public operation has an explicit failure contract and strategic
+translation owner; the dedicated module supplies consistent diagnostics without
+duplicate catch-all handling. The stale-venv case must name the attempted path,
+but that fix alone does not close MVP10. No environment auto-switch/repair,
+tracking database, automatic recovery or resubmission is included.
 
 ## PLAN.1 Schedule the next two reliability MVPs
 
@@ -615,6 +652,14 @@ repair, new tracking database or automatic resubmission is included.
   MVP9 then MVP10 with scoped tasks, evidence requirements and clear exclusions.
   Update design references and review documentation links. Planning only; no
   runtime/client edits, config changes, cluster contact or new test-pass claim.
+
+## PLAN.2 Expand error handling into an API-wide modular milestone
+
+- [x] Review public exports, CLI/ACP routes and representative error owners;
+  seed the failure/translation map, mandate a separately maintained error module,
+  replace the narrow three-slice MVP10 with a complete audit and staged rollout,
+  and remove the obsolete one-to-two-day estimate. Planning only; runtime baseline
+  and MVP9 ordering remain unchanged.
 
 ## Scientific reference case
 
@@ -667,6 +712,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-13 | Expand MVP10 to full API failure review, a dedicated error module and strategic integration across all public operations | User rejected a narrow message/updater fix; shared error ownership and complete failure contracts must be independently maintainable. Exact error API details remain proposed; implementation follows MVP9 |
 | 2026-11-13 | Investigate a concrete low-friction pattern while preserving human-readable cluster execution | User prioritized readable settings/scripts and less agent integration glue. DOCS.3 records a proposed single-declaration builder/command pattern with experiment evidence; no architecture or argument-policy change is accepted yet |
 | 2026-11-13 | Map all job/script interfaces before selecting an argument or execution refactor | User requested a general working principle spanning terminal, Python and saved JSON. Current routes are audited; recommendations remain proposals, with no change to accepted argument preferences |
 | 2026-11-13 | Job arguments are explicit, named and readable; typed CLI commands per job kind, Typer preferred | Alexandre's lasting preference: flat scalar script_args, CSV lists, default-off booleans, shell-safe strings and local client validation; replace opaque config payloads during reviews |
@@ -742,6 +788,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | FIX.CONFIG.1 Optional Slurm account and clearable config | 593 full offline tests passed in 10.57 s (41 expected collision warnings), report `.development/test-runs/optional-account.xml`; focused config tests 48 passed. Clean wheel config set/clear and account-free rendering smoke passed, SHA256 `491f184730042a666b49b448edb66be6a691296821a74de557da8a18ad7d3046`. Shared normalization removes unset account keys, selection no longer requires one, direct flags save locally, optional editor fields accept `-` to clear. Explicit accounts and historical records remain intact. Base editable import verified; backed up then cleared local rusty account and verified other settings unchanged. No cluster contact, base install or rollback edits. Updated human/agent/config design and installation register. Task commit: `git log --grep '^FIX.CONFIG.1:'`; push completed dev commit. |
 | 2026-11-13 | FIX.LOGS.1 Status-compatible log navigation | 623 full offline tests passed in 10.38 s (40 expected collision warnings), report `.development/test-runs/log-navigation.xml`. Thirty new checks verify bundle/job/expanded-array identity, sparse task indices, filters before bounds, conflicting selectors, batched multi-run queries, cached no-contact navigation and shared inspect behavior. Clean wheel indexed/cached navigation smoke passed; SHA256 `af7088345b15a3205eb6d9e723f39a0ca960e5aadda11862f8453c7e97693e43`. Human/agent examples, design and installation register updated. No cluster contact, daily state edits, base installation or rollback change. Task commit: `git log --grep '^FIX.LOGS.1:'`; push completed dev commit. |
 | 2026-11-13 | PLAN.1 Scope command arguments and actionable-error MVPs | Read DOCS.3, current updater/probe/CLI and missing-Python regressions. Confirmed broad preflight catch erases missing-executable detail and attempted Python is assigned only after probe success. Scheduled MVP9.1–3 then MVP10.1–3; wrote the bounded delivery/error contracts, failure matrix and client ownership limits. Reviewed documentation links/diff. No runtime/config/client change or cluster contact; full-suite baseline remains 623 passing tests from FIX.LOGS.1, not rerun for this planning task. Task commit: `git log --grep '^PLAN.1:'`; push completed dev commit. |
+| 2026-11-13 | PLAN.2 API-wide modular error-handling scope | User explicitly broadened MVP10. Reviewed exported Python APIs, CLI actions/aliases, ACP and representative config/persistence/path/transport/software/submission/inspection/lifecycle errors. Documented dedicated error-module ownership, strategic translation boundaries, failure families and full-API coverage gates; expanded MVP10 to nine slices. Initial map is a seed, not a completed per-callable audit. Documentation links/diff checked; no runtime/client/config edits, cluster contact or test rerun. Baseline stays 623 passing offline tests. Task commit: `git log --grep '^PLAN.2:'`; push completed dev commit. |
 
 ## How we work
 
