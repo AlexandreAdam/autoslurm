@@ -196,6 +196,10 @@ shell interpreter, remote agent or environment/release manager.
 
 ### Decisions to review before implementation
 
+DOCS.3 investigates a concrete [readable command/job pattern](design/job_command_pattern.md)
+with a client walkthrough, human review expectations, a local experiment and
+small proposed slices. Its adapter/API sketches remain unimplemented proposals.
+
 - Keep ordinary command execution as the common boundary, with Python helpers
   improving definition authoring? Or deliberately introduce another runtime mode?
 - What is the smallest shared command/argument contract that serves terminal,
