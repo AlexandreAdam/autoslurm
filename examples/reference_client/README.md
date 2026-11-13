@@ -12,13 +12,13 @@ provenance or retry system.
 
 ## Run the application locally
 
-From the development checkout, install into its isolated environment using
+From the main repository, install into its isolated test environment using
 already available build tools:
 
 ```sh
-../venv/bin/python -m pip install --no-index --no-build-isolation --no-deps -e examples/reference_client
+.development/python -m pip install --no-index --no-build-isolation --no-deps -e examples/reference_client
 cd examples/reference_client
-../../../venv/bin/science-demo --mode single --input-file data/measurements.json --output-dir demo-output/run1
+../../.development/venv/bin/science-demo --mode single --input-file data/measurements.json --output-dir demo-output/run1
 ```
 
 The direct call writes a local summary without Slurm. Choose a fresh output
@@ -27,12 +27,12 @@ AutoSlurm bundle output arguments are instead relative to the results root.
 
 ## Exercise AutoSlurm with mocked Slurm
 
-From the development checkout:
+From the main repository:
 
 ```sh
-../python -m pytest -q tests/integration/test_reference_client.py
-../python -m pytest -q tests/integration/test_execution_paths.py
-../python -m pytest -q tests/integration/test_submission_safety.py tests/integration/test_job_environment.py
+.development/python -m pytest -q tests/integration/test_reference_client.py
+.development/python -m pytest -q tests/integration/test_execution_paths.py
+.development/python -m pytest -q tests/integration/test_submission_safety.py tests/integration/test_job_environment.py
 ```
 
 Tests create a temporary console launcher equivalent to the installed entry
@@ -72,3 +72,75 @@ checks; AutoSlurm does not infer scientific validity from an ID.
 Read the [current client recipe](../../agent/01_client_workflow.md) for exact
 selection, installation ownership, operations and failure handling. This example
 does not promote development code or authorize cluster access.
+
+## MVP9.1: one typed command declaration, experimental authoring proof
+
+[typed_science_demo.py](typed_science_demo.py) adds a separate optional Typer CLI
+without changing the existing argparse demo or its fixtures. Its single function
+declares required named paths, an integer with a minimum, a numeric offset, a
+string label and a default-off flag. The command still runs without AutoSlurm:
+
+```sh
+science-typed --input-file data/measurements.json --output-dir demo-output/typed --repeat 2 --offset 0.5 --label pilot --include-values
+```
+
+It writes count 8, sum_squares 82 and the original values. Install the example's
+`typed` extra when choosing to use this command; it needs Typer 0.27. Current
+tests already have this dependency and create a temporary launcher without an
+install. The original `science-demo` retains no Typer or AutoSlurm dependency.
+
+From a workstation Python builder, the **experimental internal proof** uses the
+same declaration (run from this example directory with the test interpreter):
+
+```python
+from typed_science_demo import app
+from autoslurm.typer_adapter import from_typer
+from autoslurm import save_bundle
+
+command = from_typer(app, script="science-typed", input_args=("input_file",))
+job = command.job(
+    name="sample",
+    script_args={"input_file": "data/measurements.json", "output_dir": "typed/run",
+                 "repeat": 2, "offset": 0.5, "label": "pilot", "include_values": True},
+    slurm={"time": "00:01:00", "mem": "64M"},
+)
+planned_path = save_bundle({"sample": job}, "typed-demo")
+```
+
+`command.describe()` exposes JSON-serializable option/default/range/path metadata.
+`command.validate(values)` and `.job(...)` reject unknown/missing names, wrong
+native types, non-finite numbers, out-of-range values and unsafe strings before
+save. Integers are accepted for numeric/float options and materialized as floats;
+booleans are never accepted as integers. Static defaults, including False, remain
+visible in script_args. Input availability, machine roots, Slurm resources and
+scientific validity still use their existing application/AutoSlurm owners.
+
+The adapter supports one plain Typer leaf app with add_completion=False, canonical
+flag names and scalar annotations. It inspects metadata without parsing options
+or running scientific/parameter callbacks. It rejects app/option callbacks,
+prompts, environment/default factories, custom parsers, forward annotations,
+custom flags, lists/tuples and default-on booleans; a version/capability mismatch
+fails explicitly. Ordinary non-path strings must still be shell-safe single
+words (CSV strings work); declared paths use existing quoting/resolution. The
+shared literal argument compiler and strings with spaces are MVP9.2.
+
+This proof is not a public authoring API or a replacement for the supported
+client recipe. It is intentionally absent from AutoSlurm's top-level exports.
+The saved JSON contains only existing fields: name, script, script_args, slurm
+and declared path roles, plus ordinary snapshot metadata. It stores no callback,
+framework object, contract schema or hidden config payload. Loading/submitting
+this JSON does not rediscover the declaration or certify its options against a
+newer command version. A client must explicitly revalidate against its current
+trusted declaration when that assurance is needed. Broader saved-contract and
+public integration guarantees remain MVP9.3 release decisions.
+
+Verification (mocked scheduler, disposable local files and launchers):
+
+```sh
+.development/python -m pytest -q tests/unit/test_command_contract.py tests/integration/test_typed_reference_client.py
+```
+
+Run that verification from the repository root. It checks real parser round-trips,
+readable default-filled JSON, invalid settings without writes, preview/execution
+agreement under a results path with spaces and an accepted receipt plus scientific
+output. No cluster, external scientific application or daily config is touched.

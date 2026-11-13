@@ -12,24 +12,26 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
+  MVP9.1 typed-command proof is complete; MVP9.2–3 remain open.
   MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 634 passed, 41 expected
+  rollback source remains unchanged. Full offline suite: 674 passed, 42 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.SOFTWARE.1 restores normal pip build isolation
-  with no-deps, includes a bounded pip output tail on failed installs, and runs
-  env_command before venv activation. The real offline fixture proves isolated
-  builds and unchanged non-project installed distributions; module setup is retained
-  by the config editor. Full suite/package smoke passed; no cluster/daily state edits.
-- **Next task:** MVP9.1, a narrow shared command-argument contract and reference client proof.
+- **Latest completed task:** MVP9.1 adds experimental in-memory command contracts
+  and a narrow optional Typer adapter, plus a reference command using one typed
+  declaration for CLI/default-filled named jobs. Validation is pure and pre-save;
+  saved JSON/rendering/public exports remain unchanged. Full suite and wheel smoke
+  passed. No cluster, daily state or external scientific-client changes.
+- **Next task:** record the user's status-display MVP and newly supplied Gaia
+  reusable-workflow proposal as separate planned work, then continue MVP9.2.
   MVP9 implements readable command integration; MVP10 follows with
   an API-wide error review and dedicated shared error module. MVP10 now starts
   with a complete interface/failure inventory before migrating operation boundaries;
-  the stale-venv case is one regression among many. Planning only so far; module
-  implementation and error API details remain pending.
+  the stale-venv case is one regression among many. The error-module implementation
+  and its public API details remain pending.
   Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
@@ -575,7 +577,7 @@ The user requested this MVP after the DOCS.3 investigation. Keep ordinary
 Python scripts/installed commands and readable named `script_args`; the
 architecture sketches remain proposals until each task settles its interface.
 
-- [ ] **MVP9.1 Single-declaration proof.** Support a deliberately small typed
+- [x] **MVP9.1 Single-declaration proof.** Support a deliberately small typed
   named-option profile in the reference client. Derive names/types/static defaults
   from one lightweight command declaration; validate native values before save.
   Reject unknown/unsupported options without running science, callbacks, prompts
@@ -805,6 +807,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | PLAN.1 Scope command arguments and actionable-error MVPs | Read DOCS.3, current updater/probe/CLI and missing-Python regressions. Confirmed broad preflight catch erases missing-executable detail and attempted Python is assigned only after probe success. Scheduled MVP9.1–3 then MVP10.1–3; wrote the bounded delivery/error contracts, failure matrix and client ownership limits. Reviewed documentation links/diff. No runtime/config/client change or cluster contact; full-suite baseline remains 623 passing tests from FIX.LOGS.1, not rerun for this planning task. Task commit: `git log --grep '^PLAN.1:'`; push completed dev commit. |
 | 2026-11-13 | PLAN.2 API-wide modular error-handling scope | User explicitly broadened MVP10. Reviewed exported Python APIs, CLI actions/aliases, ACP and representative config/persistence/path/transport/software/submission/inspection/lifecycle errors. Documented dedicated error-module ownership, strategic translation boundaries, failure families and full-API coverage gates; expanded MVP10 to nine slices. Initial map is a seed, not a completed per-callable audit. Documentation links/diff checked; no runtime/client/config edits, cluster contact or test rerun. Baseline stays 623 passing offline tests. Task commit: `git log --grep '^PLAN.2:'`; push completed dev commit. |
 | 2026-11-13 | FIX.SOFTWARE.1 Plain isolated editable builds and setup before venv activation | 634 full offline tests passed in 9.16 s (41 expected collision warnings), report `.development/test-runs/plain-editable.xml`; 11 added cases plus updated command/script expectations. Real local/fake-SSH Git/venv fixture uses a no-download standard-library backend and a conflicting runtime package to prove build isolation, same/new-commit CLI refresh, single checkout and unchanged non-project distributions. Pip failures expose last 20 lines/about 4 KiB with URL-userinfo lines omitted; shell tests verify setup precedes activation and failure stops rooted jobs. Config editor preserves setup; single-setting behavior retained. Clean wheel smoke and guidance checks passed. No actual cluster contact, network build, daily config/venv install or rollback edit. Broad MVP10 remains planned. Task commit: `git log --grep '^FIX.SOFTWARE.1:'`; push completed dev commit. |
+| 2026-11-13 | MVP9.1 Single-declaration command proof | 674 full offline tests passed in 10.53 s (42 expected collision warnings), report `.development/test-runs/command-proof.xml`; 40 new cases. Experimental command-contract/optional Typer 0.27 adapter derives scalar options/defaults/ranges, rejects unsupported side-effectful/dynamic semantics before discovery, and builds current readable jobs. Reference CLI/parser/native-value round-trips, invalid options without writes, preview/mock submission identity and actual local science output passed. No contract serialized or top-level public API added. Clean wheel optional-dependency/contract/JSON smoke passed, SHA256 `17e2ab6c8a97b16a9eea104285a80082280f680e490b84750babb13171db9221`. Docs and links reviewed; no cluster, base install, daily state, external application or rollback changes. User's status/workflow planning requests remain next. Task commit: `git log --grep '^MVP9.1:'`; push completed dev commit. |
 
 ## How we work
 

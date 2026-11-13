@@ -8,8 +8,12 @@ version = "0.0.1"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+typed = ["typer>=0.27,<0.28"]
+
 [project.scripts]
 science-demo = "science_demo:main"
+science-typed = "typed_science_demo:app"
 
 [tool.setuptools]
-py-modules = ["science_demo"]
+py-modules = ["science_demo", "typed_science_demo"]

@@ -15,7 +15,7 @@ validation approach.
 | MVP6 Persistence and transport | [MVP6_persistence_and_transport.md](MVP6_persistence_and_transport.md) | Complete locally on dev |
 | MVP7 Single-checkout software updates | [MVP7_cluster_software_preparation.md](MVP7_cluster_software_preparation.md) | In-place pulls; prior copy/release design superseded |
 | MVP8 Execution logs | [MVP8_execution_logs.md](MVP8_execution_logs.md) | Bounded stdout/stderr and shared failure evidence |
-| MVP9 Readable command arguments | [job_command_pattern.md](job_command_pattern.md#mvp9-delivery-scope-planned) | Scheduled; narrow contract/compiler proof first, API details proposed |
+| MVP9 Readable command arguments | [job_command_pattern.md](job_command_pattern.md#mvp91-implemented-proof-boundary) | MVP9.1 internal typed proof complete; compiler/public integration remain MVP9.2–3 |
 | MVP10 API-wide error handling | [MVP10_actionable_errors.md](MVP10_actionable_errors.md) | Expanded by PLAN.2: full API failure audit, isolated error module and staged boundary adoption |
 | Command/job pattern investigation (DOCS.3) | [job_command_pattern.md](job_command_pattern.md) | Concrete walkthrough and local experiment; proposals for review, no runtime changes |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |

@@ -13,6 +13,11 @@ safe-word preference remains in force. No renderer or execution behavior changes
 MVP10 error handling. Delivery scope is below; implementation has not started.
 The earlier investigation's hypothetical APIs are still not supported interfaces.
 
+**MVP9.1 implemented locally, 2026-11-13:** internal command-contract and optional
+Typer adapter modules now prove one declaration feeding typed validation and the
+ordinary saved-job/preview/submission path. The implemented boundary is documented
+below. The original walkthrough remains design notation; MVP9.2–3 are still open.
+
 This follows the [current interaction map](../interaction-map.md#job-script-interactions-current-code-and-design-review).
 It compares AutoSlurm's current parser/renderer, its argparse reference client,
 and Gaia's existing typed task registry/CLI/bundle builder. Gaia is reference
@@ -292,6 +297,70 @@ literal-token-to-real-parser round-trips, preview/submission equality, unchanged
 path/array/dependency/receipt behavior, and a readable JSON/script walkthrough.
 Tests use a disposable local reference CLI and mocked Slurm/transport. Start with
 one command; additional frameworks or general signature inference are not gates.
+
+## MVP9.1 implemented proof boundary
+
+`command_contract.py` owns an in-memory, framework-free CommandOption/CommandContract
+model, strict native-value and range/default validation, plain metadata discovery,
+and construction of existing job dictionaries. `typer_adapter.py:from_typer` lazily
+imports optional Typer 0.27, prechecks the selected app/function/options and derives
+the model without parsing arguments or executing callbacks. Both modules are
+experimental and absent from top-level public exports until MVP9.3's release.
+
+The settled proof syntax is `from_typer(app, script=..., input_args=..., path_args=...)`,
+then `.describe()`, `.validate(script_args)` or `.job(name=..., script_args=..., slurm=...)`.
+Names/types/static defaults/min/max come from the command declaration; path roles
+and resources remain explicit application/infrastructure policy. There is no
+second hand-maintained option schema. Integers stay strict (bool is rejected),
+numeric/float options accept int or float and return finite floats, and default-off
+booleans retain explicit False in JSON. Invalid and unknown settings fail before
+the client writes a bundle.
+
+The adapter deliberately supports one plain leaf app, add_completion=False,
+canonical long flags, scalar static annotations and ordinary numeric bounds.
+It rejects groups/app callbacks, custom context/classes/flags, option callbacks,
+prompts, env/default factories, custom parsers, forward annotation evaluation,
+repeated/tuple/optional values and default-on booleans. Raw metadata is checked
+before Typer constructs a parser object; version/flag/requiredness capabilities
+are checked too. Discovery is not a sandbox for arbitrary imported application
+code: callers supply an already-imported lightweight trusted app. No dynamic
+application discovery/import is performed by the builder.
+
+No new saved schema or contract version: jobs contain existing name/script/
+script_args/slurm/path-role fields and normal snapshot metadata. Every supported
+static default is materialized in script_args, including omitted False flags.
+The in-memory contract and parser/callback objects are never serialized. Saved
+definitions do not claim semantic revalidation at load/submit time. Clients can
+explicitly validate loaded settings against their current trusted declaration;
+durable identity/lookup remains a release decision for MVP9.3. Public helper
+stability is deferred rather than implying today's hypothetical APIs are accepted.
+
+The existing renderer is unchanged: non-path strings must be shell-safe single
+words/CSV; declared path values use existing path quoting. Strings with spaces,
+broader values and shared literal compilation remain MVP9.2. Raw-script jobs,
+existing clients, machine roots, array/dependency behavior and receipts are unchanged.
+
+`typed_science_demo.py` supplies the reference command. It uses optional Typer
+without importing AutoSlurm to execute science. One declaration supplies its CLI
+and builder metadata; an offset/repetition/label/optional-values example proves
+the saved settings are actually used. Original argparse science-demo stays intact.
+Tests build a temporary launcher instead of installing an application environment.
+
+Verification: 674 full offline tests passed in 10.53 s (42 expected collision
+warnings); `.development/test-runs/command-proof.xml`, 40 new cases. Tests cover
+plain metadata/defaults, wrong/unknown/unsafe values, required options, ranges,
+unsupported callback/factory/parser/context/list/bool forms, version/flag capability
+gates, real parser round-trips, pre-save failures without writes, readable JSON,
+preview/dispatch equality and real local science output under a results root with
+spaces. Scheduler acceptance is retained independently of scientific checks.
+
+Clean wheel optional-dependency/contract/JSON smoke passed; artifact
+`.development/artifacts/command-proof/autoslurm-0.1.0-py3-none-any.whl`, SHA256
+`17e2ab6c8a97b16a9eea104285a80082280f680e490b84750babb13171db9221`.
+Base package/core adapter imports work with Typer imports deliberately blocked;
+the optional adapter reports its missing dependency explicitly when called.
+No base install, cluster contact, client application outside the reference example,
+daily configuration/tracking or rollback source changes.
 
 ## Open decisions and log
 

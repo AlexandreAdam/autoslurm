@@ -12,6 +12,14 @@ is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
+MVP9.1 (2026-11-13): 674 full offline tests passed (42 expected collision warnings),
+report `.development/test-runs/command-proof.xml`; clean wheel optional-dependency/
+typed-contract/JSON smoke passed. New internal contracts/adapter and reference
+command are experimental; public authoring integration remains MVP9.3. Typer is
+optional, absent from AutoSlurm's core runtime requirements; tests use the already
+installed test dependency. No base install, daily config/tracking, cluster contact,
+external scientific application or rollback source change.
+
 FIX.SOFTWARE.1 (2026-11-13): 634 full offline tests passed (41 expected collision
 warnings), report `.development/test-runs/plain-editable.xml`; clean wheel pip
 flags/failure-tail/composed-activation smoke passed. Real temporary local/fake-SSH

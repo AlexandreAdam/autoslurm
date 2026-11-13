@@ -29,6 +29,13 @@ runtime dependencies unchanged. Updates do not create/select release runtimes.
 Historical software-manifest helpers remain pure data utilities; new runs use
 the configured environment without a `software` runtime request.
 
+MVP9.1 adds an [experimental typed-command proof](../examples/reference_client/README.md#mvp91-one-typed-command-declaration-experimental-authoring-proof)
+in the reference client. It is not a supported replacement for this recipe yet:
+internal command contracts validate supported scalar settings before save, but
+saved bundles do not retain a command schema or get semantic revalidation when
+loaded. Existing JSON/preview/submission contracts remain unchanged; public
+authoring integration and broader argument compilation are later MVP9 tasks.
+
 ## Adapt scientific software
 
 Keep computation independent of AutoSlurm. Expose an installed command with
