@@ -26,6 +26,30 @@ operate from the workstation; compute nodes use already-prepared environments.
 
 ## Working rules
 
+- **Alexandre's lasting client preference (2026-11-13): job arguments are
+  explicit, named and readable in the bundle.** Apply this when building,
+  reviewing or helping software that uses AutoSlurm:
+  - Give each job its settings as individual named `script_args`, one key per
+    setting. Saved JSON and rendered commands must make the invocation readable.
+    Never hide job configuration in base64, JSON blobs, or a single config-file
+    argument. Point out existing encoded configuration as something to replace.
+  - Client entry points are CLIs with typed, named options; **Typer is preferred**.
+    Expose one command per kind of job (`tool TASK --option-a 1 --option-b x`);
+    put the fixed command in `script` and its options in `script_args`.
+  - Argument values are `int`, `float`, `str` or `bool`. Encode a list as one
+    comma-separated string, not a Python/JSON list: the renderer emits lists as
+    `--flag a b`, which does not match the intended Typer option interface.
+  - Boolean CLI options default to off: `True` renders as `--flag`, while `False`
+    is omitted. Keep effective settings visible in the bundle, including false
+    values; do not rely on omission to turn off a default-on option.
+  - String values are single shell-safe words. Ordinary non-path values are
+    unquoted by the current renderer; reject unsafe values locally.
+  - Validate every job's option names, types and values against its command's
+    signature **before saving a bundle**, and validate again before submission
+    if the command/definition changed. This is a client requirement, not a claim
+    that AutoSlurm already implements signature validation. See the
+    [client argument contract](agent/01_client_workflow.md#explicit-named-job-arguments)
+    and [bundle-writing recipe](agent/10_task_schedule.md).
 - Current refactor scope is local only: mock Slurm and transport commands. No
   cluster discovery, SSH, live jobs or remote installs. See WORKFLOW.md for the
   dated scope and installation register for the editable base Conda install.

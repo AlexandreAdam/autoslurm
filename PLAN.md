@@ -17,10 +17,11 @@ This file is the source of truth for active scope, task order and progress.
   install; tests use `.development/python` and separate temporary state. Pinned
   rollback source remains unchanged. Full offline suite: 576 passed, 39 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP7.2f: each successful pull now refreshes the
-  project's editable install in the configured existing environment, including
-  unchanged HEAD. Interpreter preflight and separate installation evidence prevent
-  a successful Git pull from hiding installation failure. MVP8 remains complete.
+- **Latest completed task:** DOCS.1 records Alexandre's lasting preference for
+  explicit readable named scalar job arguments, typed CLIs (Typer preferred),
+  client-side signature/value validation before saving/submitting, and review
+  guidance to replace encoded configuration. Documentation only; MVP7.2f/MVP8
+  implementation remains unchanged. Last code verification remains 576 tests.
 - **Next task:** no later implementation scheduled. Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
@@ -28,7 +29,7 @@ This file is the source of truth for active scope, task order and progress.
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
   the operator coordinates update timing for jobs using it.
-- **Last updated:** 2026-11-12.
+- **Last updated:** 2026-11-13.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
   `dev`; GitHub repository settings and documentation integrations stay as they were.
@@ -484,6 +485,18 @@ file-type allowlist or recursive output-directory scan is included.
   workflows. Update human/agent rules, full offline tests and package smoke; local
   milestone tag at closure. Actual cluster access remains outside this task.
 
+## DOCS.1 Lasting client argument preference
+
+- [x] Save Alexandre's explicit, named, readable job-argument preference in
+  AGENTS.md and the client/bundle/operating recipes. Prefer typed Typer commands
+  per job kind; one scalar script_args value per setting, CSV lists, default-off
+  booleans and shell-safe strings. Reject opaque configuration payloads and teach
+  client-side signature/name/type/value validation before saving/submitting.
+- [x] Record the accepted preference in the agent documentation design, review
+  the renderer for accuracy, inspect the documentation diff and relative links.
+  This task changes no implementation, saved jobs, application source or cluster.
+  Application tests are not rerun for this documentation-only change.
+
 ## Scientific reference case
 
 Use a cheap application with an installed command, relative inputs/outputs,
@@ -535,6 +548,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-13 | Job arguments are explicit, named and readable; typed CLI commands per job kind, Typer preferred | Alexandre's lasting preference: flat scalar script_args, CSV lists, default-off booleans, shell-safe strings and local client validation; replace opaque config payloads during reviews |
 | 2026-11-12 | Editable install by default after each successful software pull | User requires new command-line entry points to be installed; refresh the same checkout in the configured existing environment while retaining machine-owned dependencies and the single-copy policy |
 | 2026-11-12 | Retrieval is limited to execution logs and scheduler evidence | User clarified scientific datasets/results belong to applications; MVP8 replaces the proposed generic result downloader |
 | 2026-11-09 | Follow Gaia's living plan, one-task workflow, completion criteria and task-ID commits | Keep work reviewable across sessions |
@@ -604,6 +618,7 @@ or migration decision has already been accepted.
 | 2026-11-12 | MVP8.1–MVP8.3 Robust execution logs | 562 offline tests passed in 5.58 s (38 expected warnings), report `.development/test-runs/execution-logs-final.xml`; 20 net added cases after FIX.SSH.1. Public inspect_logs, direct asl logs and ACP stream selection share status/reasons/exit codes and bounded local/SSH excerpts. Verified exact SSH stdin reader, array/custom/merged/separate logs, stream-before-limit selection, empty/missing/permission/special files, sparse 1 GiB log bounded read, growth/rotation, malformed/oversized replies, cache failures and cached no-source/no-network reads. Clean-source offline wheel install/API/reader/entry-point/help smoke passed, SHA256 `9b3e5c18e04f3964fdb8ff0c2eabe4e55e9682f449a23ebe099b0179d0c634d4`. Main base import/help and clean rollback 33bcbd3 verified. Human/agent guidance and interaction scope updated; no scientific result transfers, base installs, daily config/state mutation, cluster contact or deployment. Task commit: `git log --grep '^MVP8:'`; local mvp8 tag at closure. |
 
 | 2026-11-12 | MVP7.2f Editable installation after software pull | 576 offline tests passed in 9.61 s (39 expected collision warnings), report `.development/test-runs/software-editable-final.xml`; 14 net new cases plus expanded real Git/venv fixture. Configured interpreter identity is checked before pulling; every successful pull runs editable pip installation without dependency/build-isolation/index/cache preparation. Same-commit entry-point repair and new CLI at unchanged package version work through local and exact fake SSH payloads, with one source checkout. Failures/timeouts/lost or malformed replies retain commit/installation evidence and never retry/reset; target redirection is ignored. Clean-source wheel/isolated target/API/help smoke passed, SHA256 `4994986c18e649411b7fc27e2f1d45c73942a1f8b957e7df7622a5f5ecedc782`. Main base import/help and clean rollback 33bcbd3 verified; user files/evidence preserved. No actual SSH/cluster installs, base environment changes, daily state/config mutations or remote deployment. Task commit: `git log --grep '^MVP7.2f:'`; push completed dev commit. |
+| 2026-11-13 | DOCS.1 Lasting client argument preference | Updated AGENTS.md, operating/client/bundle recipes and accepted agent-documentation design. Read current argument renderer to confirm list/boolean/string limits; reviewed Markdown diff, JSON example and relative links/anchors. Documentation only; no application tests rerun, code/runtime enforcement, existing bundle rewrites, client changes or cluster operations. Last code baseline stays 576 passing offline tests from MVP7.2f. Task commit: `git log --grep '^DOCS.1:'`; push completed dev commit. |
 
 ## How we work
 

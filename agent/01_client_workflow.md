@@ -1,7 +1,7 @@
 # Current client workflow
 
-Use this recipe with the development installation including MVP7.2e (single-
-checkout Git updates; no managed application releases). As of
+Use this recipe with the development installation through MVP8 and MVP7.2f
+(single-checkout Git updates plus editable refresh; no managed releases). As of
 2026-11-12, main branch `dev` is the active base Conda editable installation;
 the retained baseline rollback installation does not have these additions. Read `00_operating_rules.md`
 first; this recipe takes precedence over older examples where their claims
@@ -20,9 +20,10 @@ tracking, logs and results separate from stable storage. Prepared environments
 are operator-owned; compute jobs do not install packages, pull Git repositories
 or change shared code. One bundle targets one machine. The
 [software recipe](13_software_preparation.md) documents explicit `update_software`
-and `asl software update`: pull the existing checkout before submission, with
-before/after commit evidence. The layer never clones, installs or selects a
-runtime. Keep one checkout per project; the operator owns environment setup.
+and `asl software update`: pull the existing checkout and refresh its editable
+install in the configured environment before submission, with commit/install
+evidence. Keep one checkout per project; the operator owns dependencies/build
+tools and environment creation. Updates do not create/select release runtimes.
 Historical software-manifest helpers remain pure data utilities; new runs use
 the configured environment without a `software` runtime request.
 
@@ -35,6 +36,80 @@ invalid input or failed computation. A thin adapter may read
 a distinct output. A reducer validates all expected shards and their input
 compatibility before reporting success.
 
+## Explicit named job arguments
+
+**Alexandre's lasting preference, 2026-11-13:** job arguments are explicit,
+named and readable in the bundle. Follow this contract when building a client,
+writing/reviewing bundles or helping an existing application adopt AutoSlurm.
+
+- Expose one typed CLI command per kind of job; **Typer is preferred**. For
+  `science-tool fit --seed 17 --n-stars 8`, use `script: "science-tool fit"` and
+  individual named options in `script_args`. The command/subcommand is fixed;
+  job settings belong in named options rather than positional payloads.
+- Give every job one `script_args` key per setting. Include effective defaults
+  so the saved JSON records the settings actually used. Do not send a whole run
+  definition, unrelated jobs' settings or a nested configuration as one value.
+  Never use base64, JSON blobs, or a single config-file argument to hide settings.
+  Data files remain legitimate declared inputs; their paths must not hide job
+  configuration that should be explicit arguments.
+- Values are scalars: `int`, `float`, `str` or `bool`, not nested mappings,
+  `None` or Python/JSON lists. Represent a list as one readable comma-separated
+  string, such as `"g,r,i"`, with a typed client parser for its elements. Current
+  list rendering is `--flag a b`, which Typer rejects for this single-value
+  option pattern; it is not a supported way to pass lists in Alexandre's clients.
+- Boolean options default to off. Use real booleans in `script_args`, not
+  `"True"`/`"False"`: `True` emits `--flag`, and `False` emits nothing. Record
+  `False` in JSON for readability; its omission in the rendered command relies
+  on the CLI's default being off. Do not use omission to disable a default-on flag.
+- String values are single shell-safe words. The current renderer quotes
+  declared path arguments but leaves ordinary arguments unquoted. Keep client
+  string values safe without adding manual shell escaping: reject whitespace,
+  control characters, quotes, shell operators, substitutions and glob patterns.
+  Keep application paths relative under the path contract below.
+
+For example, a job can declare its complete, readable option mapping:
+
+```json
+{
+  "name": "fit",
+  "script": "science-tool fit",
+  "input_args": ["input_file"],
+  "script_args": {
+    "input_file": "data/measurements.json",
+    "output_dir": "study/fit",
+    "seed": 17,
+    "n_stars": 8,
+    "learning_rate": 0.001,
+    "bands": "g,r,i",
+    "require_gpu": true,
+    "verbose": false
+  },
+  "slurm": {"tasks": 1, "gres": "gpu:1", "cpus_per_task": 1, "mem": "1G", "time": "00:05:00"}
+}
+```
+
+The scalar rule applies to `script_args` values; `input_args` and `path_args`
+remain lists of argument names under AutoSlurm's path declaration contract.
+
+**Validate before writing a bundle.** The client's bundle builder must check
+each job against the actual typed command signature: reject unknown option names,
+missing required options, wrong scalar/CSV element types, unsafe strings and
+incompatible boolean defaults. Map Python-style names consistently to CLI names
+(`n_stars` becomes `--n-stars`) and preserve valid native scalar values rather
+than blindly stringifying everything. Run this before `save_bundle` or
+`schedule_job`; repeat before submitting if the signature or definition changed.
+AutoSlurm's existing structural/path/shell preflight does not replace this
+client-side semantic validation. A syntactically valid shell script can still
+contain an unknown option or the wrong CLI value type.
+
+During reviews, flag encoded configuration and suggest a concrete replacement:
+one job-specific typed command plus a flat named argument mapping. Read both the
+saved JSON and previewed invocation to confirm that settings stay understandable.
+This guidance is a client design requirement; this documentation change does not
+add a runtime validator or change existing bundle records.
+
+## Application paths
+
 Client definitions keep paths relative. These are the current bases:
 
 | Field | Base and behavior |
@@ -45,7 +120,7 @@ Client definitions keep paths relative. These are the current bases:
 | `script_args.output_dir` | Results-relative; AutoSlurm resolves under machine `results_root`, or selected execution storage's `results/` |
 | String arguments named in `path_args` | Same results-relative base, for example a reducer's `parts_dir` |
 | Undeclared arguments | Passed through; relative paths depend on the established working directory |
-| Paths inside application config files | Application-owned; never inspected or rewritten by AutoSlurm |
+| Paths inside application config files | Never rewritten by AutoSlurm; do not use a config-file option to hide job settings that must be named arguments |
 
 Configure absolute infrastructure roots once in the selected machine profile;
 keep application declarations relative. Jobs using configured software/data roots reject absolute paths

@@ -19,6 +19,22 @@ modules to use the package correctly.
 
 ## Documentation entry and retrieval
 
+### Accepted client argument preference (2026-11-13)
+
+Alexandre explicitly requires readable, individual named job arguments, typed CLI
+commands per job kind (Typer preferred), and a flat scalar `script_args` mapping.
+Opaque base64/JSON/config-file configuration payloads are to be replaced. Lists
+use one comma-separated scalar, booleans default to off, and strings stay single
+shell-safe words under the current renderer. Client builders validate actual CLI
+signatures, required/unknown options, types and unsafe values before saving or
+submitting. This is a lasting preference for integration, bundle generation and
+client reviews. The [current client recipe](../agent/01_client_workflow.md#explicit-named-job-arguments)
+and [bundle recipe](../agent/10_task_schedule.md) carry the operational contract;
+AGENTS.md carries the contributor reminder. Recording this policy changes no
+renderer/validator or saved data. Other proposed designs below remain proposals.
+
+### Context discovery
+
 An agent starts with a short orientation: what AutoSlurm owns, capability and
 version discovery, the choice between integrating an application and operating
 a run, and how to request the next recipe. Do not make a full source-code map

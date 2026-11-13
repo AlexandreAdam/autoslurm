@@ -44,6 +44,14 @@ capabilities. This page establishes operating rules during the MVP transition.
 
 ## Integrating an application
 
+Respect Alexandre's lasting preference: job settings are individual named scalar
+`script_args`, readable in saved JSON and the rendered invocation. Prefer typed
+Typer commands per job kind; never hide settings in encoded/config-file payloads.
+Validate option names/types/safe values against each CLI signature before saving
+or submitting. See the full [client argument contract](01_client_workflow.md#explicit-named-job-arguments)
+for comma-separated lists, default-off boolean flags and unquoted string limits.
+When helping/reviewing a client, identify encoded configuration to replace.
+
 Keep scientific computation independent of submission glue. Prefer an installed
 command, explicit validated parameters, relative input/output paths, resource
 and worker limits, distinct task outputs, and meaningful nonzero failures.

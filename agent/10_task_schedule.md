@@ -3,6 +3,37 @@
 Start with `00_operating_rules.md` and `01_client_workflow.md`. Identify the installation/lane and machine
 before scheduling; planned resolver or recovery features are not current APIs.
 
+## Alexandre's lasting bundle preference
+
+**Job arguments are explicit, named and readable in the bundle** (2026-11-13).
+Apply this when generating jobs and when reviewing or helping client software.
+
+- Use one typed CLI command per kind of job, preferably Typer: put a fixed
+  `tool TASK` in `script`, with one named `script_args` key per setting. Keep
+  effective defaults visible in the saved JSON.
+- Never pack settings into base64, a JSON blob or a single config-file option.
+  Point out encoded configuration as something to replace with individual
+  job-specific options. Declared input data files remain valid inputs.
+- Each argument value is `int`, `float`, `str` or `bool`. A list becomes one
+  comma-separated string parsed/validated by the client, not a Python/JSON list:
+  current list rendering produces `--flag a b`, which Typer rejects for the
+  intended single-value option interface. `input_args`/`path_args` still contain
+  lists of argument names; they are not application argument values.
+- Boolean options default to off: real `True` emits `--flag`, while real `False`
+  is omitted. Record false settings in JSON; a default-on CLI option cannot be
+  disabled by omission. String values are single shell-safe words, because the
+  current renderer leaves non-path arguments unquoted. Do not hand-escape values
+  or permit whitespace, shell metacharacters, substitutions or glob patterns.
+- **Before saving or submitting**, validate every job against its command's
+  typed signature: unknown names, required options, types (including CSV
+  elements), boolean defaults and unsafe values. Use the public path/shell
+  preview in addition to client validation; it does not check arbitrary CLI
+  signatures. Errors must fail locally before writing/submitting the workload.
+
+See the [client argument contract and example](01_client_workflow.md#explicit-named-job-arguments).
+These are lasting client-design rules; they do not claim new AutoSlurm runtime
+enforcement or authorize rewriting historical bundles.
+
 To plan a new workload, gather the relevant CLI usage, resource guidance, and ACP action:
 
 - `04_project_map.md` and `05_cli_reference.md` describe scheduling flags. The Python API `autoslurm.schedule_job` takes a job dictionary with `script`, `script_args`, `dependencies` and `slurm` fields. Do not rely on `pre_commands`: the current renderer does not execute it.
