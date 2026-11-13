@@ -23,8 +23,11 @@ This file is the source of truth for active scope, task order and progress.
   Shares inspect selection and filters array logs before file limits. Exact
   paths remain available for agent handoffs. Full suite and clean wheel smoke
   passed; no cluster contact or daily config/tracking changes.
-- **Next task:** review the DOCS.3 walkthrough and choose a first narrow proof;
-  its architecture/API sketches remain proposed. Cluster access/installations
+- **Next task:** MVP9.1, a narrow shared command-argument contract and reference
+  client proof. MVP9 implements readable command integration; MVP10 follows with
+  actionable errors, starting with the reported stale-venv failure. This turn
+  schedules both; no runtime implementation started. API details remain proposed.
+  Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
 - **Scope update:** local code/tests only, with temporary Git repositories and
@@ -79,6 +82,8 @@ Each row is incremental, not cumulative.
 | MVP6 | Separate bundle persistence/selection from transport and configuration helpers | One to two days | No storage migration or broad module renaming |
 | MVP7 | Update one checkout and refresh its editable project install | Delivered in small slices | Operator-managed existing environment/dependencies; update timing coordinated for shared jobs |
 | MVP8 | Clear bounded stdout/stderr inspection with failure evidence | Half to one day | Execution logs only; scientific results remain application-owned |
+| MVP9 | Declare command options once; validate readable job arguments and render the same invocation | Two to three focused days for the narrow profile | Static scalar options first; no remote Python launcher or universal CLI adapter |
+| MVP10 | Errors identify the failed check, selected resource, observed effects and safe next step | One to two focused days for priority boundaries | Updater first, then shared public boundaries; no automatic repair/retry framework |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
 nine focused days with the stated scope; none requires completing later product
@@ -545,6 +550,72 @@ Design: [readable command/job pattern](REFACTORING_DOCS/design/job_command_patte
 - [x] Add offline navigation/identity/invalid-selection regressions, run the full
   suite and update terminal/agent examples, design and verification evidence.
 
+## MVP9 Readable command arguments without duplicated client plumbing
+
+Design: [command/job pattern and MVP9 scope](REFACTORING_DOCS/design/job_command_pattern.md#mvp9-delivery-scope-planned).
+
+The user requested this MVP after the DOCS.3 investigation. Keep ordinary
+Python scripts/installed commands and readable named `script_args`; the
+architecture sketches remain proposals until each task settles its interface.
+
+- [ ] **MVP9.1 Single-declaration proof.** Support a deliberately small typed
+  named-option profile in the reference client. Derive names/types/static defaults
+  from one lightweight command declaration; validate native values before save.
+  Reject unknown/unsupported options without running science, callbacks, prompts
+  or dynamic defaults. Keep Typer optional and capability-checked; core contracts
+  contain plain data. Settle the public helper syntax and saved-data boundary.
+- [ ] **MVP9.2 One argument compiler.** Resolve declared paths through existing
+  policy, compile literal argument tokens once, then quote for Slurm shell output.
+  Preview and submission consume the same result. Verify parser round-trips,
+  including spaces/metacharacters, static defaults, booleans and path values.
+  For this small release retain scalar/CSV/default-off guidance; reject unsupported
+  list/tuple/default-on boolean semantics rather than silently guessing.
+- [ ] **MVP9.3 Supported authoring routes and adoption.** Expose the agreed builder
+  to Python/client CLI/agent recipes, alongside existing raw-script authoring.
+  Avoid help-text guessing for supported declarations. Demonstrate one client
+  end to end with flat JSON, readable preview/script, arrays/dependencies and
+  unchanged receipts. Record the compatibility/release boundary before changing
+  any persisted shape or argument meaning; run offline and package checks.
+
+Completion: an agent declares a supported command once, builds and validates
+named settings locally, and a human can understand the job from JSON/script.
+Repeated options, tuples, arbitrary parser integrations and broader boolean
+styles are later slices; no per-job style switches are adopted by this plan.
+
+## MVP10 Actionable failures with preserved evidence
+
+Design: [error handling](REFACTORING_DOCS/design/MVP10_actionable_errors.md).
+
+- [ ] **MVP10.1 Diagnose updater preflight.** Retain the attempted Python path
+  before launching it. Distinguish missing/nonexecutable interpreter, wrong venv,
+  malformed probe, nonzero probe and timeout from checkout/Git failures. Include
+  selected machine/project/config field, failed check and a specific correction.
+  Preserve evidence that pull/install were not started, without raw credential-
+  bearing Git output. Reproduce the user's stale-venv case with fake commands.
+- [ ] **MVP10.2 Shared failure presentation.** Define a small plain-data error
+  contract and one renderer, starting with software update then config/argument
+  preparation, submission and logs. Keep operation/stage/cause distinct; report
+  observed side effects and known/unknown outcomes. Expected CLI failures print a
+  concise explanation and nonzero exit; unexpected bugs retain debug tracebacks.
+  Preserve existing SoftwareUpdateError evidence and SubmissionError receipts.
+- [ ] **MVP10.3 Client handoff and regression gates.** Give embedding clients a
+  recipe and reference example that preserves diagnosis instead of replacing it
+  with generic 'pull failed' or an unhandled traceback. Verify human/JSON/Python
+  parity, bounded safe diagnostics, partial/unknown outcomes and no retry/fallback.
+  Document config correction and explicit recheck; run full offline/package checks.
+
+Completion: the stale-venv failure names the actual attempted executable and
+how to fix its selected profile; post-pull/install/submission uncertainty never
+gets reduced to 'nothing happened'. No environment discovery/auto-switch, package
+repair, new tracking database or automatic resubmission is included.
+
+## PLAN.1 Schedule the next two reliability MVPs
+
+- [x] Trace the reported preflight failure and current argument design; schedule
+  MVP9 then MVP10 with scoped tasks, evidence requirements and clear exclusions.
+  Update design references and review documentation links. Planning only; no
+  runtime/client edits, config changes, cluster contact or new test-pass claim.
+
 ## Scientific reference case
 
 Use a cheap application with an installed command, relative inputs/outputs,
@@ -670,6 +741,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | DOCS.3 Readable command/job pattern investigation | Reviewed current AutoSlurm pipeline, argparse example and Gaia's typed registry/CLI/builder; inspected primary Typer/Click/Python docs. Isolated probe/report `.development/test-runs/job-interface-investigation.py` / `.json` on Typer 0.27.3 verifies scalar render/parser round-trip, typed/default/range/unknown-option handling, current space/list/default-on-bool limits, strict native-type binding/coercion gaps and parameter callbacks during parsing. Click metadata export assumption failed and is recorded as an adapter limitation, not a supported API. No scientific callback executed. Added concrete hypothetical builder/JSON/preview pattern, ownership/validation boundaries and candidate slices; links/examples reviewed. No package install, production code/API, preference change, cluster contact or full-suite rerun. Last baseline remains 576 passing offline tests. Task commit: `git log --grep '^DOCS.3:'`; push completed dev commit. |
 | 2026-11-13 | FIX.CONFIG.1 Optional Slurm account and clearable config | 593 full offline tests passed in 10.57 s (41 expected collision warnings), report `.development/test-runs/optional-account.xml`; focused config tests 48 passed. Clean wheel config set/clear and account-free rendering smoke passed, SHA256 `491f184730042a666b49b448edb66be6a691296821a74de557da8a18ad7d3046`. Shared normalization removes unset account keys, selection no longer requires one, direct flags save locally, optional editor fields accept `-` to clear. Explicit accounts and historical records remain intact. Base editable import verified; backed up then cleared local rusty account and verified other settings unchanged. No cluster contact, base install or rollback edits. Updated human/agent/config design and installation register. Task commit: `git log --grep '^FIX.CONFIG.1:'`; push completed dev commit. |
 | 2026-11-13 | FIX.LOGS.1 Status-compatible log navigation | 623 full offline tests passed in 10.38 s (40 expected collision warnings), report `.development/test-runs/log-navigation.xml`. Thirty new checks verify bundle/job/expanded-array identity, sparse task indices, filters before bounds, conflicting selectors, batched multi-run queries, cached no-contact navigation and shared inspect behavior. Clean wheel indexed/cached navigation smoke passed; SHA256 `af7088345b15a3205eb6d9e723f39a0ca960e5aadda11862f8453c7e97693e43`. Human/agent examples, design and installation register updated. No cluster contact, daily state edits, base installation or rollback change. Task commit: `git log --grep '^FIX.LOGS.1:'`; push completed dev commit. |
+| 2026-11-13 | PLAN.1 Scope command arguments and actionable-error MVPs | Read DOCS.3, current updater/probe/CLI and missing-Python regressions. Confirmed broad preflight catch erases missing-executable detail and attempted Python is assigned only after probe success. Scheduled MVP9.1–3 then MVP10.1–3; wrote the bounded delivery/error contracts, failure matrix and client ownership limits. Reviewed documentation links/diff. No runtime/config/client change or cluster contact; full-suite baseline remains 623 passing tests from FIX.LOGS.1, not rerun for this planning task. Task commit: `git log --grep '^PLAN.1:'`; push completed dev commit. |
 
 ## How we work
 

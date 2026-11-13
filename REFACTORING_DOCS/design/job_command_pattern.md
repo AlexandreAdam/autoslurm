@@ -9,6 +9,10 @@ readability/friction goal. The API sketches and architecture choices below are
 proposals, not implemented or accepted interfaces. DOCS.1's scalar/CSV/default-off/
 safe-word preference remains in force. No renderer or execution behavior changes.
 
+**Planning update (PLAN.1):** the user requested this work as MVP9, followed by
+MVP10 error handling. Delivery scope is below; implementation has not started.
+The earlier investigation's hypothetical APIs are still not supported interfaces.
+
 This follows the [current interaction map](../interaction-map.md#job-script-interactions-current-code-and-design-review).
 It compares AutoSlurm's current parser/renderer, its argparse reference client,
 and Gaia's existing typed task registry/CLI/bundle builder. Gaia is reference
@@ -242,12 +246,52 @@ Gaia's policy, not new mandatory AutoSlurm abstractions.
 | C. Shared authoring adapters | Make Python, terminal and agent authoring use the same supported metadata/validator; stop relying on help-text guessing for those commands | Optional Typer adapter plus explicit compatibility boundary, no universal parser framework |
 | D. Broader values, if approved | Add per-option repeated/tuple/boolean semantics and safe strings with spaces, with true round-trip tests | Amend DOCS.1 deliberately; do not introduce blanket job-wide styles or unsupported CLI guesses |
 
-No slice is authorized for production implementation by this investigation.
+The DOCS.3 investigation alone did not authorize these production changes. The
+subsequent user request schedules the narrow MVP9 scope below; broader slices
+and saved-format changes still need their own explicit boundary.
 Verify exact equivalence from named values -> generated tokens -> actual parser,
 with default materialization, path binding, unsupported forms, invalid options,
 non-executing discovery, arrays/dependencies and preserved receipt behavior.
 Human acceptance includes understanding a job from JSON/preview/script without
 an agent session or reading private modules.
+
+## MVP9 delivery scope (planned)
+
+The useful first release is a small shared authoring/compiler path, with ordinary
+scientific commands at execution time. Deliver tasks MVP9.1–3 in PLAN order:
+
+1. One supported lightweight typed declaration feeds the CLI and a builder. Use
+   plain metadata for named int/float/str/default-off-bool options and static
+   defaults; reject unknown names, wrong native types and unsupported constructs.
+   A narrow optional Typer adapter can inspect supported metadata, with version/
+   capability tests. Never run the command or its option callbacks for validation.
+2. Compile named values to literal tokens after existing path resolution, and
+   shell-quote every literal value at the final renderer. Reuse preparation for
+   preview and actual scripts. The contract defines the supported boolean flag
+   semantics; it must not guess a parser's behavior from a Python annotation.
+3. Demonstrate the shared builder through Python and a client CLI in the reference
+   application, with accurate human/agent recipes and pre-save validation. Existing
+   raw-script jobs still use the same engine; do not require rewriting all clients.
+
+The bundle keeps explicit named settings and supported defaults visible. The
+first release retains scalar/CSV/default-off guidance; first-class repeated lists,
+tuples and default-on/negated booleans remain a later extension. This avoids
+adopting blanket `list_style`/`bool_style` switches before there is a per-option
+contract. Ordinary strings containing spaces should become safe literal values
+through the compiler; amend the current safe-word guidance only when implemented
+and verified. Do not serialize functions/parser objects or hide settings in blobs.
+
+Before a public builder is shipped, settle helper syntax, how a saved job is
+validated if its command declaration is unavailable/changed, and whether any plain
+contract metadata must be retained. Prefer existing job fields and an explicit
+unsupported/unknown result; no silent import/lookup of arbitrary client code.
+Any persisted addition/change gets a release/data-retention decision first.
+
+Acceptance: strict native-value/default/name validation, no callback/science work,
+literal-token-to-real-parser round-trips, preview/submission equality, unchanged
+path/array/dependency/receipt behavior, and a readable JSON/script walkthrough.
+Tests use a disposable local reference CLI and mocked Slurm/transport. Start with
+one command; additional frameworks or general signature inference are not gates.
 
 ## Open decisions and log
 
@@ -259,6 +303,11 @@ an agent session or reading private modules.
   application runtime checks? Define unsupported adapter behavior before shipping.
 - Should broader value support follow the compatible scalar proof? The accepted
   readability principle and current safe scalar guidance remain unchanged today.
+
+**2026-11-13, PLAN.1:** user requested two next MVPs, command arguments then error
+handling. Scheduled a narrow scalar contract/compiler/reference-client release
+as MVP9; API sketches remain proposed and broader value styles stay deferred.
+No runtime or application changes in this planning task.
 
 **2026-11-13:** read source and client examples, checked primary framework docs,
 ran the isolated design experiment, and recorded proposed interface/validation/
