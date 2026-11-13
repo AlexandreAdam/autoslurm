@@ -17,12 +17,13 @@ This file is the source of truth for active scope, task order and progress.
   install; tests use `.development/python` and separate temporary state. Pinned
   rollback source remains unchanged. Full offline suite: 576 passed, 39 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** DOCS.1 records Alexandre's lasting preference for
-  explicit readable named scalar job arguments, typed CLIs (Typer preferred),
-  client-side signature/value validation before saving/submitting, and review
-  guidance to replace encoded configuration. Documentation only; MVP7.2f/MVP8
-  implementation remains unchanged. Last code verification remains 576 tests.
-- **Next task:** no later implementation scheduled. Cluster access/installations
+- **Latest completed task:** DOCS.2 maps current job/script authoring, execution
+  and evidence routes before selecting another argument interface. The proposed
+  shared job-definition/command boundary and alternatives await review; DOCS.1's
+  lasting preference is unchanged. Documentation only; MVP7.2f/MVP8 implementation
+  remains unchanged. Last code verification remains 576 tests.
+- **Next task:** review DOCS.2's proposed working principle; no implementation
+  scheduled. Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
 - **Scope update:** local code/tests only, with temporary Git repositories and
@@ -497,6 +498,20 @@ file-type allowlist or recursive output-directory scan is included.
   This task changes no implementation, saved jobs, application source or cluster.
   Application tests are not rerun for this documentation-only change.
 
+## DOCS.2 Map job script interactions before choosing another style
+
+- [x] Trace direct application/manual Slurm use, AutoSlurm CLI, embedded Python
+  planner, client CLI, existing bundle JSON and ACP through definition saving,
+  preview/preparation, Slurm rendering/dispatch, execution and receipt/log evidence.
+  Record the current CLI/Python/path/argument differences and the roles of JSON.
+- [x] Compare command-based execution, simpler Python authoring, application-read
+  job JSON and remote Python function invocation. Mark working principles and
+  future argument-contract changes proposed, preserving accepted DOCS.1 guidance.
+  Check source references, Markdown/diagram and links. No execution behavior,
+  client application, bundle records, cluster operations or test baseline changes.
+
+See [the job-script map](REFACTORING_DOCS/interaction-map.md#job-script-interactions-current-code-and-design-review).
+
 ## Scientific reference case
 
 Use a cheap application with an installed command, relative inputs/outputs,
@@ -548,6 +563,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-13 | Map all job/script interfaces before selecting an argument or execution refactor | User requested a general working principle spanning terminal, Python and saved JSON. Current routes are audited; recommendations remain proposals, with no change to accepted argument preferences |
 | 2026-11-13 | Job arguments are explicit, named and readable; typed CLI commands per job kind, Typer preferred | Alexandre's lasting preference: flat scalar script_args, CSV lists, default-off booleans, shell-safe strings and local client validation; replace opaque config payloads during reviews |
 | 2026-11-12 | Editable install by default after each successful software pull | User requires new command-line entry points to be installed; refresh the same checkout in the configured existing environment while retaining machine-owned dependencies and the single-copy policy |
 | 2026-11-12 | Retrieval is limited to execution logs and scheduler evidence | User clarified scientific datasets/results belong to applications; MVP8 replaces the proposed generic result downloader |
@@ -619,6 +635,8 @@ or migration decision has already been accepted.
 
 | 2026-11-12 | MVP7.2f Editable installation after software pull | 576 offline tests passed in 9.61 s (39 expected collision warnings), report `.development/test-runs/software-editable-final.xml`; 14 net new cases plus expanded real Git/venv fixture. Configured interpreter identity is checked before pulling; every successful pull runs editable pip installation without dependency/build-isolation/index/cache preparation. Same-commit entry-point repair and new CLI at unchanged package version work through local and exact fake SSH payloads, with one source checkout. Failures/timeouts/lost or malformed replies retain commit/installation evidence and never retry/reset; target redirection is ignored. Clean-source wheel/isolated target/API/help smoke passed, SHA256 `4994986c18e649411b7fc27e2f1d45c73942a1f8b957e7df7622a5f5ecedc782`. Main base import/help and clean rollback 33bcbd3 verified; user files/evidence preserved. No actual SSH/cluster installs, base environment changes, daily state/config mutations or remote deployment. Task commit: `git log --grep '^MVP7.2f:'`; push completed dev commit. |
 | 2026-11-13 | DOCS.1 Lasting client argument preference | Updated AGENTS.md, operating/client/bundle recipes and accepted agent-documentation design. Read current argument renderer to confirm list/boolean/string limits; reviewed Markdown diff, JSON example and relative links/anchors. Documentation only; no application tests rerun, code/runtime enforcement, existing bundle rewrites, client changes or cluster operations. Last code baseline stays 576 passing offline tests from MVP7.2f. Task commit: `git log --grep '^DOCS.1:'`; push completed dev commit. |
+
+| 2026-11-13 | DOCS.2 Job script interaction map | Read current schedule/save/preparation/path/render/dispatch/ACP/inspection code at dev 297de16. Added authoring-route and lifecycle/evidence maps, a Mermaid overview, current brittle differences and explicitly proposed alternatives/decisions to REFACTORING_DOCS/interaction-map.md. Checked relative file links, anchors, diagram text and documentation diff. No implementation, new argument fields, callable launcher, accepted-preference changes, runtime data edits, cluster action or application tests. Last code baseline stays 576 passing offline tests. Task commit: `git log --grep '^DOCS.2:'`; push completed dev commit. |
 
 ## How we work
 
