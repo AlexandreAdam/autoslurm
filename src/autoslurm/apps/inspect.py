@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from ..array_status import declared_array_indices
+from .inspection_selection import resolve_job_selection
 
 
 from .status import _build_reference_date
@@ -77,7 +77,7 @@ def main(argv=None):
     from ..inspection import inspect_bundles
     from ..save_load_jobs import load_bundle_from_path, bundle_snapshots
     from ..status_views import rows_from_resolved, bundle_jobs_context_from_rows, observation_text
-    from .status import _selected_paths, _parse_array_task_filter
+    from .status import _selected_paths
     parser = _build_parser()
     parser.add_argument("--bundle-file", type=Path, help="Select an exact saved snapshot.")
     parser.add_argument("--receipt", type=Path, help="Select the exact snapshot referenced by a local receipt.")
@@ -118,26 +118,13 @@ def main(argv=None):
     else:
         paths = _selected_paths(args.bundle, entries, parser, reference)
     # Resolve display indices before the observation call; this never queries.
-    selected_name = args.job
-    selected_task = int(args.array_task) if args.array_task is not None else None
-    array_tasks = _parse_array_task_filter(args.array, parser)
-    if args.job and len(paths) != 1:
-        parser.error("A job selector requires one exact bundle.")
-    if args.job:
-        jobs, _, _ = load_bundle_from_path(paths[0])
-        if args.job.isdigit():
-            pairs = [(job["name"], index) for job in jobs for index in (declared_array_indices((job.get("slurm") or {}).get("array")) or [None])] if args.array is not None else [(job["name"], None) for job in jobs]
-            if array_tasks is not None:
-                pairs = [pair for pair in pairs if pair[1] in array_tasks]
-            if not 1 <= int(args.job) <= len(pairs):
-                parser.error("Job index is out of range.")
-            selected_name, selected_task = pairs[int(args.job) - 1]
-        elif args.job not in {job["name"] for job in jobs}:
-            parser.error("Selected job is absent from this snapshot.")
+    selected_name, selected_task, array_tasks = resolve_job_selection(
+        paths, args.job, args.array, int(args.array_task) if args.array_task is not None else None, parser)
     logs = args.log or args.list_files or (args.job is not None and not args.script and not args.status)
     views = inspect_bundles(paths, refresh=not args.cached, include_logs=logs, job_name=selected_name,
                             task_index=selected_task, tail=40 if args.tail is None else args.tail,
-                            include_script=args.script, refresh_logs=not args.cached)
+                            include_script=args.script, refresh_logs=not args.cached,
+                            task_indices=array_tasks if selected_task is None else None)
     if args.json:
         _emit(json.dumps(views[0] if len(views) == 1 else views, indent=2), args.clipboard)
         return

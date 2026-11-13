@@ -43,6 +43,18 @@ def test_array_display_index_selects_the_same_task_for_logs(run, capsys):
     assert "array-101_1.out" in capsys.readouterr().out
 
 
+def test_numeric_job_with_explicit_task_preserves_task_selection(run, capsys):
+    cli.main(["1", "--job", "1", "--array-task", "1", "--json"])
+    logs = json.loads(capsys.readouterr().out)["logs"]
+    assert len(logs) == 1 and logs[0]["task_index"] == 1
+
+
+def test_array_filter_limits_logs_as_well_as_display_rows(run, capsys):
+    cli.main(["1", "--array", "1", "--log", "--json"])
+    logs = json.loads(capsys.readouterr().out)["logs"]
+    assert len(logs) == 1 and logs[0]["task_index"] == 1
+
+
 def test_script_view_does_not_dump_logs(run, capsys):
     cli.main(["study", "--job", "array", "--script", "--cached"])
     text = capsys.readouterr().out

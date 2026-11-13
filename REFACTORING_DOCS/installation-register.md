@@ -12,6 +12,12 @@ is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
+FIX.LOGS.1 (2026-11-13): 623 full offline tests passed (40 expected collision
+warnings), report `.development/test-runs/log-navigation.xml`; clean wheel
+indexed/expanded-array/cached logs navigation smoke passed. The existing base
+`asl logs` command uses the source change immediately. No daily config/tracking
+mutation, base install, cluster contact or rollback change.
+
 FIX.CONFIG.1 (2026-11-13): 593 full offline tests passed (41 expected collision
 warnings), report `.development/test-runs/optional-account.xml`; clean wheel
 config set/clear and account-free render smoke passed. Base Conda still imports

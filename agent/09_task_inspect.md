@@ -25,6 +25,11 @@ pinned to its earlier behavior.
 Terminal equivalents: `asl status --bundle-file PATH --array`,
 `asl inspect --receipt PATH --json`, and
 `asl logs --receipt PATH --job JOB --stream stderr --tail 40`.
+Humans can navigate with `asl status`, `asl status 1`, then
+`asl logs 1 --job 2`; expanded rows use `asl status 1 --array`, then
+`asl logs 1 --array --job 5`. `--task N` is the actual array index, not the
+one-based display row. Logs also support bundle names/ranges/latest/date and
+`--view`; use matching array filters when copying row indices from status.
 Name/date/index conveniences resolve to an exact snapshot but can move between
 sessions; do not retain them as identity. Date selection is nearest-date.
 

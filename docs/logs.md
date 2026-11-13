@@ -7,7 +7,36 @@ needs application checks to establish scientific success.
 
 ## Select a run and read
 
-Keep the exact submission snapshot or receipt returned during submission:
+Use the same indices as `asl status`; no paths are needed:
+
+```sh
+asl status                         # list bundles
+asl status 1                       # show jobs in bundle 1
+asl logs 1 --job 2                  # logs for job row 2
+asl logs 1 --job 2 --task 7         # exact Slurm array task 7 of that job
+asl status 1 --array                # show expanded array-task rows
+asl logs 1 --array --job 5          # logs for expanded row 5
+```
+
+Bundle and displayed job row indices start at 1. `--task` uses the actual Slurm
+array index, which may start at 0 or be sparse. Use the same `--array` filters
+when moving from the status table to logs. `--array 2-4` selects those task
+indices before log-file limits apply; ordinary non-array jobs remain included,
+as in status. `--job` also accepts a job name.
+
+Bundle names, ranges, history and latest selection work too:
+
+```sh
+asl logs study --job fit --tail 100
+asl logs 1-2
+asl logs study --date 2026-11-12 --job fit
+asl logs --latest --job fit
+asl logs --view                     # same bundle list as asl status
+```
+
+Indices follow the current status visibility filter and ordering, so they can
+move as runs are added. For a durable agent handoff, keep the exact submission
+snapshot or receipt returned during submission; these selectors remain supported:
 
 ```sh
 asl logs --bundle-file /absolute/saved/run.json
@@ -20,7 +49,10 @@ IDs, scheduler state, exit code and reason alongside the recorded stdout/stderr
 paths. Missing scheduler details stay unknown. A failed job with readable
 evidence is a successful inspection; errors collecting evidence produce an error
 exit status while retaining the available information. With no arguments the
-command shows help. Browse saved bundles through `asl inspect` or `list_runs`.
+command shows help. Browse saved bundles through `asl status`, `asl logs --view`,
+`asl inspect` or `list_runs`. Numeric job selection requires one selected bundle;
+multiple bundles use one batched scheduler observation. The JSON result is an
+object for one run and a list for multiple runs, retaining exact bundle paths.
 
 An application agent can use the same evidence directly:
 
@@ -38,7 +70,7 @@ scheduler/task evidence; `view["logs"]` carries excerpts and their paths/times;
 
 ## Bounded, recorded evidence
 
-Defaults are the last 40 lines within 64 KiB per log, for at most 20 logs.
+Defaults are the last 40 lines within 64 KiB per log, for at most 20 logs per run.
 `--tail`, `--max-bytes` and `--max-logs` adjust those limits; the upper bounds are
 1 MiB per file and 100 files. Filter by job, array task and stream before those
 limits apply. Truncated excerpts and omitted logs are labelled. A very long
@@ -69,6 +101,7 @@ files are read; special files are rejected without waiting for a writer.
 
 ```sh
 asl logs --receipt /absolute/local/receipt.json --cached
+asl logs 1 --job 2 --cached
 ```
 
 Python uses `refresh=False`. Both local and remote inspection then read cached

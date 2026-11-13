@@ -419,8 +419,12 @@ asl inspect --receipt /absolute/local/receipt.json --cached --json
 ```
 
 CLI/Python/ACP status and requested logs are fresh by default. `asl logs` reads
-logs immediately and requires one exact `--bundle-file` or `--receipt`; an empty
-command shows help. Legacy bundle/index navigation remains `asl inspect`.
+logs immediately. Humans can use `asl logs 1 --job 2` with the bundle/job indices
+from `asl status`, or `asl logs 1 --array --job 5` for an expanded array row.
+`--task N` selects the actual Slurm task index; `--array` filters match status
+and apply before file limits. Names/ranges/latest/date selection and `--view`
+are also supported. Indices can move; agents retain exact `--bundle-file` or
+`--receipt` paths in durable handoffs. An empty command shows help.
 `inspect_logs` returns the same structured view as `inspect_bundle(include_logs=True)`.
 ACP `inspect_run` accepts `include_logs=True` and `stream` (`both`, `stdout`, `stderr`).
 With `refresh=False` / `--cached`, neither scheduler nor source logs are queried,

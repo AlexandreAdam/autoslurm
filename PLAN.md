@@ -10,19 +10,19 @@ This file is the source of truth for active scope, task order and progress.
 ## Status
 
 - **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment
-  and FIX.CONFIG.1 optional-account fix complete.
+  and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 593 passed, 41 expected
+  rollback source remains unchanged. Full offline suite: 623 passed, 40 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.CONFIG.1 makes the Slurm account optional and
-  clearable with local config flags or `-` in optional editor prompts. Preview
-  and mocked submission omit the profile account directive when unset; explicit
-  accounts remain supported. Backed up and cleared the daily local rusty account.
-  Full suite and clean wheel smoke passed; no cluster contact or historical edits.
+- **Latest completed task:** FIX.LOGS.1 adds status-compatible bundle/job/array
+  row navigation to `asl logs`, plus names/ranges/latest/history and listing.
+  Shares inspect selection and filters array logs before file limits. Exact
+  paths remain available for agent handoffs. Full suite and clean wheel smoke
+  passed; no cluster contact or daily config/tracking changes.
 - **Next task:** review the DOCS.3 walkthrough and choose a first narrow proof;
   its architecture/API sketches remain proposed. Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
@@ -535,6 +535,16 @@ Design: [readable command/job pattern](REFACTORING_DOCS/design/job_command_patte
 - [x] Verify config persistence, preview and mocked submission without an account;
   run the full offline suite, update human/agent docs and the config design.
 
+## FIX.LOGS.1 Logs navigation consistent with status
+
+- [x] Accept status bundle names/indices/ranges, latest/date selection and job
+  names/row indices, including expanded array rows and exact task selection.
+  Share the existing inspect selection rule rather than duplicating it.
+- [x] Keep exact bundle/receipt selectors for durable agent identity, cached
+  no-contact behavior and bounded reads; apply array filters before file limits.
+- [x] Add offline navigation/identity/invalid-selection regressions, run the full
+  suite and update terminal/agent examples, design and verification evidence.
+
 ## Scientific reference case
 
 Use a cheap application with an installed command, relative inputs/outputs,
@@ -659,6 +669,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | DOCS.2 Job script interaction map | Read current schedule/save/preparation/path/render/dispatch/ACP/inspection code at dev 297de16. Added authoring-route and lifecycle/evidence maps, a Mermaid overview, current brittle differences and explicitly proposed alternatives/decisions to REFACTORING_DOCS/interaction-map.md. Checked relative file links, anchors, diagram text and documentation diff. No implementation, new argument fields, callable launcher, accepted-preference changes, runtime data edits, cluster action or application tests. Last code baseline stays 576 passing offline tests. Task commit: `git log --grep '^DOCS.2:'`; push completed dev commit. |
 | 2026-11-13 | DOCS.3 Readable command/job pattern investigation | Reviewed current AutoSlurm pipeline, argparse example and Gaia's typed registry/CLI/builder; inspected primary Typer/Click/Python docs. Isolated probe/report `.development/test-runs/job-interface-investigation.py` / `.json` on Typer 0.27.3 verifies scalar render/parser round-trip, typed/default/range/unknown-option handling, current space/list/default-on-bool limits, strict native-type binding/coercion gaps and parameter callbacks during parsing. Click metadata export assumption failed and is recorded as an adapter limitation, not a supported API. No scientific callback executed. Added concrete hypothetical builder/JSON/preview pattern, ownership/validation boundaries and candidate slices; links/examples reviewed. No package install, production code/API, preference change, cluster contact or full-suite rerun. Last baseline remains 576 passing offline tests. Task commit: `git log --grep '^DOCS.3:'`; push completed dev commit. |
 | 2026-11-13 | FIX.CONFIG.1 Optional Slurm account and clearable config | 593 full offline tests passed in 10.57 s (41 expected collision warnings), report `.development/test-runs/optional-account.xml`; focused config tests 48 passed. Clean wheel config set/clear and account-free rendering smoke passed, SHA256 `491f184730042a666b49b448edb66be6a691296821a74de557da8a18ad7d3046`. Shared normalization removes unset account keys, selection no longer requires one, direct flags save locally, optional editor fields accept `-` to clear. Explicit accounts and historical records remain intact. Base editable import verified; backed up then cleared local rusty account and verified other settings unchanged. No cluster contact, base install or rollback edits. Updated human/agent/config design and installation register. Task commit: `git log --grep '^FIX.CONFIG.1:'`; push completed dev commit. |
+| 2026-11-13 | FIX.LOGS.1 Status-compatible log navigation | 623 full offline tests passed in 10.38 s (40 expected collision warnings), report `.development/test-runs/log-navigation.xml`. Thirty new checks verify bundle/job/expanded-array identity, sparse task indices, filters before bounds, conflicting selectors, batched multi-run queries, cached no-contact navigation and shared inspect behavior. Clean wheel indexed/cached navigation smoke passed; SHA256 `af7088345b15a3205eb6d9e723f39a0ca960e5aadda11862f8453c7e97693e43`. Human/agent examples, design and installation register updated. No cluster contact, daily state edits, base installation or rollback change. Task commit: `git log --grep '^FIX.LOGS.1:'`; push completed dev commit. |
 
 ## How we work
 

@@ -3,6 +3,7 @@
 ## Status
 
 Complete locally on dev, 2026-11-12; actual cluster validation remains deferred.
+FIX.LOGS.1 (2026-11-13) adds terminal index navigation; see the amendment below.
 The user confirmed execution-evidence-only scope; implementation choices below
 fulfil that scope without introducing a new persisted run format.
 
@@ -20,6 +21,9 @@ make `asl logs` read logs by default. Do not add a second inspection engine.
 ## Interface
 
 ```sh
+asl status 1 --array
+asl logs 1 --array --job 5
+asl logs 1 --job 2 --task 7
 asl logs --bundle-file /path/to/saved-submission.json --job fit --task 2
 asl logs --receipt /path/to/receipt.json --job fit --stream stderr --json
 asl logs --bundle-file /path/to/saved-submission.json --cached
@@ -84,3 +88,42 @@ in the current base environment. No base reinstall was performed. Rollback sourc
 is clean at 33bcbd3. No actual SSH, Slurm, scientific transfer, remote installation,
 daily configuration mutation or deployment occurred. Task prefix `MVP8:`, local
 milestone tag `mvp8`; push the completed dev commit under the working agreement.
+
+## Terminal navigation amendment (FIX.LOGS.1, 2026-11-13)
+
+The user requires the simple navigation already available in status/inspect,
+without typing file paths. `asl logs` now accepts the shared visible bundle
+name/index/range policy, nearest-date/component selectors, latest selection,
+and `--view` for the status bundle list. `--job` accepts a name or one-based row
+index; `--array` uses expanded declared-task rows and optional task/range filters.
+`--task` (alias `--array-task`) selects the actual Slurm task index, including
+sparse arrays. Use matching array filters when copying a display row from status.
+Job selection requires one exact run, resolved before observation. Contradictory
+selectors fail instead of silently choosing another job/task. Empty command
+still shows help. Names/indices can move; saved handoffs keep exact references.
+
+The job-row mapping was extracted from inspect into `apps/inspection_selection`
+and reused by both CLIs. Status continues to own shared bundle/date/range parsing.
+One inspection call batches scheduler observations across multiple selected runs.
+An optional ephemeral `ArtifactRequest.task_indices` restricts resolved array
+tasks before the existing log reader applies file limits; ordinary jobs remain
+visible under array filters, matching status. This also fixes inspect's log
+filtering and preserves an explicit task alongside a numeric unexpanded job row.
+No new persisted format or alternate retrieval engine. One-run JSON stays an
+object; multi-run JSON is a list retaining exact bundle paths. Bounds remain
+per run; cached reads never query scheduler/source logs.
+
+Verification: 623 full offline tests passed in 10.38 s, 40 expected collision
+warnings; `.development/test-runs/log-navigation.xml`. Thirty new cases cover
+bundle name/index/latest/range/history identity, ordinary/expanded/sparse rows,
+task aliases, mixed ordinary/array filtering, bounds after selection, invalid
+selectors before commands, batched queries, cached navigation/listing and the
+shared inspect regressions. The first full run exposed ANSI color in a test's
+table assertion; the assertion now strips color before checking row identity.
+
+Clean temporary-source wheel install and indexed/expanded-array/cached navigation
+smoke passed. Artifact `.development/artifacts/log-navigation/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `af7088345b15a3205eb6d9e723f39a0ca960e5aadda11862f8453c7e97693e43`.
+No live cluster commands, daily configuration/tracking mutation, package install
+into base Conda or rollback source change. Existing base `asl` imports active
+dev source; no entry-point reinstall is needed.

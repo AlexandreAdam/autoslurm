@@ -55,13 +55,14 @@ def _fresh_view(run, observations, profiles, profile_error, cache):
 
 def inspect_bundles(bundle_paths, *, refresh=True, include_logs=False, job_name=None,
                     task_index=None, tail=40, max_log_bytes=65536, max_logs=20,
-                    include_script=False, refresh_logs=None, stream="both"):
+                    include_script=False, refresh_logs=None, stream="both", task_indices=None):
     runs = [load_run(path) for path in bundle_paths]
     request = ArtifactRequest(
         include_logs=include_logs, include_script=include_script, job_name=job_name,
         task_index=task_index, tail=tail, max_log_bytes=max_log_bytes, max_logs=max_logs,
         refresh_logs=refresh and refresh_logs is not False,
         stream=stream,
+        task_indices=task_indices,
     )
     for run in runs:
         request.validate(run)
