@@ -70,11 +70,13 @@ Update the one existing project checkout on a configured machine:
 asl software update --machine cluster --project gaia-asteroseismology
 ```
 
-This runs `git pull --ff-only` in the project under `software_root`, using its
-current branch and configured upstream. It reports before/after commits and
-refuses to hide local changes or merge diverged history. The software layer
-creates no extra checkouts, mirrors, installations or release records. Package
-and environment setup stays operator-managed; jobs use the configured environment.
+This runs `git pull --ff-only` in the project under `software_root`, then
+refreshes its editable install using the configured `venv_path/bin/python`.
+Installation also runs when Git is already current, so new command-line tools
+are available. Machine-specific dependencies/build tools stay in place; the
+install requests no dependency updates or downloads. No extra checkout,
+environment or release record is created. Both the pull and installation must
+succeed; failures retain any observed commit evidence. See [software updates](docs/software.md).
 
 `asl software status --machine NAME` inspects existing Git projects locally or
 through SSH. Add `--local-project PATH` to compare declared major dependencies

@@ -74,8 +74,11 @@ They do not advertise implemented capabilities or expand the current task.
 - **Application software policy amended 2026-11-12:** the user requires one
   existing checkout per project because cluster files are limited. The explicit
   software update command pulls in place; it creates no additional code copies,
-  installations or release records. The operator coordinates update timing for
-  jobs sharing that checkout. Preparation never occurs inside submission/jobs.
+  environments or release records. The user's MVP7.2f amendment requires a default
+  editable reinstall in the configured existing environment after every successful
+  pull, refreshing command-line entry points without changing machine-owned
+  dependencies. The operator coordinates updates for jobs sharing that checkout
+  or environment. Preparation never occurs inside submission/jobs.
   This supersedes the earlier immutable application-release design; preserve
   historical evidence and the local rollback baseline. Test processes must not
   write daily records/outputs.

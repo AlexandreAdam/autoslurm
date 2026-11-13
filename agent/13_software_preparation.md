@@ -1,8 +1,9 @@
-# Update and inspect existing software (MVP7.2e)
+# Update and inspect existing software (MVP7.2f)
 
-The software layer has one purpose: pull updates into the one existing checkout
-per project. Cluster file limits rule out cloned caches, source sets, release
-copies and additional installations. The earlier preparation/release engine has
+The software layer pulls the one existing checkout per project, then refreshes
+its editable installation in the configured existing environment. This refreshes
+new CLI entry points even when the Git commit is unchanged. Cluster file limits
+rule out cloned caches, source sets, release copies and additional environments. The earlier preparation/release engine has
 been removed. Compute jobs never update code. Current development tests mock
 SSH/Slurm and use temporary local Git repositories; they do not update a cluster.
 
@@ -68,7 +69,13 @@ asl software update --machine cluster --project gaia-asteroseismology --json
 
 `--project` selects the existing Git checkout relative to `software_root`.
 The checkout must already exist, be clean and have an attached branch with a
-configured upstream. The operation runs `git pull --ff-only` once on that branch.
+configured upstream. The operation verifies `venv_path/bin/python` belongs to the
+selected environment before pulling, then runs `git pull --ff-only` once on that
+branch. After every successful pull, including unchanged HEAD, that interpreter
+runs pip install --editable against the same checkout with --no-deps,
+--no-build-isolation, --no-cache-dir and --no-index. Dependencies/build tools stay
+machine-owned; installer redirection/index configuration is ignored. No Python
+fallback, package download, new source copy or environment creation is requested.
 It does not switch branches, resolve the newest tag or select a different default
 branch. Use the operator-configured branch; there is no revision selector.
 
@@ -85,7 +92,9 @@ except SoftwareUpdateError as error:
 
 Successful states are `updated` and `up_to_date`. Evidence contains `machine`,
 `software_root`, `project`, `path`, `branch`, `upstream`, `before_commit`,
-`after_commit`, `stage` and `observed_at`. Failed/uncertain results are exposed
+`after_commit`, `stage`, `observed_at` and `installation` (state, python, editable,
+path and returncode). Success requires `installation.state=installed`; an unchanged
+Git commit still has an installation observation. Failed/uncertain results are exposed
 through `SoftwareUpdateError.evidence` or CLI JSON with exit 1. The software layer
 writes no request, preparation or release records. Clients may retain returned
 commit evidence in their existing experiment handoff.
@@ -98,8 +107,11 @@ configuration can contain credentials. A failed pull can still have changed Git
 metadata; inspect returned before/after evidence rather than assuming nothing
 happened. The operation never retries automatically.
 
-If Git times out, post-pull commit inspection fails or the SSH response is lost,
-`state=unknown` means the update may have occurred. Inspect the current project:
+If pip exits nonzero, `stage=install` and `state=failed` retain the pulled commit;
+the environment may be partially changed and Git is not rolled back. If Git/pip
+times out, post-pull commit inspection fails or the SSH response is lost,
+`state=unknown` means effects may have occurred. Inspect the current project and
+selected environment before deciding what to do:
 
 ```sh
 asl software status --machine cluster --project gaia-asteroseismology --json
@@ -108,18 +120,20 @@ asl software status --machine cluster --project gaia-asteroseismology --json
 This reads the current checkout; no operation ID or release record is required.
 Unavailable status remains unavailable evidence. Do not automatically retry a pull
 because the response was lost. SSH sends a standard-library probe through stdin;
-no remote AutoSlurm upgrade, copied worker files or activated runtime is needed.
+no remote AutoSlurm upgrade or copied worker files are needed. An existing
+configured environment with pip and the project's build backend is required.
 
 ## Job and installation boundary
 
 Updating is an explicit operator action before submission, never part of
 `preview_bundle`, `submit_jobs` or a compute script. Jobs continue to use the
-configured `venv_path`/activation. An editable install can use changed source;
-a non-editable installation does not change merely because its source was pulled.
-The layer runs no pip/build/install operation and never creates environments.
+configured `venv_path`/activation. Updates now refresh its editable project
+installation by default; no environment or source-copy release engine is created.
+Pip can write metadata/build artifacts in the existing checkout; the application
+must ignore those generated files to keep future Git preflight clean.
 Use existing software status with expected dependencies/commit to inspect the
 configured installation separately. Coordinate update timing for jobs sharing the
-checkout; source files are mutable, not pinned per job.
+checkout/environment; source and installation are mutable, not pinned per job.
 
 The removed surfaces are `prepare_software_sources`, `prepare_software`,
 `inspect_software_release`, `SoftwarePreparationError`, `asl software prepare`,

@@ -36,7 +36,9 @@ and `results_root`. `asl software update --machine NAME --project PROJECT`
 runs `git pull --ff-only` in the one existing checkout under `software_root`.
 Its current tracking branch determines what gets updated. Local changes and
 non-fast-forward history block the pull; there are no clones, source caches,
-application installations or release records. Submission stays independent and
+additional environments or release records. The command refreshes the editable
+project installation in the configured environment after every successful pull,
+including unchanged HEAD. Dependencies remain machine-owned. Submission stays independent and
 uses the configured environment. The [walkthrough](software.md) and
 [agent recipe](../agent/13_software_preparation.md) document the interface.
 

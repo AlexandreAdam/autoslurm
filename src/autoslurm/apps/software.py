@@ -12,7 +12,7 @@ from ..software_update import update_software, SoftwareUpdateError
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="asl software", description="Update an existing Git checkout or inspect machine software.")
     actions = parser.add_subparsers(dest="action")
-    update = actions.add_parser("update", help="Run git pull --ff-only in one existing project; creates no code copies.")
+    update = actions.add_parser("update", help="Pull one checkout and refresh its editable install in the configured environment.")
     update.add_argument("--machine", help="Configured machine; defaults to the selected machine.")
     update.add_argument("--project", help="Existing checkout relative to software_root (required for updates).")
     update.add_argument("--json", action="store_true", help="Print structured before/after commit evidence.")
@@ -101,6 +101,9 @@ def _update(args):
             print(str(error))
             if error.evidence.get('after_commit'):
                 print('Current commit: ' + error.evidence['after_commit'])
+            installation = error.evidence.get('installation')
+            if isinstance(installation, dict):
+                print(f'Editable install: {installation["state"]} ({installation["python"]})')
             print(f'Inspect: asl software status --machine {args.machine or error.evidence["machine"]} --project {args.project}')
         raise SystemExit(1) from None
     except (ValueError, RuntimeError, OSError) as error:
@@ -112,3 +115,4 @@ def _update(args):
         state = 'Updated' if result['state'] == 'updated' else 'Already up to date'
         print(f'{state}: {result["machine"]}/{result["project"]} ({result["branch"]})')
         print(f'  {result["before_commit"]} -> {result["after_commit"]}')
+        print(f'  Editable install refreshed: {result["installation"]["python"]}')

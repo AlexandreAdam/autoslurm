@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import sysconfig
+import venv
 
 from autoslurm import update_software, SoftwareUpdateError, save_config, storage
 
@@ -22,10 +24,28 @@ author = root / 'author'
 git('init', '--bare', upstream)
 git('init', '-b', 'main', author)
 git('-C', author, 'remote', 'add', 'origin', upstream)
+(author / '.gitignore').write_text('__pycache__/\n*.egg-info/\nbuild/\n')
+
+# Disposable environment only. Reuse the already-installed test build tools via
+# a search-path entry; never download/install them or mutate the test/base env.
+environment = root / 'environment with spaces'
+venv.EnvBuilder(with_pip=True).create(environment)
+site = environment / 'lib' / f'python{sys.version_info.major}.{sys.version_info.minor}' / 'site-packages'
+(site / 'fixture-build-tools.pth').write_text(sysconfig.get_path('purelib') + '\n')
+python = str(environment / 'bin/python')
 
 def commit(value):
-    (author / 'science.py').write_text(value)
-    git('-C', author, 'add', 'science.py')
+    (author / 'science.py').write_text(f'def main():\n    print({value!r})\n')
+    extra = '\nscience-new-fixture = "science:main"' if value in {'THIRD', 'FOURTH'} else ''
+    (author / 'pyproject.toml').write_text('''[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "autoslurm-update-fixture"
+version = "0.1.0"
+[project.scripts]
+science-fixture = "science:main"''' + extra + '\n')
+    git('-C', author, 'add', 'science.py', 'pyproject.toml', '.gitignore')
     git('-C', author, 'commit', '-m', value)
     git('-C', author, 'push', 'origin', 'main')
     return git('-C', author, 'rev-parse', 'HEAD')
@@ -39,7 +59,8 @@ checkout = software_root / 'science'
 git('clone', upstream, checkout)
 tracking = root / 'tracking'
 storage.set_storage_root(tracking)
-save_config({'default_machine': 'fixture', 'machines': {'fixture': {'software_root': str(software_root)}}})
+save_config({'default_machine': 'fixture', 'machines': {'fixture': {
+    'software_root': str(software_root), 'venv_path': str(environment)}}})
 tracking_before = sorted(str(item.relative_to(tracking)) for item in tracking.rglob('*'))
 
 real_run = subprocess.run
@@ -57,8 +78,13 @@ subprocess.run = record
 updated = update_software(project='science')
 assert (updated['before_commit'], updated['after_commit']) == (first, second)
 assert updated['state'] == 'updated'
+assert updated['installation']['state'] == 'installed'
+assert real_run([str(environment / 'bin/science-fixture')], capture_output=True, text=True, check=True).stdout.strip() == 'SECOND'
+# Same commit must still reinstall, restoring entry points that are absent/stale.
+(environment / 'bin/science-fixture').unlink()
 assert update_software(project='science')['state'] == 'up_to_date'
-assert (checkout / 'science.py').read_text() == 'SECOND'
+assert (environment / 'bin/science-fixture').exists()
+assert 'SECOND' in (checkout / 'science.py').read_text()
 assert list(software_root.iterdir()) == [checkout]
 assert tracking_before == sorted(str(item.relative_to(tracking)) for item in tracking.rglob('*'))
 
@@ -74,14 +100,20 @@ assert (checkout / 'notes.txt').read_text() == 'KEEP'
 (checkout / 'notes.txt').unlink()
 
 # Exactly the same standard-library payload runs through fake SSH; no installed
-# remote AutoSlurm, worker files, copied sources or installations are needed.
+# remote AutoSlurm, worker files or copied sources are needed.
 subprocess.run = real_run
 third = commit('THIRD')
-save_config({'default_machine': 'remote', 'machines': {'remote': {'software_root': str(software_root), 'ssh_alias': 'offline-alias'}}})
+save_config({'default_machine': 'remote', 'machines': {'remote': {
+    'software_root': str(software_root), 'ssh_alias': 'offline-alias', 'venv_path': str(environment)}}})
 subprocess.run = record
 remote = update_software(project='science')
 assert remote['state'] == 'updated' and remote['after_commit'] == third
-assert (checkout / 'science.py').read_text() == 'THIRD'
+assert 'THIRD' in (checkout / 'science.py').read_text()
+assert real_run([str(environment / 'bin/science-new-fixture')], capture_output=True, text=True, check=True).stdout.strip() == 'THIRD'
+origin = real_run([python, '-I', '-B', '-c', 'import science; print(science.__file__)'],
+                  capture_output=True, text=True, check=True).stdout.strip()
+assert Path(origin).resolve() == (checkout / 'science.py').resolve()
+assert not (site / 'science.py').exists()  # editable link, not another source copy
 assert list(software_root.iterdir()) == [checkout]
 assert sum(command[0] == 'ssh' for command in commands) == 1
 

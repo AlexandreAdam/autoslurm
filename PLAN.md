@@ -9,21 +9,21 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP8 execution-log retrieval complete locally on dev.
+- **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment complete.
   MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 562 passed, 38 expected
+  rollback source remains unchanged. Full offline suite: 576 passed, 39 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP8.1–MVP8.3 exposes `inspect_logs` / `asl logs`
-  through shared inspection and one bounded regular-file reader. Fresh/cached,
-  merged streams, missing/empty/errors and concurrent change are explicit.
-  FIX.SSH.1 was completed and pushed separately before this milestone.
-- **Next task:** no later implementation is scheduled. Application scientific
-  results/datasets remain outside AutoSlurm retrieval. Actual cluster submission
-  verification belongs to the user; no cluster contact was made in these tasks.
+- **Latest completed task:** MVP7.2f: each successful pull now refreshes the
+  project's editable install in the configured existing environment, including
+  unchanged HEAD. Interpreter preflight and separate installation evidence prevent
+  a successful Git pull from hiding installation failure. MVP8 remains complete.
+- **Next task:** no later implementation scheduled. Cluster access/installations
+  remain outside the local development scope; tests mock transport and use a
+  disposable local environment. Machine-owned dependencies are not updated.
 - **Scope update:** local code/tests only, with temporary Git repositories and
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
@@ -74,7 +74,7 @@ Each row is incremental, not cumulative.
 | MVP4 | Shared preparation and explicit submission lifecycle/dispatch boundaries | One to two days | Existing receipt format and failure guarantees; no retry engine |
 | MVP5 | Separate inspection collection, state projection, caches and artifact reads | One to two days | Preserve public inspection results; no new index |
 | MVP6 | Separate bundle persistence/selection from transport and configuration helpers | One to two days | No storage migration or broad module renaming |
-| MVP7 | Prepare exact Git project revisions and verify isolated runtime installations for a bundle | Estimate after manifest contract | Login/preparation host only; never update code/environments used by existing jobs |
+| MVP7 | Update one checkout and refresh its editable project install | Delivered in small slices | Operator-managed existing environment/dependencies; update timing coordinated for shared jobs |
 | MVP8 | Clear bounded stdout/stderr inspection with failure evidence | Half to one day | Execution logs only; scientific results remain application-owned |
 
 Useful changes can ship after MVP1 and MVP2. MVP0-MVP3 represent roughly five to
@@ -397,12 +397,14 @@ Design: [MVP7 software updates](REFACTORING_DOCS/design/MVP7_cluster_software_pr
 **Outcome:** explicitly pull the latest upstream changes into the existing
 project checkout selected relative to `software_root`. One source copy per
 project. This layer creates no clones, Git mirrors/worktrees, source sets,
-application installations, environments or preparation/release records.
+additional environments or preparation/release records. MVP7.2f refreshes the
+editable project installation in the configured existing environment.
 Submission and compute jobs stay independent and use configured environments.
 
 The user's 2026-11-12 clarification supersedes the earlier immutable-release and
 source-pin strategy. Update the current branch's configured upstream with
-`git pull --ff-only`; do not guess or switch branches. No installer is included.
+`git pull --ff-only`; do not guess or switch branches. The user's subsequent
+MVP7.2f amendment adds editable installation without restoring the release engine.
 
 - [x] **MVP7.0a/b Initial source/dependency/clone planning.** Historical decisions;
   clone/source-copy requirements are superseded by MVP7.2e. Dependencies remain
@@ -430,12 +432,21 @@ source-pin strategy. Update the current branch's configured upstream with
   Verify with mocks and real temporary local Git repositories, full offline tests,
   accurate human/agent documentation and artifact/help smoke. No live cluster work.
 
+- [x] **MVP7.2f Refresh the editable installation after pulling.** User requested
+  default editable installation so new command-line tools are available. Preflight
+  the configured environment, pull once, then run its Python/pip against the same
+  checkout even if HEAD is unchanged. No dependency updates, release copies or
+  environment creation. Report install success separately from Git changes and
+  preserve post-pull commit evidence on install failure/timeout/response loss.
+  Test failures, exact SSH stdin worker, and a real temporary editable package
+  gaining a CLI; update human/agent docs and run full offline/package checks.
+
 The [agent recipe](agent/13_software_preparation.md) is the current integration
 boundary. `prepare_software_sources`, `prepare_software`, `inspect_software_release`
 and release selectors are removed. Existing source/release copies and records are
 not automatically deleted: actual cluster cleanup is a separate operator action.
 There is no broader deployment/ACP preparation/runtime manager planned in this
-layer; scientific package/environment setup remains operator-managed.
+layer; scientific dependencies/build tools and environment creation remain operator-managed.
 
 ## FIX.SSH.1 Submission connection ownership
 
@@ -524,6 +535,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-12 | Editable install by default after each successful software pull | User requires new command-line entry points to be installed; refresh the same checkout in the configured existing environment while retaining machine-owned dependencies and the single-copy policy |
 | 2026-11-12 | Retrieval is limited to execution logs and scheduler evidence | User clarified scientific datasets/results belong to applications; MVP8 replaces the proposed generic result downloader |
 | 2026-11-09 | Follow Gaia's living plan, one-task workflow, completion criteria and task-ID commits | Keep work reviewable across sessions |
 | 2026-11-09 | Keep AutoSlurm's implementation; agents operate from the workstation and compute jobs use prepared environments | Fit the existing workflow without a platform migration |
@@ -590,6 +602,8 @@ or migration decision has already been accepted.
 
 | 2026-11-12 | FIX.SSH.1 Submission connection ownership and macOS sockets | 542 offline tests passed in 5.64 s (39 expected collision warnings), report `.development/test-runs/ssh-session-final.xml`; 17 new cases. Both submit callers inherit configured sharing without Control overrides or explicit open/close; own-session short paths, failed/malformed config fallback, long TMPDIR, cleanup errors and local no-ops verified. User/agent SSH docs updated. No actual SSH, cluster changes or environment installation. Gaia main pushed through ba97a0b first, preserving dirty PDFs/data. Task commit: `git log --grep '^FIX.SSH.1:'`. Resume separately saved MVP8 log work. |
 | 2026-11-12 | MVP8.1–MVP8.3 Robust execution logs | 562 offline tests passed in 5.58 s (38 expected warnings), report `.development/test-runs/execution-logs-final.xml`; 20 net added cases after FIX.SSH.1. Public inspect_logs, direct asl logs and ACP stream selection share status/reasons/exit codes and bounded local/SSH excerpts. Verified exact SSH stdin reader, array/custom/merged/separate logs, stream-before-limit selection, empty/missing/permission/special files, sparse 1 GiB log bounded read, growth/rotation, malformed/oversized replies, cache failures and cached no-source/no-network reads. Clean-source offline wheel install/API/reader/entry-point/help smoke passed, SHA256 `9b3e5c18e04f3964fdb8ff0c2eabe4e55e9682f449a23ebe099b0179d0c634d4`. Main base import/help and clean rollback 33bcbd3 verified. Human/agent guidance and interaction scope updated; no scientific result transfers, base installs, daily config/state mutation, cluster contact or deployment. Task commit: `git log --grep '^MVP8:'`; local mvp8 tag at closure. |
+
+| 2026-11-12 | MVP7.2f Editable installation after software pull | 576 offline tests passed in 9.61 s (39 expected collision warnings), report `.development/test-runs/software-editable-final.xml`; 14 net new cases plus expanded real Git/venv fixture. Configured interpreter identity is checked before pulling; every successful pull runs editable pip installation without dependency/build-isolation/index/cache preparation. Same-commit entry-point repair and new CLI at unchanged package version work through local and exact fake SSH payloads, with one source checkout. Failures/timeouts/lost or malformed replies retain commit/installation evidence and never retry/reset; target redirection is ignored. Clean-source wheel/isolated target/API/help smoke passed, SHA256 `4994986c18e649411b7fc27e2f1d45c73942a1f8b957e7df7622a5f5ecedc782`. Main base import/help and clean rollback 33bcbd3 verified; user files/evidence preserved. No actual SSH/cluster installs, base environment changes, daily state/config mutations or remote deployment. Task commit: `git log --grep '^MVP7.2f:'`; push completed dev commit. |
 
 ## How we work
 

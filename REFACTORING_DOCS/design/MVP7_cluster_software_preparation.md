@@ -4,7 +4,8 @@
 
 The user's 2026-11-12 clarification supersedes the earlier source/release
 preparation design: cluster file limits require **one existing checkout per
-project**, updated in place. This layer's sole mutation is `git pull --ff-only`.
+project**, updated in place. MVP7.2f amends the original pull-only behavior with
+an editable installation in the configured existing environment after each pull.
 MVP7.2e removes the source/cache/wheel/release engines and their job selectors.
 The prior implementation and design remain in Git history and the PLAN Done log;
 they are not supported executable alternatives.
@@ -17,8 +18,8 @@ local rollback source and remote files must remain untouched by this task.
 ## User-confirmed decisions
 
 - **Single copy — accepted, 2026-11-12.** Never create project clones, bare Git
-  caches, detached source sets, worktrees, releases, application installations,
-  environments, or preparation/release records in this layer.
+  caches, detached source sets, worktrees, releases, additional environments or
+  preparation/release records. MVP7.2f refreshes an existing editable install.
 - **Existing branch, latest upstream.** Pull the existing checkout's configured
   tracking branch with `--ff-only`. Do not guess/switch the branch, pin an older
   commit, stash changes, reset history or merge divergence. Earlier fresh-default-
@@ -29,9 +30,10 @@ local rollback source and remote files must remain untouched by this task.
 - **SSH config ownership remains.** Use only `ssh_alias`, through the shared
   adapter. Operator Git/SSH configuration owns repository authentication.
 - **Dependencies remain machine-owned.** Existing read-only dependency/application
-  metadata checks remain useful. Updates run no installer, and jobs use their
-  configured environment. Environment construction and revision-managed execution
-  are outside this layer.
+  metadata checks remain useful. Updates reinstall the project editable with
+  --no-deps/--no-build-isolation/--no-index, keeping scientific dependencies and
+  build tools operator-managed. Jobs use their configured environment; environment
+  construction and revision-managed execution remain outside this layer.
 - **Explicit update.** Submission/preview/compute scripts never pull code.
   The operator coordinates update timing for jobs sharing mutable source.
 
@@ -54,8 +56,8 @@ result = update_software(machine="cluster", project="gaia-asteroseismology")
 
 Failures raise `SoftwareUpdateError` carrying `.evidence`. The result reports
 version 1, machine/root/project/path, current branch/upstream, before/after
-commits, stage, state, timestamp and any bounded error. States `updated` and
-`up_to_date` mean a successful pull with readable commits. `failed` describes a
+commits, stage, state, timestamp, installation outcome and any bounded error. States `updated` and
+`up_to_date` mean a successful pull with readable commits and completed editable installation. `failed` describes a
 known rejection/failure; `unknown` means effects may have occurred without a
 complete observation. No new persistent record format or migration is needed.
 
@@ -64,16 +66,17 @@ complete observation. No new persistent record format or migration is needed.
 | Owner | Responsibility |
 |---|---|
 | `software_update` | Select one machine/profile, send the stdin probe through shared SSH, validate its response and expose available evidence |
-| `software_update_probe` | Pure relative-project selector plus existing-checkout preflight, one Git pull and before/after observation; standard library only |
+| `software_update_probe` | Pure relative-project selector plus checkout/environment preflight, one Git pull, editable refresh and stage evidence; standard library only |
 | `apps/software` | Help, text/JSON output and exit status |
 | `software_status` / `software_probe` | Existing read-only Git inspection; status never pulls |
 | `software_requirements` / `environment_probe` | Existing focused metadata/dependency/source comparisons without scientific imports |
 | `transport`, `config`, `machine_paths` | Existing shared SSH/profile/root normalization |
 
-The same updater executes locally or travels over SSH through stdin. Nothing is
-copied/installed on the target, and installed remote AutoSlurm is not imported.
-Git's own working tree and normal metadata are the only writes requested by the
-updater; there is no additional state engine. Git's own index/ref locks handle
+The same updater executes locally or travels over SSH through stdin. The probe is not
+copied/installed on the target and never imports installed remote AutoSlurm; it
+refreshes the application editable through the selected environment's pip.
+Git working-tree/metadata and the project's editable install metadata/entry points
+are the writes requested by the updater; there is no additional state engine. Git's own index/ref locks handle
 competing operations; no AutoSlurm lock/record file is introduced.
 
 Preflight checks a real existing repository root inside software_root, a readable
@@ -82,7 +85,7 @@ recursive submodule updates, rebase and automatic stashing. It uses no reset or
 force option. Raw Git diagnostics are not returned because they may contain
 credentials; recognized authentication/divergence failures have bounded messages.
 
-A lost connection, Git timeout or unreadable post-pull HEAD produces unknown
+A lost connection, Git/install timeout or unreadable post-pull HEAD produces unknown
 rather than invented success or an automatic retry. Inspect current Git status
 through the existing public status operation. There is no release identity to
 recover or background retry/resume service. A reported failed pull may still have
@@ -156,3 +159,42 @@ report `.development/test-runs/ssh-session-final.xml`. Seventeen new cases cover
 both submit adapters, auto/autoask/persistence, malformed/failed observations,
 short sockets under long TMPDIR, cleanup failure and local no-ops. The existing
 submission/job-runner/alias/persistence suites passed. No real SSH was invoked.
+
+## Editable-install amendment (MVP7.2f, complete locally)
+
+**User accepted, 2026-11-12:** software updates must run an editable install by
+default to refresh new command-line entry points. This amends the earlier
+pull-only policy, while retaining one checkout and one existing environment.
+Use configured venv_path/bin/python; verify its prefix before pulling, never
+substitute system Python or create an environment. After every successful pull,
+including unchanged HEAD, run pip install --editable against that checkout.
+Keep machine-owned dependencies/backend in place with --no-deps and
+--no-build-isolation; disable cache/index access for this local project operation.
+Missing build requirements are an installation failure, not permission to rebuild
+the machine's scientific environment. No installs inside compute jobs/submission.
+
+Installation evidence is additive in the existing returned object, not a saved
+record: selected interpreter, editable source path, state and exit code. Overall
+success requires installation success. Retain before/after Git commits if pip
+fails; installed environment may be partially changed. Installation timeout or
+lost SSH response is unknown and must not trigger a retry/reset. Never roll Git
+back implicitly after a pip failure. Test with temporary local environments and
+fake SSH only; no actual cluster installation is authorized by implementation.
+
+Final verification: 576 full offline tests passed in 9.61 s, 39 expected collision
+warnings; `.development/test-runs/software-editable-final.xml`. Fourteen net new
+cases plus the expanded temporary Git/venv fixture verify interpreter mismatch,
+missing/invalid configuration and unavailable interpreter before pull; install
+failure/timeout with retained Git evidence; untrusted/malformed remote success;
+no retry/fallback; unchanged-commit entry-point repair and a new CLI at unchanged
+package version. The exact stdin SSH payload installs editable into that temporary
+environment and imports source from the single existing checkout. Pip environment
+redirection is disabled; no scientific dependencies are installed or changed.
+
+Clean temporary-source wheel build and isolated target/API/evidence/help smoke
+passed. Artifact `.development/artifacts/mvp7.2f/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `4994986c18e649411b7fc27e2f1d45c73942a1f8b957e7df7622a5f5ecedc782`.
+Base editable source import/help and clean rollback source 33bcbd3 reverified.
+No base install, actual cluster contact, cluster package/Git update, daily config
+or tracking mutation. Push the completed task commit to origin/dev; existing
+milestone tags and rollback source are not advanced by this amendment.

@@ -6,8 +6,9 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code includes MVP8: locate it with
-`git log --grep '^MVP8:'`; the local milestone tag at closure is `mvp8`.
+historical. Current tested code includes MVP8 plus the editable-install amendment
+MVP7.2f: locate it with `git log --grep '^MVP7.2f:'`. The last local milestone tag
+is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
@@ -259,3 +260,18 @@ machine. Store nonsecret paths/identities, never credential contents.
   an operator reinstalls; new wheels select apps.logs. No base install/state/config
   mutation. Clean pinned rollback 33bcbd3 reverified. Scientific files remain
   application-owned; no cluster contact, job, transfer or remote deployment.
+
+- **MVP7.2f, 2026-11-12:** 576 offline tests passed in 9.61 s, 39 expected
+  collision warnings; `.development/test-runs/software-editable-final.xml`.
+  Real temporary Git/venv fixture verifies new/repaired entry points from one
+  editable checkout, including the exact fake SSH payload. The disposable env
+  uses already-installed test build tools; no dependencies were downloaded and
+  base/test environment installations were not modified. New update behavior
+  refreshes the project in the machine's existing configured environment by
+  default, preserving machine-owned dependencies/build tools. No actual cluster
+  operation was performed. Clean-source wheel/isolated target/API/help smoke:
+  `.development/artifacts/mvp7.2f/autoslurm-0.1.0-py3-none-any.whl`, SHA256
+  `4994986c18e649411b7fc27e2f1d45c73942a1f8b957e7df7622a5f5ecedc782`.
+  Main base import/help works unchanged; clean rollback 33bcbd3 reverified.
+  Existing user documents and software_preparations evidence retained, daily
+  state/config untouched. No automatic remote promotion or milestone-tag move.

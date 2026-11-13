@@ -7,7 +7,7 @@ tracking JSON directly. The pinned stable installation retains its earlier API.
 | Stage | Supported surface | Durable result |
 |---|---|---|
 | Describe work | `save_bundle`, `schedule_job` | Exact planned path and saved job names |
-| Update software explicitly | `update_software`, `asl software update` | Existing checkout pulled once, before/after commits or `SoftwareUpdateError.evidence`; no files tracked by this layer |
+| Update software explicitly | `update_software`, `asl software update` | Checkout pulled once and editable installation refreshed; commit/install outcomes or `SoftwareUpdateError.evidence`; no tracking records |
 | Inspect software | `inspect_software`, `software_expectations`, `asl software status` | Read-only Git/selected-environment evidence and focused compatibility checks |
 | Check paths/scripts | `preview_bundle(path, machine=...)` | Resolved producing paths and script text; no submission |
 | Dispatch once | `submit_jobs(..., bundle_path=path)` | Receipt, or `SubmissionError.receipt` |
@@ -33,10 +33,11 @@ work. Use fresh output namespaces and keep scientific validation application-own
 ## Ownership inside AutoSlurm
 
 Software updates use `software_update` for selected-machine orchestration and
-`software_update_probe` for one existing checkout's Git preflight/pull. The
+`software_update_probe` for checkout/environment preflight, one pull and editable install. The
 standard-library probe travels over the existing SSH adapter through stdin;
 remote AutoSlurm installation is unnecessary. It creates no source copies,
-installations or records. `software_manifest` retains pure historical request
+environments or records; it refreshes the existing editable project install.
+`software_manifest` retains pure historical request
 validation only; it never updates code or selects job runtimes.
 
 Read-only inspection uses `software_status` for selected-machine orchestration
@@ -159,8 +160,8 @@ Explicit root-setting flags resolve an old split without moving files or invokin
 SSH. New execution evidence saves the two roots; historical execution contexts
 still read the older separate project/result fields. The context's internal
 `project_root` field is a compatibility input-base slot, never a third configurable
-root for new work. Software updates only pull existing checkouts; cloning,
-installation and release management are outside this layer.
+root for new work. Software updates pull existing checkouts and refresh their editable installations;
+cloning, environment construction and release management remain outside this layer.
 
 MVP7.0d centralizes SSH alias validation and transport evidence in config/transport.
 Current profiles normalize to `ssh_alias`; new execution/receipt metadata stores

@@ -1,6 +1,7 @@
-"""One existing checkout, explicit fast-forward updates, no copy/install service."""
+"""One checkout and one selected environment; pull then refresh editable."""
 
 import json
+import os
 from pathlib import Path
 from subprocess import CompletedProcess, TimeoutExpired
 
@@ -19,7 +20,8 @@ def checkout(tmp_path):
     root = tmp_path / 'software with spaces'
     path = root / 'science'
     (path / '.git').mkdir(parents=True)
-    save_config({'default_machine': 'fixture', 'machines': {'fixture': {'software_root': str(root)}}})
+    save_config({'default_machine': 'fixture', 'machines': {'fixture': {
+        'software_root': str(root), 'venv_path': str(root.parent / 'environment')}}})
     return root, path
 
 
@@ -34,9 +36,25 @@ class Git:
         self.stderr = ''
         self.timeout = False
         self.advance = True
+        self.install_exit = 0
+        self.install_timeout = False
+        self.prefix = str(path.parent.parent / 'environment')
 
     def __call__(self, command, **options):
         self.calls.append(command)
+        if command[0] != 'git':
+            assert command[0] == str(self.path.parent.parent / 'environment/bin/python')
+            if '-c' in command:
+                return CompletedProcess(command, 0, json.dumps({'prefix': self.prefix}), '')
+            assert command[-2:] == ['--editable', str(self.path)]
+            assert '--no-deps' in command and '--no-build-isolation' in command
+            assert '--no-cache-dir' in command and '--no-index' in command
+            assert options['cwd'] == str(self.path)
+            assert options['env']['PIP_CONFIG_FILE'] == os.devnull
+            assert 'PIP_TARGET' not in options['env']
+            if self.install_timeout:
+                raise TimeoutExpired(command, 120)
+            return CompletedProcess(command, self.install_exit, '', 'private installer diagnostic')
         assert command[:3] == ['git', '-C', str(self.path)]
         assert options['env']['GIT_TERMINAL_PROMPT'] == '0'
         args = command[3:]
@@ -73,7 +91,9 @@ def test_update_pulls_once_in_place_and_saves_no_extra_files(checkout, monkeypat
     assert (result['before_commit'], result['after_commit']) == (FIRST, SECOND)
     assert result['branch'] == 'main' and result['upstream'] == 'origin/main'
     assert sum('pull' in call for call in git.calls) == 1
-    assert not any(set(call) & {'clone', 'checkout', 'worktree', 'install', 'reset', 'stash'} for call in git.calls)
+    assert not any(set(call) & {'clone', 'checkout', 'worktree', 'reset', 'stash'} for call in git.calls)
+    assert sum('install' in call for call in git.calls) == 1
+    assert result['installation']['state'] == 'installed'
     assert before == set(root.rglob('*')) | set(storage.storage_root().rglob('*'))
 
 
@@ -82,7 +102,9 @@ def test_already_current_reports_up_to_date_without_new_records(checkout, monkey
     git = Git(path)
     git.advance = False
     monkeypatch.setattr('subprocess.run', git)
-    assert update_software(project='science')['state'] == 'up_to_date'
+    result = update_software(project='science')
+    assert result['state'] == 'up_to_date' and result['installation']['state'] == 'installed'
+    assert sum('install' in call for call in git.calls) == 1
     assert list(root.iterdir()) == [path]
 
 
@@ -173,13 +195,16 @@ def test_invalid_relative_selector_is_rejected_before_profile_discovery(monkeypa
 
 
 def remote_profile(root):
-    save_config({'default_machine': 'remote', 'machines': {'remote': {'ssh_alias': 'research', 'software_root': str(root)}}})
+    save_config({'default_machine': 'remote', 'machines': {'remote': {
+        'ssh_alias': 'research', 'software_root': str(root), 'venv_path': str(root.parent / 'environment')}}})
 
 
 def response(root):
     return {'version': 1, 'software_root': str(root), 'project': 'science', 'path': str(root / 'science'),
             'state': 'updated', 'branch': 'main', 'upstream': 'origin/main',
-            'before_commit': FIRST, 'after_commit': SECOND, 'observed_at': 'now'}
+            'before_commit': FIRST, 'after_commit': SECOND, 'observed_at': 'now', 'stage': 'complete',
+            'installation': {'state': 'installed', 'editable': True, 'returncode': 0,
+                             'python': str(root.parent / 'environment/bin/python'), 'path': str(root / 'science')}}
 
 
 def test_remote_update_is_one_ssh_stdin_probe_without_remote_autoslurm(checkout, monkeypatch):
@@ -207,7 +232,7 @@ def test_lost_or_invalid_remote_response_is_unknown_without_retry_or_fallback(ch
         calls.append(command)
         record = response(root)
         if failure == 'timeout':
-            raise TimeoutExpired(command, 180)
+            raise TimeoutExpired(command, 300)
         if failure == 'wrong-project':
             record['project'] = 'other'
         if failure == 'incomplete-success':
@@ -259,3 +284,105 @@ def test_unreadable_commit_after_pull_does_not_report_the_old_commit_as_current(
         update_software(project='science')
     assert caught.value.evidence['state'] == 'unknown'
     assert caught.value.evidence['after_commit'] is None
+
+
+@pytest.mark.parametrize('unchanged', [False, True])
+def test_install_failure_retains_successful_pull_evidence(checkout, monkeypatch, unchanged):
+    root, path = checkout
+    git = Git(path)
+    git.advance, git.install_exit = not unchanged, 1
+    monkeypatch.setattr('subprocess.run', git)
+    monkeypatch.setenv('PIP_TARGET', '/unwanted/install')
+    with pytest.raises(SoftwareUpdateError, match='Editable installation failed') as caught:
+        update_software(project='science')
+    result = caught.value.evidence
+    assert result['stage'] == 'install' and result['state'] == 'failed'
+    assert result['after_commit'] == (FIRST if unchanged else SECOND)
+    assert result['installation']['state'] == 'failed'
+    assert result['installation']['returncode'] == 1
+    assert 'private installer diagnostic' not in json.dumps(result)
+    assert sum('pull' in call for call in git.calls) == 1
+    assert sum('install' in call for call in git.calls) == 1
+
+
+def test_install_timeout_retains_pulled_commit_and_does_not_retry(checkout, monkeypatch):
+    _, path = checkout
+    git = Git(path)
+    git.install_timeout = True
+    monkeypatch.setattr('subprocess.run', git)
+    with pytest.raises(SoftwareUpdateError) as caught:
+        update_software(project='science')
+    result = caught.value.evidence
+    assert result['state'] == 'unknown' and result['stage'] == 'install'
+    assert result['after_commit'] == SECOND and result['installation']['state'] == 'unknown'
+    assert sum('install' in call for call in git.calls) == 1
+
+
+@pytest.mark.parametrize('failure', ['wrong-prefix', 'malformed', 'timeout', 'missing-python'])
+def test_wrong_or_unavailable_environment_is_rejected_before_pulling(checkout, monkeypatch, failure):
+    _, path = checkout
+    git = Git(path)
+    git.prefix = '/system/python'
+    def run(command, **kwargs):
+        if '-c' in command:
+            if failure == 'malformed':
+                return CompletedProcess(command, 0, 'not JSON', '')
+            if failure == 'timeout':
+                raise TimeoutExpired(command, 15)
+            if failure == 'missing-python':
+                raise FileNotFoundError('selected Python unavailable')
+        return git(command, **kwargs)
+    monkeypatch.setattr('subprocess.run', run)
+    with pytest.raises(SoftwareUpdateError) as caught:
+        update_software(project='science')
+    assert caught.value.evidence['stage'] == 'preflight'
+    assert caught.value.evidence['installation']['state'] == 'not_started'
+    assert not any('pull' in cmd or 'install' in cmd for cmd in git.calls)
+
+
+def test_missing_environment_configuration_does_not_contact_machine(checkout, monkeypatch):
+    root, _ = checkout
+    save_config({'default_machine': 'remote', 'machines': {'remote': {
+        'ssh_alias': 'research', 'software_root': str(root)}}})
+    monkeypatch.setattr('subprocess.run', lambda *a, **kw: pytest.fail('Missing venv must fail before SSH'))
+    with pytest.raises(ValueError, match='venv_path'):
+        update_software(project='science')
+
+
+@pytest.mark.parametrize('field,value', [('state', 'not_started'), ('python', '/wrong/bin/python'),
+                                      ('editable', False), ('returncode', 1)])
+def test_remote_success_requires_selected_editable_installation(checkout, monkeypatch, field, value):
+    root, _ = checkout
+    remote_profile(root)
+    result = response(root)
+    result['installation'][field] = value
+    calls = []
+    monkeypatch.setattr('subprocess.run', lambda cmd, **kw: calls.append(cmd) or CompletedProcess(cmd, 0, json.dumps(result), ''))
+    with pytest.raises(SoftwareUpdateError) as caught:
+        update_software(project='science')
+    assert caught.value.evidence['state'] == 'unknown' and len(calls) == 1
+
+
+def test_cli_text_reports_installation_after_unchanged_pull(checkout, monkeypatch, capsys):
+    root, _ = checkout
+    result = response(root)
+    result.update(state='up_to_date', after_commit=FIRST, machine='fixture')
+    monkeypatch.setattr(software, 'update_software', lambda **kw: result)
+    software.main(['update', '--project', 'science'])
+    text = capsys.readouterr().out
+    assert 'Already up to date' in text and 'Editable install refreshed' in text
+
+
+def test_remote_install_failure_keeps_commit_and_prints_failed_stage(checkout, monkeypatch, capsys):
+    root, _ = checkout
+    remote_profile(root)
+    result = response(root)
+    result.update(state='failed', stage='install', error='Editable installation failed')
+    result['installation'].update(state='failed', returncode=1)
+    calls = []
+    monkeypatch.setattr('subprocess.run', lambda cmd, **kw: calls.append(cmd) or CompletedProcess(cmd, 0, json.dumps(result), ''))
+    with pytest.raises(SystemExit) as caught:
+        software.main(['update', '--project', 'science'])
+    text = capsys.readouterr().out
+    assert caught.value.code == 1 and SECOND in text and 'Editable install: failed' in text
+    assert len(calls) == 1

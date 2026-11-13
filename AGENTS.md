@@ -63,9 +63,12 @@ operate from the workstation; compute nodes use already-prepared environments.
   and an agreed import/migration policy, not a migration framework in advance.
 - Distinguish absent, stale, failed, and unknown observations. Never blindly
   retry a submission whose scheduler outcome may already have taken effect.
-- **Single-copy software policy (2026-11-12):** the software layer only runs
-  `git pull --ff-only` in an existing project checkout under `software_root`.
-  Never create clones, Git mirrors, worktrees, release copies, wheel installs,
+- **Single-copy software policy (2026-11-12):** the software layer runs
+  `git pull --ff-only` in one existing checkout under `software_root`, then refreshes
+  its editable installation with the configured venv_path/bin/python, even if HEAD
+  is unchanged (user amendment MVP7.2f). No dependency upgrades/downloads; machine
+  dependencies/build tools remain operator-owned. Verify interpreter prefix first.
+  Never create clones, Git mirrors, worktrees, release copies, additional
   environments or preparation/release records. `update_software` / `asl software
   update` are explicit operations separate from submission; compute jobs never
   update code. The operator coordinates update timing for jobs using the shared
@@ -103,7 +106,7 @@ operate from the workstation; compute nodes use already-prepared environments.
   integration boundary. Keep path bases, preflight, incremental receipts,
   uncertainty/inspection, stale evidence and bounded log limits accurate.
 - [Software updates](agent/13_software_preparation.md) documents explicit
-  single-checkout pulls and the retained read-only status surface. Source/release
+  single-checkout pulls/editable refresh and the retained read-only status surface. Source/release
   preparation has been removed. Do not infer authorization to update an actual
   cluster from the command's availability during local-only development.
   `asl software status` provides read-only Git and selected-environment metadata
