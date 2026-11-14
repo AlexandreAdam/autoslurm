@@ -9,8 +9,11 @@ broader scope and dedicated ownership are explicit user requirements. It is no
 longer a one-to-two-day updater/message patch. **MVP10.1 is complete:** the
 [full audit](MVP10_api_failure_audit.md) and
 [coverage register](MVP10_api_inventory.json) account for 233 routes, 112 owners
-and all 18 broad catches. No runtime implementation yet; exact field/helper/type
-names and exception/envelope/debug/exit conventions remain proposed for MVP10.2.
+and all 18 broad catches. **MVP10.2 is implemented locally:** stdlib-only errors.py,
+the opt-in terminal adapter and additive diagnostics on existing domain exceptions.
+Current coverage is 248 routes/127 owners; operation adoption remains pending.
+The current API/policy is documented below without claiming formal acceptance
+of every proposed technical decision or universal CLI/ACP migration.
 [PLAN.md](../../PLAN.md#mvp10-actionable-failures-with-preserved-evidence) owns tasks.
 
 ## Problems and evidence
@@ -68,7 +71,7 @@ remains a design reference; the linked register owns exhaustive surface coverage
 
 ## Dedicated module and dependency rules
 
-Proposed concrete starting layout (these are future files, not current imports):
+Current MVP10.2 layout (operation integration remains in later slices):
 
 ```text
 src/autoslurm/errors.py
@@ -108,6 +111,42 @@ known effects); normalize/render through the shared host module. Reuse the same
 normalization for local results. Do not copy a separate human-message catalogue
 into every remote worker. Preserve older plain error fields as explicitly planned
 compatibility, with unknown codes/details rather than fabricated classifications.
+
+### MVP10.2 implemented foundation
+
+Public imports are explicit in `autoslurm.errors`: Diagnostic, DiagnosticCause,
+DiagnosticError, diagnostic_catalog, invalid_argument, missing_resource and
+command_failure. Root reexports remain unchanged. The core imports only stdlib
+dataclasses/re/types/typing and performs no I/O or recovery. Normal package-root
+import still eagerly loads older services; that separate import boundary is not
+claimed fixed by isolated leaf-module tests.
+
+Diagnostic has code, operation, stage, scalar identity/observation context,
+optional cause, explicit step effects, summary/next-action overrides and up to four
+leaf secondary diagnostics. Category/default wording have one catalogue owner.
+Mappings and children are detached/immutable; enrichment refuses conflicting
+identity. Effects are never inferred from codes, timeouts or errno. Cause captures
+kind/detail/errno/returncode; original exceptions remain in native Python chains.
+Known URL-userinfo/credential/key forms are redacted before UTF-8 bounding; unknown
+secrets are not universally detectable, so raw config/environment/argv are excluded.
+
+to_dict() returns detached version=1 diagnostic facts, not a new persisted record.
+Summary/context strings are 512 bytes, next action 1024, detail 4096; numeric facts
+are signed 64-bit and effect steps are bounded to 32. The existing receipt/update
+payload is preserved by identity and referenced rather than serialized wholesale.
+SubmissionError(message, receipt) and SoftwareUpdateError(message, evidence) still
+behave as RuntimeError subclasses with the same messages/payloads/causes; optional
+diagnostic= and the shared base are additive. Legacy errors have diagnostic=None.
+
+apps.error_output supplies render_diagnostic and exit_with_error. The opt-in failure
+adapter renders text to stderr or JSON to stdout, then exits 1. Its envelope is
+status=error, message=summary, diagnostic=to_dict(). Existing parser usage exit 2
+and observation/warning exit behavior remain command-owned. Unknown/legacy errors,
+KeyboardInterrupt and debug=True re-raise the original exception; output failure
+also re-raises the initiating error and keeps the write failure in __context__.
+No global catch hook, ACP-envelope migration or new debug CLI flag was added.
+Backends do not use the adapter. See the [installed recipe](../../src/autoslurm/agent_resources/15_diagnostics.md)
+and [human guide](../../docs/errors.md) for exact fields and staged adoption.
 
 ## Diagnostic contract and failure families
 
@@ -228,7 +267,7 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | Task | Deliverable |
 |---|---|
 | MVP10.1 complete | Exhaustive public API/action/entry-point and broad-catch register; current effects/outcomes and recommended translation contracts; exact model decisions remain in MVP10.2 |
-| MVP10.2 | Dedicated error module, isolated tests, shared terminal adapter and JSON/Python/ACP conventions |
+| MVP10.2 complete | Dedicated diagnostic module, isolated tests, opt-in terminal adapter and additive exception/JSON conventions; service/ACP-wide adoption pending |
 | MVP10.3 | Config, selection, arguments/paths, bundle/preflight and persistence adoption |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
@@ -256,9 +295,10 @@ inventory; the original one-to-two-day estimate no longer applies.
 
 ## Open questions and forward constraints
 
-Settle diagnostic field names, compatibility with existing result JSON, exact
-error module exports and the debug/CLI exit conventions in MVP10.2, using the
-completed MVP10.1 register. Keep additive fields where possible; an actual
+MVP10.2 supplies the implemented diagnostic fields/exports and opt-in debug/exit
+conventions above. Settle each service's result/observation policy when adopting
+it; existing CLI/ACP and helper protocol envelopes remain unchanged. Keep additive
+fields where possible; an actual
 breaking shape needs an explicit release/data policy. Public exception properties
 remain readable. Clients should display the provided diagnosis instead of
 assembling their own misleading 'pull failed' labels; demonstrate that in the
@@ -329,3 +369,17 @@ state/config, environment, cluster or external-client change. MVP10.2 follows;
 diagnostic adoption remains pending. Audit effort allowance is 7–13 focused days
 for remaining model/adoption/parity work, with per-slice re-estimation and separate
 deployment; it supersedes any narrow updater-only estimate.
+
+2026-11-13, MVP10.2: implemented the foundation, 17 catalogue codes, named fact
+constructors, detached/bounded/redacted serialization, immutable identity/effects,
+secondary diagnostics and opt-in terminal/JSON/debug behavior. Existing domain
+exception positional messages/payloads/causes retained with optional diagnostic=.
+36 focused tests pass; full offline suite 797 passed, 43 expected collision warnings,
+10.62 s; `.development/test-runs/error-core.xml`. Clean-source wheel smoke verifies
+API, legacy payloads, JSON and installed recipe/CLI/ACP without Typer; artifact
+SHA256 `f6734a18963e0f64b64cd4c0365bcd0ba1572e96bae795e80402f939e53ae2cc`.
+Coverage register expanded to 248 routes/127 owners with foundation tests; all
+18 existing broad catches retained. Human/agent guides and relative links reviewed.
+No cluster contact, base install, daily state/config or persisted-format change;
+domain operation translation, stale-venv fix and universal presentation are pending.
+MVP10.3 configuration/authoring/persistence adoption is next.

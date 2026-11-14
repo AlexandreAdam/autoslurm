@@ -6,6 +6,7 @@ chapters:
   - file: configuration
   - file: logs
   - file: software
+  - file: errors
   - file: ssh_configuration
   - file: register_script
   - file: cli_integration

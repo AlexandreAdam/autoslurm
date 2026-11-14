@@ -9,17 +9,18 @@ from .config import load_config, is_remote_machine, absolute_machine_path
 from .software_update_probe import relative_project_path, update_checkout
 from .storage import storage_root
 from .transport import ssh_command
+from .errors import DiagnosticError
 
 
 __all__ = ['update_software', 'SoftwareUpdateError']
 
 
-class SoftwareUpdateError(RuntimeError):
+class SoftwareUpdateError(DiagnosticError):
     """Failed/uncertain pull, carrying the available before/after evidence."""
 
-    def __init__(self, message, evidence):
+    def __init__(self, message, evidence, *, diagnostic=None):
         self.evidence = evidence
-        super().__init__(message)
+        super().__init__(message, diagnostic=diagnostic)
 
 
 def _validate_result(result, root, project, python):

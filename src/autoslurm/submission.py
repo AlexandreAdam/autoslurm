@@ -10,17 +10,18 @@ import subprocess
 from .record_files import atomic_json
 from .storage import storage_root
 from .transport import ssh_command
+from .errors import DiagnosticError
 
 __all__ = ["SubmissionError", "load_submission", "list_submissions", "refresh_submission"]
 SUBMISSION_METADATA_KEY = "_autoslurm_submission"
 SUBMISSION_PROTOCOL = 1
 
 
-class SubmissionError(RuntimeError):
+class SubmissionError(DiagnosticError):
     """Submission stopped; receipt preserves known outcomes and exact identity."""
 
-    def __init__(self, message, receipt):
-        super().__init__(message)
+    def __init__(self, message, receipt, *, diagnostic=None):
+        super().__init__(message, diagnostic=diagnostic)
         self.receipt = receipt
 
 

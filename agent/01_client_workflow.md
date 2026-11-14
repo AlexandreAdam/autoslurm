@@ -36,6 +36,12 @@ caller-supplied trusted contract. Saved bundles do not retain or automatically
 rediscover command schemas; use explicit `validate_job` before relying on a
 changed declaration. Existing JSON/preview/submission contracts remain unchanged.
 
+MVP10.2 adds the opt-in [diagnostic foundation](../src/autoslurm/agent_resources/15_diagnostics.md).
+Use explicit diagnostic facts at client boundaries and retain original receipts/
+update evidence before presentation. Existing services are adopting diagnostics
+in later slices; an error's optional `.diagnostic` can still be None. No universal
+CLI/ACP behavior change or stale-venv fix is claimed yet.
+
 ## Adapt scientific software
 
 Keep computation independent of AutoSlurm. Expose an installed command with

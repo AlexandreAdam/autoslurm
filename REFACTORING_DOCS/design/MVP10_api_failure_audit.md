@@ -208,3 +208,18 @@ No package implementation changes, dependency installation, cluster contact or
 daily-state changes are part of this task. Test and checker results are recorded
 in PLAN.md's Done log after they actually run. Successful source coverage is not
 MVP10 diagnostic completion, and offline tests do not establish live compatibility.
+
+## MVP10.2 amendment
+
+The historical counts/findings above describe the original MVP10.1 audit.
+The register now also covers the implemented diagnostic foundation: 248 routes,
+127 owners, 185 Python names and 15 public method/property members. This adds nine
+explicit module exports and six members (including category's property) without
+changing root exports. All 18 existing broad handlers remain as audited.
+
+The new diagnostics contract references test_errors/test_error_output, with
+36 focused tests and 797 passing offline tests overall. Domain exceptions now
+accept optional diagnostic= while retaining positional messages/payload identity
+and causes. Model/adapter ownership is implemented; E01–E18 service adoption and
+command/ACP parity remain open. The [design's current contract](MVP10_actionable_errors.md#mvp102-implemented-foundation)
+and installed agent recipe specify the exact opt-in API and its bounds.

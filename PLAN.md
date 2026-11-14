@@ -9,8 +9,8 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP10 in progress; MVP10.1 public interface/failure audit
-  complete. MVP9 complete locally; MVP7.2f editable-update amendment
+- **Current milestone:** MVP10 in progress; MVP10.1 audit and MVP10.2 diagnostic
+  foundation complete locally. MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
   FIX.DEPENDENCY.1 defaults dependent jobs to kill-on-invalid-dep=yes.
@@ -21,26 +21,26 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 761 passed, 43 expected
+  rollback source remains unchanged. Full offline suite: 797 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.1 audits 233 Python/CLI/ACP routes, 112 distinct
-  owners and all 18 broad catches. The coverage register records current outcomes,
-  effects, proposed translation/diagnosis/next actions and regression sources;
-  18 findings guide the adoption slices. Read-only AST coverage and four drift
-  controls pass; full offline suite remains 761 passing (43 expected warnings).
-  No package runtime, public contract, daily configuration or cluster change.
-- **Next task:** MVP10.2 dedicated diagnostic module and thin terminal adapter,
-  using the [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
-  Settle exact diagnostic/exception/envelope/debug/exit conventions in that slice;
-  module implementation and all operation adoption remain pending.
+- **Latest completed task:** MVP10.2 implements the stdlib-only diagnostic core,
+  catalogue, safe serialization, immutable effects/context and opt-in terminal
+  adapter. Existing domain exceptions retain their messages/payloads/causes with
+  optional diagnostic=. 36 focused/797 full offline tests and clean-wheel API/
+  installed-recipe checks pass; no package install into daily/base environments.
+  Coverage is 248 routes/127 owners; all 18 existing broad catches remain.
+- **Next task:** MVP10.3 configuration/authoring/persistence adoption, using the
+  [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
+  Integrate the diagnostic model at meaningful operation boundaries; most current
+  service errors still have no diagnostic. Stale-venv correction is MVP10.4.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
   MVP9 implements readable command integration; MVP10 follows with
   an API-wide error review and dedicated shared error module. MVP10 now starts
   with a complete interface/failure inventory before migrating operation boundaries;
-  the stale-venv case is one regression among many. The error-module implementation
-  and its public API details remain pending.
+  the stale-venv case is one regression among many. The error module is implemented;
+  service integration and public route parity remain pending.
   Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
@@ -640,13 +640,16 @@ is in the design; every callable/action and its outcome contract must be reviewe
   exit behavior and loss of partial success; finalize the coverage register.
   Completed [audit and priorities](REFACTORING_DOCS/design/MVP10_api_failure_audit.md)
   with a per-owner plain-data register, canonical alias mapping and read-only
-  AST coverage checker. Diagnostic adoption remains pending in MVP10.2–9.
-- [ ] **MVP10.2 Dedicated error module.** Add one dependency-light owner for error
+  AST coverage checker. Operation adoption remains pending in MVP10.3–9.
+- [x] **MVP10.2 Dedicated error module.** Add one dependency-light owner for error
   codes/categories, structured diagnostics, context/cause preservation, named
   diagnostic constructors and safe serialization. Keep CLI rendering in a thin
   presentation adapter using those same diagnostics. Isolate unit tests; do not
   import backends, run commands or decide recovery in this module. Preserve public
   exception/receipt contracts and settle additive data/debug/exit-code conventions.
+  Implemented errors.py and opt-in apps/error_output.py, with explicit public
+  submodule imports and packaged diagnostic recipe. No universal service/CLI/ACP
+  migration or automatic outcome classification; later slices adopt the core.
 - [ ] **MVP10.3 Configuration, authoring and persistence.** Integrate at config,
   selector, command/argument/path validation, bundle graph/render/preflight and
   local record publication boundaries. Distinguish invalid/missing/inaccessible/
@@ -924,6 +927,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | FIX.DEPENDENCY.1 Default cancellation for impossible dependencies | 741 full offline tests passed in 9.69 s (42 expected collision warnings), report `.development/test-runs/invalid-dependency.xml`; 18 new renderer cases plus preview/dispatch assertions and updated dependent-script fixtures. Shared renderer adds one default yes directive only for nonempty dependencies, preserves underscore/hyphen explicit overrides, handles arrays and leaves definitions unchanged in local/remote contexts. Full-suite fixture mismatches were updated for the intended directive. Clean wheel/default/nonmutation/actual-shell smoke passed, SHA256 `62579a91072cc8989df90da81c178d4b83eca46242490d067c046440f9011e8a`. Human/agent docs and MVP4 design amended; links/diff checked. No cluster, configuration, daily state, base installation or historical/queued script change. Task commit: `git log --grep '^FIX.DEPENDENCY.1:'`; push completed dev commit. |
 | 2026-11-13 | MVP9.3 Public authoring, saved validation and installed recipe | 761 full offline tests passed in 11.08 s (43 expected collision warnings), report `.development/test-runs/typed-authoring.xml`; 83 focused checks passed, 20 added cases. Public contracts/optional Typer adapter, strict no-default-injection saved-job checks, detached values and dependency authoring verified. Reference plan/validate/preview CLI runs four original-index tasks plus reducer through existing preview/dispatch/receipts/cached inspection and actual local science under mocked Slurm. Packaged recipe is discoverable through CLI/ACP without a checkout; complete historical guidance packaging remains L3. Clean AutoSlurm/client wheels verify optional Typer absence, public imports, installed recipe/action metadata, client CLI and scientific entry point; SHA256 `dbcca8ede6c0135729aead31aa83b1da75a24489542bc646dffdaec9ba167ccb`. Human/agent guides and links/diff checked. MVP9 complete locally, local tag `mvp9` at closure; no schema migration, cluster, base install, daily state/config, external client or rollback change. Task commit: `git log --grep '^MVP9.3:'`; push completed dev commit. |
 | 2026-11-13 | MVP10.1 Complete public interface/failure inventory | Audited revision `6104372`: 233 routes (Python exports/methods, root/alias/subaction/standalone/helper CLI and eight ACP actions), 112 owners, 24 failure contracts and all 18 broad catches individually reviewed. Register records inputs/current outcomes/effects plus translation owner, desired diagnosis, next action, regression sources and pending adoption task. E01–E18 cover swallowed causes, false missing, publication/partial/unknown effects and presentation gaps; preserve evidence-saving catches. Read-only AST checker passed and rejected four drift controls (missing export, wrong alias, missing effects, unreviewed catch). Full offline suite: 761 passed, 43 expected collision warnings, 10.53 s; `.development/test-runs/error-inventory.xml`. Documentation links/diff reviewed. No package runtime, dependencies, daily state/config, external client, cluster or rollback changes; no artifact rebuild needed for an audit-only task. MVP10.2 is next; proposed diagnostic APIs are not accepted/implemented by this audit. Task commit: `git log --grep '^MVP10.1:'`; push completed dev commit. |
+| 2026-11-13 | MVP10.2 Shared diagnostic foundation | Stdlib-only errors.py owns 17 codes/categories/default wording, immutable context/effects, named fact constructors, safe bounded serialization and primary/secondary facts; apps/error_output.py is opt-in text/JSON/exit/debug presentation. SubmissionError/SoftwareUpdateError retain positional messages, payload identity, RuntimeError compatibility and native causes with optional diagnostic=. 36 focused tests and 797 full offline tests passed (43 expected collision warnings), 10.62 s; `.development/test-runs/error-core.xml`. Clean-source offline wheel/temporary-target smoke verifies APIs, legacy payloads, redacted JSON and installed recipe via CLI/ACP without Typer; SHA256 `f6734a18963e0f64b64cd4c0365bcd0ba1572e96bae795e80402f939e53ae2cc`. Coverage checker: 248 routes/127 owners/18 retained broad catches. Human/agent docs and links reviewed. No cluster, base install, daily config/state, persisted-format or rollback change. Operation adoption, stale-venv fix and universal CLI/ACP parity remain pending; MVP10.3 is next. Task commit: `git log --grep '^MVP10.2:'`; push completed dev commit. |
 
 ## How we work
 

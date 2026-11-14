@@ -1,7 +1,7 @@
 {
   "audited_revision": "61043722c4758cb188994f996e7e46ef8140003d",
   "audited_date": "2026-11-13",
-  "scope": "MVP10.1 source inventory. No diagnostic module/adoption implemented. Owner rows inherit failures, translation_owner, desired_diagnostic, next_action, regression_evidence and implementation_task from their named contract. Alias routes inherit that owner's full row. Regression paths are existing behavior evidence, not proof that proposed diagnostics pass.",
+  "scope": "MVP10.1 source inventory, amended for the implemented MVP10.2 diagnostic foundation; operation adoption remains pending. Owner rows inherit failures, translation_owner, desired_diagnostic, next_action, regression_evidence and implementation_task from their named contract. Alias routes inherit that owner's full row. Existing service regression paths do not prove future diagnostic adoption; foundation tests are identified separately.",
   "interfaces": {
     "acp:gather_context": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
@@ -55,6 +55,12 @@
     "method:autoslurm.command_contract.CommandContract.validate": "autoslurm.command_contract.CommandContract.validate",
     "method:autoslurm.command_contract.CommandContract.validate_job": "autoslurm.command_contract.CommandContract.validate_job",
     "method:autoslurm.command_contract.CommandOption.validate": "autoslurm.command_contract.CommandOption.validate",
+    "method:autoslurm.errors.Diagnostic.category": "autoslurm.errors.Diagnostic.category",
+    "method:autoslurm.errors.Diagnostic.to_dict": "autoslurm.errors.Diagnostic.to_dict",
+    "method:autoslurm.errors.Diagnostic.with_context": "autoslurm.errors.Diagnostic.with_context",
+    "method:autoslurm.errors.Diagnostic.with_secondary": "autoslurm.errors.Diagnostic.with_secondary",
+    "method:autoslurm.errors.DiagnosticCause.from_exception": "autoslurm.errors.DiagnosticCause.from_exception",
+    "method:autoslurm.errors.DiagnosticCause.to_dict": "autoslurm.errors.DiagnosticCause.to_dict",
     "method:autoslurm.execution.ExecutionContext.resolve_job": "autoslurm.execution.ExecutionContext.resolve_job",
     "method:autoslurm.execution.ExecutionContext.resolve_path": "autoslurm.execution.ExecutionContext.resolve_path",
     "method:autoslurm.execution.ExecutionContext.validate_jobs": "autoslurm.execution.ExecutionContext.validate_jobs",
@@ -78,6 +84,8 @@
     "python:autoslurm.action_definitions": "autoslurm.acp.action_definitions",
     "python:autoslurm.activation_command_from_config": "autoslurm.config.activation_command_from_config",
     "python:autoslurm.all_bundle_snapshots": "autoslurm.bundle_selection.all_bundle_snapshots",
+    "python:autoslurm.apps.error_output.exit_with_error": "autoslurm.apps.error_output.exit_with_error",
+    "python:autoslurm.apps.error_output.render_diagnostic": "autoslurm.apps.error_output.render_diagnostic",
     "python:autoslurm.attach_software_manifest": "autoslurm.software_manifest.attach_software_manifest",
     "python:autoslurm.bulk_submit_driver.BulkSubmitDriverResult": "autoslurm.bulk_submit_driver.BulkSubmitDriverResult",
     "python:autoslurm.bulk_submit_driver.BulkSubmitPayload": "autoslurm.bulk_submit_driver.BulkSubmitPayload",
@@ -113,6 +121,13 @@
     "python:autoslurm.definitions.DATE_FORMAT": "autoslurm.definitions.DATE_FORMAT",
     "python:autoslurm.definitions.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
     "python:autoslurm.dependency_graph": "autoslurm.job_dependency.dependency_graph",
+    "python:autoslurm.errors.Diagnostic": "autoslurm.errors.Diagnostic",
+    "python:autoslurm.errors.DiagnosticCause": "autoslurm.errors.DiagnosticCause",
+    "python:autoslurm.errors.DiagnosticError": "autoslurm.errors.DiagnosticError",
+    "python:autoslurm.errors.command_failure": "autoslurm.errors.command_failure",
+    "python:autoslurm.errors.diagnostic_catalog": "autoslurm.errors.diagnostic_catalog",
+    "python:autoslurm.errors.invalid_argument": "autoslurm.errors.invalid_argument",
+    "python:autoslurm.errors.missing_resource": "autoslurm.errors.missing_resource",
     "python:autoslurm.execute_acp": "autoslurm.acp.execute_acp",
     "python:autoslurm.execution.ExecutionContext": "autoslurm.execution.ExecutionContext",
     "python:autoslurm.execution.execution_context_from_snapshot": "autoslurm.execution.execution_context_from_snapshot",
@@ -582,6 +597,18 @@
         "tests/integration/test_shared_inspection.py"
       ],
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "diagnostics": {
+      "implementation_task": "MVP10.2",
+      "failures": "Invalid codes/context/cause/effect/secondary facts raise programming TypeError/ValueError; unknown/legacy errors are deliberately re-raised; terminal write failure re-raises initiating error.",
+      "translation_owner": "errors owns facts/catalogue/safe serialization; apps.error_output owns presentation and opt-in exit only. Neither classifies scheduler effects or performs recovery.",
+      "desired_diagnostic": "Immutable plain facts with bounded/redacted output, detached JSON, original exception chains, known/unknown caller-supplied effects and primary plus secondary evidence.",
+      "next_action": "Call at an explicitly adopted boundary; preserve receipt/update evidence before presentation, and keep legacy handling when diagnostic is absent. No retry inference.",
+      "regression_evidence": [
+        "tests/unit/test_errors.py",
+        "tests/unit/test_error_output.py"
+      ],
+      "adoption": "Foundation implemented in MVP10.2; no claim of domain or CLI/ACP-wide adoption."
     }
   },
   "owners": {
@@ -1157,8 +1184,8 @@
     },
     "autoslurm.software_update.SoftwareUpdateError": {
       "contract": "software_update",
-      "inputs": "Message and plain update evidence.",
-      "current": "RuntimeError subclass with .evidence.",
+      "inputs": "Message and plain update evidence. Optional diagnostic= keyword is additive in MVP10.2.",
+      "current": "RuntimeError subclass with .evidence. Now inherits DiagnosticError (still RuntimeError); .diagnostic defaults None and original payload identity/message/cause remain.",
       "effects": "No I/O; property retained."
     },
     "autoslurm.software_update.update_software": {
@@ -1217,8 +1244,8 @@
     },
     "autoslurm.submission.SubmissionError": {
       "contract": "receipt",
-      "inputs": "Message and plain receipt.",
-      "current": "RuntimeError subclass with .receipt, no formatting or validation module yet.",
+      "inputs": "Message and plain receipt. Optional diagnostic= keyword is additive in MVP10.2.",
+      "current": "RuntimeError subclass with .receipt, no formatting or validation module yet. Now inherits DiagnosticError (still RuntimeError); .diagnostic defaults None and original payload identity/message/cause remain.",
       "effects": "Exception construction has no I/O; retain property/chaining compatibility."
     },
     "autoslurm.submission.list_submissions": {
@@ -1256,6 +1283,96 @@
       "inputs": "Trusted already-imported static leaf Typer app; literal script and path roles.",
       "current": "CommandContract; ValueError for unsupported/missing optional metadata, cause chained for import failure; parser-discovery exceptions can escape.",
       "effects": "Inspects static declarations only; no callback/help command or command-name imports."
+    },
+    "autoslurm.errors.Diagnostic": {
+      "contract": "diagnostics",
+      "inputs": "Known code, operation/stage; optional scalar identity/observation context, cause, effects, summary/action and up to four leaf secondary diagnostics.",
+      "current": "Frozen validated model with immutable detached mappings; malformed facts TypeError/ValueError.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.Diagnostic.category": {
+      "contract": "diagnostics",
+      "inputs": "Read a valid diagnostic's category property.",
+      "current": "Catalogue-derived category string; no separate classification or I/O.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.Diagnostic.to_dict": {
+      "contract": "diagnostics",
+      "inputs": "Valid diagnostic.",
+      "current": "Detached version=1 JSON-safe facts, including bounded cause/context/effects/secondary; never serializes receipt or exception objects.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.Diagnostic.with_context": {
+      "contract": "diagnostics",
+      "inputs": "Additional known context facts.",
+      "current": "New diagnostic; conflicts reject instead of redirecting selected identity.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.Diagnostic.with_secondary": {
+      "contract": "diagnostics",
+      "inputs": "Zero to four leaf diagnostics, including already attached leaves.",
+      "current": "New diagnostic preserving primary effects/context/cause; nesting/overflow rejected explicitly.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.DiagnosticCause": {
+      "contract": "diagnostics",
+      "inputs": "Exception kind, safe detail, optional signed 64-bit errno/returncode.",
+      "current": "Frozen cause facts; invalid types ValueError/TypeError, details bounded/redacted.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.DiagnosticCause.from_exception": {
+      "contract": "diagnostics",
+      "inputs": "Trusted originating exception, optional selected safe detail and returncode.",
+      "current": "Captures type/errno/code/detail; never chooses outcome/effects or consumes original exception chain.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.DiagnosticCause.to_dict": {
+      "contract": "diagnostics",
+      "inputs": "Valid cause.",
+      "current": "Detached plain safe cause facts.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.DiagnosticError": {
+      "contract": "diagnostics",
+      "inputs": "Diagnostic, or legacy message plus optional diagnostic keyword.",
+      "current": "RuntimeError subclass; .diagnostic optional; Python cause/traceback remains native. Unknown message without diagnostic stays legacy.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.diagnostic_catalog": {
+      "contract": "diagnostics",
+      "inputs": "No arguments.",
+      "current": "Detached code/category/summary/action catalogue; no mutable policy leaked.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.invalid_argument": {
+      "contract": "diagnostics",
+      "inputs": "Operation/stage, named field, explanation and optional context.",
+      "current": "Known validation Diagnostic; no automatic effect claim.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.missing_resource": {
+      "contract": "diagnostics",
+      "inputs": "Observed absent resource/path; operation/stage, optional cause/effects/context.",
+      "current": "Diagnostic naming missing resource; callers must not use failed SSH queries as absence.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.command_failure": {
+      "contract": "diagnostics",
+      "inputs": "Operation/stage, command name, observed nonzero returncode cause, explicit effects and context.",
+      "current": "command_failed Diagnostic, never inferred scheduler rejection; missing/nonzero evidence ValueError.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.apps.error_output.render_diagnostic": {
+      "contract": "diagnostics",
+      "inputs": "Diagnostic.",
+      "current": "Bounded human string containing primary/secondary context, cause, effects and next action; invalid object TypeError.",
+      "effects": "Pure presentation, no printing or recovery."
+    },
+    "autoslurm.apps.error_output.exit_with_error": {
+      "contract": "diagnostics",
+      "inputs": "Exception; optional json_output/debug/stream.",
+      "current": "Diagnosed DiagnosticError -> text stderr or JSON stdout then SystemExit(1); unknown/legacy/interrupt/debug re-raise original; output failure re-raises initiating error with output issue as context.",
+      "effects": "One terminal/stream write and explicit exit only; no domain action, payload serialization, generic catch hook or retry."
     }
   },
   "catch_reviews": {
@@ -1377,5 +1494,13 @@
       "effects": "Preflight then ff-only pull and editable --no-deps reinstall; no dependency repair.",
       "contract": "software_update"
     }
-  }
+  },
+  "amendments": [
+    {
+      "task": "MVP10.2",
+      "date": "2026-11-13",
+      "base_revision": "78ad308",
+      "note": "Added explicit diagnostic module/adapter exports and members. Legacy domain exceptions optionally carry diagnostics; operation adoption is still pending. Historical MVP10.1 audited_revision stays unchanged."
+    }
+  ]
 }
