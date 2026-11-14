@@ -2,6 +2,8 @@ import pytest
 from argparse import Namespace
 from unittest.mock import patch
 from autoslurm.utils import machine_config
+from autoslurm import ConfigurationError
+from autoslurm.storage import config_file_path
 
 
 @pytest.fixture
@@ -37,7 +39,8 @@ def mock_load_config(tmp_path):
     with patch(
         "autoslurm.config.load_config", return_value=mock_config
     ) as mock_load_config:
-        yield mock_load_config
+        with patch("autoslurm.config._load_config_with_path", side_effect=lambda: (mock_load_config(), config_file_path())):
+            yield mock_load_config
 
 
 def test_machine_config_custom_machine_complete(mock_load_config, args):
@@ -66,7 +69,7 @@ def test_machine_config_incomplete(mock_load_config, args):
     """
     mock_config = {"machines": {"local": {}}, "default_machine": "local"}
     mock_load_config.return_value = mock_config
-    with pytest.raises(AttributeError):
+    with pytest.raises(ConfigurationError):
         machine_config(args)
 
 
@@ -87,7 +90,7 @@ def test_machine_config_custom_remote_machine_missing_keys(args, mock_load_confi
 def test_machine_config_custom_invalid_remote_machine(args, mock_load_config):
     args.machine = "some_invalid_machine"
 
-    with pytest.raises(EnvironmentError):
+    with pytest.raises(ConfigurationError):
         machine_config(args)
 
 
@@ -183,5 +186,5 @@ def test_missing_env_command(args, mock_load_config):
     }
     mock_load_config.return_value = mock_config
 
-    with pytest.raises(AttributeError, match="venv_path|env_command"):
+    with pytest.raises(ConfigurationError, match="venv_path|env_command"):
         machine_config(args)

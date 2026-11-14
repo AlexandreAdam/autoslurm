@@ -100,8 +100,10 @@ from .software_update import update_software, SoftwareUpdateError
 from .software_requirements import software_expectations
 from .command_contract import CommandContract, CommandOption
 from .typer_adapter import from_typer
+from .errors import ConfigurationError
 
 __all__ = [
+    'ConfigurationError',
     'CommandContract',
     'CommandOption',
     'from_typer',

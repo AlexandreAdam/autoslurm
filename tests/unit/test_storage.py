@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from autoslurm import storage
+from autoslurm import storage, ConfigurationError
 from autoslurm.utils import load_config
 
 
@@ -36,7 +36,7 @@ def test_explicit_root_does_not_load_legacy_configuration(tmp_path, monkeypatch)
     monkeypatch.setenv("AUTOSLURM_STORAGE_ROOT", str(tmp_path))
     (tmp_path / "src").mkdir()
     (tmp_path / "src/config.json").write_text('{"local": {}}')
-    with pytest.raises(EnvironmentError, match="Configuration file not found"):
+    with pytest.raises(ConfigurationError, match="Configuration file not found"):
         load_config()
 
 

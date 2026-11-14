@@ -6,6 +6,7 @@ from typing import Callable
 import pytest
 from unittest.mock import MagicMock
 from tests.submission_helpers import accepted_receipt
+from autoslurm.storage import config_file_path
 
 mock_job_name = "Test_Job"
 mock_jobs = {
@@ -187,6 +188,7 @@ def mock_load_config(monkeypatch, tmp_path):
     monkeypatch.setattr("autoslurm.bundle_selection.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.run_slurm.load_config", lambda: mock_config)
     monkeypatch.setattr("autoslurm.config.load_config", lambda: mock_config)
+    monkeypatch.setattr("autoslurm.config._load_config_with_path", lambda: (mock_config, config_file_path()))
     monkeypatch.setattr("autoslurm.load_config", lambda: mock_config)
     from autoslurm.storage import ensure_storage_dirs, set_storage_root
     set_storage_root(tmp_path)

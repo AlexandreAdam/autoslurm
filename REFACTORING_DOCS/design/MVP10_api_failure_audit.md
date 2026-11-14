@@ -17,8 +17,9 @@ task and regression sources from its named contract. `route_notes` refine ACP
 actions and routes whose semantics need separate explanation. These are explicit
 references, not additional implementations of each alias.
 
-All diagnostic adoption is **pending**. Existing regression sources prove only
-their current tested behavior; they do not prove the proposed diagnostic contract.
+At the original audit, all diagnostic adoption was pending. MVP10.2 and MVP10.3a
+amendments below record foundation and configuration adoption. Other regression
+anchors prove only their current tested behavior, not the proposed contract.
 Use the owner row plus its contract and any route note when closing a later task.
 An owner may need several regressions and more than one implementation slice.
 
@@ -223,3 +224,31 @@ accept optional diagnostic= while retaining positional messages/payload identity
 and causes. Model/adapter ownership is implemented; E01–E18 service adoption and
 command/ACP parity remain open. The [design's current contract](MVP10_actionable_errors.md#mvp102-implemented-foundation)
 and installed agent recipe specify the exact opt-in API and its bounds.
+
+## MVP10.3a amendment
+
+Current coverage is 251 routes/129 owners: ConfigurationError is exported at root
+and leaf, and configuration_failure at leaf. Python names total 188; public
+method/property members stay 15 and all 18 broad catches remain. The config
+contract and four public owner rows now describe implemented read/profile/
+selection diagnostics, alongside the shared CLI root/alias/standalone/debug policy.
+
+E09's read/editor replacement risk is addressed: missing, denied, corrupt JSON,
+UTF-8, invalid shapes/settings, dangling links and entries appearing during a
+failed read are distinct; existing files are preserved. Original cause and actual
+canonical/legacy source identity are retained. This is not complete publication
+race protection. E08's filter/selection defaults remain MVP10.3b; E06's publication
+phase/secondary failures remain MVP10.3c. Stale-venv E01 remains MVP10.4.
+
+The explicit dev exception boundary replaces known configuration OSError/
+AttributeError failures with ConfigurationError (DiagnosticError/RuntimeError and
+ValueError compatible); original exceptions remain chained. Persisted shapes and
+historical evidence are unchanged. The config CLI renders expected errors through
+the shared adapter; other CLI/ACP routes are not claimed migrated.
+
+`tests/integration/test_configuration_diagnostics.py` and updated error/legacy
+configuration tests verify the contract through public Python and CLI boundaries,
+no reset/write on read failure, early submit/preview rejection without commands,
+and unexpected-bug visibility. Full offline suite: 851 passed. Clean-wheel smoke
+verifies imports, all config routes/debug, retained files and installed agent
+recipe. Remaining tasks stay open; source coverage is not diagnostic completion.

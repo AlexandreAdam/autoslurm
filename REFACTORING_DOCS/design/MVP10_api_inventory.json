@@ -1,7 +1,7 @@
 {
   "audited_revision": "61043722c4758cb188994f996e7e46ef8140003d",
   "audited_date": "2026-11-13",
-  "scope": "MVP10.1 source inventory, amended for the implemented MVP10.2 diagnostic foundation; operation adoption remains pending. Owner rows inherit failures, translation_owner, desired_diagnostic, next_action, regression_evidence and implementation_task from their named contract. Alias routes inherit that owner's full row. Existing service regression paths do not prove future diagnostic adoption; foundation tests are identified separately.",
+  "scope": "MVP10.1 source inventory, amended for MVP10.2 diagnostics and MVP10.3a configuration read/validation adoption. Authoring/selection/path adoption and publication I/O remain pending in MVP10.3b/c. Owner rows inherit their named contracts; aliases resolve to the same owner. Regression anchors establish only the explicitly recorded adoption, not universal diagnostic coverage.",
   "interfaces": {
     "acp:gather_context": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
@@ -71,6 +71,7 @@
     "python:autoslurm.CONFIG_FILE_PATH": "autoslurm.definitions.CONFIG_FILE_PATH",
     "python:autoslurm.CommandContract": "autoslurm.command_contract.CommandContract",
     "python:autoslurm.CommandOption": "autoslurm.command_contract.CommandOption",
+    "python:autoslurm.ConfigurationError": "autoslurm.errors.ConfigurationError",
     "python:autoslurm.DATE_FORMAT": "autoslurm.definitions.DATE_FORMAT",
     "python:autoslurm.ExecutionContext": "autoslurm.execution.ExecutionContext",
     "python:autoslurm.LevelSubmitResult": "autoslurm.bulk_submit.LevelSubmitResult",
@@ -121,10 +122,12 @@
     "python:autoslurm.definitions.DATE_FORMAT": "autoslurm.definitions.DATE_FORMAT",
     "python:autoslurm.definitions.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
     "python:autoslurm.dependency_graph": "autoslurm.job_dependency.dependency_graph",
+    "python:autoslurm.errors.ConfigurationError": "autoslurm.errors.ConfigurationError",
     "python:autoslurm.errors.Diagnostic": "autoslurm.errors.Diagnostic",
     "python:autoslurm.errors.DiagnosticCause": "autoslurm.errors.DiagnosticCause",
     "python:autoslurm.errors.DiagnosticError": "autoslurm.errors.DiagnosticError",
     "python:autoslurm.errors.command_failure": "autoslurm.errors.command_failure",
+    "python:autoslurm.errors.configuration_failure": "autoslurm.errors.configuration_failure",
     "python:autoslurm.errors.diagnostic_catalog": "autoslurm.errors.diagnostic_catalog",
     "python:autoslurm.errors.invalid_argument": "autoslurm.errors.invalid_argument",
     "python:autoslurm.errors.missing_resource": "autoslurm.errors.missing_resource",
@@ -324,7 +327,7 @@
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
     },
     "config": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3a (read/validation complete); MVP10.3c (publication pending)",
       "failures": "Absent/unreadable/corrupt config, invalid profile/root/alias/account, missing selected machine or activation, failed atomic publication.",
       "translation_owner": "config normalization/selection/read/write, with presentation at config CLI.",
       "desired_diagnostic": "Config path, selected machine, setting and cause; distinguish missing/corrupt/denied and publication phase.",
@@ -334,9 +337,10 @@
         "tests/integration/test_config_roots.py",
         "tests/integration/test_optional_account.py",
         "tests/unit/test_activation.py",
-        "tests/integration/test_interactive_env_command.py"
+        "tests/integration/test_interactive_env_command.py",
+        "tests/integration/test_configuration_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema."
     },
     "authoring": {
       "implementation_task": "MVP10.3",
@@ -607,9 +611,10 @@
       "next_action": "Call at an explicitly adopted boundary; preserve receipt/update evidence before presentation, and keep legacy handling when diagnostic is absent. No retry inference.",
       "regression_evidence": [
         "tests/unit/test_errors.py",
-        "tests/unit/test_error_output.py"
+        "tests/unit/test_error_output.py",
+        "tests/integration/test_configuration_diagnostics.py"
       ],
-      "adoption": "Foundation implemented in MVP10.2; no claim of domain or CLI/ACP-wide adoption."
+      "adoption": "MVP10.2 foundation implemented; MVP10.3a adds ConfigurationError and configuration_failure with configuration CLI adoption. Other domains and universal CLI/ACP parity remain pending."
     }
   },
   "owners": {
@@ -658,8 +663,8 @@
     "autoslurm.apps.config.main": {
       "contract": "config",
       "inputs": "view/summary; settings update; set-default; interactive editor. Interactive env_command prompt supports add/replace/keep/clear.",
-      "current": "Help on empty; ValueError -> SystemExit(message), other OSError can traceback; optional validation prints bool. Interactive EnvironmentError load fallback creates fresh config.",
-      "effects": "View local-only; save writes; interactive validation may SSH. An unreadable existing config can trigger replacement workflow."
+      "current": "Empty/debug-only invocation shows help. Known ConfigurationError renders shared stderr diagnostic/exit 1 across root/alias/standalone; --debug re-raises original chain. Parser usage remains exit 2; unexpected bugs propagate. --view retains raw JSON output shape.",
+      "effects": "View/read local-only; true missing config may enter first-use editor. Unreadable/corrupt/invalid/dangling or concurrently present entries stop without reset/write. Valid saves still use atomic publication, and optional existing validation may SSH (mocked in task tests). Publication diagnostics pending."
     },
     "autoslurm.apps.filter.main": {
       "contract": "selection",
@@ -892,26 +897,26 @@
     "autoslurm.config.activation_command_from_config": {
       "contract": "config",
       "inputs": "Profile with optional env_command/venv_path.",
-      "current": "String with setup before activation; invalid nonstring entries are currently ignored, malformed profile can AttributeError.",
+      "current": "String with setup before activation; known malformed profile or nonstring env_command/venv_path raises ConfigurationError. Empty/unset activation still returns empty string; machine_config requires activation.",
       "effects": "Pure formatting, does not activate or verify environment."
     },
     "autoslurm.config.load_config": {
       "contract": "config",
       "inputs": "Selected storage config JSON, optional legacy location.",
-      "current": "Normalized dict; missing/invalid topology EnvironmentError, JSONDecodeError, ValueError, OSError or shape TypeError.",
+      "current": "Normalized dict; known read/JSON/UTF-8/topology/profile failures raise ConfigurationError (ValueError/RuntimeError compatible), retaining actual primary/legacy source and original cause. Explicit environment storage root forbids legacy lookup; corrupt/denied primary never falls back.",
       "effects": "Reads only; no connection."
     },
     "autoslurm.config.machine_config": {
       "contract": "config",
       "inputs": "Optional argparse namespace, exact machine and overrides.",
-      "current": "(name,profile); missing machine EnvironmentError, missing activation AttributeError, normalization ValueError.",
+      "current": "(name, profile); ConfigurationError for unknown selection, malformed overrides, invalid profile/activation. Actual config source path/machine/field retained; validation overrides identify source=profile_overrides. No environment existence check.",
       "effects": "Reads selected local config only."
     },
     "autoslurm.config.save_config": {
       "contract": "config",
       "inputs": "machines/default/filter dict.",
-      "current": "None; normalization ValueError, malformed mapping KeyError/TypeError, serialization/publication OSError/TypeError.",
-      "effects": "Creates parent; atomic publication may already have occurred before directory fsync/cleanup failure."
+      "current": "None; profile/topology normalization raises ConfigurationError before publication. Serialization/publication OSError/TypeError remain for MVP10.3c.",
+      "effects": "Invalid settings do not start config_write; otherwise existing atomic writer owns parent creation/publication. Directory fsync/cleanup failure may follow publication; shared phase diagnostics pending."
     },
     "autoslurm.context.agent_context": {
       "contract": "context",
@@ -1374,6 +1379,18 @@
       "inputs": "Exception; optional json_output/debug/stream.",
       "current": "Diagnosed DiagnosticError -> text stderr or JSON stdout then SystemExit(1); unknown/legacy/interrupt/debug re-raise original; output failure re-raises initiating error with output issue as context.",
       "effects": "One terminal/stream write and explicit exit only; no domain action, payload serialization, generic catch hook or retry."
+    },
+    "autoslurm.errors.ConfigurationError": {
+      "contract": "diagnostics",
+      "inputs": "Diagnostic, or inherited DiagnosticError message/optional diagnostic contract.",
+      "current": "Known configuration read/validation exception; DiagnosticError/RuntimeError and ValueError compatibility. .diagnostic holds shared facts; native __cause__ retains originating failure. Replaces old OSError/AttributeError configuration failure family explicitly at this dev release boundary.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.configuration_failure": {
+      "contract": "diagnostics",
+      "inputs": "Explicit stage, problem=invalid/missing/unreadable/corrupt, optional safe scalar context, cause, summary and caller-supplied effects.",
+      "current": "Configuration Diagnostic using existing catalogue codes; no inferred side effects, no raw config. Unknown problem is programming ValueError.",
+      "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
     }
   },
   "catch_reviews": {
@@ -1508,6 +1525,12 @@
       "date": "2026-11-13",
       "base_revision": "ed13a2a",
       "note": "Interactive profile creation/editing now prompts for env_command, with Enter keep and '-' remove. Error-adoption status is unchanged; no MVP10.3 implementation."
+    },
+    {
+      "task": "MVP10.3a",
+      "date": "2026-11-13",
+      "base_revision": "6e6cf7b",
+      "note": "Configuration read/JSON/profile/selection validation adopts the shared core; ConfigurationError exported at root and leaf, configuration_failure exported at leaf. CLI aliases/standalone/debug and retained-file regressions added. Authoring/selection/path and publication adoption split into MVP10.3b/c. Historical audit revision remains unchanged."
     }
   ]
 }

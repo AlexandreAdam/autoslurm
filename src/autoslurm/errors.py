@@ -10,7 +10,8 @@ from types import MappingProxyType
 from typing import Mapping
 
 __all__ = ["Diagnostic", "DiagnosticCause", "DiagnosticError", "diagnostic_catalog",
-           "invalid_argument", "missing_resource", "command_failure"]
+           "invalid_argument", "missing_resource", "command_failure",
+           "ConfigurationError", "configuration_failure"]
 
 # code -> (category, summary, next action). Effects never come from this catalogue.
 _CATALOG = {
@@ -202,6 +203,36 @@ class DiagnosticError(RuntimeError):
             raise TypeError("Provide an optional Diagnostic, or one Diagnostic as the message.")
         self.diagnostic = diagnostic
         super().__init__(message)
+
+
+class ConfigurationError(DiagnosticError, ValueError):
+    """Known configuration read/validation failure, carrying a Diagnostic.
+
+    ValueError compatibility remains for validation callers. File read failures
+    now use this family too; their original OSError remains in __cause__.
+    """
+
+
+def configuration_failure(*, stage, problem="invalid", summary=None, context=None,
+                          cause=None, effects=None):
+    """Construct known configuration facts; caller supplies actual effect evidence."""
+    problems = {
+        "invalid": ("configuration_invalid", "The selected configuration is invalid.",
+                    "Correct the named setting in the selected profile or exact configuration file; preserve existing evidence."),
+        "missing": ("resource_missing", "Configuration file not found.",
+                    "Create a profile with `asl config --interactive` in the selected storage root."),
+        "unreadable": ("resource_inaccessible", "The configuration file could not be read.",
+                       "Check the selected configuration path and access permissions; preserve the existing file."),
+        "corrupt": ("record_invalid", "The configuration file is not valid JSON text.",
+                    "Correct the exact configuration file after retaining its original contents."),
+    }
+    if problem not in problems:
+        raise ValueError("Unknown configuration problem.")
+    code, wording, action = problems[problem]
+    return Diagnostic(code, "configuration", stage,
+                      context={} if context is None else context, cause=cause,
+                      effects={} if effects is None else effects,
+                      summary=wording if summary is None else summary, next_action=action)
 
 
 def invalid_argument(*, operation, stage, field, explanation, context=None):

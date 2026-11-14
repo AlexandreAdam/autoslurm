@@ -13,6 +13,19 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3a (2026-11-13): 851 full offline tests passed in 9.87 s (43 expected
+collision warnings); `.development/test-runs/configuration-diagnostics.xml`.
+The main editable source gains typed configuration diagnostics and retained-file
+protection without reinstalling base commands. Clean-source offline wheel/
+temporary-target API/root/alias/standalone/debug/installed-recipe smoke passed;
+artifact `.development/artifacts/configuration-diagnostics/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `0c3529f9e3af49e3b0674a611af7878a26c4568d7b3476419e75eb363b43e3de`.
+ConfigurationError is an explicit dev exception-family change; saved formats
+are unchanged. No base/test dependency installation, daily config/state, actual
+SSH/Slurm, cluster environment, external client or rollback-source changes.
+User documents and software_preparations evidence remain excluded. Broader
+authoring/path/publication and stale-venv diagnostics remain later slices.
+
 FIX.CONFIG.2 (2026-11-13): 803 full offline tests passed (43 expected collision
 warnings); `.development/test-runs/config-env-command.xml`. Main editable
 `asl config --interactive` gains an env_command prompt without reinstalling.

@@ -93,6 +93,25 @@ output overrides previously allowed by results-only profiles are rejected.
 `configuration` and the existing `autoslurm-configuration` command remain aliases.
 The alias/root/account flags only save settings; they do not validate a live connection.
 The interactive editor retains connection/environment validation.
+
+Known local configuration errors now show the failed path/field/profile, original
+cause and corrective action, then exit 1. Use `asl config --summary --debug` (or
+add `--debug` to another config action) to retain the original exception/cause
+traceback. Parser misuse remains exit 2. Unexpected code errors are not turned
+into ordinary configuration failures. `--view` still prints the raw JSON shape
+for inspection; malformed JSON or unreadable files fail clearly.
+
+An existing corrupt, unreadable or dangling-symlink configuration is preserved:
+the interactive editor does not offer to replace it with a fresh default. Correct
+the reported file/access problem explicitly. Only observed absence permits first-
+use profile creation. An explicit `AUTOSLURM_STORAGE_ROOT` disables the historical
+`src/config.json` lookup; without that selector, lookup is allowed only when the
+primary file is actually absent, never after corruption or denied access.
+Python callers catch `ConfigurationError` and read `.diagnostic.to_dict()`;
+validation remains ValueError-compatible. Missing/unreadable reads and missing
+activation now use that class instead of the previous OSError/AttributeError mix.
+Filesystem publication errors remain a later diagnostic-adoption slice.
+
 New installations also expose `autoslurm-config`; the existing editable installation
 can use `asl config` immediately without reinstalling console scripts.
 See [the client workflow](../agent/01_client_workflow.md) and

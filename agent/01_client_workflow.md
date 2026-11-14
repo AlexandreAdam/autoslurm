@@ -42,6 +42,16 @@ update evidence before presentation. Existing services are adopting diagnostics
 in later slices; an error's optional `.diagnostic` can still be None. No universal
 CLI/ACP behavior change or stale-venv fix is claimed yet.
 
+MVP10.3a adopts that contract for configuration reads, profile/setting validation
+and machine selection. Catch `from autoslurm import ConfigurationError`, retain
+its `.diagnostic` and original `__cause__`, and correct the reported source/field.
+Invalid configuration stops preview/submission before commands; it never selects
+another profile or repairs an environment. The config CLI renders these failures
+once and supports `--debug`. Existing corrupt/unreadable files are preserved.
+Read failures/missing activation no longer use OSError/AttributeError; validation
+remains ValueError-compatible. Publication I/O and other services are not yet
+fully adopted; see the packaged diagnostic recipe.
+
 ## Adapt scientific software
 
 Keep computation independent of AutoSlurm. Expose an installed command with

@@ -1,7 +1,8 @@
 # Diagnostic foundation and client handling
 
-MVP10.2 implements the foundation only. Existing AutoSlurm services/CLI/ACP have
-not yet adopted it universally; `.diagnostic is None` is normal on legacy errors.
+MVP10.2 implements the foundation. MVP10.3a adopts local configuration read/profile/
+setting/selection failures and the config CLI. Other AutoSlurm services/CLI/ACP
+have not adopted it universally; `.diagnostic is None` is normal on legacy errors.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -12,6 +13,7 @@ Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
 from autoslurm.errors import (
     Diagnostic, DiagnosticCause, DiagnosticError, diagnostic_catalog,
     invalid_argument, missing_resource, command_failure,
+    ConfigurationError, configuration_failure,
 )
 from autoslurm.apps.error_output import render_diagnostic, exit_with_error
 ```
@@ -64,6 +66,40 @@ detail permits newline/tab, and known URL-userinfo/credential/key forms are
 redacted before bounding. Each diagnostic and its four possible secondary leaves
 have these bounds. Do not submit whole records or secrets expecting universal
 redaction; original exception objects remain available to trusted debugging.
+
+## Configuration adoption in MVP10.3a
+
+Catch `ConfigurationError` from `autoslurm` or `autoslurm.errors`. Known failures
+carry the same Diagnostic. File absence uses resource_missing, denied/unreadable
+access uses resource_inaccessible, invalid UTF-8/JSON uses record_invalid, and bad
+shape/profile/settings/selection use configuration_invalid. Actual source paths,
+including a legacy file when used, and named fields/profiles remain visible.
+Overrides are marked source=profile_overrides. JSON causes expose line/column
+without embedding raw contents; original Python causes remain available.
+
+`configuration_failure(stage=..., problem=..., context=..., cause=..., effects=...)`
+constructs these facts in the shared core; it performs no lookup. Problem is
+invalid/missing/unreadable/corrupt. Caller-supplied effects are not inferred; config
+read/validation adapters record config_write=not_started. Publication errors have
+not been migrated yet; never infer that all writes or other prior actions are
+unchanged from this diagnostic.
+
+The class inherits DiagnosticError/RuntimeError and ValueError. This development
+release replaces OSError/EnvironmentError for config reads and AttributeError for
+missing activation with ConfigurationError; update client catches deliberately.
+Validation ValueError catches still work. No JSON schema or data migration is
+introduced. The config CLI handles its root/alias/standalone routes with the
+shared adapter and optional --debug; usage errors stay exit 2. Unknown code bugs
+are re-raised. Raw --view retains its JSON shape. Existing corrupt/unreadable files
+and dangling symlinks are preserved; only actual absence enters first-use creation.
+Explicit AUTOSLURM_STORAGE_ROOT never enables legacy-file fallback. Without that
+selector, only a missing primary file permits the old src/config.json lookup.
+No automatic profile/environment switch or submission retry is added.
+
+Bundle authoring/selection/path diagnostics, record publication, configuration
+validation's external commands, stale-venv probing and other CLI/ACP parity are
+later adoption work. Invalid storage selectors can still fail during eager package
+import before this interface is available. Do not hide those limitations.
 
 ## At a client boundary
 

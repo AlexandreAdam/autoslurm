@@ -7,6 +7,7 @@ from typing import Optional
 from .array_status import FAILED_STATES
 from .bundle_selection import latest_bundle_summaries
 from .config import load_config
+from .errors import ConfigurationError
 
 CANCELLABLE_STATES = {
     "PENDING",
@@ -70,7 +71,7 @@ def _query_compat(job_ids, machine_name=None, machine_config=None):
     if machine_config is None and machine_name is not None:
         try:
             machine_config = load_config()["machines"][machine_name]
-        except (EnvironmentError, KeyError):
+        except (ConfigurationError, EnvironmentError, KeyError):
             return {}, {}
     observed = query_scheduler(job_ids, machine_config, machine_name)
     return ({key: value["state"] for key, value in observed["records"].items()},

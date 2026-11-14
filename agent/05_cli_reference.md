@@ -14,6 +14,9 @@
   (`env_command`) after the venv path. Enter keeps it, a command replaces it and
   `-` removes it. Creation offers the same prompt. Setup precedes venv activation
   in jobs and config validation; interactive edits retain post-save validation.
+  Known configuration failures exit 1 with path/field/cause/action; `--debug`
+  preserves original exceptions. Existing unreadable/corrupt files are retained,
+  and only observed absence starts first-use creation. `--view` keeps raw JSON.
 
 - `asl status --bundle-file PATH --array`: fresh shared status and task evidence;
   `--json` returns structured observations (a list); `--cached` avoids cluster calls.

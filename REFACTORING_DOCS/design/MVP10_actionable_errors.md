@@ -11,7 +11,10 @@ longer a one-to-two-day updater/message patch. **MVP10.1 is complete:** the
 [coverage register](MVP10_api_inventory.json) account for 233 routes, 112 owners
 and all 18 broad catches. **MVP10.2 is implemented locally:** stdlib-only errors.py,
 the opt-in terminal adapter and additive diagnostics on existing domain exceptions.
-Current coverage is 248 routes/127 owners; operation adoption remains pending.
+**MVP10.3a is implemented locally:** configuration read/profile/selection validation
+and the config CLI adopt the shared core. Current coverage is 251 routes/129 owners;
+other service adoption remains pending. MVP10.3 was split before implementation
+into configuration (a), authoring/selection/paths (b) and publication (c).
 The current API/policy is documented below without claiming formal acceptance
 of every proposed technical decision or universal CLI/ACP migration.
 [PLAN.md](../../PLAN.md#mvp10-actionable-failures-with-preserved-evidence) owns tasks.
@@ -71,7 +74,7 @@ remains a design reference; the linked register owns exhaustive surface coverage
 
 ## Dedicated module and dependency rules
 
-Current MVP10.2 layout (operation integration remains in later slices):
+Current layout (configuration adoption is implemented; other domains follow):
 
 ```text
 src/autoslurm/errors.py
@@ -147,6 +150,39 @@ also re-raises the initiating error and keeps the write failure in __context__.
 No global catch hook, ACP-envelope migration or new debug CLI flag was added.
 Backends do not use the adapter. See the [installed recipe](../../src/autoslurm/agent_resources/15_diagnostics.md)
 and [human guide](../../docs/errors.md) for exact fields and staged adoption.
+
+### MVP10.3a implemented configuration boundary
+
+`ConfigurationError` is exported from `autoslurm` and `autoslurm.errors`;
+`configuration_failure` lives in the latter with the shared code/wording owner.
+It uses existing configuration_invalid, resource_missing, resource_inaccessible
+and record_invalid codes. The backend supplies actual config path, machine/field,
+original cause and config_write=not_started for read/validation failures. It never
+passes the raw document into diagnostics. JSON errors retain safe line/column;
+Unicode errors explain UTF-8. Legacy lookup requires actual primary absence and
+no explicit AUTOSLURM_STORAGE_ROOT; denied/corrupt primary files never fall back.
+
+This is an explicit **dev exception-contract boundary**: configuration failures
+formerly exposed as OSError/EnvironmentError, JSONDecodeError or missing-activation
+AttributeError now raise ConfigurationError. ValueError validation compatibility
+remains, as does RuntimeError/common DiagnosticError compatibility. Original
+exceptions remain in __cause__; clients should catch ConfigurationError or
+DiagnosticError. No saved format or historical record migration is introduced.
+
+Config root/alias/standalone commands share stderr text/exit 1, parser exit 2 and
+an explicit --debug that re-raises original chains. Unexpected programming errors
+are not converted. Raw --view output remains JSON. The editor starts first-use
+setup only after actual absence, preserving unreadable/corrupt/invalid files,
+dangling links and entries that appeared during a failed read. This read guard
+does not claim to solve publication races. Explicit root/profile edits and optional
+existing post-save validation retain their behavior; tests mock validation.
+
+MVP10.3b owns command/graph/manifest validation, snapshot/filter selection and
+path preparation. MVP10.3c owns atomic publication/serialization/fsync/cleanup
+diagnostics, record reads outside config and import-time storage-root validation.
+The stale-venv executable check and external validation/probes remain MVP10.4.
+No repair, alternate profile/environment, automatic retry or broad CLI/ACP
+migration is added by configuration adoption.
 
 ## Diagnostic contract and failure families
 
@@ -268,7 +304,9 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 |---|---|
 | MVP10.1 complete | Exhaustive public API/action/entry-point and broad-catch register; current effects/outcomes and recommended translation contracts; exact model decisions remain in MVP10.2 |
 | MVP10.2 complete | Dedicated diagnostic module, isolated tests, opt-in terminal adapter and additive exception/JSON conventions; service/ACP-wide adoption pending |
-| MVP10.3 | Config, selection, arguments/paths, bundle/preflight and persistence adoption |
+| MVP10.3a complete | Config read/profile/selection validation, retained-file protection and config CLI aliases/standalone/debug |
+| MVP10.3b | Authoring, snapshot/filter selection, argument/graph/manifest/path/render preparation diagnostics |
+| MVP10.3c | Record read/publication diagnostics, including config writes and pre/post-publication effects |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
 | MVP10.6 | Status/inspection/log/cache adoption with explicit observation quality and partial data |
@@ -383,3 +421,17 @@ Coverage register expanded to 248 routes/127 owners with foundation tests; all
 No cluster contact, base install, daily state/config or persisted-format change;
 domain operation translation, stale-venv fix and universal presentation are pending.
 MVP10.3 configuration/authoring/persistence adoption is next.
+
+2026-11-13, MVP10.3a: split MVP10.3 before implementation; completed configuration
+read/profile/selection validation with shared codes/causes/context and the config
+CLI/alias/standalone/debug policy. Preserved unreadable/corrupt/invalid existing
+files and actual legacy source paths. Explicit ConfigurationError boundary is
+documented for Python clients; ValueError compatibility and original causes remain.
+Full offline suite: 851 passed, 43 expected collision warnings, 9.87 s;
+`.development/test-runs/configuration-diagnostics.xml`. Clean-source offline wheel/
+temporary-target API/config routes/debug/retained-file/installed-recipe smoke
+passed; SHA256 `0c3529f9e3af49e3b0674a611af7878a26c4568d7b3476419e75eb363b43e3de`.
+AST register matches 251 routes/129 owners/18 retained broad catches. No base
+install, daily state/config, cluster, external client, persisted-format or rollback
+change. Publication effects and general authoring/selection/path diagnostics stay
+open in MVP10.3b/c; stale-venv remains MVP10.4.

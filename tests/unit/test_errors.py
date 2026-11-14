@@ -10,7 +10,8 @@ import sys
 import pytest
 
 from autoslurm.errors import (Diagnostic, DiagnosticCause, DiagnosticError,
-                             command_failure, diagnostic_catalog, invalid_argument, missing_resource)
+                             command_failure, diagnostic_catalog, invalid_argument, missing_resource,
+                             ConfigurationError, configuration_failure)
 
 
 def test_core_loads_standalone_with_only_standard_library_imports(monkeypatch):
@@ -182,3 +183,16 @@ def test_legacy_exceptions_keep_message_payload_identity_and_optional_diagnostic
             assert error.__cause__ is original and error.diagnostic is diagnostic
             assert getattr(error, attribute) is payload
     assert str(DiagnosticError(diagnostic)) == diagnostic.summary
+
+
+def test_configuration_constructor_uses_known_codes_without_inventing_write_effects():
+    for problem, code in (("missing", "resource_missing"), ("corrupt", "record_invalid"),
+                          ("unreadable", "resource_inaccessible"), ("invalid", "configuration_invalid")):
+        diagnostic = configuration_failure(stage="read_configuration", problem=problem,
+                                           context={"path": "/selected/config.json"})
+        assert diagnostic.code == code and diagnostic.effects == {}
+        error = ConfigurationError(diagnostic)
+        assert isinstance(error, ValueError) and isinstance(error, RuntimeError)
+        assert error.diagnostic is diagnostic
+    with pytest.raises(ValueError, match="Unknown configuration problem"):
+        configuration_failure(stage="read", problem="guess")

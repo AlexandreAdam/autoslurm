@@ -1,13 +1,13 @@
 import argparse
 import json
-import os
 import shlex
 import subprocess
 import sys
-from pathlib import Path
 from typing import Dict, Optional
 
-from ..config import activation_command_from_config, load_config, save_config, is_remote_machine, normalize_machine_profile, set_machine_settings
+from ..config import activation_command_from_config, load_config, save_config, is_remote_machine, normalize_machine_profile, set_machine_settings, _read_config, _load_config_with_path
+from ..errors import ConfigurationError, configuration_failure
+from .error_output import exit_with_error
 from ..transport import ssh_command, remote_storage_root_from_config
 from ..storage import config_file_path
 
@@ -259,9 +259,12 @@ def _change_default_machine(config: Dict):
     save_config(config)
 
 
-def _set_default_machine_by_name(config: Dict, name: str):
+def _set_default_machine_by_name(config: Dict, name: str, *, path):
     if name not in config["machines"]:
-        raise SystemExit(f"Machine '{name}' not found in configuration.")
+        raise ConfigurationError(configuration_failure(stage="select_profile",
+            summary="Selected default machine was not found in configuration.",
+            context={"machine": name, "field": "default_machine", "path": str(path)},
+            effects={"config_write": "not_started"}))
     if name == config["default_machine"]:
         print(f"'{name}' is already the default machine.")
         return
@@ -315,20 +318,11 @@ def _menu_loop(config: Dict):
 
 
 def display_config():
-    path = config_file_path()
-    if not os.path.exists(path):
-        print("No configuration file found.")
-        return
-    with open(path, "r") as file:
-        data = json.load(file)
+    data, _ = _read_config()
     print(json.dumps(data, indent=4))
 
 
 def display_config_summary():
-    path = config_file_path()
-    if not os.path.exists(path):
-        print("No configuration file found.")
-        return
     config = load_config()
     print("machine type default ssh_alias slurm_account venv_path software_root results_root")
     for name, machine in config["machines"].items():
@@ -371,6 +365,7 @@ def _main(argv: list[str] | None = None):
     )
     parser.add_argument("--ssh-alias", help="Set the SSH config Host alias; SSH manages hostname, user and keys.")
     parser.add_argument("--machine", help="Machine to update (default: configured default).")
+    parser.add_argument("--debug", action="store_true", help="Show original exceptions and causes for configuration failures.")
     parser.add_argument("--software-root", help="Set the absolute software directory without connecting to the machine.")
     parser.add_argument("--results-root", help="Set the absolute shared input/output directory; merges an old project_root setting.")
     account = parser.add_mutually_exclusive_group()
@@ -378,13 +373,13 @@ def _main(argv: list[str] | None = None):
     account.add_argument("--clear-slurm-account", action="store_true", help="Remove the configured account; omit its #SBATCH --account directive.")
     if argv is None:
         argv = sys.argv[1:]
-    if not argv:
+    if not argv or argv == ["--debug"]:
         parser.print_help()
         return
     args = parser.parse_args(argv)
 
     if any(value is not None for value in (args.software_root, args.results_root, args.ssh_alias, args.slurm_account)) or args.clear_slurm_account:
-        if args.view or args.summary or args.interactive or args.set_default:
+        if args.view or args.summary or args.interactive or args.set_default is not None:
             parser.error("Profile updates cannot be combined with view, summary, interactive or set-default.")
         selected = set_machine_settings(args.machine, software_root=args.software_root, results_root=args.results_root, ssh_alias=args.ssh_alias,
                                         slurm_account=args.slurm_account, clear_slurm_account=args.clear_slurm_account)
@@ -402,41 +397,31 @@ def _main(argv: list[str] | None = None):
         return
 
     if args.interactive:
-        if not os.path.exists(config_file_path()):
-            _create_default_machine()
-            return
-        try:
-            config = load_config()
-        except EnvironmentError:
-            print("Found an invalid configuration file. Creating a fresh default configuration.")
-            _create_default_machine()
-            return
-        _menu_loop(config)
+        _interactive_config()
         return
 
-    if args.set_default:
-        if not os.path.exists(config_file_path()):
-            raise EnvironmentError(
-                f"Configuration file not found at {config_file_path()}."
-            )
-        config = load_config()
-        _set_default_machine_by_name(config, args.set_default)
+    if args.set_default is not None:
+        config, path = _load_config_with_path()
+        _set_default_machine_by_name(config, args.set_default, path=path)
         return
 
-    if not os.path.exists(config_file_path()):
-        _create_default_machine()
-        return
+    _interactive_config()
+
+
+def _interactive_config():
     try:
         config = load_config()
-    except EnvironmentError:
-        print("Found an invalid configuration file. Creating a fresh default configuration.")
-        _create_default_machine()
-        return
+    except ConfigurationError as error:
+        if error.diagnostic.code == "resource_missing":
+            _create_default_machine()
+            return
+        raise
     _menu_loop(config)
 
 
 def main(argv: list[str] | None = None):
+    selected_args = list(sys.argv[1:] if argv is None else argv)
     try:
-        return _main(argv)
-    except ValueError as error:
-        raise SystemExit(str(error)) from error
+        return _main(selected_args)
+    except ConfigurationError as error:
+        exit_with_error(error, debug="--debug" in selected_args)

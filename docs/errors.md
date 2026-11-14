@@ -5,9 +5,10 @@ what may already have happened, and the next safe action. A failed connection
 does not prove a file is missing or a job was rejected. A successful inspection
 can report a scientifically failed job.
 
-MVP10.2 supplies the shared diagnostic foundation. Existing commands and services
-are adopting it in later MVP10 slices; this release does **not** fix the stale-venv
-message or change all CLI errors. SubmissionError still carries its receipt and
+MVP10.2 supplies the shared diagnostic foundation. MVP10.3a adopts it for local
+configuration reads, profile/setting validation, selection and the config CLI.
+Other commands and services are adopting it in later slices; this release does
+**not** fix the stale-venv message or change all CLI errors. SubmissionError still carries its receipt and
 SoftwareUpdateError its update evidence. Keep those objects, particularly accepted
 job IDs and unknown outcomes, even when displaying an error.
 
@@ -23,6 +24,16 @@ Existing SubmissionError(message, receipt) and SoftwareUpdateError(message,
 evidence) accept an optional `diagnostic=` while retaining their original payloads
 and normal Python exception chaining. A missing diagnostic means that operation
 has not adopted the new interface; keep its existing handling.
+
+`ConfigurationError`, available from `autoslurm` and `autoslurm.errors`, carries
+the actual source path, named field/profile, safe original cause and next action
+for known configuration failures. It is a DiagnosticError/RuntimeError and also
+a ValueError for existing validation catches. **Development API boundary:** missing/
+unreadable config and missing activation settings now use ConfigurationError,
+replacing the old OSError/EnvironmentError/AttributeError mix. Catch it explicitly;
+the originating file error remains in `__cause__` with errno in the diagnostic.
+This does not change saved JSON or migrate records. Publication failures and invalid
+storage-root selectors/package-import errors still await their later slices.
 
 The opt-in `autoslurm.apps.error_output` adapter renders these same facts as text
 or JSON. It exits 1 for a diagnosed operation failure, writes text to stderr or
