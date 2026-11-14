@@ -18,8 +18,8 @@ actions and routes whose semantics need separate explanation. These are explicit
 references, not additional implementations of each alias.
 
 At the original audit, all diagnostic adoption was pending. MVP10.2, MVP10.3a and
-MVP10.3b.1–3 amendments below record foundation, configuration, authoring,
-selection and pure path/render adoption. Other regression
+MVP10.3b.1–3 and MVP10.3c.1 amendments below record foundation, configuration,
+authoring, selection, pure paths/render and shared publication adoption. Other regression
 anchors prove only their current tested behavior, not the proposed contract.
 Use the owner row plus its contract and any route note when closing a later task.
 An owner may need several regressions and more than one implementation slice.
@@ -347,3 +347,33 @@ CLI/debug and unclassified programming bugs. Full offline suite: 1026 passed,
 render/producing-context/retained-script/CLI/debug/ACP/installed-recipe smoke passed.
 External readiness, generic record I/O/publication and universal observation/CLI/
 ACP adoption remain pending.
+
+## MVP10.3c.1 adoption amendment (2026-11-14)
+
+Base `0e51823`; c was split before implementation into shared publication (c.1),
+bundle/config domain boundaries (c.2) and receipt/cache/script persistence (c.3).
+The shared atomic JSON writer now translates known serialization/OSError failures
+to RecordWriteError, retaining exact destination/stage, native cause/errno and
+separate destination publication/durability effects. Serialization explicitly
+changes from raw TypeError/ValueError to this OSError/DiagnosticError family.
+RecordCollisionError preserves FileExistsError compatibility; snapshots advance
+timestamps only after clean exclusive collisions, never uncertain publication or
+failed cleanup. Other direct reads/domain wrappers remain their staged adoption.
+
+E06's shared-writer cleanup masking is addressed: temp/directory close and unlink
+cannot replace primary error/cause; observed complete publication survives later
+directory-sync failure. Link/replace failure keeps unknown publication even when a
+file happens to exist. Secondary diagnostics are bounded, native debug causes are
+retained, and unexpected bugs/interrupts remain unchanged. Two BaseException
+safeguards explicitly protect resource/evidence cleanup, without broad error
+classification. E06's script/domain write boundaries remain c.2/c.3 and 10.5.
+
+32 new cases in `tests/integration/test_record_publication_diagnostics.py` cover
+pre/during/post-publication fault injection, failure after an actual successful
+syscall, complete retained records, directory/temp close masking, cleanup-only and
+secondary failures, native interruptions/bugs, bounded secondary evidence, legacy
+note support, clean versus failed-cleanup collisions and payload-free facts.
+Full offline suite: 1058 passed, 43 expected warnings; clean-source offline wheel/
+temporary-target API/publication/durability/cleanup/retained-record/JSON/debug/ACP/
+installed-recipe smoke passed. Register matches 260 routes/135 owners/18 individually
+reviewed broad catches. No record schema rewrite or scheduler outcome inference.

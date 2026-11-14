@@ -73,6 +73,17 @@ preserving historical producing roots without current-profile discovery. Preserv
 the original file. No inferred effects, automatic repair or resubmission follows.
 Readiness/existence/process diagnostics remain MVP10.4, publication MVP10.3c.
 
+MVP10.3c.1 adds shared JSON publication diagnostics. Catch public RecordWriteError
+(DiagnosticError and OSError), retain its `.diagnostic` and original `__cause__`,
+and inspect the exact destination before repeating a write. Serialization failures
+now use this class too, replacing raw TypeError/ValueError at this dev boundary.
+record_publication distinguishes not_started/unknown/succeeded; record_durability
+is separate. Cleanup failures retain the primary and known publication effects.
+These facts cover one local record, not scheduler acceptance or a multi-file
+transaction. Bundle/config domain context/presentation and direct reads remain
+MVP10.3c.2; receipt/cache/script integration is c.3. Keep existing receipt/update
+handling until those owners adopt the richer contract. See installed 15_diagnostics.
+
 ## Adapt scientific software
 
 Keep computation independent of AutoSlurm. Expose an installed command with

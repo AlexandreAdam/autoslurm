@@ -10,7 +10,8 @@ This file is the source of truth for active scope, task order and progress.
 ## Status
 
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
-  foundation, MVP10.3a configuration and MVP10.3b authoring/selection/path/render diagnostics complete
+  foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
+  and MVP10.3c.1 shared JSON publication diagnostics complete
   locally. MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
@@ -22,21 +23,22 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1026 passed, 43 expected
+  rollback source remains unchanged. Full offline suite: 1058 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.3b.3 adopts pure path/render diagnostics with
-  machine/job/field/logical/attempted resolved identity and exact bundle context.
-  Shared renderer guards reject malformed directives/exports without echoing values;
-  safe shell rejection retains the named job and line. Saved producing context is
-  validated without profile fallback. Direct scripts render before destination open,
-  preserving existing files on render failure; submit honors preparation --debug.
-  1026 full offline tests and clean-wheel smoke pass.
-  Coverage: 256 routes/132 owners/16 broad catches. No daily profile,
+- **Latest completed task:** MVP10.3c.1 adopts shared JSON publication diagnostics.
+  RecordWriteError retains destination/stage/native cause and separates publication
+  from directory durability; syscall failures keep unknown outcomes. Cleanup cannot
+  mask primary errors or interruption. Only clean exclusive collisions advance a
+  snapshot timestamp. Serialization now uses this explicit dev exception family.
+  1058 full offline tests and clean-wheel smoke pass.
+  Coverage: 260 routes/135 owners/18 broad catches; two new resource/evidence
+  safeguards explicitly reviewed. No daily profile,
   environment, cluster, persisted-format or rollback change.
-- **Next task:** MVP10.3c record read/publication diagnostics, using the
+- **Next task:** MVP10.3c.2 bundle/config record boundaries, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
-  service errors still have no diagnostic. Publication effects remain MVP10.3c;
+  service errors still have no diagnostic. c.2 domain reads/enrichment/CLI and
+  c.3 receipt/cache/script persistence remain open;
   stale-venv correction is MVP10.4.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
@@ -694,6 +696,17 @@ is in the design; every callable/action and its outcome contract must be reviewe
   - [ ] **MVP10.3c Record persistence.** Adopt local JSON read/publication diagnostics
     for bundles/config/receipts/cache, distinguishing not-published/published/unknown
     effects and secondary cleanup failures. Preserve saved data and accepted IDs.
+    Split before implementation into independently tested boundaries:
+    - [x] **MVP10.3c.1 Shared JSON publication.** Diagnose serialization and
+      filesystem stages at the atomic writer, retaining known/unknown publication,
+      durability and secondary cleanup failures. Preserve exclusive collision
+      behavior without retrying a write whose publication or cleanup is uncertain.
+    - [ ] **MVP10.3c.2 Bundle/config record boundaries.** Adopt direct bundle reads,
+      append/metadata records, config writes and related CLI presentation; preserve
+      existing files and enrich shared publication diagnostics with domain identity.
+    - [ ] **MVP10.3c.3 Receipt/cache/script persistence.** Adopt local receipt/cache
+      reads/writes and script publication, retaining accepted IDs and useful live
+      evidence. Submission orchestration and observation policy remain 10.5/10.6.
 - [ ] **MVP10.4 Transport, readiness and software.** Classify process launch,
   SSH/session/helper/protocol/transfer and environment/Git/pip failures at adapters
   with operation context. Reproduce the stale-venv case with its attempted Python
@@ -973,6 +986,7 @@ or migration decision has already been accepted.
 
 | 2026-11-14 | MVP10.3b.2 Snapshot/filter selection diagnostics | Shared snapshot analysis replaces duplicated graph checks and failure-to-empty listing. Public SelectionError/selection_failure retain exact selectors/paths, safe causes and absent/access/invalid distinctions; missing selections explicitly replace FileNotFoundError. Discovery returns per-entry state/diagnostic, unknown jobs/counts=None, healthy neighbours and observed graph-invalid counts. No directory creation; regular-file/nonblocking checks reject special files. Newest failures remain visible and block older-draft fallback; stable filename tie-breaks preserve equal-date index ordering. Config owns active/all validation and defaults only after absence. Internal save/append fallback checks resource_missing only; automatic stale/unsubmitted cleanup excludes unknown counts. Filter/submit/status/inspect/logs text/JSON/debug routes and ACP discovery retain adopted facts; submit validates strictly before connecting. Two masking broad catches removed. 60 new regressions; 965 full offline tests passed in 10.00 s (43 expected collision warnings), `.development/test-runs/selection-diagnostics.xml`. Clean-source offline wheel/temporary-target discovery/selection/retained-record/CLI/JSON/debug/ACP/installed-recipe smoke passed; SHA256 `b0b224f02f50fa2154b2f50349297e0263ff691e1e3d98ac73259d46cf2202cc`. AST register: 256 routes/132 owners/16 broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, persisted-format, external client or rollback changes; user documents/evidence excluded. Path/render b.3 is next; generic publication/read, readiness/stale-venv and universal observation/CLI/ACP adoption remain pending. Task commit: `git log --grep '^MVP10.3b.2:'`; push completed dev commit. |
 | 2026-11-14 | MVP10.3b.3 Path/render preparation diagnostics | ExecutionContext reuses shared InvalidRequestError for known path/base/role/cwd/log guards, retaining job/machine/field/option/logical/attempted resolved identity; preview/submit add exact bundle context. Shared render guards diagnose malformed directives/exports without echoing values. Bash syntax rejection retains safe line/named-job evidence; other checker failures remain process errors. Saved producing-context lookup distinguishes missing/ambiguous/invalid evidence via SelectionError and preserves historical roots/transport without profile discovery. Direct scripts render before destination open, preserving existing/absent files on render failures; atomic publication stays 3c. Submit honors preparation --debug. 61 new regressions; 1026 full offline tests passed in 10.20 s (43 expected collision warnings), `.development/test-runs/preparation-diagnostics.xml`. Clean-source offline wheel/temporary-target path/render/producing-context/retained-script/CLI/debug/ACP/installed-recipe smoke passed; SHA256 `98345cd7e42c890ca3f32979addc82d3a02d6a41b3d33a7cb69f639106c3e9a6`. AST register: 256 routes/132 owners/16 broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, schema/history rewrite, external client or rollback edit; user documents/evidence excluded. MVP10.3b complete; 3c record read/publication is next, 10.4 readiness/stale-venv and broader observation/CLI/ACP remain pending. Task commit: `git log --grep '^MVP10.3b.3:'`; push completed dev commit. |
+| 2026-11-14 | MVP10.3c.1 Shared JSON publication diagnostics | Split c into shared writer, bundle/config and receipt/cache/script boundaries before implementation. RecordWriteError/RecordCollisionError and pure fact constructor reuse the core catalogue; native causes and safe kind/errno/path/stage retained. Serialization explicitly replaces raw TypeError/ValueError at this dev boundary, while OSError and exclusive FileExistsError compatibility remain. Publication not_started/unknown/succeeded is separate from directory durability; post-publication failures preserve complete records, failed syscalls never imply rollback. Explicit temp/directory close and all cleanup retain primary plus bounded secondary/native evidence, including bugs/interrupts; two resource/evidence-only broad catches reviewed. Only clean exclusive collisions advance snapshot timestamps. 32 new cases and updated legacy failure assertions; 1058 full offline tests passed in 10.04 s (43 expected collision warnings), `.development/test-runs/record-publication-diagnostics.xml`. Clean-source offline wheel/temporary-target API/publication/durability/cleanup/retained-record/JSON/debug/ACP/installed-recipe smoke passed; SHA256 `fa3340a99969341c1498f11d521fc875db47d5a6f66d250a7981024f0153168b`. AST register: 260 routes/135 owners/18 reviewed broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, persisted-format, external client or rollback edit; user documents/evidence excluded. c.2 bundle/config boundaries next, c.3 receipt/cache/script and broader transport/submission/observation/CLI/ACP remain open. Task commit: `git log --grep '^MVP10.3c.1:'`; push completed dev commit. |
 
 ## How we work
 

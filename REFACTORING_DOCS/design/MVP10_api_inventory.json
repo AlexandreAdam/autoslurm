@@ -77,6 +77,7 @@
     "python:autoslurm.InvalidRequestError": "autoslurm.errors.InvalidRequestError",
     "python:autoslurm.LevelSubmitResult": "autoslurm.bulk_submit.LevelSubmitResult",
     "python:autoslurm.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
+    "python:autoslurm.RecordWriteError": "autoslurm.errors.RecordWriteError",
     "python:autoslurm.SelectionError": "autoslurm.errors.SelectionError",
     "python:autoslurm.SoftwareUpdateError": "autoslurm.software_update.SoftwareUpdateError",
     "python:autoslurm.SubmissionError": "autoslurm.submission.SubmissionError",
@@ -129,12 +130,15 @@
     "python:autoslurm.errors.DiagnosticCause": "autoslurm.errors.DiagnosticCause",
     "python:autoslurm.errors.DiagnosticError": "autoslurm.errors.DiagnosticError",
     "python:autoslurm.errors.InvalidRequestError": "autoslurm.errors.InvalidRequestError",
+    "python:autoslurm.errors.RecordCollisionError": "autoslurm.errors.RecordCollisionError",
+    "python:autoslurm.errors.RecordWriteError": "autoslurm.errors.RecordWriteError",
     "python:autoslurm.errors.SelectionError": "autoslurm.errors.SelectionError",
     "python:autoslurm.errors.command_failure": "autoslurm.errors.command_failure",
     "python:autoslurm.errors.configuration_failure": "autoslurm.errors.configuration_failure",
     "python:autoslurm.errors.diagnostic_catalog": "autoslurm.errors.diagnostic_catalog",
     "python:autoslurm.errors.invalid_argument": "autoslurm.errors.invalid_argument",
     "python:autoslurm.errors.missing_resource": "autoslurm.errors.missing_resource",
+    "python:autoslurm.errors.record_write_failure": "autoslurm.errors.record_write_failure",
     "python:autoslurm.errors.selection_failure": "autoslurm.errors.selection_failure",
     "python:autoslurm.execute_acp": "autoslurm.acp.execute_acp",
     "python:autoslurm.execution.ExecutionContext": "autoslurm.execution.ExecutionContext",
@@ -298,6 +302,10 @@
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)"
+    ],
+    "autoslurm.record_files.atomic_json": [
+      "BaseException",
+      "BaseException"
     ]
   },
   "contracts": {
@@ -393,9 +401,10 @@
         "tests/unit/test_save_load_jobs.py",
         "tests/integration/test_persistence_boundaries.py",
         "tests/integration/test_selection_diagnostics.py",
-        "tests/integration/test_preparation_diagnostics.py"
+        "tests/integration/test_preparation_diagnostics.py",
+        "tests/integration/test_record_publication_diagnostics.py"
       ],
-      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c."
+      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c. MVP10.3c split before implementation: c.1 shared writer implemented with RecordWriteError/effect-aware cleanup; c.2 domain reads/enrichment/CLI and c.3 receipt/cache/script persistence remain open."
     },
     "selection": {
       "implementation_task": "MVP10.3b.2",
@@ -629,6 +638,18 @@
         "tests/integration/test_selection_diagnostics.py"
       ],
       "adoption": "MVP10.2 foundation; MVP10.3a ConfigurationError/configuration_failure; MVP10.3b.1 InvalidRequestError and optional explicit cause/effects on invalid_argument. Identity enrichment compares against the same bounded/redacted representation. Other domains and universal CLI/ACP parity remain pending. MVP10.3b.2 adds SelectionError/selection_failure using existing catalogue codes and no inferred effects."
+    },
+    "record_publication": {
+      "implementation_task": "MVP10.3c.1 (shared writer); MVP10.3c.2/3 (domain adapters)",
+      "failures": "Serialization, directory/temp creation, flush/close, publication syscall, directory durability and cleanup failures, including an initiating interrupt/bug.",
+      "translation_owner": "record_files.atomic_json owns filesystem phase/effects; errors owns RecordWriteError/RecordCollisionError/record_write_failure. Callers retain domain evidence.",
+      "desired_diagnostic": "Exact destination/stage, native safe kind/errno, publication not_started/unknown/succeeded separate from durability, bounded secondary cleanup facts.",
+      "next_action": "Inspect exact destination and retained effects before repeating save/append; no blanket rollback or scheduler conclusion.",
+      "regression_evidence": [
+        "tests/integration/test_record_publication_diagnostics.py",
+        "tests/integration/test_persistence_boundaries.py"
+      ],
+      "adoption": "MVP10.3c.1 implemented: typed OSError-compatible writer failures; serialization replaces raw TypeError/ValueError explicitly. Exclusive collisions remain FileExistsError-compatible; only clean collisions may select another snapshot timestamp. Native bugs/interrupts propagate; cleanup evidence cannot erase primary or original cause. Domain reads/enrichment/CLI and receipt/cache/script policies remain c.2/c.3/10.5/10.6."
     }
   },
   "owners": {
@@ -1163,13 +1184,13 @@
     "autoslurm.save_load_jobs.save_bundle": {
       "contract": "persistence",
       "inputs": "Job dict, bundle name and append flag.",
-      "current": "Exact Path; known bundle/job/key/script/name input guards use InvalidRequestError, replacing old TypeError/KeyError guards. Commands must be nonempty strings. Empty drafts retained. Serialization/publication failures still raw (MVP10.3c).",
+      "current": "Exact Path; known bundle/job/key/script/name input guards use InvalidRequestError, replacing old TypeError/KeyError guards. Commands must be nonempty strings. Empty drafts retained. Serialization/publication failures still raw (MVP10.3c). Shared writer failures now use RecordWriteError with exact destination and phase effects. Snapshot name advancement catches only clean RecordCollisionError, never ambiguous publication or failed cleanup.",
       "effects": "Mutates input job name/kind defaults; append replaces snapshot atomically; publication may have happened on error."
     },
     "autoslurm.save_load_jobs.schedule_job": {
       "contract": "persistence",
       "inputs": "One job, optional bundle name and append flag.",
-      "current": "(effective job,exact path); known malformed job or missing/blank/nonstring script uses InvalidRequestError before publication. Name validation uses same family. Raw publication errors remain; prints saved location.",
+      "current": "(effective job,exact path); known malformed job or missing/blank/nonstring script uses InvalidRequestError before publication. Name validation uses same family. Raw publication errors remain; prints saved location. Shared writer failures now use RecordWriteError with exact destination and phase effects. Snapshot name advancement catches only clean RecordCollisionError, never ambiguous publication or failed cleanup.",
       "effects": "Mutates supplied job defaults; publishes/appends once; no scheduler."
     },
     "autoslurm.software_manifest.attach_software_manifest": {
@@ -1423,6 +1444,24 @@
       "inputs": "Explicit stage, problem=invalid/missing/unreadable/corrupt and optional safe context/cause/summary.",
       "current": "Selection Diagnostic using existing codes/default wording; no effect inference or exception classification. Unknown problem stays programming ValueError.",
       "effects": "Pure construction; no lookup, retry, mutation, printing or exit."
+    },
+    "autoslurm.errors.RecordWriteError": {
+      "contract": "record_publication",
+      "inputs": "Diagnostic or message with diagnostic; raised by known shared publication guards.",
+      "current": "DiagnosticError/RuntimeError/OSError-compatible expected failure; serialization also uses this family, retaining original exception in __cause__.",
+      "effects": "Exception data only; caller supplies exact publication/durability facts. No I/O, retry, rollback or domain outcome inference."
+    },
+    "autoslurm.errors.RecordCollisionError": {
+      "contract": "record_publication",
+      "inputs": "Exclusive publication collision Diagnostic.",
+      "current": "RecordWriteError and FileExistsError-compatible; secondary/native cleanup evidence prevents automatic timestamp advancement.",
+      "effects": "Exception data only; observed collision means this publication did not replace the destination."
+    },
+    "autoslurm.errors.record_write_failure": {
+      "contract": "record_publication",
+      "inputs": "Explicit stage/path/effects/cause; problem storage/serialization/collision.",
+      "current": "Shared Diagnostic using existing storage_failed/invalid_argument codes; unknown problem remains programming ValueError.",
+      "effects": "Pure facts construction; never reads files, classifies arbitrary exceptions or infers rollback."
     }
   },
   "catch_reviews": {
@@ -1463,6 +1502,10 @@
       "RETAIN evidence-saving catch including KeyboardInterrupt around staging/dispatch. Preserve operation phase, local receipt and accepted/unknown outcomes, not generic failed submission. MVP10.5.",
       "RETAIN secondary persistence catch including KeyboardInterrupt: keep primary error plus tracking_error; never retry dispatch. MVP10.5.",
       "RETAIN post-dispatch publication catch including KeyboardInterrupt: successful/partial scheduler evidence survives projection failure. MVP10.5."
+    ],
+    "autoslurm.record_files.atomic_json": [
+      "RETAIN resource/evidence protection only: store initiating exception while cleanup runs, then re-raise the same native interrupt/programming bug. Known serialization/OSError failures are translated at narrower guards; no broad classification.",
+      "RETAIN cleanup protection including interruption/bugs: finish remaining cleanup, retain secondary native failures/diagnostics beside primary, or re-raise original cleanup-only unexpected exception. Never overwrite primary cause or blindly replay publication."
     ]
   },
   "route_notes": {
@@ -1583,6 +1626,12 @@
       "date": "2026-11-14",
       "base_revision": "bfa69ca",
       "note": "Pure paths/render adoption, validated producing context and render-before-open direct script creation. Reuses shared InvalidRequestError/SelectionError without new codes/routes/schemas. Bash status2 syntax rejection omits arbitrary stderr literals; other checker failures remain process adoption. No cluster readiness, publication I/O or universal CLI/ACP completion."
+    },
+    {
+      "task": "MVP10.3c.1",
+      "date": "2026-11-14",
+      "base_revision": "0e51823",
+      "note": "Split c before implementation. Shared atomic JSON writer owns publication/durability facts, safe typed failures and evidence-preserving cleanup; two explicitly reviewed BaseException safeguards added. Only clean exclusive collisions advance snapshot timestamps. Raw serialization exception family changes to RecordWriteError; no record schema, universal CLI adoption or scheduler outcome change."
     }
   ]
 }

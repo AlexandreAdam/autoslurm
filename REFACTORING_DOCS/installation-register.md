@@ -13,6 +13,21 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3c.1 (2026-11-14): 1058 full offline tests passed in 10.04 s (43 expected
+collision warnings); `.development/test-runs/record-publication-diagnostics.xml`.
+Shared JSON publication now reports phase effects and secondary cleanup while
+preserving native causes. Main editable commands inherit the writer without a
+reinstall; serialization errors use the documented RecordWriteError dev boundary.
+Clean-source offline wheel/temporary-target API/publication/durability/cleanup/
+retained-record/JSON/debug/ACP/installed-recipe smoke passed; artifact
+`.development/artifacts/record-publication-diagnostics/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `fa3340a99969341c1498f11d521fc875db47d5a6f66d250a7981024f0153168b`.
+No base/test dependency installation, daily config/state, actual cluster command,
+external client, persisted-format or rollback-source edit. User documents and
+software_preparations remain excluded. MVP10.3c was split before implementation;
+c.2 bundle/config boundaries are next, c.3 receipt/cache/script integration remains
+open, as do external readiness and broader submission/observation/CLI/ACP adoption.
+
 MVP10.3b.3 (2026-11-14): 1026 full offline tests passed in 10.20 s (43 expected
 collision warnings); `.development/test-runs/preparation-diagnostics.xml`.
 Pure path/render diagnostics and validated producing-context lookup use the main

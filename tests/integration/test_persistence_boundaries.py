@@ -7,7 +7,7 @@ from subprocess import CompletedProcess
 
 import pytest
 
-from autoslurm import save_bundle, schedule_job
+from autoslurm import save_bundle, schedule_job, RecordWriteError
 from autoslurm.storage import config_file_path, jobs_dir
 from autoslurm.utils import save_config, update_job_metadata
 
@@ -17,8 +17,10 @@ def test_failed_configuration_serialization_keeps_previous_record():
     save_config(config)
     before = config_file_path().read_bytes()
     config["machines"]["local"]["bad"] = object()
-    with pytest.raises(TypeError):
+    with pytest.raises(RecordWriteError) as stopped:
         save_config(config)
+    assert isinstance(stopped.value.__cause__, TypeError)
+    assert stopped.value.diagnostic.effects['record_publication'] == 'not_started'
     assert config_file_path().read_bytes() == before
 
 
@@ -26,14 +28,16 @@ def test_failed_metadata_update_keeps_previous_bundle():
     path = save_bundle({"sample": {"script": "science"}}, "study")
     before = path.read_bytes()
     date = datetime.strptime(path.stem.rsplit("_", 1)[-1], "%Y%m%d%H%M%S")
-    with pytest.raises(TypeError):
+    with pytest.raises(RecordWriteError) as stopped:
         update_job_metadata("study", date, "sample", {"bad": object()})
+    assert isinstance(stopped.value.__cause__, TypeError)
     assert path.read_bytes() == before
 
 
 def test_failed_new_snapshot_is_not_visible():
-    with pytest.raises(TypeError):
+    with pytest.raises(RecordWriteError) as stopped:
         save_bundle({"sample": {"script": "science", "bad": object()}}, "study")
+    assert stopped.value.diagnostic.stage == 'serialize'
     assert list(jobs_dir().glob("*.json")) == []
 
 
@@ -93,8 +97,9 @@ def test_failed_record_publication_keeps_old_bytes_and_cleans_temporary(monkeypa
     def fail(*args, **kwargs):
         raise OSError("disk failure")
     monkeypatch.setattr("autoslurm.record_files.os." + ("fsync" if fault == "flush" else "replace"), fail)
-    with pytest.raises(OSError, match="disk failure"):
+    with pytest.raises(RecordWriteError) as stopped:
         atomic_json(path, {"new": "evidence"})
+    assert str(stopped.value.__cause__) == 'disk failure'
     assert path.read_bytes() == before
     assert sorted(path.parent.iterdir()) == [path]
 
@@ -134,8 +139,10 @@ def test_directory_sync_failure_retains_complete_published_record(monkeypatch, t
         if len(calls) == 2:
             raise OSError("directory sync failed")
     monkeypatch.setattr(record_files.os, "fsync", sync)
-    with pytest.raises(OSError, match="directory sync failed"):
+    with pytest.raises(RecordWriteError) as stopped:
         record_files.atomic_json(path, {"complete": True}, exclusive=True)
+    assert stopped.value.diagnostic.effects['record_publication'] == 'succeeded'
+    assert str(stopped.value.__cause__) == 'directory sync failed'
     assert json.loads(path.read_text()) == {"complete": True}
     assert sorted(path.parent.iterdir()) == [path]
 
@@ -143,7 +150,7 @@ def test_directory_sync_failure_retains_complete_published_record(monkeypatch, t
 def test_failed_multi_job_append_does_not_publish_half_a_batch():
     path = save_bundle({"original": {"script": "science"}}, "study")
     before = path.read_bytes()
-    with pytest.raises(TypeError):
+    with pytest.raises(RecordWriteError):
         save_bundle({"first": {"script": "science"}, "second": {"script": "science", "bad": object()}}, "study", append=True)
     assert path.read_bytes() == before
     assert list(jobs_dir().glob("*.json")) == [path]
@@ -161,8 +168,10 @@ def test_blocked_snapshot_directory_raises_without_collision_retry(monkeypatch, 
     blocked = tmp_path / "not-a-directory"
     blocked.write_text("unrelated")
     monkeypatch.setattr(save_load_jobs, "jobs_dir", lambda: blocked)
-    with pytest.raises(FileExistsError):
+    with pytest.raises(RecordWriteError) as stopped:
         save_bundle({"sample": {"script": "science"}}, "study")
+    assert stopped.value.diagnostic.stage == 'prepare_directory'
+    assert not isinstance(stopped.value, FileExistsError)
     assert blocked.read_text() == "unrelated"
 
 

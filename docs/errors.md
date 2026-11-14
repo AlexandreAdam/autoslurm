@@ -99,6 +99,30 @@ the original error for debugging. Parser usage errors remain exit 2; observation
 and warning exit policies remain with their commands. This adapter is not
 automatically installed around existing commands.
 
+Shared JSON writes now raise `RecordWriteError`, exported from `autoslurm` and
+`autoslurm.errors`. It retains OSError/DiagnosticError compatibility and the
+original cause. **Development API boundary:** unsupported or circular JSON data
+also uses this family, replacing raw TypeError/ValueError from serialization.
+The diagnostic names the exact destination and failed stage without copying
+record contents. Bundle/config/receipt/cache writers inherit this shared boundary;
+their richer domain context and CLI presentation are still being adopted.
+
+Two effect fields explain a failed write. `record_publication=not_started` means
+publication to the destination was not attempted; parent directories or temporary
+files may already exist. `unknown` means link/replace failed without proving its
+outcome. `succeeded` means the complete record was published. Separately,
+`record_durability=succeeded` means the directory sync returned successfully;
+`unknown` means durability was not confirmed. This does not establish a transaction
+across records or say anything about scheduler acceptance.
+
+Cleanup failures cannot erase the initiating error. Expected cleanup failures
+appear as secondary diagnostics; native causes remain available for debugging.
+A failure after publication leaves the record in place. Inspect that exact file
+before repeating a save or append. Only a clean exclusive-name collision allows
+snapshot creation to choose another timestamp; uncertain publication or failed
+cleanup stops the operation. No record is rolled back or automatically removed.
+Direct record reads and broader receipt/cache/script policies remain later slices.
+
 Agent developers should read the [packaged diagnostic recipe](../src/autoslurm/agent_resources/15_diagnostics.md)
 for supported fields, bounds, classification and integration examples. The
 [implementation coverage register](../REFACTORING_DOCS/design/MVP10_api_failure_audit.md)

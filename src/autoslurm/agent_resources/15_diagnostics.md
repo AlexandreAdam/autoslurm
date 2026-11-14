@@ -6,6 +6,7 @@ have not adopted it universally; `.diagnostic is None` is normal on legacy error
 MVP10.3b.1 also adopts the authoring boundaries described below.
 MVP10.3b.2 adds snapshot/filter selection and per-entry discovery diagnostics.
 MVP10.3b.3 adds pure path/render preparation and saved producing-context validation.
+MVP10.3c.1 adds phase-aware shared JSON publication diagnostics.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -18,6 +19,7 @@ from autoslurm.errors import (
     invalid_argument, missing_resource, command_failure,
     ConfigurationError, configuration_failure, InvalidRequestError,
     SelectionError, selection_failure,
+    RecordWriteError, RecordCollisionError, record_write_failure,
 )
 from autoslurm.apps.error_output import render_diagnostic, exit_with_error
 ```
@@ -246,6 +248,50 @@ metadata and readiness/existence probes remain their separately planned owners.
 once to stderr/exit 1; --debug re-raises the original exception. Schedule keeps its
 --autoslurm-debug behavior. Universal ACP/CLI adoption remains MVP10.8. Retain
 receipts and original history; never infer a safe resubmission from validation alone.
+
+## Shared JSON publication in MVP10.3c.1
+
+`from autoslurm import RecordWriteError` is the supported client catch. It inherits
+DiagnosticError/RuntimeError and OSError. `autoslurm.errors` additionally exports
+RecordCollisionError and the pure record_write_failure constructor. No filesystem
+operation lives in the error module. **Dev exception-family change:** unsupported/
+circular JSON serialization now raises RecordWriteError with invalid_argument,
+field record_data and chained TypeError/ValueError; raw serializer exceptions no
+longer form that public boundary. Filesystem failures use storage_failed with a
+safe original kind/errno and native cause. Neither diagnostic copies record values
+or arbitrary serializer/filesystem exception text.
+
+Operation is record_publication. Stages: prepare_directory, create_temporary,
+serialize, sync_temporary, close_temporary, publish_record, sync_directory,
+close_directory and cleanup_temporary. Context.path is the exact destination.
+The shared writer supplies explicit facts:
+
+- record_publication: not_started before destination publication or on an observed
+  exclusive collision; unknown after a failed link/replace; succeeded after that
+  syscall returned. Parent/temp creation can happen before publication starts.
+- record_durability: not_started before publication; unknown until directory fsync
+  returns; succeeded afterwards. Successful cleanup does not prove durability.
+- Failed cleanup retains the primary diagnosis/effects and adds bounded secondary
+  diagnostics. If four secondary slots are already used, native cleanup evidence
+  is still retained. Interrupts and unexpected bugs remain the same exceptions;
+  safe standard notes are added where supported. record_cleanup_errors contains
+  native debug evidence, including secondary causes, and must not be serialized.
+
+RecordCollisionError is also FileExistsError-compatible. Snapshot creation advances
+to another timestamp only after a clean collision without cleanup failures.
+Other failures stop, including successful publication followed by directory-sync
+or cleanup failure. Do not blindly save/append again; inspect the exact destination
+and retain the existing evidence. No rollback, implicit deletion or write retry.
+
+Bundle/config/receipt/cache writers using the shared atomic primitive inherit this
+failure family. It describes one local record only, never submission acceptance,
+dependency state or an atomic transaction across files. Existing cache OSError
+handling remains nonfatal, with richer returned diagnostics still pending c.3.
+Domain enrichment/direct bundle reads and config/schedule CLI presentation remain
+c.2; receipt/cache/script persistence remains c.3. SubmissionError.receipt and
+SoftwareUpdateError.evidence stay authoritative; their higher-level adapters are
+not replaced by catching only RecordWriteError. Do not call private record_files
+helpers from scientific clients. Use supported save/config/submission operations.
 
 ## At a client boundary
 

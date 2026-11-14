@@ -18,8 +18,13 @@ snapshot/filter selection and per-entry discovery use shared diagnostics.
 **MVP10.3b.3 is implemented locally:** pure path/render preparation and saved
 producing-context validation adopt the same error families. MVP10.3b is complete;
 record publication/read effects remain MVP10.3c.
-Current coverage is 256 routes/132 owners/16 remaining broad catches; two masking
-handlers were removed. Other service adoption remains pending.
+MVP10.3c is split before implementation into shared JSON publication (c.1),
+bundle/config boundaries (c.2) and receipt/cache/script persistence (c.3).
+**MVP10.3c.1 is implemented locally:** the shared JSON writer reports explicit
+publication/durability effects and retains primary/secondary cleanup evidence.
+Current coverage is 260 routes/135 owners/18 broad catches: two earlier masking
+handlers were removed and two resource/evidence safeguards added and reviewed.
+Other service adoption remains pending.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
 paths (b) and publication (c); b was then split into authoring (b.1), snapshot
 selection (b.2) and pure path/render preparation (b.3) before its implementation.
@@ -310,6 +315,39 @@ producing_machine and external existence/readiness remain later owners. The subm
 CLI now honors --debug for adopted preparation errors too. No new code catalogue,
 error family, dependency or universal CLI/ACP adoption is introduced.
 
+### MVP10.3c.1 implemented shared publication boundary
+
+The existing atomic writer remains the single local JSON publication owner.
+errors.py owns RecordWriteError (DiagnosticError/RuntimeError/OSError),
+RecordCollisionError (also FileExistsError) and pure record_write_failure; the
+package root exports RecordWriteError for clients. No new code catalogue/schema.
+Known serializer failures now use RecordWriteError instead of TypeError/ValueError
+at this explicit dev boundary. Original causes remain chained; diagnostics omit
+record values and arbitrary exception text, retaining safe kind/errno/path/stage.
+
+The writer records destination publication as not_started before the syscall,
+unknown after failed link/replace, succeeded after observed return. Directory
+durability remains separately unknown until directory fsync succeeds. Parent/
+temp creation is not destination publication. Post-publication sync/close/cleanup
+failures never imply rollback; the complete record may already be visible.
+Snapshot timestamp advancement catches only a known exclusive collision with no
+cleanup failure, replacing the old broad FileExistsError retry/exists heuristic.
+
+Temporary files are closed explicitly so a close error cannot mask serializer
+failure; directory close cannot mask directory-sync failure either. All remaining
+cleanup runs. Expected secondary failures use bounded diagnostics, while native
+record_cleanup_errors retains debug causes even after the four-diagnostic bound.
+Native bugs/interrupts stay unchanged, with safe notes where supported. Two broad
+BaseException handlers are resource/evidence protection only, not classification.
+No automatic write replay or record deletion/rollback is introduced. Generic
+serialization errors at the cache writer now follow its existing nonfatal OSError
+handling; richer returned cache evidence remains c.3/10.6.
+
+This slice supplies shared publication facts; c.2 adds bundle/config direct reads,
+domain context and presentation, c.3 receipt/cache/script persistence. Existing
+SubmissionError.receipt/update evidence remain authoritative; no scheduler effects,
+universal CLI/ACP parity or direct-loader migration is claimed here.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -434,7 +472,9 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.3b.1 complete | Typed/raw authoring guards, graphs/software intent, bundle preparation and schedule CLI diagnostics |
 | MVP10.3b.2 complete | Snapshot/filter selection and per-entry broken/unavailable evidence |
 | MVP10.3b.3 complete | Pure paths/render diagnostics, validated producing context and render-before-open script creation |
-| MVP10.3c | Record read/publication diagnostics, including config writes and pre/post-publication effects |
+| MVP10.3c.1 complete | Shared JSON writer diagnostics with publication/durability facts and secondary cleanup |
+| MVP10.3c.2 | Bundle/config read/write boundaries and CLI presentation |
+| MVP10.3c.3 | Receipt/cache/script persistence and retained evidence |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
 | MVP10.6 | Status/inspection/log/cache adoption with explicit observation quality and partial data |
@@ -610,3 +650,19 @@ installation register updated. No actual cluster commands, dependency installati
 daily config/state, external client or rollback-source changes. MVP10.3b complete;
 3c record read/publication is next; external readiness/stale-venv and broader
 observation/CLI/ACP adoption remain pending.
+
+2026-11-14, MVP10.3c.1: split c, then implemented shared JSON publication
+diagnostics, separate publication/durability facts, safe original causes and
+evidence-preserving cleanup. Native bugs/interrupts remain unchanged; serialization
+has an explicit dev exception-family boundary. Only clean exclusive collisions
+advance a timestamp. 32 new cases plus updated legacy assertions; 1058 full offline
+tests passed in 10.04 s, 43 expected warnings;
+`.development/test-runs/record-publication-diagnostics.xml`. Clean-source offline
+wheel/temporary-target API/publication/durability/cleanup/retained-record/JSON/debug/
+ACP/installed-recipe smoke passed; SHA256
+`fa3340a99969341c1498f11d521fc875db47d5a6f66d250a7981024f0153168b`.
+AST register: 260 routes/135 owners/18 individually reviewed broad catches.
+Human/agent docs and installation register updated. No actual cluster command,
+dependency installation, daily config/state, external client, saved-format or
+rollback change. c.2 bundle/config boundaries are next; c.3 receipt/cache/script
+persistence and external/submission/observation/CLI/ACP adoption remain open.

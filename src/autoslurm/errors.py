@@ -12,7 +12,8 @@ from typing import Mapping
 __all__ = ["Diagnostic", "DiagnosticCause", "DiagnosticError", "diagnostic_catalog",
            "invalid_argument", "missing_resource", "command_failure",
            "ConfigurationError", "configuration_failure", "InvalidRequestError",
-           "SelectionError", "selection_failure"]
+           "SelectionError", "selection_failure", "RecordWriteError",
+           "RecordCollisionError", "record_write_failure"]
 
 # code -> (category, summary, next action). Effects never come from this catalogue.
 _CATALOG = {
@@ -223,6 +224,38 @@ class SelectionError(DiagnosticError, ValueError):
     Missing selections use this same family rather than FileNotFoundError.
     Native filesystem causes remain chained; codes distinguish failure kinds.
     """
+
+
+class RecordWriteError(DiagnosticError, OSError):
+    """Expected JSON publication failure with explicit filesystem effect facts.
+
+    OSError compatibility lets existing evidence-preserving callers retain their
+    policy. Serialization failures also use this family at this dev boundary;
+    the original TypeError/ValueError remains chained, never copied as payload.
+    """
+
+
+class RecordCollisionError(RecordWriteError, FileExistsError):
+    """Exclusive publication observed an existing destination.
+
+    Only a collision without secondary cleanup errors permits selecting another
+    snapshot name. Other publication failures may already have changed the file.
+    """
+
+
+def record_write_failure(*, stage, path, effects, cause, problem="storage"):
+    """Describe caller-observed writer facts; no I/O or inferred rollback/retry."""
+    if problem not in {"storage", "serialization", "collision"}:
+        raise ValueError("Unknown record publication problem.")
+    summary = {
+        "storage": f"Local JSON record publication failed during {stage}.",
+        "serialization": "Record data cannot be serialized as JSON.",
+        "collision": "Exclusive record publication found an existing destination.",
+    }[problem]
+    return Diagnostic("invalid_argument" if problem == "serialization" else "storage_failed",
+        "record_publication", stage, context={"path": path, "field": "record_data"} if problem == "serialization" else {"path": path},
+        effects=effects, cause=cause, summary=summary,
+        next_action="Inspect the exact destination and publication/durability facts before repeating any write; retain existing records and original evidence.")
 
 
 def selection_failure(*, stage, problem="invalid", summary=None, context=None, cause=None):

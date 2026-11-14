@@ -11,7 +11,7 @@ from .record_files import atomic_json
 from .definitions import DATE_FORMAT
 from .storage import ensure_storage_dirs, jobs_dir
 from .job_dependency import dependency_graph
-from .errors import InvalidRequestError, SelectionError
+from .errors import InvalidRequestError, SelectionError, RecordCollisionError
 from .bundle_selection import (
     SNAPSHOT_KIND_KEY, _snapshot_date, get_bundle_filter_mode, set_bundle_filter_mode,
     all_bundle_snapshots, bundle_snapshot_state, bundle_snapshots,
@@ -63,8 +63,8 @@ def _new_snapshot(bundle, name, *, warn_on_collision=False):
         try:
             atomic_json(path, bundle, exclusive=True, indent=4)
             return path
-        except FileExistsError:
-            if not path.exists():
+        except RecordCollisionError as error:
+            if getattr(error, "record_cleanup_errors", ()):
                 raise
             date += timedelta(seconds=1)
 
