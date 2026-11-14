@@ -18,7 +18,7 @@ actions and routes whose semantics need separate explanation. These are explicit
 references, not additional implementations of each alias.
 
 At the original audit, all diagnostic adoption was pending. MVP10.2, MVP10.3a and
-MVP10.3b.1 amendments below record foundation, configuration and authoring adoption. Other regression
+MVP10.3b.1–2 amendments below record foundation, configuration, authoring and selection adoption. Other regression
 anchors prove only their current tested behavior, not the proposed contract.
 Use the owner row plus its contract and any route note when closing a later task.
 An owner may need several regressions and more than one implementation slice.
@@ -285,3 +285,36 @@ long bounded identity enrichment and unexpected-bug visibility. Full offline sui
 905 passed, 43 expected warnings. Clean-wheel isolated API/graph/record/CLI/debug/
 optional-Typer/agent-recipe smoke passed. The register describes adopted portions
 and pending boundaries; source coverage still is not diagnostic completion.
+
+## MVP10.3b.2 amendment
+
+Current coverage is 256 routes/132 owners, including root/leaf SelectionError
+and leaf selection_failure. Python names total 193; public methods/properties
+remain 15. The get-filter and submit-snapshot broad catches are removed, leaving
+16 handlers. Their retired review reasons remain in the register's amendment;
+all receipt-saving and other effect-boundary catches retain their safeguards.
+
+E08's snapshot/filter masking is addressed at discovery/selection: shared analysis
+retains per-entry diagnostic and broken/unavailable/missing states, healthy
+neighbours, nullable unknown jobs/counts and observed graph-invalid metadata.
+Configuration owns filter validation, and only absence defaults reads. Exact/
+nearest selection remains payload-free; invalid selectors are typed and a newer
+failed entry cannot redirect submission to an older draft. Listing creates no
+directories, and automatic stale/unsubmitted cleanup excludes unknown counts.
+The strict submit record gate now raises the concrete diagnosis before machine
+selection. CLI and ACP discovery routes expose adopted facts while other
+observation, request-validation and post-dispatch policies remain later work.
+
+Explicit dev contracts replace missing-selection FileNotFoundError with
+SelectionError and use jobs/counts=None for unknown contents. Saved JSON has no
+new schema or historical rewrite. Name loading inherits typed selection errors;
+direct generic record I/O/publication remains MVP10.3c, path/render b.3, stale-venv
+and readiness 10.4. Selection state is not a new scheduler observation policy.
+
+`tests/integration/test_selection_diagnostics.py` adds 60 cases covering invalid/
+conflicting selectors, stable indices, no fallback/writes, directory/read denial,
+missing versus broken/link/FIFO files, per-entry/known-ID evidence, invalid filter
+preservation, cleanup protection, Python/CLI/JSON/debug/ACP and visible programming
+bugs. Full offline suite: 965 passed, 43 expected warnings. Clean-source offline
+wheel/temporary-target discovery/selection/retained-record/CLI/JSON/debug/ACP/agent
+smoke passed. Source coverage still does not establish broad MVP10 completion.

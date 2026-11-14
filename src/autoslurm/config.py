@@ -118,6 +118,13 @@ def activation_command_from_config(machine_config: dict) -> str:
     return " && ".join(commands)
 
 
+def _bundle_filter_mode(value, *, path=None):
+    if not isinstance(value, str) or value.strip().lower() not in {'active', 'all'}:
+        raise _configuration_error("bundle_filter_mode must be 'active' or 'all'.",
+            field='bundle_filter_mode', path=path, stage='validate_configuration')
+    return value.strip().lower()
+
+
 def _normalize_config(raw: dict, *, profile_overrides=None, machine=None, path=None) -> dict:
     """
     Normalize the configuration to ensure the structure contains 'machines',
@@ -177,9 +184,7 @@ def _normalize_config(raw: dict, *, profile_overrides=None, machine=None, path=N
         raise _configuration_error("Default machine not found in the configuration file.", field="default_machine",
                                    machine=default_machine if isinstance(default_machine, str) else None,
                                    path=path, stage="validate_configuration")
-    bundle_filter_mode = str(raw.get("bundle_filter_mode", "active")).strip().lower()
-    if bundle_filter_mode not in {"active", "all"}:
-        bundle_filter_mode = "active"
+    bundle_filter_mode = _bundle_filter_mode(raw.get('bundle_filter_mode', 'active'), path=path)
     normalized = {
         "machines": machines,
         "default_machine": default_machine,

@@ -13,6 +13,20 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3b.2 (2026-11-14): 965 full offline tests passed in 10.00 s (43 expected
+collision warnings); `.development/test-runs/selection-diagnostics.xml`.
+Snapshot/filter diagnostics use the main editable source without reinstalling.
+Explicit dev API boundaries: missing selections use SelectionError, and discovery
+represents unknown jobs/counts as None with per-entry diagnostics. Saved formats
+and historical records are unchanged. Clean-source offline wheel/temporary-target
+discovery/selection/retained-record/CLI/JSON/debug/ACP/installed-recipe smoke passed;
+artifact `.development/artifacts/selection-diagnostics/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `b0b224f02f50fa2154b2f50349297e0263ff691e1e3d98ac73259d46cf2202cc`.
+No base/test dependency installation, daily config/state, cluster contact, external
+client or rollback-source edit. Existing user documents and software_preparations
+evidence remain excluded. Paths/rendering is next; publication, external readiness
+and broader observation/CLI/ACP adoption remain pending.
+
 MVP10.3b.1 (2026-11-14): 905 full offline tests passed in 11.45 s (43 expected
 collision warnings); `.development/test-runs/authoring-diagnostics.xml`. Main
 editable commands gain typed authoring diagnostics without reinstalling. The

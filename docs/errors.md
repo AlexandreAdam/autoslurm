@@ -48,10 +48,30 @@ historical software-intent metadata and bundle input/preparation guards. It reta
 ValueError compatibility, replacing old TypeError/KeyError authoring guards and
 CycleError for invalid DAGs at this dev boundary. Missing/blank/nonstring commands
 fail before new save/schedule publication. No saved format or history is rewritten.
-Snapshot selection, paths/rendering, publication, process and universal CLI/ACP
-adoption remain separate tasks. `asl schedule` renders adopted errors to stderr
+Paths/rendering, publication, process and universal CLI/ACP adoption remain separate
+tasks. `asl schedule` renders adopted errors to stderr
 and exits 1; add `--autoslurm-debug` for original exceptions. Ordinary application
 `--debug` still forwards. Unknown code bugs propagate.
+
+`SelectionError` now explains invalid selectors, missing snapshots and unreadable
+discovery sources. Catch it instead of FileNotFoundError for missing name/index/
+path selections; it remains ValueError/DiagnosticError compatible. The diagnostic
+distinguishes absence, access failure and invalid records, with the exact path and
+original cause. An inaccessible jobs directory is not an empty directory.
+
+Bundle discovery keeps healthy entries beside failures. Failed entries carry
+`diagnostic`; unknown jobs/counts are `None`, while a valid empty draft has an
+empty list and zero counts. A newer broken snapshot remains visible and blocks
+fallback to an older draft. Unknown counts are excluded from automatic stale/
+unsubmitted cleanup. These are discovery states, separate from scheduler states.
+Existing files and saved JSON formats are unchanged.
+
+An absent config uses the default active filter. Invalid or unreadable config,
+including an invalid stored filter mode, now raises ConfigurationError instead of
+silently changing visible indices. Filter/submit/status/inspect/logs render adopted
+selection/configuration failures once and support `--debug`; existing JSON modes
+return the same facts. `asl submit` checks the exact record before connecting.
+Other inspection and post-dispatch error policies remain staged adoption.
 
 The opt-in `autoslurm.apps.error_output` adapter renders these same facts as text
 or JSON. It exits 1 for a diagnosed operation failure, writes text to stderr or

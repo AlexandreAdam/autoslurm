@@ -119,7 +119,7 @@ def test_submit_named_bundle_prefers_most_recent_ready_to_go_snapshot(tmp_path, 
     assert captured["bundle_path"] == draft_path
 
 
-def test_submit_latest_rejects_bundle_name(tmp_path, monkeypatch):
+def test_submit_latest_rejects_bundle_name(tmp_path, monkeypatch, capsys):
     storage_root = tmp_path / "storage"
     set_storage_root(storage_root)
     ensure_storage_dirs()
@@ -131,8 +131,10 @@ def test_submit_latest_rejects_bundle_name(tmp_path, monkeypatch):
 
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
 
-    with pytest.raises(SystemExit, match="does not take a bundle name"):
+    with pytest.raises(SystemExit) as stopped:
         submit.main(["bundle_new", "--latest"])
+    assert stopped.value.code == 1
+    assert 'do not take a bundle name' in capsys.readouterr().err
 
 
 def test_submit_index_uses_snapshot_path_even_with_duplicate_bundle_name(tmp_path, monkeypatch):
@@ -173,7 +175,7 @@ def test_submit_index_uses_snapshot_path_even_with_duplicate_bundle_name(tmp_pat
     assert captured["bundle_path"] == old_path
 
 
-def test_submit_refuses_broken_bundle_from_index(tmp_path, monkeypatch):
+def test_submit_refuses_broken_bundle_from_index(tmp_path, monkeypatch, capsys):
     storage_root = tmp_path / "storage"
     set_storage_root(storage_root)
     ensure_storage_dirs()
@@ -203,12 +205,13 @@ def test_submit_refuses_broken_bundle_from_index(tmp_path, monkeypatch):
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
     monkeypatch.setattr(submit, "submit_jobs", fake_submit_jobs)
 
-    with pytest.raises(SystemExit, match="Refusing to submit broken bundle"):
+    with pytest.raises(SystemExit) as stopped:
         submit.main(["--index", "1"])
+    assert stopped.value.code == 1 and 'Unknown dependency' in capsys.readouterr().err
     assert called["submit"] is False
 
 
-def test_submit_refuses_broken_bundle_from_name(tmp_path, monkeypatch):
+def test_submit_refuses_broken_bundle_from_name(tmp_path, monkeypatch, capsys):
     storage_root = tmp_path / "storage"
     set_storage_root(storage_root)
     ensure_storage_dirs()
@@ -229,6 +232,7 @@ def test_submit_refuses_broken_bundle_from_name(tmp_path, monkeypatch):
     monkeypatch.setattr(submit, "machine_config", fake_machine_config)
     monkeypatch.setattr(submit, "submit_jobs", fake_submit_jobs)
 
-    with pytest.raises(SystemExit, match="Refusing to submit broken bundle"):
+    with pytest.raises(SystemExit) as stopped:
         submit.main(["recovery"])
+    assert stopped.value.code == 1 and 'Unknown dependency' in capsys.readouterr().err
     assert called["submit"] is False

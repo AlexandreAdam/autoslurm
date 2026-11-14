@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from datetime import datetime
 from typing import Optional
 
 from ..status_views import bundle_jobs_context_from_rows
 from ..bundle_selection import bundle_snapshots
+from ..errors import SelectionError, ConfigurationError
+from .error_output import exit_with_error
 
 
 DATE_FORMATS = (
@@ -141,7 +144,7 @@ def _selected_paths(tokens, entries, parser, reference_date=None):
     return list(dict.fromkeys(paths))
 
 
-def main(argv=None):
+def _main(argv=None):
     import json
     from pathlib import Path
     from ..inspection import inspect_bundles
@@ -151,6 +154,7 @@ def main(argv=None):
     parser.add_argument("--bundle-file", type=Path, help="Inspect one exact saved snapshot.")
     parser.add_argument("--json", action="store_true", help="Return the shared structured observation.")
     parser.add_argument("--cached", action="store_true", help="Read last observations without scheduler queries; marked stale.")
+    parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
     args = parser.parse_args(argv)
     reference = _build_reference_date(args.date, args.year, args.month, args.day, args.hour, args.minute, args.second)
     entries = _status_rows(reference)
@@ -175,3 +179,11 @@ def main(argv=None):
             rows = rows_from_resolved(jobs, view["jobs"], show_array_tasks=args.array is not None, array_tasks=array_tasks)
             print(bundle_jobs_context_from_rows(Path(path).stem.rsplit("_", 1)[0], date, rows, show_array_tasks=args.array is not None))
             print(observation_text(view))
+
+
+def main(argv=None):
+    selected = list(sys.argv[1:] if argv is None else argv)
+    try:
+        return _main(selected)
+    except (SelectionError, ConfigurationError) as error:
+        exit_with_error(error, json_output='--json' in selected, debug='--debug' in selected)

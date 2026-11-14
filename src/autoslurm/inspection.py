@@ -88,7 +88,8 @@ def inspect_bundle(bundle_path=None, *, receipt_path=None, **kwargs):
 
 
 def list_runs(bundle_name=None):
-    return [{"bundle": entry["bundle"], "bundle_path": str(entry["path"]), "saved_at": entry["date"].isoformat()}
+    return [{"bundle": entry["bundle"], "bundle_path": str(entry["path"]), "saved_at": entry["date"].isoformat(),
+             'state': entry['state'], 'diagnostic': entry['diagnostic']}
             for entry in list_saved_bundles(bundle_name=bundle_name)]
 
 

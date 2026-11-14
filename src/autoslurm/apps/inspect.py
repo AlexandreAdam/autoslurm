@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from .inspection_selection import resolve_job_selection
+from ..errors import SelectionError, ConfigurationError
+from .error_output import exit_with_error
 
 
 from .status import _build_reference_date
@@ -72,7 +75,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv=None):
+def _main(argv=None):
     import json
     from ..inspection import inspect_bundles
     from ..save_load_jobs import load_bundle_from_path, bundle_snapshots
@@ -83,12 +86,15 @@ def main(argv=None):
     parser.add_argument("--receipt", type=Path, help="Select the exact snapshot referenced by a local receipt.")
     parser.add_argument("--json", action="store_true", help="Return the shared structured observation.")
     parser.add_argument("--cached", action="store_true", help="Read cached scheduler evidence without network calls.")
+    parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
     args = parser.parse_args(argv)
     if args.cached and args.refresh:
         parser.error("Choose cached evidence or an explicit refresh.")
     if args.view:
         from .status import main as status_main
         forwarded = ["--cached"] if args.cached else []
+        if args.debug:
+            forwarded.append('--debug')
         for field in ("date", "year", "month", "day", "hour", "minute", "second"):
             if getattr(args, field) is not None:
                 forwarded.extend(["--" + field, str(getattr(args, field))])
@@ -152,3 +158,11 @@ def main(argv=None):
             if not view["logs"]:
                 parts.append("No logs found for this submitted identity.")
     _emit("\n".join(parts), args.clipboard)
+
+
+def main(argv=None):
+    selected = list(sys.argv[1:] if argv is None else argv)
+    try:
+        return _main(selected)
+    except (SelectionError, ConfigurationError) as error:
+        exit_with_error(error, json_output='--json' in selected, debug='--debug' in selected)

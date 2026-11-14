@@ -10,9 +10,9 @@ from .context import agent_context
 from .experiment_context import experiment_context
 from .bundle_selection import list_saved_bundles
 from .save_load_jobs import schedule_job
-from .storage import ensure_storage_dirs, jobs_dir
 from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
 from .inspection import inspect_bundle, list_runs
+from .errors import ConfigurationError, SelectionError
 
 ACTION_FILE = Path(__file__).resolve().parent / "acp_action.json"
 
@@ -47,7 +47,6 @@ def _parse_date(value: Optional[str]) -> Optional[datetime]:
 
 
 def list_bundles(bundle_name: str, desired_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
-    ensure_storage_dirs()
     entries = []
     for entry in list_saved_bundles(desired_date=desired_date, bundle_name=bundle_name):
         entries.append(
@@ -56,6 +55,8 @@ def list_bundles(bundle_name: str, desired_date: Optional[datetime] = None) -> L
                 "date": entry["date"].isoformat(),
                 "path": str(entry["path"]),
                 "jobs": entry["jobs"],
+                "state": entry['state'],
+                "diagnostic": entry['diagnostic'],
             }
         )
     return entries
@@ -130,6 +131,8 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
                 },
             }
         return {"status": "error", "message": f"Unknown action '{action}'"}
+    except (SelectionError, ConfigurationError) as error:
+        return {'status': 'error', 'message': str(error), 'diagnostic': error.diagnostic.to_dict()}
     except SubmissionError as exc:
         return {"status": "error", "message": str(exc), "result": exc.receipt}
     except Exception as exc:  # pragma: no cover - bubble up errors

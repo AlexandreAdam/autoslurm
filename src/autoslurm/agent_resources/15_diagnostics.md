@@ -4,6 +4,7 @@ MVP10.2 implements the foundation. MVP10.3a adopts local configuration read/prof
 setting/selection failures and the config CLI. Other AutoSlurm services/CLI/ACP
 have not adopted it universally; `.diagnostic is None` is normal on legacy errors.
 MVP10.3b.1 also adopts the authoring boundaries described below.
+MVP10.3b.2 adds snapshot/filter selection and per-entry discovery diagnostics.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -15,6 +16,7 @@ from autoslurm.errors import (
     Diagnostic, DiagnosticCause, DiagnosticError, diagnostic_catalog,
     invalid_argument, missing_resource, command_failure,
     ConfigurationError, configuration_failure, InvalidRequestError,
+    SelectionError, selection_failure,
 )
 from autoslurm.apps.error_output import render_diagnostic, exit_with_error
 ```
@@ -145,6 +147,64 @@ and exits 1. `--autoslurm-debug` re-raises the original error/cause chain; ordin
 application `--debug` retains its previous forwarding behavior. Parser misuse stays
 exit 2 and unexpected programming errors propagate. Its legacy help-text discovery
 is unchanged and does not gain typed signature validation or new process diagnostics.
+
+## Snapshot selection in MVP10.3b.2
+
+`SelectionError` is exported at root and in errors. It inherits DiagnosticError/
+RuntimeError and ValueError. Known selector/discovery/read failures have operation
+selection and codes invalid_argument, resource_missing, resource_inaccessible or
+record_invalid. The stdlib-only `selection_failure(stage=..., problem=..., context=...,
+cause=..., summary=...)` constructs these facts without lookup or effect inference;
+problem is invalid/missing/unreadable/corrupt. Native filesystem/JSON/Unicode
+causes remain chained on raised failures; returned diagnostics contain safe facts.
+Never infer submission effects from selection errors.
+
+**Dev exception boundary:** missing selections now raise SelectionError rather
+than FileNotFoundError, including `nearest_bundle_filename` and name-based loading.
+Catch this class and inspect diagnostic.code. Direct bundle file loading retains
+its older read exception policy until the record-read slice. Type/selector conflicts,
+positive integer indices (excluding bool), and naive datetime reference dates are
+validated before discovery. Exact path and prefer_draft=False name/nearest lookup
+remain metadata/filename-only; they do not prove payload validity. Unversioned
+external files use mtime when explicitly selected (supply their bundle name when
+it cannot be inferred); no file is rewritten. Equal timestamp indices have a stable
+filename tie-break. Normal index order remains descending timestamp.
+
+Discovery uses one snapshot analysis shared by `list_saved_bundles`, snapshot
+state/list helpers, ACP list_bundles/list_experiments and list_runs. These services
+do not create storage directories. Missing storage is an empty list; inaccessible
+storage is an operation failure, not an empty list. Each readable empty draft has
+jobs=[], job_count=0, submitted_count=0 and diagnostic=None. Unreadable/unparseable
+contents have jobs=None and unknown counts=None; never coerce those to empty/zero.
+Graph-invalid dictionaries can retain observed job names/counts and ID count.
+Returned states include ready_to_go/active/broken/unavailable/missing, where the
+last means a discovered file disappeared. Returned diagnostic is a plain to_dict()
+value or None, not an exception. Missing/unavailable is not scientific job failure.
+
+`bundle_snapshot_state(path, strict=True)` raises the same diagnosis instead of
+returning a failed entry, preserving native chains. The submit CLI uses that guard
+before selecting a machine or connecting. A newer broken/unavailable/missing
+snapshot cannot be bypassed for an older ready draft, and active visibility keeps
+the latest failed entry beside submitted history. Unknown-count records are excluded
+from automatic stale/unsubmitted cleanup; explicit operator targets retain their
+existing behavior. Corruption never authorizes rebuilding or retrying by itself.
+
+Only absent configuration defaults the filter to active. Bad JSON, denied access,
+invalid profiles or invalid stored filter modes raise ConfigurationError; they do
+not silently change which indices are visible. Set mode explicitly to active/all
+after correcting the exact file. Existing healthy filtering/draft/date policy is
+otherwise retained.
+
+Filter/submit/status/inspect/logs root/standalone/alias routes render adopted
+selection/configuration operation failures with shared text on stderr/exit 1 and
+--debug for original chains. Existing --json on status/inspect/logs uses the shared
+diagnostic envelope. Parser usage remains exit 2. ACP adds diagnostic to expected
+selection/configuration error envelopes and keeps per-entry diagnostics in successful
+discovery results. Other ACP catches, observation/log errors and post-dispatch
+failures remain their existing policies until later adoption. Discovery state is
+separate from the inspection pipeline's scheduler/observation state; this is not
+universal observation or CLI/ACP parity. Unexpected bugs at the adopted selection
+boundaries propagate; no broad catch converts them into empty/broken records.
 
 ## At a client boundary
 

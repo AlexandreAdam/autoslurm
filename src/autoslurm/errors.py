@@ -11,7 +11,8 @@ from typing import Mapping
 
 __all__ = ["Diagnostic", "DiagnosticCause", "DiagnosticError", "diagnostic_catalog",
            "invalid_argument", "missing_resource", "command_failure",
-           "ConfigurationError", "configuration_failure", "InvalidRequestError"]
+           "ConfigurationError", "configuration_failure", "InvalidRequestError",
+           "SelectionError", "selection_failure"]
 
 # code -> (category, summary, next action). Effects never come from this catalogue.
 _CATALOG = {
@@ -214,6 +215,33 @@ class ConfigurationError(DiagnosticError, ValueError):
     ValueError compatibility remains for validation callers. File read failures
     now use this family too; their original OSError remains in __cause__.
     """
+
+
+class SelectionError(DiagnosticError, ValueError):
+    """Known selector/discovery failure; unavailable is distinct from absent.
+
+    Missing selections use this same family rather than FileNotFoundError.
+    Native filesystem causes remain chained; codes distinguish failure kinds.
+    """
+
+
+def selection_failure(*, stage, problem="invalid", summary=None, context=None, cause=None):
+    """Construct explicit selection facts without lookup, recovery or effect inference."""
+    problems = {
+        "invalid": ("invalid_argument", "The bundle selector is invalid.",
+                    "Correct the named selector and select the exact saved bundle again."),
+        "missing": ("resource_missing", "No matching saved bundle was found.",
+                    "Verify the exact selector and storage root; do not automatically choose another bundle."),
+        "unreadable": ("resource_inaccessible", "The selected snapshot or directory cannot be read.",
+                       "Check the identified path and permissions; retain existing records and treat contents as unknown."),
+        "corrupt": ("record_invalid", "The saved bundle is invalid.",
+                    "Inspect the exact saved bundle and retain its original contents; rebuild a definition explicitly if needed."),
+    }
+    if problem not in problems:
+        raise ValueError("Unknown selection problem.")
+    code, wording, action = problems[problem]
+    return Diagnostic(code, "selection", stage, context={} if context is None else context,
+                      cause=cause, summary=wording if summary is None else summary, next_action=action)
 
 
 def configuration_failure(*, stage, problem="invalid", summary=None, context=None,

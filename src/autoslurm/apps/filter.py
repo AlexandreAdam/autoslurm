@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 from ..bundle_selection import get_bundle_filter_mode, set_bundle_filter_mode
+from ..errors import ConfigurationError, SelectionError
+from .error_output import exit_with_error
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -19,10 +22,11 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("active", "all"),
         help="Set filter mode. Omit to print current mode.",
     )
+    parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
     return parser
 
 
-def main(argv: list[str] | None = None) -> None:
+def _main(argv: list[str] | None = None) -> None:
     parser = _build_parser()
     args = parser.parse_args(argv)
     mode = get_bundle_filter_mode()
@@ -32,3 +36,11 @@ def main(argv: list[str] | None = None) -> None:
     print("Available filters:")
     print("- active: show running/completed submission history; also show the latest ready_to_go snapshot when it is the newest snapshot for a bundle name (or latest broken if no ready_to_go exists).")
     print("- all: show every saved bundle snapshot with no filtering.")
+
+
+def main(argv: list[str] | None = None) -> None:
+    selected = list(sys.argv[1:] if argv is None else argv)
+    try:
+        return _main(selected)
+    except (ConfigurationError, SelectionError) as error:
+        exit_with_error(error, debug='--debug' in selected)

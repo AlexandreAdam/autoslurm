@@ -8,6 +8,8 @@ from ..inspection import inspect_bundles
 from ..submission import load_submission
 from .inspection_selection import resolve_job_selection
 from .status import _build_reference_date, _selected_paths, _status_rows
+from ..errors import SelectionError, ConfigurationError
+from .error_output import exit_with_error
 
 
 def main(argv=None):
@@ -32,6 +34,7 @@ def main(argv=None):
     freshness.add_argument('--cached', action='store_true', help='Read cached evidence only, without cluster or source-log access.')
     freshness.add_argument('--refresh', action='store_true', help='Refresh status and log excerpts (the default).')
     parser.add_argument('--json', action='store_true', help='Print the shared structured evidence.')
+    parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
     argv = sys.argv[1:] if argv is None else list(argv)
     if not argv:
         parser.print_help()
@@ -44,6 +47,8 @@ def main(argv=None):
             parser.error('--view lists bundles; choose a bundle separately to read logs.')
         from .status import main as status_main
         forwarded = ['--cached'] if args.cached else []
+        if args.debug:
+            forwarded.append('--debug')
         for field in ('date', 'year', 'month', 'day', 'hour', 'minute', 'second'):
             value = getattr(args, field)
             if value is not None:
@@ -73,6 +78,8 @@ def main(argv=None):
                                task_indices=array_tasks if task_index is None else None,
                                include_logs=True, stream=args.stream, tail=args.tail,
                                max_log_bytes=args.max_bytes, max_logs=args.max_logs, refresh=not args.cached)
+    except (SelectionError, ConfigurationError) as error:
+        exit_with_error(error, json_output=args.json, debug=args.debug)
     except (ValueError, RuntimeError, OSError, argparse.ArgumentTypeError) as error:
         print(json.dumps({'state': 'error', 'error': str(error)}) if args.json else str(error))
         raise SystemExit(1) from None

@@ -6,7 +6,7 @@ from ..bundle_selection import bundle_snapshot_state, select_bundle_snapshot
 from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs
 from ..submission import SubmissionError
-from ..errors import InvalidRequestError
+from ..errors import ConfigurationError, InvalidRequestError, SelectionError
 from .error_output import exit_with_error
 
 
@@ -19,6 +19,7 @@ def parse_args(argv=None):
     """
     parser = argparse.ArgumentParser(description="Run scripts on a SLURM cluster.")
     parser.add_argument("name", nargs="?", help="Name of the job")
+    parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
     # parser.add_argument('date', required=False, help='If provided, will look for job closest to this date. Otherwise, latest job is ran.'
     # 'Provide in the format [Y]YYYY-[M]MM-[D]DD-[H]HH-[m]mm-[s]ss.'
     # 'E.g., Y2021 will yield the latest job of 2021. M09 will yield the latest job of last September.'
@@ -69,7 +70,7 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def main(argv=None):
+def _main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     if not argv:
@@ -85,35 +86,10 @@ def main(argv=None):
         parser.print_help()
         return
     args = parse_args(argv)
-    if args.latest and args.bundle_file is not None:
-        raise SystemExit("--latest cannot be combined with --bundle-file.")
-    if args.index is not None and args.bundle_file is not None:
-        raise SystemExit("--index cannot be combined with --bundle-file.")
-    if args.latest and args.index is not None:
-        raise SystemExit("--latest cannot be combined with --index.")
-    if args.latest and args.name is not None:
-        raise SystemExit("--latest does not take a bundle name.")
-    if args.index is not None and args.name is not None:
-        raise SystemExit("--index does not take a bundle name.")
-    if not args.latest and args.name is None:
-        if args.index is None and args.bundle_file is None:
-            raise SystemExit("Submit requires a bundle name unless --latest or --index is used.")
-
-    try:
-        selected = select_bundle_snapshot(args.name, bundle_path=args.bundle_file, latest=args.latest, index=args.index)
-    except (ValueError, FileNotFoundError) as exc:
-        raise SystemExit(str(exc)) from exc
+    selected = select_bundle_snapshot(args.name, bundle_path=args.bundle_file, latest=args.latest, index=args.index)
     args.name, args.bundle_file = selected["bundle"], Path(selected["path"])
 
-    try:
-        snapshot = bundle_snapshot_state(args.bundle_file)
-    except Exception as exc:
-        raise SystemExit(f"Unable to validate bundle file '{args.bundle_file}': {exc}") from exc
-    if str(snapshot.get("state", "")).lower() == "broken":
-        raise SystemExit(
-            "Refusing to submit broken bundle: dependency graph or bundle structure is invalid. "
-            "Inspect with `autoslurm status` or `autoslurm inspect` and rebuild the bundle."
-        )
+    bundle_snapshot_state(args.bundle_file, strict=True)
 
     machine_name, config = machine_config(args)
     try:
@@ -128,3 +104,11 @@ def main(argv=None):
         exit_with_error(error)
     except (SubmissionError, ValueError, RuntimeError, OSError) as exc:
         raise SystemExit(str(exc)) from exc
+
+
+def main(argv=None):
+    selected = list(sys.argv[1:] if argv is None else argv)
+    try:
+        return _main(selected)
+    except (SelectionError, ConfigurationError) as error:
+        exit_with_error(error, debug='--debug' in selected)

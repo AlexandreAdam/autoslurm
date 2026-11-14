@@ -289,6 +289,19 @@ submission name/latest selection prefers ready drafts; inspection resolves the
 newest selected snapshot. Dated loading selects the nearest timestamp across
 saved snapshots.
 
+MVP10.3b.2 returns per-snapshot `state` and plain `diagnostic` from discovery,
+including list_runs and ACP listings. An unreadable or unparseable snapshot has
+unknown jobs/counts (`None`), distinct from an empty draft (`[]`/zero). Retain the
+failed entry alongside healthy records and report its diagnosis; do not silently
+choose an older definition. The newest failed snapshot remains visible and blocks
+ready-draft fallback. Catch public SelectionError for selector/discovery failures;
+it replaces FileNotFoundError for missing selections and remains ValueError/
+DiagnosticError compatible. Only absent config defaults the visibility filter;
+corrupt/unreadable/invalid config must be corrected explicitly. Exact filename-
+only selection does not validate contents. Strict bundle_snapshot_state is used
+by the submit CLI before connecting. Paths/rendering, publication, readiness and
+inspection observation-policy migration remain separate tasks.
+
 Before submission, `preview_bundle(planned_path, machine="target")` validates and
 returns plain resolved paths and rendered script text without writing scripts or
 submitting. MVP4 shares the same definition validation and script preparation

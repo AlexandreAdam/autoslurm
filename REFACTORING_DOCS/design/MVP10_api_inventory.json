@@ -1,7 +1,7 @@
 {
   "audited_revision": "61043722c4758cb188994f996e7e46ef8140003d",
   "audited_date": "2026-11-13",
-  "scope": "MVP10.1 source inventory, amended for MVP10.2 diagnostics, MVP10.3a configuration and MVP10.3b.1 authoring adoption. Snapshot selection, paths/rendering, publication and other domains remain pending. Owner rows inherit named contracts; aliases resolve to the same owner. Regression anchors prove only explicitly recorded adoption, not universal diagnostic coverage.",
+  "scope": "MVP10.1 source inventory, amended through MVP10.3b.2 snapshot/filter selection. Configuration, authoring and selection adoption is recorded per owner/contract; paths/rendering, generic record publication/reads, external operations and universal route parity remain pending. Aliases share canonical owners; source coverage is not diagnostic completion.",
   "interfaces": {
     "acp:gather_context": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
@@ -77,6 +77,7 @@
     "python:autoslurm.InvalidRequestError": "autoslurm.errors.InvalidRequestError",
     "python:autoslurm.LevelSubmitResult": "autoslurm.bulk_submit.LevelSubmitResult",
     "python:autoslurm.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
+    "python:autoslurm.SelectionError": "autoslurm.errors.SelectionError",
     "python:autoslurm.SoftwareUpdateError": "autoslurm.software_update.SoftwareUpdateError",
     "python:autoslurm.SubmissionError": "autoslurm.submission.SubmissionError",
     "python:autoslurm.SubmissionRequest": "autoslurm.bulk_submit.SubmissionRequest",
@@ -128,11 +129,13 @@
     "python:autoslurm.errors.DiagnosticCause": "autoslurm.errors.DiagnosticCause",
     "python:autoslurm.errors.DiagnosticError": "autoslurm.errors.DiagnosticError",
     "python:autoslurm.errors.InvalidRequestError": "autoslurm.errors.InvalidRequestError",
+    "python:autoslurm.errors.SelectionError": "autoslurm.errors.SelectionError",
     "python:autoslurm.errors.command_failure": "autoslurm.errors.command_failure",
     "python:autoslurm.errors.configuration_failure": "autoslurm.errors.configuration_failure",
     "python:autoslurm.errors.diagnostic_catalog": "autoslurm.errors.diagnostic_catalog",
     "python:autoslurm.errors.invalid_argument": "autoslurm.errors.invalid_argument",
     "python:autoslurm.errors.missing_resource": "autoslurm.errors.missing_resource",
+    "python:autoslurm.errors.selection_failure": "autoslurm.errors.selection_failure",
     "python:autoslurm.execute_acp": "autoslurm.acp.execute_acp",
     "python:autoslurm.execution.ExecutionContext": "autoslurm.execution.ExecutionContext",
     "python:autoslurm.execution.execution_context_from_snapshot": "autoslurm.execution.execution_context_from_snapshot",
@@ -271,17 +274,11 @@
       "Exception",
       "Exception"
     ],
-    "autoslurm.apps.submit.main": [
-      "Exception"
-    ],
     "autoslurm.bulk_submit_driver.submit_payload.persist": [
       "(Exception, KeyboardInterrupt)"
     ],
     "autoslurm.bulk_submit_driver.submit_payload.submit_level": [
       "(Exception, KeyboardInterrupt)",
-      "Exception"
-    ],
-    "autoslurm.bundle_selection.get_bundle_filter_mode": [
       "Exception"
     ],
     "autoslurm.log_files._query_remote_tails": [
@@ -340,9 +337,10 @@
         "tests/integration/test_optional_account.py",
         "tests/unit/test_activation.py",
         "tests/integration/test_interactive_env_command.py",
-        "tests/integration/test_configuration_diagnostics.py"
+        "tests/integration/test_configuration_diagnostics.py",
+        "tests/integration/test_selection_diagnostics.py"
       ],
-      "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema."
+      "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema. MVP10.3b.2 validates bundle_filter_mode through one config owner; absence alone defaults reads to active, while invalid/unreadable/corrupt configuration is visible."
     },
     "authoring": {
       "implementation_task": "MVP10.3b.1 (command/literal/definition guards); MVP10.3b.3 (paths/rendering pending)",
@@ -392,12 +390,13 @@
       "next_action": "Repair input/access explicitly; inspect exact path if publication may have happened before retrying save/append.",
       "regression_evidence": [
         "tests/unit/test_save_load_jobs.py",
-        "tests/integration/test_persistence_boundaries.py"
+        "tests/integration/test_persistence_boundaries.py",
+        "tests/integration/test_selection_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c."
     },
     "selection": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3b.2",
       "failures": "Invalid/conflicting selector/date/index, missing exact file, broken payload, directory access and malformed filter config.",
       "translation_owner": "bundle_selection discovery/selection; bad entries need per-item facts, not an empty listing.",
       "desired_diagnostic": "Exact selector and storage root, broken-entry evidence, empty versus unavailable listing; retain filename-only selection policy.",
@@ -405,9 +404,10 @@
       "regression_evidence": [
         "tests/unit/test_bundle_listing.py",
         "tests/unit/test_filter_clean_cli.py",
-        "tests/integration/test_persistence_boundaries.py"
+        "tests/integration/test_persistence_boundaries.py",
+        "tests/integration/test_selection_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Known selection/discovery failures use SelectionError with selection operation and invalid_argument/resource_missing/resource_inaccessible/record_invalid codes. A missing selection replaces FileNotFoundError explicitly at this dev boundary. Per-entry state/plain diagnostic preserves healthy neighbours; unknown jobs/counts are None, not empty/zero. File/nearest selection remains payload-free. Bad filter config never defaults silently. No source fallback, implicit directory creation, deletion, scheduler query or retry."
     },
     "paths": {
       "implementation_task": "MVP10.3",
@@ -593,9 +593,10 @@
         "tests/unit/test_apps_cli.py",
         "tests/unit/test_cli_help_on_empty_args.py",
         "tests/unit/test_logs_cli.py",
-        "tests/unit/test_status_cli.py"
+        "tests/unit/test_status_cli.py",
+        "tests/integration/test_selection_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Partial through b.2: selection/configuration errors at filter/submit/status/inspect/logs roots/aliases/standalone use the shared adapter and --debug; existing status/inspect/logs JSON modes use its envelope. Parser usage stays exit2. Other observation, presentation and post-dispatch policies remain MVP10.8/later domain slices."
     },
     "acp": {
       "implementation_task": "MVP10.8",
@@ -605,9 +606,10 @@
       "next_action": "Correct action/fields or follow the domain action; inspect partial/unknown evidence instead of replaying schedule/refresh.",
       "regression_evidence": [
         "tests/unit/test_acp.py",
-        "tests/integration/test_shared_inspection.py"
+        "tests/integration/test_shared_inspection.py",
+        "tests/integration/test_selection_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Partial b.2: expected SelectionError/ConfigurationError envelopes include shared diagnostic; list_experiments/list_runs retain per-entry state/diagnostic. SubmissionError receipt retention unchanged; other broad ACP handling and request validation remain MVP10.8."
     },
     "diagnostics": {
       "implementation_task": "MVP10.2",
@@ -619,9 +621,10 @@
         "tests/unit/test_errors.py",
         "tests/unit/test_error_output.py",
         "tests/integration/test_configuration_diagnostics.py",
-        "tests/integration/test_authoring_diagnostics.py"
+        "tests/integration/test_authoring_diagnostics.py",
+        "tests/integration/test_selection_diagnostics.py"
       ],
-      "adoption": "MVP10.2 foundation; MVP10.3a ConfigurationError/configuration_failure; MVP10.3b.1 InvalidRequestError and optional explicit cause/effects on invalid_argument. Identity enrichment compares against the same bounded/redacted representation. Other domains and universal CLI/ACP parity remain pending."
+      "adoption": "MVP10.2 foundation; MVP10.3a ConfigurationError/configuration_failure; MVP10.3b.1 InvalidRequestError and optional explicit cause/effects on invalid_argument. Identity enrichment compares against the same bounded/redacted representation. Other domains and universal CLI/ACP parity remain pending. MVP10.3b.2 adds SelectionError/selection_failure using existing catalogue codes and no inferred effects."
     }
   },
   "owners": {
@@ -634,14 +637,14 @@
     "autoslurm.acp.execute_acp": {
       "contract": "acp",
       "inputs": "Request mapping with action and action-specific fields.",
-      "current": "status success/result or error/message; SubmissionError result retains receipt, other Exception becomes string; nonmapping input can fail before catch.",
+      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending).",
       "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
     },
     "autoslurm.acp.list_bundles": {
       "contract": "selection",
       "inputs": "Bundle name and optional date.",
-      "current": "JSON-friendly snapshot rows; inherits list_saved_bundles masking and discovery errors.",
-      "effects": "Local dirs/reads only."
+      "current": "JSON-friendly identity/jobs/state/diagnostic rows; unknown jobs=None rather than empty. Expected selection/discovery errors retain typed diagnosis through dispatch.",
+      "effects": "Local reads only; no directory creation."
     },
     "autoslurm.apps.agent_context.main": {
       "contract": "context",
@@ -664,7 +667,7 @@
     "autoslurm.apps.clean.main": {
       "contract": "clean",
       "inputs": "Snapshot scope/selectors, optional --yes.",
-      "current": "Default preview; broad load exceptions skip entries; raw unlink errors can follow earlier deletions.",
+      "current": "Default preview; broad load exceptions skip entries; raw unlink errors can follow earlier deletions. Unknown submitted counts no longer qualify for automatic stale/unsubmitted cleanup; explicit operator targets retain existing behavior.",
       "effects": "May query status even during preview; --yes deletes per path. Receipt-bearing/unreadable candidates conservatively retained."
     },
     "autoslurm.apps.config.main": {
@@ -675,9 +678,9 @@
     },
     "autoslurm.apps.filter.main": {
       "contract": "selection",
-      "inputs": "Optional active/all mode.",
-      "current": "Prints current mode/default; invalid parser choice exit2; config write errors raw.",
-      "effects": "Read mode silently defaults on config failure; explicit mode writes config."
+      "inputs": "Optional active/all and --debug.",
+      "current": "Shared text/exit1 for known config/selection failures; --debug re-raises. Invalid parser choice exit2; publication errors retain old policy.",
+      "effects": "Read is local with absence-only default; explicit mode writes config."
     },
     "autoslurm.apps.initialize.main": {
       "contract": "persistence",
@@ -687,14 +690,14 @@
     },
     "autoslurm.apps.inspect.main": {
       "contract": "inspection",
-      "inputs": "Names/indices or file, status/script/log/task options; optional clipboard/JSON.",
-      "current": "Views or legacy text; failures inconsistently raw; bad per-item view generally exit0; clipboard failure after successful print can raise.",
+      "inputs": "Names/indices or file, status/script/log/task options; optional clipboard/JSON. --debug for adopted selection/config errors.",
+      "current": "Views or legacy text; failures inconsistently raw; bad per-item view generally exit0; clipboard failure after successful print can raise. MVP10.3b.2 renders SelectionError/ConfigurationError through shared text/JSON/exit1/debug; no universal migration of returned observation/log errors or later legacy catches.",
       "effects": "Observation/cache effects; requested clipboard writes are secondary presentation effect."
     },
     "autoslurm.apps.logs.main": {
       "contract": "inspection",
-      "inputs": "Status-like bundle/job/task selectors, stream, tail/bytes/files, cached/JSON.",
-      "current": "Expected selection/read errors printed then exit1; error-view entries also exit1; healthy/empty/missing logs distinguishable.",
+      "inputs": "Status-like bundle/job/task selectors, stream, tail/bytes/files, cached/JSON. --debug for adopted selection/config errors.",
+      "current": "Expected selection/read errors printed then exit1; error-view entries also exit1; healthy/empty/missing logs distinguishable. MVP10.3b.2 renders SelectionError/ConfigurationError through shared text/JSON/exit1/debug; no universal migration of returned observation/log errors or later legacy catches.",
       "effects": "Bounded log/status reads; refresh caches; no dataset retrieval."
     },
     "autoslurm.apps.root.main": {
@@ -723,9 +726,9 @@
     },
     "autoslurm.apps.status.main": {
       "contract": "inspection",
-      "inputs": "Names/indices/date or exact bundle-file; array and cached/JSON options.",
-      "current": "Views text/JSON; broken/partial evidence normally exit0, raw selection/read failures can traceback; post-inspect bundle reload can fail.",
-      "effects": "Fresh scheduler queries/cache; --cached no scheduler; filename listing still creates dirs."
+      "inputs": "Names/indices/date or exact bundle-file; array and cached/JSON options. --debug for adopted selection/config errors.",
+      "current": "Views text/JSON; broken/partial evidence normally exit0, raw selection/read failures can traceback; post-inspect bundle reload can fail. MVP10.3b.2 renders SelectionError/ConfigurationError through shared text/JSON/exit1/debug; no universal migration of returned observation/log errors or later legacy catches.",
+      "effects": "Fresh scheduler queries/cache; --cached no scheduler; snapshot listing no longer creates dirs."
     },
     "autoslurm.apps.submission.main": {
       "contract": "receipt",
@@ -736,7 +739,7 @@
     "autoslurm.apps.submit.main": {
       "contract": "submission",
       "inputs": "Name/date or file/latest/index plus machine overrides.",
-      "current": "Adopted InvalidRequestError reaching preparation uses shared rendering/exit 1. Earlier broken-snapshot and selection gates and other error/result/receipt routes retain their existing policies until later slices. No universal diagnostic parity or JSON added.",
+      "current": "Central selector and strict snapshot read/graph guard before machine selection; known SelectionError/ConfigurationError render shared stderr/exit1 with --debug. Adopted authoring handling retained. Unexpected selection/graph bugs propagate after removing broad snapshot catch; later domain/receipt/presentation policies remain pending.",
       "effects": "Preview/selection reads then submission; accepted receipt must survive rendering error."
     },
     "autoslurm.apps.sync.main": {
@@ -796,68 +799,68 @@
     "autoslurm.bundle_selection.all_bundle_snapshots": {
       "contract": "selection",
       "inputs": "Optional reference date for relevant listings; selected root/filter.",
-      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
-      "effects": "ensure_storage_dirs even for listing; no scheduler."
+      "current": "Metadata rows with state and diagnostic=None or plain diagnostic facts; healthy entries retained beside broken/unavailable/missing entries. Unknown contents/counts None; graph-invalid dictionaries retain observed names/counts. Invalid filename discovery candidates still ignored; newer failures remain visible beside history.",
+      "effects": "Local enumeration/reads only; does not create storage directories or query scheduler. Inaccessible directory raises SelectionError rather than empty results."
     },
     "autoslurm.bundle_selection.bundle_snapshot_state": {
       "contract": "selection",
-      "inputs": "Exact timestamped snapshot path.",
-      "current": "Metadata including broken state; FileNotFoundError/ValueError invalid path/name/date, corrupt/unreadable payload becomes broken without cause.",
-      "effects": "Read only."
+      "inputs": "Exact regular snapshot path and optional strict boolean. Explicit unversioned files use mtime fallback.",
+      "current": "Metadata includes per-entry state/plain diagnostic; strict=True raises SelectionError with native chains for known read/graph failures. Invalid path/type/missing/inaccessible metadata raises SelectionError; unknown bugs propagate.",
+      "effects": "Read only, no repair/write; nonregular files including FIFOs are rejected."
     },
     "autoslurm.bundle_selection.bundle_snapshots": {
       "contract": "selection",
       "inputs": "Optional reference date for relevant listings; selected root/filter.",
-      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
-      "effects": "ensure_storage_dirs even for listing; no scheduler."
+      "current": "Metadata rows with state and diagnostic=None or plain diagnostic facts; healthy entries retained beside broken/unavailable/missing entries. Unknown contents/counts None; graph-invalid dictionaries retain observed names/counts. Invalid filename discovery candidates still ignored; newer failures remain visible beside history.",
+      "effects": "Local enumeration/reads only; does not create storage directories or query scheduler. Inaccessible directory raises SelectionError rather than empty results."
     },
     "autoslurm.bundle_selection.get_bundle_filter_mode": {
       "contract": "selection",
       "inputs": "Selected config.",
-      "current": "active/all string; any Exception currently silently defaults to active.",
-      "effects": "Reads only; masks missing/corrupt/permission/bug distinctions."
+      "current": "active/all string. Only absent configuration defaults to active; invalid mode/JSON/profile or denied access raises ConfigurationError. Unexpected programming failures propagate.",
+      "effects": "Read only; preserves configuration and visibility failure distinctions."
     },
     "autoslurm.bundle_selection.inactive_bundle_snapshots": {
       "contract": "selection",
       "inputs": "Optional reference date for relevant listings; selected root/filter.",
-      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
-      "effects": "ensure_storage_dirs even for listing; no scheduler."
+      "current": "Metadata rows with state and diagnostic=None or plain diagnostic facts; healthy entries retained beside broken/unavailable/missing entries. Unknown contents/counts None; graph-invalid dictionaries retain observed names/counts. Invalid filename discovery candidates still ignored; newer failures remain visible beside history. Automatic stale lists exclude records whose submitted count is unknown.",
+      "effects": "Local enumeration/reads only; does not create storage directories or query scheduler. Inaccessible directory raises SelectionError rather than empty results."
     },
     "autoslurm.bundle_selection.latest_bundle_summaries": {
       "contract": "selection",
       "inputs": "Optional reference date for relevant listings; selected root/filter.",
-      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
-      "effects": "ensure_storage_dirs even for listing; no scheduler."
+      "current": "Metadata rows with state and diagnostic=None or plain diagnostic facts; healthy entries retained beside broken/unavailable/missing entries. Unknown contents/counts None; graph-invalid dictionaries retain observed names/counts. Invalid filename discovery candidates still ignored; newer failures remain visible beside history.",
+      "effects": "Local enumeration/reads only; does not create storage directories or query scheduler. Inaccessible directory raises SelectionError rather than empty results."
     },
     "autoslurm.bundle_selection.list_saved_bundles": {
       "contract": "selection",
       "inputs": "Optional desired date/name.",
-      "current": "Rows with jobs; JSON/OSError/AttributeError replaced by jobs=[], not an error record.",
-      "effects": "Discovery ensures dirs; local reads only."
+      "current": "Rows ordered by timestamp proximity; jobs/state/counts/diagnostic share snapshot analysis. Unknown contents are jobs=None and unknown counts=None, distinct from a readable empty draft. Healthy rows survive another entry's failure.",
+      "effects": "Local reads; never creates directories or contacts cluster."
     },
     "autoslurm.bundle_selection.nearest_bundle_filename": {
       "contract": "selection",
       "inputs": "Name and optional desired date.",
-      "current": "Filename/date via select_bundle_snapshot(prefer_draft=False); missing FileNotFoundError.",
-      "effects": "Discovery may create dirs; no content read for filename-only choice."
+      "current": "Filename/date via select_bundle_snapshot(prefer_draft=False); known missing selection now raises SelectionError, with resource_missing code.",
+      "effects": "Filename enumeration only, no payload read, directory creation or scheduler."
     },
     "autoslurm.bundle_selection.select_bundle_snapshot": {
       "contract": "selection",
       "inputs": "Name or exact path/latest/index, date and draft preference.",
-      "current": "Exact selected row; ValueError conflict/out-of-range, FileNotFoundError absent; invalid payload can affect draft preference.",
-      "effects": "Listings may create dirs; no dispatch."
+      "current": "Selected exact row. Typed/conflicting/invalid dates/indices and missing/access failures raise SelectionError (ValueError/DiagnosticError compatible), replacing FileNotFoundError selection family. Newest failed entry blocks older-ready fallback; stable filename tie-break for equal timestamp indices.",
+      "effects": "Exact/nearest metadata-only or local snapshot analysis for draft/latest/index. No writes, host fallback, repair, dispatch or automatic retry."
     },
     "autoslurm.bundle_selection.set_bundle_filter_mode": {
       "contract": "selection",
       "inputs": "active/all mode.",
-      "current": "Saved normalized string; ValueError invalid mode, config/publication errors propagate.",
-      "effects": "Writes config; publication uncertainty applies."
+      "current": "Saved canonical active/all; invalid input or existing configuration raises ConfigurationError through shared config validation. Publication errors remain staged adoption.",
+      "effects": "Explicit config write only; failed validation/read does not overwrite it. Publication uncertainty remains 3c."
     },
     "autoslurm.bundle_selection.stale_bundle_snapshots": {
       "contract": "selection",
       "inputs": "Optional reference date for relevant listings; selected root/filter.",
-      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
-      "effects": "ensure_storage_dirs even for listing; no scheduler."
+      "current": "Metadata rows with state and diagnostic=None or plain diagnostic facts; healthy entries retained beside broken/unavailable/missing entries. Unknown contents/counts None; graph-invalid dictionaries retain observed names/counts. Invalid filename discovery candidates still ignored; newer failures remain visible beside history. Automatic stale lists exclude records whose submitted count is unknown.",
+      "effects": "Local enumeration/reads only; does not create storage directories or query scheduler. Inaccessible directory raises SelectionError rather than empty results."
     },
     "autoslurm.command_contract.CommandContract": {
       "contract": "authoring",
@@ -1059,9 +1062,9 @@
     },
     "autoslurm.inspection.list_runs": {
       "contract": "selection",
-      "inputs": "Optional name and date.",
-      "current": "Plain snapshot identities; inherits list_saved_bundles empty-jobs masking.",
-      "effects": "Local discovery creates storage dirs."
+      "inputs": "Optional bundle name.",
+      "current": "Plain snapshot identities plus discovery state and diagnostic; does not relabel failed discovery as an empty run.",
+      "effects": "Local reads only; no directory creation or scheduler."
     },
     "autoslurm.job_dependency.dependency_graph": {
       "contract": "graph",
@@ -1144,8 +1147,8 @@
     "autoslurm.save_load_jobs.load_bundle": {
       "contract": "persistence",
       "inputs": "Name and optional desired date.",
-      "current": "(ordered jobs,graph,date); selection FileNotFoundError, loader errors propagate.",
-      "effects": "Discovery creates storage dirs, then local reads; no scheduler."
+      "current": "(ordered jobs,graph,date); name/nearest selection now raises SelectionError for known lookup failures. Direct loader read/publication exception adoption remains3c; authoring graph policy retained.",
+      "effects": "Local filename discovery/reads without directory creation; no scheduler."
     },
     "autoslurm.save_load_jobs.load_bundle_from_path": {
       "contract": "persistence",
@@ -1404,6 +1407,18 @@
       "inputs": "Known validation message and named field; optional explicit stage/context/DiagnosticCause/effects.",
       "current": "DiagnosticError/RuntimeError and ValueError subclass with authoring operation and invalid_argument code. No generic exception classifier. Existing TypeError/KeyError authoring guards and DAG CycleError now use this family; native causes retained.",
       "effects": "Pure construction; no I/O, backend imports, printing, exit, retry, repair or inferred effects."
+    },
+    "autoslurm.errors.SelectionError": {
+      "contract": "diagnostics",
+      "inputs": "Known Diagnostic, using inherited DiagnosticError constructor contract.",
+      "current": "DiagnosticError/RuntimeError and ValueError subclass for expected selector/discovery failures; missing selection replaces FileNotFoundError family. Native filesystem/parser causes remain chained.",
+      "effects": "Pure construction, no I/O, backend imports, recovery, exit or inferred effects."
+    },
+    "autoslurm.errors.selection_failure": {
+      "contract": "diagnostics",
+      "inputs": "Explicit stage, problem=invalid/missing/unreadable/corrupt and optional safe context/cause/summary.",
+      "current": "Selection Diagnostic using existing codes/default wording; no effect inference or exception classification. Unknown problem stays programming ValueError.",
+      "effects": "Pure construction; no lookup, retry, mutation, printing or exit."
     }
   },
   "catch_reviews": {
@@ -1420,18 +1435,12 @@
       "Selecting CANCELLED snapshots: a load failure currently skips an entry without evidence; retain per-file diagnosis and conservative selection. MVP10.7.",
       "Selecting failed snapshots: broad load skip hides corruption/bugs; report retained/skipped entry rather than deleting on unknown. MVP10.7."
     ],
-    "autoslurm.apps.submit.main": [
-      "Snapshot classification catch converts all exceptions to SystemExit text. Narrow expected input failures, retain cause/debug path and exact selector. MVP10.3/8."
-    ],
     "autoslurm.bulk_submit_driver.submit_payload.persist": [
       "RETAIN evidence-protection catch including KeyboardInterrupt. On persistence failure keep current IDs, phase and original storage cause; don't dispatch another job. MVP10.5."
     ],
     "autoslurm.bulk_submit_driver.submit_payload.submit_level": [
       "RETAIN catch including KeyboardInterrupt around sbatch: record rejection versus uncertain acceptance, prior IDs and blocked descendants; persistence error must not erase scheduler cause. MVP10.5.",
       "RETAIN post-acceptance protection: accepted ID remains in memory even if tracking fails; distinguish persistence failure from scheduler failure, keep initiating cause and secondary errors. MVP10.5."
-    ],
-    "autoslurm.bundle_selection.get_bundle_filter_mode": [
-      "Config access/parse/bug currently collapses to active. Missing optional preference can default explicitly; unreadable/corrupt config needs visible diagnosis. MVP10.3."
     ],
     "autoslurm.log_files._query_remote_tails": [
       "Keep per-reference failed observations on transport/protocol problems, narrow expected catches and retain bounded safe stderr/returncode; unexpected bugs need debug visibility. MVP10.6."
@@ -1479,14 +1488,14 @@
     },
     "acp:list_experiments": {
       "inputs": "required bundle",
-      "current": "success/result serialized rows, broken payload can appear jobs=[]",
-      "effects": "Local discovery/directories/reads",
+      "current": "success/result rows with jobs/state/diagnostic; unknown jobs=None. Expected operation failures add shared diagnostic.",
+      "effects": "Local reads only, no directory creation.",
       "contract": "selection"
     },
     "acp:list_runs": {
       "inputs": "optional bundle",
-      "current": "success/result identities or error/message",
-      "effects": "Local discovery/directories/reads",
+      "current": "success/result identities with discovery state/diagnostic; expected selection/config failures add shared diagnostic to error envelope.",
+      "effects": "Local reads only, no directory creation.",
       "contract": "selection"
     },
     "acp:list_submissions": {
@@ -1550,6 +1559,20 @@
       "date": "2026-11-14",
       "base_revision": "23b66a8",
       "note": "Authoring adoption and explicit InvalidRequestError dev boundary; command/literal/graph/software-intent/save-preparation guards, shared schedule rendering and native cause preservation. MVP10.3b split before implementation; snapshot selection and path/render slices remain open, as does publication3c."
+    },
+    {
+      "task": "MVP10.3b.2",
+      "date": "2026-11-14",
+      "base_revision": "b3f6ee3",
+      "note": "Snapshot/filter selection adoption, shared per-entry analysis, nullable unknown counts and explicit SelectionError dev boundary. Two broad catches removed; historical reasons retained here. No persisted schema change or universal observation/ACP parity.",
+      "retired_broad_catches": {
+        "autoslurm.apps.submit.main": [
+          "Snapshot classification catch converts all exceptions to SystemExit text. Narrow expected input failures, retain cause/debug path and exact selector. MVP10.3/8."
+        ],
+        "autoslurm.bundle_selection.get_bundle_filter_mode": [
+          "Config access/parse/bug currently collapses to active. Missing optional preference can default explicitly; unreadable/corrupt config needs visible diagnosis. MVP10.3."
+        ]
+      }
     }
   ]
 }

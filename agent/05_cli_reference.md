@@ -1,5 +1,12 @@
 ## CLI Reference for Agents
 
+Snapshot/filter selection failures in filter/submit/status/inspect/logs use shared
+diagnostics: stderr and exit 1, `--debug` for original causes; existing `--json`
+status/inspect/logs modes return the shared error envelope. Parser usage remains
+exit 2. Failed discovery entries carry a diagnostic and remain visible; unknown
+contents are not empty jobs. These additions cover selection/configuration, not
+all scheduler/log/post-dispatch errors. Installed `15_diagnostics` describes limits.
+
 `asl schedule` uses shared diagnostics for adopted authoring failures (stderr,
 exit 1). `--autoslurm-debug` preserves original errors; application `--debug`
 retains its forwarding behavior. Help discovery remains heuristic; prefer trusted

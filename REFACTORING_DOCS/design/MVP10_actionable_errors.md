@@ -12,9 +12,11 @@ longer a one-to-two-day updater/message patch. **MVP10.1 is complete:** the
 and all 18 broad catches. **MVP10.2 is implemented locally:** stdlib-only errors.py,
 the opt-in terminal adapter and additive diagnostics on existing domain exceptions.
 **MVP10.3a is implemented locally:** configuration read/profile/selection validation
-and the config CLI adopt the shared core. Current coverage is 251 routes/129 owners;
-other service adoption remains pending. **MVP10.3b.1 is implemented locally:**
-authoring adopts InvalidRequestError, with 253 routes/130 owners now registered.
+and the config CLI adopt the shared core. **MVP10.3b.1 is implemented locally:**
+authoring adopts InvalidRequestError. **MVP10.3b.2 is implemented locally:**
+snapshot/filter selection and per-entry discovery use shared diagnostics.
+Current coverage is 256 routes/132 owners/16 remaining broad catches; two masking
+handlers were removed. Other service adoption remains pending.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
 paths (b) and publication (c); b was then split into authoring (b.1), snapshot
 selection (b.2) and pure path/render preparation (b.3) before its implementation.
@@ -231,6 +233,51 @@ MVP10.3b.3 covers pure paths/rendering. Local record reads/publication stay 3c;
 external readiness/transport/software and stale-venv checks stay 10.4. Lower-level
 bulk submission callback/accepted-ID mapping errors remain 10.5.
 
+### MVP10.3b.2 implemented selection boundary
+
+`SelectionError` (root/errors exports) and `selection_failure` (errors export)
+use the existing catalogue. Expected invalid selectors, absent matches, inaccessible
+paths/directories and malformed records have distinct codes, fields/paths, safe
+causes and next actions. No effects, retry or repair are inferred. Native chains
+remain available; unexpected code bugs propagate at the adopted boundaries.
+Missing selections explicitly change from FileNotFoundError to SelectionError,
+which retains ValueError/DiagnosticError compatibility. Name-based loaders inherit
+this selection boundary; direct loader read errors remain with 3c.
+
+One snapshot analysis now owns list/state interpretation and reuses dependency_graph
+validation, replacing repeated validation and failure-to-empty branches. Read models
+add state/diagnostic and explicitly allow unknown jobs/counts=None rather than
+[]/zero. Healthy neighbours survive a broken/unavailable/missing entry; a valid
+empty draft remains []/zero. Graph-invalid dictionaries retain observed names,
+count and known ID count. These are discovery states, not scheduler outcomes.
+This is an explicit dev **returned-data boundary**, with no persisted format,
+historical record rewrite or migration. Raw documents never enter diagnostics.
+
+Discovery no longer creates directories. Absent storage is empty; denied/invalid
+directories fail visibly. Nonregular files are rejected; the POSIX reader checks
+the opened descriptor and uses nonblocking open to avoid waiting on a replaced
+FIFO. Exact/nearest filename selection stays payload-free and explicit external
+files retain mtime fallback. Indices sort by timestamp with a deterministic filename
+tie-break; references must be naive datetime values. Typed selector conflicts fail
+before discovery. A newest failed entry blocks older-draft fallback and remains
+visible beside submitted history. Unknown-count entries no longer qualify for
+automatic stale/unsubmitted cleanup; explicit operator targets retain old policy.
+
+Only absent configuration defaults filter reads to active. The config module
+owns active/all validation; invalid stored/requested modes and unreadable/corrupt
+profiles raise ConfigurationError without rewriting or silently changing indices.
+Internal new/append snapshot fallback checks only selection resource_missing;
+directory access failure never authorizes a new snapshot.
+
+Filter/submit/status/inspect/logs CLI roots/standalone/aliases present adopted
+selection/config errors through the shared adapter, exit 1 and --debug. Existing
+status/inspect/logs JSON modes expose the same diagnostic; parser usage stays exit 2.
+Submit uses strict snapshot validation before machine selection/connection. ACP
+expected selection/config errors add diagnostic; list_bundles/list_runs and ACP
+listings retain per-entry state/diagnostic. Broader observation/post-dispatch/ACP
+bug policies are still later slices. Removing broad get-filter and submit-snapshot
+catches leaves 16 broad handlers; receipt-saving safeguards remain untouched.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -353,7 +400,7 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.2 complete | Dedicated diagnostic module, isolated tests, opt-in terminal adapter and additive exception/JSON conventions; service/ACP-wide adoption pending |
 | MVP10.3a complete | Config read/profile/selection validation, retained-file protection and config CLI aliases/standalone/debug |
 | MVP10.3b.1 complete | Typed/raw authoring guards, graphs/software intent, bundle preparation and schedule CLI diagnostics |
-| MVP10.3b.2 | Snapshot/filter selection and per-entry broken/unavailable evidence |
+| MVP10.3b.2 complete | Snapshot/filter selection and per-entry broken/unavailable evidence |
 | MVP10.3b.3 | Pure paths/render preparation diagnostics |
 | MVP10.3c | Record read/publication diagnostics, including config writes and pre/post-publication effects |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
@@ -500,3 +547,18 @@ AST register matches 253 routes/130 owners/18 retained broad catches. No actual
 cluster commands, daily state/config, dependency installation, saved-format,
 external-client or rollback changes. Snapshot selection b.2 is next; b.3 paths/
 rendering, 3c publication and 10.4 stale-venv remain open.
+
+2026-11-14, MVP10.3b.2: implemented shared snapshot analysis, typed selectors,
+strict submit record gate, absence-only filter default, per-entry diagnostics and
+unknown counts, no older-draft fallback after newer failure, stable index tie-breaks
+and unknown-count cleanup protection. Root/standalone/alias CLI text/JSON/debug
+and ACP discovery retain adopted facts; two masking catches removed. 60 new
+regressions; 965 full offline tests passed in 10.00 s, 43 expected collision
+warnings; `.development/test-runs/selection-diagnostics.xml`. Clean-source offline
+wheel/temporary-target discovery/selection/retained-record/CLI/JSON/debug/ACP/
+installed-recipe smoke passed; SHA256
+`b0b224f02f50fa2154b2f50349297e0263ff691e1e3d98ac73259d46cf2202cc`.
+AST register: 256 routes/132 owners/16 remaining broad catches. Human/agent docs
+and installation register updated; no actual cluster commands, base dependency
+installation, daily config/state, persisted-format, external client or rollback
+changes. b.3 paths/rendering is next; other domain/observation adoption remains open.

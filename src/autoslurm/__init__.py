@@ -100,11 +100,12 @@ from .software_update import update_software, SoftwareUpdateError
 from .software_requirements import software_expectations
 from .command_contract import CommandContract, CommandOption
 from .typer_adapter import from_typer
-from .errors import ConfigurationError, InvalidRequestError
+from .errors import ConfigurationError, InvalidRequestError, SelectionError
 
 __all__ = [
     'ConfigurationError',
     'InvalidRequestError',
+    'SelectionError',
     'CommandContract',
     'CommandOption',
     'from_typer',

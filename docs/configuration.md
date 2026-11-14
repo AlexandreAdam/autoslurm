@@ -112,6 +112,13 @@ validation remains ValueError-compatible. Missing/unreadable reads and missing
 activation now use that class instead of the previous OSError/AttributeError mix.
 Filesystem publication errors remain a later diagnostic-adoption slice.
 
+The visibility filter accepts only `active` or `all` (`asl filter active`,
+`asl filter all`). A missing configuration defaults reads to active; malformed,
+inaccessible or invalid configuration no longer silently resets the filter.
+An invalid stored `bundle_filter_mode` identifies that exact field/file. Correct
+the file first; filter reads and failed updates preserve its contents. This keeps
+status and index selection from silently changing after a configuration failure.
+
 New installations also expose `autoslurm-config`; the existing editable installation
 can use `asl config` immediately without reinstalling console scripts.
 See [the client workflow](../agent/01_client_workflow.md) and

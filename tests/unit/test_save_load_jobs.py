@@ -6,7 +6,7 @@ from autoslurm.save_load_jobs import (
     transfer_slurm_to_remote,
     nearest_bundle_filename,
 )
-from autoslurm import DATE_FORMAT, InvalidRequestError
+from autoslurm import DATE_FORMAT, InvalidRequestError, SelectionError
 from unittest.mock import patch
 from unittest.mock import MagicMock
 from datetime import datetime
@@ -98,7 +98,7 @@ def test_nearest_bundle_file(tmp_path, mock_load_config):
     assert result == "job2_20220101000000.json"
 
     # Test with non-existent job name
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(SelectionError):
         nearest_bundle_filename("job3")
 
 
@@ -227,7 +227,7 @@ def test_load_job_topological_sorting(tmp_path, mock_load_config):
 
 def test_load_job_file_not_found(tmp_path, mock_load_config):
     bundle_name = "non_existent_bundle"
-    with pytest.raises(FileNotFoundError) as excinfo:
+    with pytest.raises(SelectionError) as excinfo:
         load_bundle(bundle_name)
     assert "No files found" in str(
         excinfo.value

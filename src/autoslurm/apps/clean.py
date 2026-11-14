@@ -96,7 +96,7 @@ def main(argv: list[str] | None = None) -> None:
             return
     else:
         inactive = inactive_bundle_snapshots()
-        unsubmitted = [entry for entry in all_bundle_snapshots() if int(entry.get("submitted_count", 0)) == 0]
+        unsubmitted = [entry for entry in all_bundle_snapshots() if entry.get('submitted_count') == 0]
         cancelled: list[dict] = []
         for entry in all_bundle_snapshots():
             try:

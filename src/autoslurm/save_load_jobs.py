@@ -11,7 +11,7 @@ from .record_files import atomic_json
 from .definitions import DATE_FORMAT
 from .storage import ensure_storage_dirs, jobs_dir
 from .job_dependency import dependency_graph
-from .errors import InvalidRequestError
+from .errors import InvalidRequestError, SelectionError
 from .bundle_selection import (
     SNAPSHOT_KIND_KEY, _snapshot_date, get_bundle_filter_mode, set_bundle_filter_mode,
     all_bundle_snapshots, bundle_snapshot_state, bundle_snapshots,
@@ -54,8 +54,9 @@ def _new_snapshot(bundle, name, *, warn_on_collision=False):
                     "use the flags --append and --bundle=name_of_bundle."
                 )
             date += timedelta(seconds=1)
-    except FileNotFoundError:
-        pass
+    except SelectionError as error:
+        if error.diagnostic.code != 'resource_missing':
+            raise
     ensure_storage_dirs()
     while True:
         path = jobs_dir() / f"{name}_{date.strftime(DATE_FORMAT)}.json"
@@ -96,7 +97,9 @@ def _append_jobs(jobs, name):
     """Read once and publish the complete append once; never leave a partial batch."""
     try:
         filename, _ = nearest_bundle_filename(name)
-    except FileNotFoundError:
+    except SelectionError as error:
+        if error.diagnostic.code != 'resource_missing':
+            raise
         path, bundle = None, {}
     else:
         path = jobs_dir() / filename
@@ -192,8 +195,9 @@ def load_bundle(
     tuple: A tuple containing the loaded jobs and the dependency graph.
 
     Raises:
-    FileNotFoundError: If the specified job file does not exist.
-    JSONDecodeError: If the job file is not a valid JSON file.
+    SelectionError: If the name/date selection is invalid, missing or inaccessible.
+    OSError: If the selected file cannot be read or decoded by the direct loader.
+    InvalidRequestError: If the saved job graph is invalid.
     """
 
     job_file, _ = nearest_bundle_filename(name, desired_date)
