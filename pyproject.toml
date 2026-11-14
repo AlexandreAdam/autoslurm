@@ -14,11 +14,12 @@ dependencies = ["packaging>=23", "tomli; python_version < '3.11'"]
 version = "0.1.0"
 
 [project.optional-dependencies]
+commands = ["typer>=0.27,<0.28"]
 test = [
   "pytest",
   "pytest-cov[all]",
   "pytest-mock",
-  "typer",
+  "typer>=0.27,<0.28",
 ]
 lint = [
   "black",
@@ -42,3 +43,6 @@ autoslurm-context = "autoslurm.apps.inspect:main"
 autoslurm-agent = "autoslurm.apps.agent_context:main"
 autoslurm-experiment-context = "autoslurm.apps.experiment_context:main"
 autoslurm-agent-context = "autoslurm.apps.agent_context:main"
+
+[tool.setuptools.package-data]
+autoslurm = ["acp_action.json", "agent_resources/*.md"]

@@ -88,6 +88,18 @@ See the [human walkthrough](docs/software.md) and
 Development tests use local repositories and mocked SSH/Slurm; no live cluster
 update was performed during this implementation.
 
+## Typed command authoring
+
+Typed client authoring uses the public `CommandContract`, `CommandOption` and
+optional `from_typer` APIs. A command declaration supplies validated, named job
+settings; saved JSON and rendered scripts remain readable. Revalidate a saved
+job explicitly with `command.validate_job(job)` before using a changed command.
+Install the `commands` extra for the supported Typer 0.27 adapter. See the
+[human walkthrough](docs/typed_commands.md),
+[reference CLI](examples/reference_client/README.md#typed-command-authoring) and
+[packaged agent recipe](src/autoslurm/agent_resources/14_typed_commands.md)
+(`asl agent --sections 14_typed_commands`). Ordinary script authoring is retained.
+
 ## Installation
 
 ### Install the `autoslurm` package

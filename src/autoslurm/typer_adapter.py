@@ -1,7 +1,6 @@
-"""Experimental optional adapter for a deliberately narrow Typer 0.27 leaf app.
+"""Optional public adapter for a deliberately narrow Typer 0.27 leaf app.
 
-Inspect static metadata, never parse arguments or invoke a callback. Keep this
-adapter out of the package's public exports until the MVP9 integration release.
+Inspect static metadata, never parse arguments or invoke a callback.
 """
 
 import inspect
@@ -12,18 +11,25 @@ from packaging.version import Version
 
 from .command_contract import CommandContract, CommandOption
 
+__all__ = ['from_typer']
+
 
 def from_typer(app, *, script, input_args=(), path_args=()):
+    """Derive a contract from one trusted, already-imported static leaf app.
+
+    Install autoslurm[commands] on the authoring machine. Application execution
+    needs only its own CLI; this function never imports a command by name.
+    """
     try:
         import typer
         from typer.core import TyperCommand
         from typer.main import get_command
         from typer.models import DefaultPlaceholder, OptionInfo
     except ImportError as error:
-        raise ValueError('The experimental command adapter requires optional Typer 0.27.') from error
+        raise ValueError('The command adapter requires optional Typer 0.27; install autoslurm[commands].') from error
     version = Version(typer.__version__)
     if version.release[:2] != (0, 27):
-        raise ValueError('Experimental adapter supports Typer 0.27 only; other versions need capability tests.')
+        raise ValueError('The adapter supports Typer 0.27 only; other versions need capability tests.')
 
     def setting(value):
         return value.value if type(value) is DefaultPlaceholder else value
@@ -35,7 +41,7 @@ def from_typer(app, *, script, input_args=(), path_args=()):
             or setting(app.info.context_settings) or setting(app.info.result_callback)
             or setting(app.info.chain) or setting(app.info.invoke_without_command)
             or setting(app.info.cls) is not None):
-        raise ValueError('This proof requires one leaf command, no app callbacks/context overrides, and add_completion=False.')
+        raise ValueError('The adapter requires one leaf command, no app callbacks/context overrides, and add_completion=False.')
     entry = app.registered_commands[0]
     callback = entry.callback
     if (entry.cls is not TyperCommand or entry.context_settings
@@ -69,7 +75,7 @@ def from_typer(app, *, script, input_args=(), path_args=()):
                 if field not in allowed and (field not in baseline or value != baseline[field]):
                     raise ValueError(f'{parameter.name}: unsupported Typer option behavior: {field}.')
             if information.param_decls or (annotated and information.default is not Ellipsis):
-                raise ValueError(f'{parameter.name}: custom flag declarations are unsupported in this proof.')
+                raise ValueError(f'{parameter.name}: custom flag declarations are unsupported.')
             if not annotated:
                 default = information.default
         elif default is inspect.Parameter.empty:
@@ -91,4 +97,4 @@ def from_typer(app, *, script, input_args=(), path_args=()):
                 or bool(parameter.is_flag) != (option.kind == 'bool')
                 or (option.kind == 'bool' and (not parameter.is_bool_flag or parameter.default is not False))):
             raise ValueError(f'{parameter.name}: unsupported parser semantics.')
-    return CommandContract(script, tuple(definitions), tuple(input_args), tuple(path_args))
+    return CommandContract(script, tuple(definitions), input_args, path_args)

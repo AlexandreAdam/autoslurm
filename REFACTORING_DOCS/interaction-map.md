@@ -156,9 +156,10 @@ commit/path does not freeze mutable source or environments until the job starts.
 3. The command remains free-form script text. MVP9.2's shared compiler now
    validates literal values and quotes scalar/list/positional tokens after path
    resolution. Raw lists retain one flag and several words; False/None/empty
-   lists are omitted. Tokens are internal, not a new saved record. Typed authoring
-   remains an experimental narrow scalar/default-off proof until MVP9.3; raw CLI
-   discovery still has the limitations above. list_style/bool_style remain unimplemented.
+   lists are omitted. Tokens are internal, not a new saved record. MVP9.3 exposes
+   CommandContract/CommandOption/from_typer and explicit saved-job validation for
+   the narrow scalar/default-off profile; raw CLI discovery still has the
+   limitations above. list_style/bool_style remain unimplemented.
 4. Shell syntax validity does not establish CLI validity or preserve intent.
    Omitted, explicitly false and explicitly empty can select different defaults.
    A command's list conventions and positive/negative flag names cannot reliably

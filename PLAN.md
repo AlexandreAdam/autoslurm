@@ -9,26 +9,27 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment
+- **Current milestone:** MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
   FIX.DEPENDENCY.1 defaults dependent jobs to kill-on-invalid-dep=yes.
-  MVP9.1 typed-command proof and MVP9.2 shared literal compiler are complete;
-  MVP9.3 public authoring/adoption remains open.
+  MVP9.1–3 typed command contracts, literal compiler and public adoption are
+  complete. A local `mvp9` tag records closure without a remote rollout.
   MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 741 passed, 42 expected
+  rollback source remains unchanged. Full offline suite: 761 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.DEPENDENCY.1 adds the requested default
-  `#SBATCH --kill-on-invalid-dep=yes` to scripts with declared dependencies.
-  Explicit per-job overrides win; root jobs are unchanged. Preview and dispatched
-  scripts remain identical, without saved-definition mutation. Full offline and
-  wheel checks pass; no cluster or historical/queued job change.
-- **Next task:** MVP9.3 supported authoring routes and adoption, including public
-  helper and saved-command validation boundaries. MVP11 and MVP12 are
+- **Latest completed task:** MVP9.3 exposes CommandContract/CommandOption and
+  optional from_typer, adds explicit complete saved-job revalidation, and delivers
+  a packaged agent recipe plus a public-API reference CLI with arrays/dependencies.
+  Full offline and clean AutoSlurm/client-wheel checks pass. No new persisted
+  schema, command auto-import, automatic submission, cluster or external client edit.
+- **Next task:** MVP10.1 API and failure inventory, including the new authoring
+  exports. Settle the full audit before dedicated error-module implementation.
+  MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
   MVP9 implements readable command integration; MVP10 follows with
@@ -605,12 +606,14 @@ architecture sketches remain proposals until each task settles its interface.
   list/tuple/default-on boolean semantics in the typed authoring contract rather
   than silently guessing. Raw bundles retain existing space-style lists and
   positionals with literal quoting; no new list/boolean style is introduced.
-- [ ] **MVP9.3 Supported authoring routes and adoption.** Expose the agreed builder
+- [x] **MVP9.3 Supported authoring routes and adoption.** Expose the agreed builder
   to Python/client CLI/agent recipes, alongside existing raw-script authoring.
   Avoid help-text guessing for supported declarations. Demonstrate one client
   end to end with flat JSON, readable preview/script, arrays/dependencies and
   unchanged receipts. Record the compatibility/release boundary before changing
   any persisted shape or argument meaning; run offline and package checks.
+  Public helpers retain the proven names; validate_job requires a supplied trusted
+  contract and every saved setting. No schema/import lookup or migration added.
 
 Completion: an agent declares a supported command once, builds and validates
 named settings locally, and a human can understand the job from JSON/script.
@@ -827,6 +830,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-13 | MVP9 public authoring uses CommandContract, CommandOption and optional from_typer; saved jobs are explicitly revalidated | Implemented the requested narrow public boundary with complete named settings and no persisted schema/import lookup. Changed defaults preserve old explicit values; missing/removed/incompatible options require deliberate rebuild. This establishes current-contract compatibility, not historical code or remote identity |
 | 2026-11-13 | Dependent jobs default to kill-on-invalid-dep=yes | User requested Slurm cancel jobs whose dependencies can never be satisfied; explicit per-job Slurm overrides remain authoritative, roots and already queued scripts are unchanged |
 | 2026-11-13 | Schedule readable status reasons and reusable Gaia workflow services | User requested same-row pending explanations and generic Gaia behavior in supported APIs with everyday human/agent documentation. PLAN.3 scopes MVP11/12; exact APIs, data and runtime packaging remain proposed, existing retrieval/update boundaries retained |
 | 2026-11-13 | Expand MVP10 to full API failure review, a dedicated error module and strategic integration across all public operations | User rejected a narrow message/updater fix; shared error ownership and complete failure contracts must be independently maintainable. Exact error API details remain proposed; implementation follows MVP9 |
@@ -911,6 +915,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | PLAN.3 Status explanations and reusable Gaia workflow roadmap | Preserved the supplied proposal unchanged; read representative Gaia bundle/command/registry/run code at `8eaffec` without executing it. Scheduled MVP11 reason/projection/table slices and MVP12 resource/offline/review/run/preparation/retry/optional-runtime services with per-slice public API, CLI/agent discovery, evidence and human examples. Mapped MVP9/10/11 and completed-update overlaps; retained separate fetch/runtime/data decisions and low-level submit boundaries. Reviewed diff, relative links and task references; documentation-only, no test rerun. Existing baseline remains 674 passing offline tests from MVP9.1. No cluster, config/state, external client, installation or rollback changes. Task commit: `git log --grep '^PLAN.3:'`; push completed dev commit. |
 | 2026-11-13 | MVP9.2 Shared literal argument compiler | 723 full offline tests passed in 10.01 s (42 expected collision warnings), report `.development/test-runs/argument-compiler.xml`; 105 focused checks passed. One pure owner compiles resolved values into literal argv groups and shell-quotes them; retired the old renderer formatter. Actual Bash capture and Typer parsing preserve spaces/quotes/substitutions as text; reference preview matches dispatched script and actual scientific output, while invalid raw values stop before staging. Plain output and raw list/positional/omission semantics remain, typed authoring stays scalar/CSV/default-off. No saved shape change; new rendering does not expand expressions or rewrite old artifacts. Clean wheel import/path/actual-shell smoke passed without Typer, SHA256 `d8d846ed99b780dde236a8beb5c4e6e69d422aa1f7598991dd59c460177d9f9a`. Agent/human guidance and links updated. No cluster, base install, daily config/state, external scientific application or rollback edits. Task commit: `git log --grep '^MVP9.2:'`; push completed dev commit. |
 | 2026-11-13 | FIX.DEPENDENCY.1 Default cancellation for impossible dependencies | 741 full offline tests passed in 9.69 s (42 expected collision warnings), report `.development/test-runs/invalid-dependency.xml`; 18 new renderer cases plus preview/dispatch assertions and updated dependent-script fixtures. Shared renderer adds one default yes directive only for nonempty dependencies, preserves underscore/hyphen explicit overrides, handles arrays and leaves definitions unchanged in local/remote contexts. Full-suite fixture mismatches were updated for the intended directive. Clean wheel/default/nonmutation/actual-shell smoke passed, SHA256 `62579a91072cc8989df90da81c178d4b83eca46242490d067c046440f9011e8a`. Human/agent docs and MVP4 design amended; links/diff checked. No cluster, configuration, daily state, base installation or historical/queued script change. Task commit: `git log --grep '^FIX.DEPENDENCY.1:'`; push completed dev commit. |
+| 2026-11-13 | MVP9.3 Public authoring, saved validation and installed recipe | 761 full offline tests passed in 11.08 s (43 expected collision warnings), report `.development/test-runs/typed-authoring.xml`; 83 focused checks passed, 20 added cases. Public contracts/optional Typer adapter, strict no-default-injection saved-job checks, detached values and dependency authoring verified. Reference plan/validate/preview CLI runs four original-index tasks plus reducer through existing preview/dispatch/receipts/cached inspection and actual local science under mocked Slurm. Packaged recipe is discoverable through CLI/ACP without a checkout; complete historical guidance packaging remains L3. Clean AutoSlurm/client wheels verify optional Typer absence, public imports, installed recipe/action metadata, client CLI and scientific entry point; SHA256 `dbcca8ede6c0135729aead31aa83b1da75a24489542bc646dffdaec9ba167ccb`. Human/agent guides and links/diff checked. MVP9 complete locally, local tag `mvp9` at closure; no schema migration, cluster, base install, daily state/config, external client or rollback change. Task commit: `git log --grep '^MVP9.3:'`; push completed dev commit. |
 
 ## How we work
 

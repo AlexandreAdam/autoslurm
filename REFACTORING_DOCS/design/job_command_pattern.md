@@ -20,6 +20,11 @@ ordinary saved-job/preview/submission path. The implemented boundary is document
 below. MVP9.2 now implements literal compilation; public integration remains MVP9.3.
 The original walkthrough remains design notation rather than a supported API.
 
+**MVP9 complete locally, 2026-11-13:** MVP9.3 exposes CommandContract,
+CommandOption and optional from_typer, explicit saved-job revalidation and a
+packaged agent recipe. The implemented public boundary below supersedes the
+earlier checkpoint restrictions; hypothetical walkthrough APIs remain proposals.
+
 This follows the [current interaction map](../interaction-map.md#job-script-interactions-current-code-and-design-review).
 It compares AutoSlurm's current parser/renderer, its argparse reference client,
 and Gaia's existing typed task registry/CLI/bundle builder. Gaia is reference
@@ -415,14 +420,91 @@ install, actual cluster operation, external client or rollback changes.
 
 ## Open decisions and log
 
-- MVP9.1 settled the internal proof syntax; which supported public authoring
-  surface should MVP9.3 expose alongside ordinary command execution?
-- How should a saved definition retain/find plain command-contract metadata and
-  report changed/unknown command versions? Follow existing release/data rules.
-- Which validations are declarative and pure, and which explicitly remain
-  application runtime checks? Define unsupported adapter behavior before shipping.
+MVP9.3 settles the narrow public authoring and saved-validation boundary below.
+The historical in-memory-only descriptions in MVP9.1/2 describe those checkpoints.
+
+## MVP9.3 implemented public authoring and adoption
+
+Public imports are `from autoslurm import CommandContract, CommandOption,
+from_typer`. Existing module paths retain the same owners, not compatibility
+wrappers. Core imports and explicit contracts need no Typer. The `commands`
+extra supplies the tested Typer 0.27 profile; unsupported versions/capabilities
+fail explicitly. Command declarations, arguments and metadata are pure; no
+callback/help probing, automatic import by command name or remote work is added.
+
+`describe()` returns plain metadata; `validate(values)` and
+`job(name=..., script_args=..., slurm=..., dependencies=...)` materialize current
+supported defaults for new jobs. Optional dependency names become the existing
+field; arrays stay ordinary Slurm settings. Public constructor checks stabilize
+simple names, scalar path options, immutable option/path declarations and
+non-overlapping input/result roles. The existing engine owns complete graph,
+path/readiness and submission-snapshot checks. This does not add a workflow runtime.
+
+### Saved-job and release/data boundary
+
+`validate_job(job)` checks a complete saved job against the explicitly supplied
+current contract. It checks command text, input/result roles, setting names,
+native types/ranges, resources mapping and dependency names, returning a detached
+copy. It preserves other job/record fields and does not publish or modify records.
+All supported options must already be present: new optional defaults are not
+silently injected into old plans. Previously materialized values remain explicit
+when defaults change. Unknown/removed options and incompatible declarations fail
+locally; a client reviews and builds a new definition deliberately.
+
+No new saved schema, contract fingerprint, arbitrary import target or migration.
+This preserves existing JSON and retained historical evidence. Revalidation proves
+compatibility with the supplied current contract, not historical code identity,
+scientific validity or installed remote version. If no trusted supported contract
+is available, raw authoring remains possible but has no automatic semantic claim.
+Receipt/snapshot protections and operator-controlled submission remain unchanged;
+validating settings is not permission to resubmit a saved submission.
+
+This is the supported authoring boundary for the local `dev` MVP9 candidate,
+still package version 0.1.0; it is not a public-index publication, remote rollout
+or rollback-source change. No script/receipt format changes in MVP9.3. MVP9.2's
+documented literal rendering boundary remains in force. A local `mvp9` tag records
+closure without changing installed environments.
+
+### Human, agent and client routes
+
+`docs/typed_commands.md` explains purpose, review and failure meaning. The
+reference client's `science-jobs plan/validate/preview` uses only public APIs;
+planning/validation is local, preview explicitly performs normal readiness checks,
+and no command submits automatically. Four original-index shards feed a reducer;
+scientific commands have no AutoSlurm import and validate their own output identity.
+
+`src/autoslurm/agent_resources/14_typed_commands.md` is the single source of the
+new installed recipe. Context selection merges it with legacy checkout guidance,
+giving packaged names precedence. `asl agent --sections 14_typed_commands` and
+ACP `gather_context` with task integrate/commands/schedule expose the recipe;
+existing ACP schedule still accepts a validated plain dictionary. No parser/Python
+object is added to ACP. Explicit package data includes this recipe/action metadata;
+complete historical documentation packaging remains L3, not implied by this slice.
+
+Verification: 761 full offline tests passed in 11.08 s (43 expected collision
+warnings), report `.development/test-runs/typed-authoring.xml`; 83 focused checks
+passed. Twenty added cases cover strict saved settings/default changes, command/
+role/type drift, detached copies/no I/O, public exports, recipe discovery without
+a checkout, and client CLI plan/validate/preview through arrays, dependency IDs,
+byte-identical dispatch scripts, receipts, cached inspection and actual scientific
+outputs. Clean AutoSlurm/client wheel smoke also checks optional-dependency absence,
+installed API/recipe/ACP routes, client CLI and scientific entry-point execution.
+Clean wheel SHA256:
+`dbcca8ede6c0135729aead31aa83b1da75a24489542bc646dffdaec9ba167ccb`, artifact
+`.development/artifacts/typed-authoring/autoslurm-0.1.0-py3-none-any.whl`.
+No actual cluster connection/submission/install, base install, daily config/state,
+external scientific-client edit or rollback change.
+
+## Remaining extensions
+
 - Should repeated/tuple/default-on option support follow the scalar release?
   Literal string quoting is implemented in MVP9.2; broader parser semantics remain open.
+- Broader CLI adapters, remote command availability/version checks and any future
+  persisted command identity need separately scoped contracts and release choices.
+
+**2026-11-13, MVP9.3:** exposes the narrow public contract/builder and strict
+explicit saved-job validation, installed agent recipe and reference client routes.
+MVP9 is complete locally; API-wide error inventory (MVP10.1) is next.
 
 **2026-11-13, MVP9.2:** implemented the shared literal compiler and removed the
 old formatter. Updated the string guidance after actual parser/shell execution

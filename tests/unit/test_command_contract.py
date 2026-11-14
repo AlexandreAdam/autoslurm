@@ -7,7 +7,7 @@ from typing import Annotated
 import pytest
 import typer
 
-from autoslurm.typer_adapter import from_typer
+from autoslurm import CommandContract, CommandOption, from_typer
 
 
 @pytest.fixture
@@ -150,3 +150,80 @@ def test_optional_typer_absence_is_an_explicit_error(monkeypatch):
     monkeypatch.setattr(builtins, '__import__', without_typer)
     with pytest.raises(ValueError, match='optional Typer'):
         from_typer(None, script='science')
+
+
+def test_saved_job_validation_is_pure_detached_and_keeps_explicit_values(command, monkeypatch):
+    from pathlib import Path
+    _, contract = command
+    job = contract.job(name='sample', script_args={'input_file': 'data.json', 'output_dir': 'study'},
+                       dependencies=('parent',), slurm={'array': '0-3'})
+    job['environment'] = {'MODE': 'original'}
+    job['_autoslurm_execution'] = {'logical_paths': {'input_file': 'data.json'}}
+
+    def no_effects(*args, **kwargs):
+        pytest.fail('Saved-job validation performed I/O or executed a command')
+
+    monkeypatch.setattr('subprocess.run', no_effects)
+    monkeypatch.setattr(Path, 'open', no_effects)
+    checked = contract.validate_job(job)
+    assert checked == job and checked is not job
+    checked['environment']['MODE'] = 'changed'
+    checked['_autoslurm_execution']['logical_paths']['input_file'] = 'other'
+    checked['dependencies'].append('other-parent')
+    assert job['environment']['MODE'] == 'original'
+    assert job['_autoslurm_execution']['logical_paths']['input_file'] == 'data.json'
+    assert job['dependencies'] == ['parent']
+
+
+@pytest.mark.parametrize('field,value,match', [
+    ('script', 'different-command', 'command'), ('input_args', [], 'input_args'),
+    ('path_args', ['input_file'], 'path_args'), ('input_args', 'input_file', 'names'),
+    ('slurm', None, 'mapping'), ('dependencies', ['sample'], 'itself'),
+    ('name', 'bad name', 'simple'), ('script_args', {}, 'missing explicit'),
+])
+def test_saved_job_mismatches_are_explicit(command, field, value, match):
+    _, contract = command
+    job = contract.job(name='sample', script_args={'input_file': 'data.json', 'output_dir': 'study'})
+    job[field] = value
+    with pytest.raises(ValueError, match=match):
+        contract.validate_job(job)
+
+
+def test_changed_defaults_never_silently_replace_saved_settings():
+    original = CommandContract('science', (CommandOption('count', 'int', False, 1),))
+    job = original.job(name='sample', script_args={})
+    current = CommandContract('science', (CommandOption('count', 'int', False, 9),))
+    assert current.validate_job(job)['script_args']['count'] == 1
+    added = CommandContract('science', (CommandOption('count', 'int', False, 9), CommandOption('label', 'str', False, 'new')))
+    with pytest.raises(ValueError, match='missing explicit.*label'):
+        added.validate_job(job)
+    removed = CommandContract('science', ())
+    with pytest.raises(ValueError, match='Unknown.*count'):
+        removed.validate_job(job)
+    changed = CommandContract('science', (CommandOption('count', 'str', False, 'one'),))
+    with pytest.raises(ValueError, match='count.*str'):
+        changed.validate_job(job)
+    job['script_args'].pop('count')
+    with pytest.raises(ValueError, match='missing explicit.*count'):
+        current.validate_job(job)
+    assert current.job(name='new-definition', script_args={})['script_args'] == {'count': 9}
+
+
+def test_public_contract_owns_immutable_option_and_path_declarations():
+    options = [CommandOption('input_file', 'str', True)]
+    roles = ['input_file']
+    contract = CommandContract('science', options, input_args=roles)
+    options.clear()
+    roles.clear()
+    assert len(contract.options) == 1 and contract.input_args == ('input_file',)
+    with pytest.raises(ValueError, match='both'):
+        CommandContract('science', contract.options, input_args=('input_file',), path_args=('input_file',))
+    with pytest.raises(ValueError, match='strings'):
+        CommandContract('science', (CommandOption('output_dir', 'int', False, 1),))
+
+
+@pytest.mark.parametrize('parents', ['parent', ['sample'], ['parent', 'parent'], ['bad/name']])
+def test_public_builder_rejects_invalid_dependencies(command, parents):
+    _, contract = command
+    with pytest.raises(ValueError):
+        contract.job(name='sample', script_args={'input_file': 'x', 'output_dir': 'y'}, dependencies=parents)

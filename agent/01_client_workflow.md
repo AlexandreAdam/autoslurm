@@ -29,12 +29,12 @@ runtime dependencies unchanged. Updates do not create/select release runtimes.
 Historical software-manifest helpers remain pure data utilities; new runs use
 the configured environment without a `software` runtime request.
 
-MVP9.1 adds an [experimental typed-command proof](../examples/reference_client/README.md#mvp91-one-typed-command-declaration-experimental-authoring-proof)
-in the reference client. It is not a supported replacement for this recipe yet:
-internal command contracts validate supported scalar settings before save, but
-saved bundles do not retain a command schema or get semantic revalidation when
-loaded. Existing JSON/preview/submission contracts remain unchanged; public
-authoring integration and broader argument compilation are later MVP9 tasks.
+MVP9 adds [supported typed-command authoring](../examples/reference_client/README.md#typed-command-authoring)
+through public `CommandContract`, `CommandOption` and optional `from_typer`.
+They validate named settings before save and revalidate exact jobs against a
+caller-supplied trusted contract. Saved bundles do not retain or automatically
+rediscover command schemas; use explicit `validate_job` before relying on a
+changed declaration. Existing JSON/preview/submission contracts remain unchanged.
 
 ## Adapt scientific software
 
@@ -117,8 +117,12 @@ one job-specific typed command plus a flat named argument mapping. Read both the
 saved JSON and previewed invocation to confirm that settings stay understandable.
 Client signature checks remain distinct from AutoSlurm's structural/literal
 checks. No command schema is stored or rediscovered automatically on loading a
-bundle. The experimental typed adapter in the reference client is not yet a
-supported public authoring API (MVP9.3).
+bundle. Use the supported `from autoslurm import from_typer` adapter for its narrow
+Typer profile, or explicit `CommandContract` / `CommandOption` metadata for other
+clients. `command.job(...)` validates new settings and fills defaults;
+`command.validate_job(saved_job)` rechecks complete saved settings against a
+current trusted contract without filling new defaults or changing files. See the
+[packaged authoring recipe](../src/autoslurm/agent_resources/14_typed_commands.md).
 
 MVP9.2 changes rendering for newly generated scripts only; saved job fields and
 historical scripts/receipts are retained. Legacy raw bundles still support

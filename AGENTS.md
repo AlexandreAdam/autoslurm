@@ -48,8 +48,11 @@ operate from the workstation; compute nodes use already-prepared environments.
     use runtime_environment or a CLI's environment defaults for runtime values.
   - Validate every job's option names, types and values against its command's
     signature **before saving a bundle**, and validate again before submission
-    if the command/definition changed. This is a client requirement, not a claim
-    that AutoSlurm already implements signature validation. See the
+    if the command/definition changed. Public `from_typer`, `CommandContract` and
+    `CommandOption` support this for the documented scalar profile. Use
+    `validate_job` for saved definitions, supplying a trusted current contract;
+    raw dictionaries are not automatically matched to an application signature.
+    See the [packaged typed recipe](src/autoslurm/agent_resources/14_typed_commands.md), the
     [client argument contract](agent/01_client_workflow.md#explicit-named-job-arguments)
     and [bundle-writing recipe](agent/10_task_schedule.md).
 - Current refactor scope is local only: mock Slurm and transport commands. No

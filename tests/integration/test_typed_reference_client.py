@@ -11,10 +11,9 @@ import sys
 import pytest
 from typer.main import get_command
 
-from autoslurm import load_bundle_from_path, preview_bundle, save_bundle, save_config, submit_jobs
+from autoslurm import load_bundle_from_path, preview_bundle, save_bundle, save_config, submit_jobs, from_typer
 from autoslurm.argument_compilation import compile_script_arguments
 from autoslurm.storage import jobs_dir, storage_root
-from autoslurm.typer_adapter import from_typer
 
 
 EXAMPLE = Path(__file__).resolve().parents[2] / 'examples/reference_client'

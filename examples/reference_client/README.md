@@ -73,7 +73,7 @@ Read the [current client recipe](../../agent/01_client_workflow.md) for exact
 selection, installation ownership, operations and failure handling. This example
 does not promote development code or authorize cluster access.
 
-## MVP9.1: one typed command declaration, experimental authoring proof
+## Typed command authoring
 
 [typed_science_demo.py](typed_science_demo.py) adds a separate optional Typer CLI
 without changing the existing argparse demo or its fixtures. Its single function
@@ -89,13 +89,12 @@ It writes count 8, sum_squares 82 and the original values. Install the example's
 tests already have this dependency and create a temporary launcher without an
 install. The original `science-demo` retains no Typer or AutoSlurm dependency.
 
-From a workstation Python builder, the **experimental internal proof** uses the
+From a workstation Python builder, the supported public API uses the
 same declaration (run from this example directory with the test interpreter):
 
 ```python
 from typed_science_demo import app
-from autoslurm.typer_adapter import from_typer
-from autoslurm import save_bundle
+from autoslurm import from_typer, save_bundle
 
 command = from_typer(app, script="science-typed", input_args=("input_file",))
 job = command.job(
@@ -127,20 +126,63 @@ script_args. CSV remains the list convention. Default-off booleans remain flags.
 For example, `label: "pilot's first run"` stays readable in JSON and becomes
 one quoted CLI value. The reference execution test verifies the exact label.
 
-This proof is not a public authoring API or a replacement for the supported
-client recipe. It is intentionally absent from AutoSlurm's top-level exports.
+The adapter, CommandContract and CommandOption are public top-level APIs.
 The saved JSON contains only existing fields: name, script, script_args, slurm
 and declared path roles, plus ordinary snapshot metadata. It stores no callback,
 framework object, contract schema or hidden config payload. Loading/submitting
 this JSON does not rediscover the declaration or certify its options against a
 newer command version. A client must explicitly revalidate against its current
-trusted declaration when that assurance is needed. Broader saved-contract and
-public integration guarantees remain MVP9.3 release decisions.
+trusted declaration when that assurance is needed:
+
+```python
+from autoslurm import load_bundle_from_path
+jobs, _, _ = load_bundle_from_path(planned_path)
+checked = command.validate_job(jobs[0])
+```
+
+Revalidation checks the exact command/path roles and complete saved settings;
+missing options fail even if the current command supplies new defaults. It
+returns a detached copy without writing anything. Previously saved explicit
+values survive changed defaults. It establishes compatibility with the current
+trusted declaration, not historical code identity or remote installation state.
+
+### Reference client CLI and array/reducer workflow
+
+[jobs_demo.py](jobs_demo.py) contains submit-side glue using only public APIs.
+Install the example's `jobs` extra into the client environment after installing
+the active AutoSlurm version. Compute environments only need the example's
+`typed` extra for the scientific commands. The original science-demo is unchanged.
+
+```sh
+science-jobs plan --bundle typed-array --input-file data/measurements.json --output-dir typed-array
+science-jobs validate --bundle-path /exact/path/returned/by/plan.json
+science-jobs preview --bundle-path /exact/path/returned/by/plan.json --machine PROFILE
+```
+
+Planning and revalidation are local. JSON goes to stdout, save progress to stderr.
+Preview performs the normal selected-machine readiness checks and can contact
+the cluster. This reference client never submits automatically. Operator code can
+call `validate_saved_bundle(path)`, review `preview_bundle`, then explicitly call
+`submit_jobs("typed-array", bundle_path=path, machine=...)` and retain its receipt.
+
+The plan has four original-index tasks (`array: "0-3%2"`) running
+`science-typed-shard`, followed by `science-typed-reduce` with an explicit dependency.
+Each command has its own lightweight Typer leaf app. The reducer's future parts
+directory is a declared `path_args` value; the measurement file is a required
+`input_args` value. Shards read SLURM_ARRAY_TASK_ID at execution, not via a shell
+expression embedded in settings. Existing science routines validate all four
+outputs against input identity before writing the summary (count 4, sum 30).
+No AutoSlurm dependency is imported by those scientific entry points.
+
+Resources, scheduler status and receipts use the existing engine. An accepted
+receipt is not scientific completion. Inspect the exact receipt with public
+`inspect_bundle(..., refresh=False)` or explicitly refresh the producing scheduler;
+use bounded `inspect_logs`/`asl logs` for evidence. Never blindly retry uncertainty.
 
 Verification (mocked scheduler, disposable local files and launchers):
 
 ```sh
-.development/python -m pytest -q tests/unit/test_command_contract.py tests/integration/test_typed_reference_client.py
+.development/python -m pytest -q tests/unit/test_command_contract.py tests/integration/test_typed_reference_client.py tests/integration/test_typed_authoring_workflow.py
 ```
 
 Run that verification from the repository root. It checks real parser round-trips,

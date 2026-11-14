@@ -98,8 +98,13 @@ from .software_manifest import attach_software_manifest, normalize_software_mani
 from .software_status import inspect_software
 from .software_update import update_software, SoftwareUpdateError
 from .software_requirements import software_expectations
+from .command_contract import CommandContract, CommandOption
+from .typer_adapter import from_typer
 
 __all__ = [
+    'CommandContract',
+    'CommandOption',
+    'from_typer',
     'CONFIG_FILE_PATH',
     'MACHINE_KEYS',
     'DATE_FORMAT',

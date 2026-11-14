@@ -54,3 +54,19 @@ def test_task_context_delivers_current_client_contract(task):
     assert context.index("## 00_operating_rules.md") < context.index("## 01_client_workflow.md")
     assert "load_bundle_from_path(planned_path)" in context
     assert "Remote bulk-to-legacy" in context
+
+
+def test_authoring_context_is_discoverable_by_task_and_explicit_section():
+    response = execute_acp({'action': 'gather_context', 'task': 'integrate'})
+    assert response['status'] == 'success'
+    assert '## 14_typed_commands.md' in response['result']
+    assert 'command.validate_job' in response['result']
+    assert 'from autoslurm import CommandContract, CommandOption, from_typer' in response['result']
+    selected = agent_context(sections=['14_typed_commands'])
+    assert '## 14_typed_commands.md' in selected and 'Task: Inspect Experiments' not in selected
+
+
+def test_packaged_authoring_context_does_not_need_a_checkout(tmp_path, monkeypatch):
+    monkeypatch.setattr('autoslurm.context.AGENT_FOLDER', tmp_path / 'missing-checkout-agent')
+    selected = agent_context(sections=['14_typed_commands'])
+    assert 'Typed command authoring' in selected and 'validate_job' in selected

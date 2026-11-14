@@ -1,15 +1,32 @@
-"""Experimental, in-memory named-option contract; no parser or host dependencies.
+"""Public in-memory named-option contracts; no parser or host dependencies.
 
-MVP9 internal proof. Saved jobs remain ordinary dictionaries, without a persisted
-contract or any promise of semantic revalidation after loading them.
+Saved jobs remain ordinary dictionaries. Revalidation requires an explicit trusted
+contract; loading a job never imports application code or discovers a parser.
 """
 
+import copy
 from dataclasses import asdict, dataclass
 import math
 import re
 import shlex
 
 from .argument_compilation import literal_argument
+
+__all__ = ['CommandOption', 'CommandContract']
+
+
+def _job_name(value):
+    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', value):
+        raise ValueError('Job names must be simple nonempty names without path separators.')
+    return value
+
+
+def _names(values, label):
+    if not isinstance(values, (list, tuple)) or any(not isinstance(value, str) for value in values):
+        raise ValueError(f'{label} must be a list or tuple of names.')
+    if len(set(values)) != len(values):
+        raise ValueError(f'{label} must not contain duplicate names.')
+    return tuple(values)
 
 
 @dataclass(frozen=True)
@@ -24,7 +41,7 @@ class CommandOption:
     def __post_init__(self):
         if not isinstance(self.name, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', self.name):
             raise ValueError('Command option names must be ordinary named arguments.')
-        if self.kind not in {'str', 'int', 'float', 'bool'} or type(self.required) is not bool:
+        if not isinstance(self.kind, str) or self.kind not in {'str', 'int', 'float', 'bool'} or type(self.required) is not bool:
             raise ValueError(f'Unsupported option contract for {self.name}.')
         for bound in (self.minimum, self.maximum):
             if bound is not None and (self.kind not in {'int', 'float'} or type(bound) not in (int, float) or not math.isfinite(bound)):
@@ -58,6 +75,11 @@ class CommandOption:
 
 @dataclass(frozen=True)
 class CommandContract:
+    """Validate scalar named settings and build ordinary saved-job dictionaries.
+
+    ``validate`` fills current defaults for new settings. ``validate_job`` checks
+    complete saved settings without silently adding defaults from a newer CLI.
+    """
     script: str
     options: tuple[CommandOption, ...]
     input_args: tuple[str, ...] = ()
@@ -68,14 +90,21 @@ class CommandContract:
             raise ValueError('Provide a nonempty ordinary application command.')
         tokens = shlex.split(self.script)
         if not tokens or ' '.join(tokens) != self.script or any(shlex.quote(token) != token for token in tokens):
-            raise ValueError('This proof supports only a literal command prefix with shell-safe words.')
+            raise ValueError('Command contracts require a literal command prefix with shell-safe words.')
+        if not isinstance(self.options, (list, tuple)) or any(not isinstance(option, CommandOption) for option in self.options):
+            raise ValueError('options must contain CommandOption values.')
+        object.__setattr__(self, 'options', tuple(self.options))
+        object.__setattr__(self, 'input_args', _names(self.input_args, 'input_args'))
+        object.__setattr__(self, 'path_args', _names(self.path_args, 'path_args'))
         names = [option.name for option in self.options]
         if len(names) != len(set(names)):
             raise ValueError('Duplicate command option names.')
         if not set(self.input_args + self.path_args) <= set(names):
             raise ValueError('Path declarations must name existing command options.')
+        if set(self.input_args) & (set(self.path_args) | {'output_dir'}):
+            raise ValueError('An argument cannot be both a required input and a result path.')
         for option in self.options:
-            if option.name in self.input_args + self.path_args and option.kind != 'str':
+            if option.name in self.input_args + self.path_args + ('output_dir',) and option.kind != 'str':
                 raise ValueError(f'{option.name}: declared paths must be strings.')
             if not option.required:
                 self._validate_value(option, option.default)
@@ -100,18 +129,59 @@ class CommandContract:
             values[option.name] = self._validate_value(option, script_args.get(option.name, option.default))
         return values
 
-    def job(self, *, name, script_args, slurm=None):
+    def job(self, *, name, script_args, slurm=None, dependencies=()):
+        """Build a new definition with all supported defaults made explicit."""
         values = self.validate(script_args)
-        if not isinstance(name, str) or not name or '/' in name or '\\' in name:
-            raise ValueError('Job name must be a nonempty simple name.')
+        _job_name(name)
         if slurm is not None and not isinstance(slurm, dict):
             raise ValueError('slurm must be a mapping.')
         job = {'name': name, 'script': self.script, 'script_args': values, 'slurm': dict(slurm or {})}
+        parents = _names(dependencies, 'dependencies')
+        for parent in parents:
+            if _job_name(parent) == name:
+                raise ValueError('A job cannot depend on itself.')
+        if parents:
+            job['dependencies'] = list(parents)
         if self.input_args:
             job['input_args'] = list(self.input_args)
         if self.path_args:
             job['path_args'] = list(self.path_args)
         return job
+
+    def validate_job(self, job):
+        """Return a checked copy of an exact job using this trusted declaration.
+
+        Check invocation/path identity and every saved setting. Do not fill
+        missing defaults, change files, verify installed code or authorize retry.
+        Extra job fields/record evidence are retained; graph/path readiness and
+        submission-snapshot guards remain the normal engine's responsibility.
+        """
+        if not isinstance(job, dict):
+            raise ValueError('A saved job must be a mapping.')
+        _job_name(job.get('name'))
+        if job.get('script') != self.script:
+            raise ValueError('Saved job command does not match the supplied contract.')
+        for field in ('input_args', 'path_args'):
+            raw = job.get(field)
+            declared = _names(() if raw is None else raw, field)
+            if set(declared) != set(getattr(self, field)):
+                raise ValueError(f'Saved job {field} does not match the supplied contract.')
+        values = job.get('script_args')
+        if not isinstance(values, dict):
+            raise ValueError('Saved script_args must be a named mapping.')
+        missing = {option.name for option in self.options} - set(values)
+        if missing:
+            raise ValueError(f'Saved job is missing explicit settings {sorted(missing)}; rebuild it explicitly against the current command.')
+        validated = self.validate(values)
+        if not isinstance(job.get('slurm', {}), dict):
+            raise ValueError('Job slurm options must be a mapping.')
+        # Reuse new-job checks for resources and dependency names, retaining all
+        # other fields instead of manufacturing a new submission definition.
+        self.job(name=job['name'], script_args=validated, slurm=job.get('slurm', {}),
+                 dependencies=job.get('dependencies') if job.get('dependencies') is not None else ())
+        checked = copy.deepcopy(job)
+        checked['script_args'] = validated
+        return checked
 
     def describe(self):
         """Plain discoverable metadata, deliberately not saved into a bundle."""

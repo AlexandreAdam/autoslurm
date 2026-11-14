@@ -33,6 +33,13 @@ Apply this when generating jobs and when reviewing or helping client software.
   signatures. Errors must fail locally before writing/submitting the workload.
 
 See the [client argument contract and example](01_client_workflow.md#explicit-named-job-arguments).
+For supported typed declarations use public `from_typer`, `CommandContract` and
+`CommandOption` from `autoslurm`. The
+[typed authoring recipe](../src/autoslurm/agent_resources/14_typed_commands.md)
+ships with the package and is available through `asl agent --sections 14_typed_commands`
+or ACP `gather_context` with `task: "integrate"`. It covers new jobs, explicit
+saved-job revalidation and unsupported parser behavior; no help-text guessing is
+used for this route. Raw dictionary authoring remains available.
 These are client-design rules. AutoSlurm checks structural/literal validity;
 arbitrary command signatures still need client validation. Existing raw bundles
 retain space-style lists and positionals, now safely quoted, but the recommended
@@ -52,7 +59,7 @@ To plan a new workload, gather the relevant CLI usage, resource guidance, and AC
 - `07_acp_actions.md` and `acp_action.json` define the `schedule` action (expecting `bundle`, `job`, optional `append`). Crafting an ACP payload with those keys mirrors calling the CLI/Python helper.
 - `01_context_overview.md` reminds you that bundles live under `$AUTOSLURM/jobs` and that duplicate job names are renamed (`_001`, `_002`, …).
 
-Prompt tip: include the examples from `06_resource_rules.md` (light, heavy, array) along with the `slurm` field descriptions from `04_project_map.md` so the LLM replicates the exact flag strings you want. Call `autoslurm-agent-context --sections 00_operating_rules.md 01_client_workflow.md 10_task_schedule.md 12_task_acp_reference.md 06_resource_rules.md` (or `{"action":"gather_context","task":"schedule"}`) to keep the prompt concise before scheduling, then use `execute_acp({"action":"schedule", ...})`.
+Prompt tip: include the examples from `06_resource_rules.md` (light, heavy, array) along with the `slurm` field descriptions from `04_project_map.md` so the LLM replicates the exact flag strings you want. Call `autoslurm-agent-context --sections 00_operating_rules.md 01_client_workflow.md 10_task_schedule.md 14_typed_commands.md 12_task_acp_reference.md 06_resource_rules.md` (or `{"action":"gather_context","task":"schedule"}`) to keep the prompt concise before scheduling, then use `execute_acp({"action":"schedule", ...})` with the validated job dictionary.
 
 ## Output Path Rule For Bundle-Building Agents
 

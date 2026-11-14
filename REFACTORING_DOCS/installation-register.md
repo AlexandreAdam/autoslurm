@@ -6,11 +6,24 @@
 main repository and base Conda commands for daily use of the refactor. The main
 checkout is now branch `dev`, starting from tested MVP4 commit `89e2781`; activation
 records are located with `git log --grep '^MVP4.4:'`. Earlier layouts below are
-historical. Current tested code includes MVP8 plus the editable-install amendment
-MVP7.2f: locate it with `git log --grep '^MVP7.2f:'`. The last local milestone tag
-is `mvp8`; this amendment does not advance prior milestone/rollback tags.
+historical. Current tested code includes MVP9 public authoring and the editable
+update/dependency defaults described below. The last local milestone tag is
+`mvp9`; the pinned rollback tag/source is unchanged. Locate the earlier editable
+amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
+
+MVP9.3 (2026-11-13): 761 full offline tests passed (43 expected collision warnings),
+report `.development/test-runs/typed-authoring.xml`; clean AutoSlurm/reference-client
+wheels verify public authoring imports, optional Typer absence, installed agent
+recipe/ACP/CLI selection, reference client CLI and scientific entry-point execution.
+Artifact `.development/artifacts/typed-authoring/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `dbcca8ede6c0135729aead31aa83b1da75a24489542bc646dffdaec9ba167ccb`.
+MVP9 complete locally; local `mvp9` tag records the candidate. Existing base
+entry points import the active source without reinstall; the new commands extra
+and reference-client entry points were tested only in disposable wheel targets.
+No base dependencies/install, daily config/state, cluster, external scientific
+client, historical records or rollback-source changes. Saved data has no new schema.
 
 FIX.DEPENDENCY.1 (2026-11-13): 741 full offline tests passed (42 expected collision
 warnings), report `.development/test-runs/invalid-dependency.xml`; clean wheel

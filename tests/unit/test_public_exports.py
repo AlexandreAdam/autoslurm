@@ -11,7 +11,8 @@ def test_public_exports_are_explicit_and_include_client_operations():
     assert {"save_bundle", "schedule_job", "preview_bundle", "submit_jobs", "SubmissionError",
             "load_submission", "refresh_submission", "list_submissions", "list_runs",
             "inspect_bundle", "inspect_bundles", "recorded_execution", "resolve_results_path",
-            "path_exists", "execute_acp", "action_definitions"} <= actual
+            "path_exists", "execute_acp", "action_definitions", "CommandContract",
+            "CommandOption", "from_typer"} <= actual
     assert not {"Callable", "dataclass", "defaultdict", "annotations", "atomic_json", "ssh_command"} & actual
     assert not any(hasattr(autoslurm, name) for name in ("Callable", "dataclass", "defaultdict"))
 

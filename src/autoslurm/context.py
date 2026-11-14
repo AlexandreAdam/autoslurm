@@ -4,10 +4,24 @@ from typing import Iterable, List, Optional
 
 
 AGENT_FOLDER = Path(__file__).resolve().parent.parent.parent / "agent"
+PACKAGED_AGENT_FOLDER = Path(__file__).resolve().parent / "agent_resources"
+
+
+def _relative_agent_path(path):
+    for folder in (PACKAGED_AGENT_FOLDER, AGENT_FOLDER):
+        try:
+            return path.relative_to(folder)
+        except ValueError:
+            continue
+    raise ValueError(f"Not an agent resource: {path.name}")
 
 
 def _ordered_agent_files() -> List[Path]:
-    files = [path for path in AGENT_FOLDER.rglob("*") if path.is_file()]
+    # Packaged recipes have one source of truth; legacy checkout guidance stays
+    # available during the staged documentation/distribution refactor.
+    files = {_relative_agent_path(path): path
+             for folder in (AGENT_FOLDER, PACKAGED_AGENT_FOLDER)
+             for path in folder.rglob("*") if path.is_file()}
 
     def sort_key(path: Path) -> tuple[int, str]:
         name = path.name
@@ -18,11 +32,11 @@ def _ordered_agent_files() -> List[Path]:
                 order = int(prefix)
         return order, str(path)
 
-    return sorted(files, key=sort_key)
+    return sorted(files.values(), key=sort_key)
 
 
 def _render_file(path: Path) -> str:
-    relative = path.relative_to(AGENT_FOLDER)
+    relative = _relative_agent_path(path)
     if path.suffix.lower() == ".md":
         return f"## {relative}\n{path.read_text()}"
     lang = path.suffix.lstrip(".")
@@ -31,7 +45,7 @@ def _render_file(path: Path) -> str:
 
 
 def _matches_selectors(path: Path, selectors: Iterable[str]) -> bool:
-    rel = path.relative_to(AGENT_FOLDER)
+    rel = _relative_agent_path(path)
     text = str(rel).lower()
     return any(selector.lower() in text for selector in selectors)
 

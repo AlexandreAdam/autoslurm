@@ -36,6 +36,14 @@ proposed designs below remain proposals.
 
 ### Context discovery
 
+MVP9.3 implements the public typed-command recipe as a single packaged source,
+`src/autoslurm/agent_resources/14_typed_commands.md`. Existing context selectors
+merge packaged recipes with legacy checkout guidance; package recipes win name
+collisions. `gather_context` for schedule/integrate/commands and explicit CLI
+section selection expose this recipe, including strict saved-job revalidation.
+This is narrow installed-resource delivery, not completion of the L3 audit or
+packaging of all historical agent material.
+
 PLAN.3 adds a per-slice adoption requirement for
 [MVP12's reusable workflow services](design/MVP12_reusable_workflows.md#public-adoption-gate-for-every-slice).
 Resource views, offline planning, review, run grouping and retry/runtime helpers
