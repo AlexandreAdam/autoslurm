@@ -6,7 +6,7 @@ from autoslurm.save_load_jobs import (
     transfer_slurm_to_remote,
     nearest_bundle_filename,
 )
-from autoslurm import DATE_FORMAT
+from autoslurm import DATE_FORMAT, InvalidRequestError
 from unittest.mock import patch
 from unittest.mock import MagicMock
 from datetime import datetime
@@ -331,11 +331,11 @@ def test_save_bundle_type_error(mock_load_config):
     # test bundle not a dict
     bundle_name = "mock"
     bundle = [{"key": "value"}]
-    with pytest.raises(TypeError):
+    with pytest.raises(InvalidRequestError):
         save_bundle(bundle, bundle_name)
     # test bundle not a dict of dict
     bundle = {"key": "value"}
-    with pytest.raises(TypeError):
+    with pytest.raises(InvalidRequestError):
         save_bundle(bundle, bundle_name)
 
 
@@ -343,7 +343,7 @@ def test_save_bundle_no_script_error(mock_load_config):
     # test bundle not a dict
     bundle_name = "mock"
     bundle = {"JobA": {"dependencies": []}}
-    with pytest.raises(KeyError):
+    with pytest.raises(InvalidRequestError):
         save_bundle(bundle, bundle_name)
 
 

@@ -12,6 +12,7 @@ from .save_load_jobs import load_bundle_from_path
 from .bundle_selection import select_bundle_snapshot
 from .submission_operation import execute_prepared_bundle
 from .config import machine_config as resolve_machine_config
+from .errors import InvalidRequestError
 from .transport import remote_storage_root_from_config
 
 __all__ = ["submit_jobs", "preview_bundle"]
@@ -29,8 +30,12 @@ def _select_context(machine, overrides, context=None):
 
 
 def _prepare_selected_bundle(path, context):
-    jobs, children_by_job, _ = load_bundle_from_path(path)
-    prepared = prepare_bundle(jobs, children_by_job, context)
+    try:
+        jobs, children_by_job, _ = load_bundle_from_path(path)
+        prepared = prepare_bundle(jobs, children_by_job, context)
+    except InvalidRequestError as error:
+        error.diagnostic = error.diagnostic.with_context(bundle_path=str(path), machine=context.machine_name)
+        raise
     validate_prepared_bundle(prepared, context)
     return prepared
 

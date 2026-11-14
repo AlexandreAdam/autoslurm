@@ -40,6 +40,12 @@ ships with the package and is available through `asl agent --sections 14_typed_c
 or ACP `gather_context` with `task: "integrate"`. It covers new jobs, explicit
 saved-job revalidation and unsupported parser behavior; no help-text guessing is
 used for this route. Raw dictionary authoring remains available.
+Catch public `InvalidRequestError` for adopted authoring failures and retain its
+`.diagnostic` (field/option/job/project/stage plus correction) and native cause.
+New save/schedule guards reject missing/blank/nonstring commands; graph validation
+reports malformed/unknown dependencies and cycles. Saved settings stay explicit;
+never replace them or inject new defaults to suppress validation errors. See
+installed `15_diagnostics` for the exact dev exception boundary and pending layers.
 These are client-design rules. AutoSlurm checks structural/literal validity;
 arbitrary command signatures still need client validation. Existing raw bundles
 retain space-style lists and positionals, now safely quoted, but the recommended

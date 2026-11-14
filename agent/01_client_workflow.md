@@ -52,6 +52,14 @@ Read failures/missing activation no longer use OSError/AttributeError; validatio
 remains ValueError-compatible. Publication I/O and other services are not yet
 fully adopted; see the packaged diagnostic recipe.
 
+MVP10.3b.1 adds public `InvalidRequestError` for typed authoring, literal arguments,
+graphs, software-intent metadata and bundle input/preparation guards. Inspect its
+diagnostic field/option/job/stage and correct the definition before saving or
+submitting. Preserve explicit saved settings; a missing setting is not permission
+to insert a new default. It is ValueError/DiagnosticError compatible; old
+TypeError/KeyError authoring guards and cycle errors now use this class. Read/
+publication, snapshot selection, path/render and transport adoption remain pending.
+
 ## Adapt scientific software
 
 Keep computation independent of AutoSlurm. Expose an installed command with

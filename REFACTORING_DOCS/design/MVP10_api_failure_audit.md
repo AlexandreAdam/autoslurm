@@ -17,8 +17,8 @@ task and regression sources from its named contract. `route_notes` refine ACP
 actions and routes whose semantics need separate explanation. These are explicit
 references, not additional implementations of each alias.
 
-At the original audit, all diagnostic adoption was pending. MVP10.2 and MVP10.3a
-amendments below record foundation and configuration adoption. Other regression
+At the original audit, all diagnostic adoption was pending. MVP10.2, MVP10.3a and
+MVP10.3b.1 amendments below record foundation, configuration and authoring adoption. Other regression
 anchors prove only their current tested behavior, not the proposed contract.
 Use the owner row plus its contract and any route note when closing a later task.
 An owner may need several regressions and more than one implementation slice.
@@ -252,3 +252,36 @@ no reset/write on read failure, early submit/preview rejection without commands,
 and unexpected-bug visibility. Full offline suite: 851 passed. Clean-wheel smoke
 verifies imports, all config routes/debug, retained files and installed agent
 recipe. Remaining tasks stay open; source coverage is not diagnostic completion.
+
+## MVP10.3b.1 amendment
+
+Current coverage is 253 routes/130 owners: InvalidRequestError is exported at
+root and errors module. Python names total 190; public method/property members
+stay 15 and all 18 broad catches remain. MVP10.3b was split before implementation
+into authoring (b.1), snapshot selection (b.2) and pure path/render preparation
+(b.3). Parent b remains open.
+
+Command/literal/adapter, dependency graph and historical software-intent validation
+adopt explicit field/option/job/project diagnostics; original tokenizer/import/
+repository-parser/cycle causes remain chained. Save/schedule shape/key/script
+guards and in-memory preparation adopt the same family, with exact bundle/machine
+context through public preview/submit. Schedule root/standalone routes use the
+shared stderr/exit/debug boundary. Submitted/saved settings are not silently
+changed and callbacks are not executed by typed discovery. Generic code bugs,
+process discovery and publication failures remain distinct.
+
+Known save TypeError/KeyError and graph CycleError now use InvalidRequestError
+(ValueError/DiagnosticError compatible): this dev boundary is documented without
+rewriting records. Raw bundle signatures still require a trusted client contract.
+The graph contract remains partial for bulk callback/ID mapping (MVP10.5); preview
+still needs path/render/readiness adoption. The submit CLI's earlier broken-record
+gate and filter/selector behavior remain b.2; record reads/publication remain 3c.
+No universal CLI/ACP completion or stale-venv fix is claimed.
+
+`tests/integration/test_authoring_diagnostics.py` adds 54 contract/evidence cases:
+named settings, exact saved validation, literal readability, malformed/cyclic DAGs,
+retained records/no commands, safe manifest/import causes, CLI/debug parity,
+long bounded identity enrichment and unexpected-bug visibility. Full offline suite:
+905 passed, 43 expected warnings. Clean-wheel isolated API/graph/record/CLI/debug/
+optional-Typer/agent-recipe smoke passed. The register describes adopted portions
+and pending boundaries; source coverage still is not diagnostic completion.

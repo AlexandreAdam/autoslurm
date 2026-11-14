@@ -13,6 +13,20 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3b.1 (2026-11-14): 905 full offline tests passed in 11.45 s (43 expected
+collision warnings); `.development/test-runs/authoring-diagnostics.xml`. Main
+editable commands gain typed authoring diagnostics without reinstalling. The
+explicit dev exception-family change preserves ValueError compatibility, readable
+saved settings and JSON formats. Clean-source offline wheel/temporary-target
+API/graph/retained-record/root/standalone/debug/optional-Typer/installed-recipe
+smoke passed; artifact
+`.development/artifacts/authoring-diagnostics/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `5d8685e83105132dc763100306945e286444d796a020738296adba27e5fa0187`.
+No base/test dependency install, daily config/state, actual SSH/Slurm, cluster
+environment, external client or rollback-source edit. User documents and existing
+software_preparations evidence are excluded. Snapshot selection, pure paths/render,
+publication and external readiness diagnostics remain separate slices.
+
 MVP10.3a (2026-11-13): 851 full offline tests passed in 9.87 s (43 expected
 collision warnings); `.development/test-runs/configuration-diagnostics.xml`.
 The main editable source gains typed configuration diagnostics and retained-file

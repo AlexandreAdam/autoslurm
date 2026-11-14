@@ -43,7 +43,10 @@ def test_preview_and_submission_reject_the_same_invalid_definition(problem, loca
         jobs = {"bad/name": {"name": "bad/name", "script": "echo science", "slurm": {}}}
     else:
         jobs["sample"]["id"] = "101"
-    path = save_bundle(jobs, "study")
+    # Persisted/external definitions can be malformed even though new saves now
+    # reject an empty command. Exercise engine revalidation of that exact file.
+    path = storage_root() / 'jobs' / 'study_20261113000000.json'
+    path.write_text(json.dumps(jobs))
     before = path.read_bytes()
     def shell_check_only(command, **kwargs):
         assert command == ["bash", "-n"]

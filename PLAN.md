@@ -10,7 +10,8 @@ This file is the source of truth for active scope, task order and progress.
 ## Status
 
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
-  foundation and MVP10.3a configuration diagnostics complete locally. MVP9 complete locally; MVP7.2f editable-update amendment
+  foundation, MVP10.3a configuration and MVP10.3b.1 authoring diagnostics complete
+  locally. MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
   FIX.DEPENDENCY.1 defaults dependent jobs to kill-on-invalid-dep=yes.
@@ -21,19 +22,21 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 851 passed, 43 expected
+  rollback source remains unchanged. Full offline suite: 905 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.3a adopts shared configuration read/validation
-  diagnostics through Python and the config CLI/aliases/standalone commands.
-  Existing corrupt/unreadable files are preserved; errors retain actual source,
-  field/profile and original causes. Expected CLI errors exit 1; --debug and bugs
-  retain tracebacks. 851 full offline tests and a clean-wheel check pass.
-  Coverage: 251 routes/129 owners/18 retained broad catches. No daily profile,
+- **Latest completed task:** MVP10.3b.1 adopts authoring diagnostics for typed
+  commands/adapter, literal arguments, graphs, software metadata and bundle
+  input/preparation guards. InvalidRequestError retains field/option/job/project,
+  safe native causes and exact bundle/machine context when known. Schedule CLI
+  uses shared text/exit 1 and --autoslurm-debug; unexpected bugs propagate.
+  Readable saved options remain unchanged. 905 full offline tests and a clean-wheel
+  check pass. Coverage: 253 routes/130 owners/18 retained broad catches. No daily profile,
   environment, cluster, persisted-format or rollback change.
-- **Next task:** MVP10.3b authoring, selection and path diagnostics, using the
+- **Next task:** MVP10.3b.2 snapshot/filter selection diagnostics, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
-  service errors still have no diagnostic. Publication effects remain MVP10.3c;
+  service errors still have no diagnostic. Pure paths/rendering remain MVP10.3b.3;
+  publication effects remain MVP10.3c;
   stale-venv correction is MVP10.4.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
@@ -50,7 +53,7 @@ This file is the source of truth for active scope, task order and progress.
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
   the operator coordinates update timing for jobs using it.
-- **Last updated:** 2026-11-13.
+- **Last updated:** 2026-11-14.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
   `dev`; GitHub repository settings and documentation integrations stay as they were.
@@ -676,6 +679,18 @@ is in the design; every callable/action and its outcome contract must be reviewe
   - [ ] **MVP10.3b Authoring, selection and paths.** Adopt diagnostics in command/
     argument/graph/manifest validation, snapshot selection and pure path/render
     preparation; keep invalid requests distinct from per-entry broken evidence.
+    Split before implementation into independently verified boundaries:
+    - [x] **MVP10.3b.1 Authoring diagnostics.** Typed command/adapter/literal
+      arguments, dependency graphs, software-intent metadata, save/schedule input
+      guards and in-memory bundle preparation. Preserve explicit options, attach
+      field/option/job context and native causes; wire the schedule CLI. Invalid
+      requests stop before publication/dispatch; no broad bug-to-validation catch.
+    - [ ] **MVP10.3b.2 Snapshot selection diagnostics.** Exact/index/latest/filter
+      selection and per-entry broken/unavailable evidence, without silently
+      turning unreadable records into empty jobs or choosing a different bundle.
+    - [ ] **MVP10.3b.3 Path/render preparation diagnostics.** Pure path resolution,
+      logical/resolved/job identity and render validation; keep external readiness
+      failures and record publication with their separately planned owners.
   - [ ] **MVP10.3c Record persistence.** Adopt local JSON read/publication diagnostics
     for bundles/config/receipts/cache, distinguishing not-published/published/unknown
     effects and secondary cleanup failures. Preserve saved data and accepted IDs.
@@ -953,8 +968,8 @@ or migration decision has already been accepted.
 | 2026-11-13 | MVP10.1 Complete public interface/failure inventory | Audited revision `6104372`: 233 routes (Python exports/methods, root/alias/subaction/standalone/helper CLI and eight ACP actions), 112 owners, 24 failure contracts and all 18 broad catches individually reviewed. Register records inputs/current outcomes/effects plus translation owner, desired diagnosis, next action, regression sources and pending adoption task. E01–E18 cover swallowed causes, false missing, publication/partial/unknown effects and presentation gaps; preserve evidence-saving catches. Read-only AST checker passed and rejected four drift controls (missing export, wrong alias, missing effects, unreviewed catch). Full offline suite: 761 passed, 43 expected collision warnings, 10.53 s; `.development/test-runs/error-inventory.xml`. Documentation links/diff reviewed. No package runtime, dependencies, daily state/config, external client, cluster or rollback changes; no artifact rebuild needed for an audit-only task. MVP10.2 is next; proposed diagnostic APIs are not accepted/implemented by this audit. Task commit: `git log --grep '^MVP10.1:'`; push completed dev commit. |
 | 2026-11-13 | MVP10.2 Shared diagnostic foundation | Stdlib-only errors.py owns 17 codes/categories/default wording, immutable context/effects, named fact constructors, safe bounded serialization and primary/secondary facts; apps/error_output.py is opt-in text/JSON/exit/debug presentation. SubmissionError/SoftwareUpdateError retain positional messages, payload identity, RuntimeError compatibility and native causes with optional diagnostic=. 36 focused tests and 797 full offline tests passed (43 expected collision warnings), 10.62 s; `.development/test-runs/error-core.xml`. Clean-source offline wheel/temporary-target smoke verifies APIs, legacy payloads, redacted JSON and installed recipe via CLI/ACP without Typer; SHA256 `f6734a18963e0f64b64cd4c0365bcd0ba1572e96bae795e80402f939e53ae2cc`. Coverage checker: 248 routes/127 owners/18 retained broad catches. Human/agent docs and links reviewed. No cluster, base install, daily config/state, persisted-format or rollback change. Operation adoption, stale-venv fix and universal CLI/ACP parity remain pending; MVP10.3 is next. Task commit: `git log --grep '^MVP10.2:'`; push completed dev commit. |
 | 2026-11-13 | FIX.CONFIG.2 Interactive environment setup | Added optional env_command prompt immediately after venv_path for profile creation/editing; Enter keeps, a command replaces, and `-` removes the key. Shared persistence/activation/validation are reused. Six new regressions reproduced the missing prompt, then verified public config/configuration interactive flows, exact profile preservation, quoted venv paths, mocked SSH/Python/helper-root validation and rendered setup-before-activation. Existing prompt fixtures updated. 84 focused tests and 803 full offline tests passed in 10.98 s (43 expected collision warnings), report `.development/test-runs/config-env-command.xml`. Clean-source offline wheel/temporary-target interactive/alias/clear/render smoke passed, SHA256 `61c2233cdd76b0107bc148111060e6349a7f3adaf7d64493b8e8206509d58a24`. Human/agent guidance, design, installation register and API audit updated; relative links/diff checked. No actual SSH, daily config/environment, base install or rollback edits. MVP10.3 remains unstarted. Task commit: `git log --grep '^FIX.CONFIG.2:'`; push completed dev commit. |
-
 | 2026-11-13 | MVP10.3a Configuration diagnostics | Split MVP10.3 before implementation. Shared errors.py now owns ConfigurationError/configuration_failure; known reads/JSON/UTF-8/profile/selection/settings failures carry actual source path, machine/field, original cause, safe bounded detail, correction and config_write=not_started. Config root/alias/standalone routes use stderr/exit 1 and --debug; unexpected bugs stay visible. Existing invalid/unreadable/corrupt files, dangling links and entries appearing during failed reads never enter reset/first-use setup. Explicit root/legacy lookup and raw view shape preserved. Dev exception-family change documented; no saved-schema change. 851 full offline tests passed in 9.87 s (43 expected collision warnings), `.development/test-runs/configuration-diagnostics.xml`. Clean-source offline wheel/temporary-target API/config routes/debug/retained-file/installed-recipe smoke passed; SHA256 `0c3529f9e3af49e3b0674a611af7878a26c4568d7b3476419e75eb363b43e3de`. AST register: 251 routes/129 owners/18 broad catches; human/agent docs, design and installation register updated. No actual cluster commands, base dependency install, daily config/state, external client or rollback edit; user documents/evidence preserved. MVP10.3b is next; publication diagnostics stay 3c and stale-venv stays 10.4. Task commit: `git log --grep '^MVP10.3a:'`; push completed dev commit. |
+| 2026-11-14 | MVP10.3b.1 Authoring diagnostics | Split b into authoring, snapshot selection and pure path/render tasks before implementation. Public InvalidRequestError reuses the shared core for known command/option/adapter/literal/graph/software-intent/input/preparation failures, retaining field/option/job/project/stage, exact bundle/machine and native causes. Save/schedule input guards replace old TypeError/KeyError; blank/nonstring commands stop before publication. dependency_graph now rejects cycles itself, retaining CycleError and named cycle. Explicit settings, raw argument styles and saved formats remain unchanged; no callbacks or blanket bug catches. Schedule root/standalone routes use shared stderr/exit 1 and --autoslurm-debug, preserving application --debug. Bounded identity enrichment no longer masks a repeated long identity. 54 new contract/evidence cases; 905 full offline tests passed in 11.45 s (43 expected collision warnings), `.development/test-runs/authoring-diagnostics.xml`. Clean-source offline wheel/temporary-target API/graph/retained-record/root/standalone/debug/optional-Typer/installed-recipe smoke passed; SHA256 `5d8685e83105132dc763100306945e286444d796a020738296adba27e5fa0187`. AST register: 253 routes/130 owners/18 broad catches. Human/agent docs, design and installation register updated. No actual cluster commands, daily config/state, dependency installation, external client or rollback edit; user documents/evidence excluded. Snapshot selection b.2 is next; b.3 paths/rendering, 3c publication and 10.4 stale-venv remain open. Task commit: `git log --grep '^MVP10.3b.1:'`; push completed dev commit. |
 
 ## How we work
 

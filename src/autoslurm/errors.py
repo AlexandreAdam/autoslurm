@@ -11,7 +11,7 @@ from typing import Mapping
 
 __all__ = ["Diagnostic", "DiagnosticCause", "DiagnosticError", "diagnostic_catalog",
            "invalid_argument", "missing_resource", "command_failure",
-           "ConfigurationError", "configuration_failure"]
+           "ConfigurationError", "configuration_failure", "InvalidRequestError"]
 
 # code -> (category, summary, next action). Effects never come from this catalogue.
 _CATALOG = {
@@ -170,7 +170,10 @@ class Diagnostic:
     def with_context(self, **context):
         """Add known identity; refuse to redirect or replace existing context."""
         for key, value in context.items():
-            if key in self.context and self.context[key] != value:
+            # Stored identities are already redacted/bounded. Re-enrichment of
+            # the same long identity must compare using that same representation.
+            compared = _text(value) if isinstance(value, str) else value
+            if key in self.context and self.context[key] != compared:
                 raise ValueError(f"Diagnostic context conflicts for {key}.")
         return replace(self, context={**self.context, **context})
 
@@ -235,11 +238,25 @@ def configuration_failure(*, stage, problem="invalid", summary=None, context=Non
                       summary=wording if summary is None else summary, next_action=action)
 
 
-def invalid_argument(*, operation, stage, field, explanation, context=None):
+class InvalidRequestError(DiagnosticError, ValueError):
+    """Known authoring validation failure; original causes remain chained.
+
+    Only explicit validation guards construct this error. Effects are supplied
+    by the boundary that knows them, never inferred from an invalid request.
+    """
+
+    def __init__(self, message, *, field, stage="validate_definition", context=None,
+                 cause=None, effects=None):
+        super().__init__(invalid_argument(operation="authoring", stage=stage,
+            field=field, explanation=message, context=context, cause=cause, effects=effects))
+
+
+def invalid_argument(*, operation, stage, field, explanation, context=None, cause=None, effects=None):
     """A known local validation error; no assertion about other operation effects."""
     _required_text(field, "field")
     return Diagnostic("invalid_argument", operation, stage,
                       context=_context_with(context, field=field), summary=explanation,
+                      cause=cause, effects={} if effects is None else effects,
                       next_action=f"Correct {field} and validate the exact request again.")
 
 

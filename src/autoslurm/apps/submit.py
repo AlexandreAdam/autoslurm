@@ -6,6 +6,8 @@ from ..bundle_selection import bundle_snapshot_state, select_bundle_snapshot
 from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs
 from ..submission import SubmissionError
+from ..errors import InvalidRequestError
+from .error_output import exit_with_error
 
 
 def parse_args(argv=None):
@@ -122,5 +124,7 @@ def main(argv=None):
             bundle_path=args.bundle_file,
             context=resolve_execution_context(machine_name, config),
         )
+    except InvalidRequestError as error:
+        exit_with_error(error)
     except (SubmissionError, ValueError, RuntimeError, OSError) as exc:
         raise SystemExit(str(exc)) from exc

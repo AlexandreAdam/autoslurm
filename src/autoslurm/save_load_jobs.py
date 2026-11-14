@@ -11,6 +11,7 @@ from .record_files import atomic_json
 from .definitions import DATE_FORMAT
 from .storage import ensure_storage_dirs, jobs_dir
 from .job_dependency import dependency_graph
+from .errors import InvalidRequestError
 from .bundle_selection import (
     SNAPSHOT_KIND_KEY, _snapshot_date, get_bundle_filter_mode, set_bundle_filter_mode,
     all_bundle_snapshots, bundle_snapshot_state, bundle_snapshots,
@@ -69,8 +70,12 @@ def _new_snapshot(bundle, name, *, warn_on_collision=False):
 
 def _normalize_scheduled_job(job):
     """Apply the historical command/name defaults before storing a scheduled job."""
-    if "script" not in job:
-        raise KeyError("Job configuration must minimally contain the 'script' entry to run an application")
+    if not isinstance(job, dict):
+        raise InvalidRequestError('Job configuration must be a dictionary.', field='job', stage='schedule_job',
+                                  effects={'bundle_write': 'not_started'})
+    if not isinstance(job.get('script'), str) or not job['script'].strip():
+        raise InvalidRequestError("Job configuration must contain a nonempty 'script' entry to run an application",
+            field='script', stage='schedule_job', effects={'bundle_write': 'not_started'})
     if "name" not in job:
         script_value = job["script"]
         candidate = script_value.split()[-1]
@@ -82,6 +87,7 @@ def _normalize_scheduled_job(job):
             job["name"] = script_value
     if len(job["script"].split()) == 1 and job["script"].endswith(".py"):
         job["script"] = f"python {job['script']}"
+    _effective_job_name(job, None)
     _ensure_snapshot_kind({job["name"]: job}, kind="draft")
     return job
 
@@ -118,12 +124,19 @@ def save_bundle(bundle: dict, name: str, append: bool = False) -> Path:
     operation submits jobs. Callers retain the historical job-name/kind defaults.
     """
     if not isinstance(bundle, dict):
-        raise TypeError("bundle must be a dictionary")
-    for job in bundle.values():
+        raise InvalidRequestError('bundle must be a dictionary', field='bundle', stage='save_bundle',
+                                  effects={'bundle_write': 'not_started'})
+    for key, job in bundle.items():
+        identity = {'job': key if isinstance(key, str) else None}
+        if not isinstance(key, str) or not key.strip():
+            raise InvalidRequestError('Bundle keys must be nonempty job names.', field='name', stage='save_bundle',
+                                      effects={'bundle_write': 'not_started'})
         if not isinstance(job, dict):
-            raise TypeError("Each job in the bundle must be a dictionary. If you want to save a single job, use schedule_job() instead.")
-        if "script" not in job:
-            raise KeyError("Each job in the bundle must minimally contain the 'script' entry to run an application")
+            raise InvalidRequestError('Each job in the bundle must be a dictionary. If you want to save a single job, use schedule_job() instead.',
+                field='job', stage='save_bundle', context=identity, effects={'bundle_write': 'not_started'})
+        if not isinstance(job.get('script'), str) or not job['script'].strip():
+            raise InvalidRequestError("Each job in the bundle must contain a nonempty 'script' entry to run an application",
+                field='script', stage='save_bundle', context=identity, effects={'bundle_write': 'not_started'})
     for key, job in bundle.items():
         job["name"] = _effective_job_name(job, key)
     _ensure_snapshot_kind(bundle, kind="draft")
@@ -160,7 +173,7 @@ def _effective_job_name(job, definition_key):
     if name is None:
         return definition_key
     if not isinstance(name, str) or not name.strip():
-        raise ValueError("Job names must be nonempty strings.")
+        raise InvalidRequestError('Job names must be nonempty strings.', field='name', stage='validate_definition')
     return name
 
 
@@ -211,7 +224,11 @@ def load_bundle_from_path(
                 f"Error decoding the job bundle file {file_path}. Make sure it is a valid JSON file."
             )
 
-    dependencies = dependency_graph(jobs)
+    try:
+        dependencies = dependency_graph(jobs)
+    except InvalidRequestError as error:
+        error.diagnostic = error.diagnostic.with_context(bundle_path=str(file_path))
+        raise
     sorted_job_names = tuple(TopologicalSorter(dependencies).static_order())[::-1]
     jobs = order_jobs(jobs, sorted_job_names)
     # AutoSlurm snapshot identity comes from its filename, not mutable mtime.

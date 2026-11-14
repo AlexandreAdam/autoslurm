@@ -35,6 +35,24 @@ the originating file error remains in `__cause__` with errno in the diagnostic.
 This does not change saved JSON or migrate records. Publication failures and invalid
 storage-root selectors/package-import errors still await their later slices.
 
+Known authoring failures now raise `InvalidRequestError`, also exported from
+`autoslurm` and `autoslurm.errors`. For example, a job whose `count` option has
+the wrong type reports field `script_args`, option `count`, job `fit` and the
+validation stage. Dependency errors identify the affected job; cycles retain
+the original cause and their job names. Correct the named setting and validate
+the exact definition again. Saved arguments remain individually readable; missing
+saved settings are never filled silently from newer command defaults.
+
+This applies to typed commands/adapter, literal arguments, dependency graphs,
+historical software-intent metadata and bundle input/preparation guards. It retains
+ValueError compatibility, replacing old TypeError/KeyError authoring guards and
+CycleError for invalid DAGs at this dev boundary. Missing/blank/nonstring commands
+fail before new save/schedule publication. No saved format or history is rewritten.
+Snapshot selection, paths/rendering, publication, process and universal CLI/ACP
+adoption remain separate tasks. `asl schedule` renders adopted errors to stderr
+and exits 1; add `--autoslurm-debug` for original exceptions. Ordinary application
+`--debug` still forwards. Unknown code bugs propagate.
+
 The opt-in `autoslurm.apps.error_output` adapter renders these same facts as text
 or JSON. It exits 1 for a diagnosed operation failure, writes text to stderr or
 JSON to stdout, and re-raises unexpected/undiagnosed errors. `debug=True` re-raises

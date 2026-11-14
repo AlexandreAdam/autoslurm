@@ -8,6 +8,8 @@ from typing import Dict, List, Sequence
 from ..job_runner import submit_jobs
 from ..save_load_jobs import schedule_job
 from ..config import machine_config
+from ..errors import InvalidRequestError
+from .error_output import exit_with_error
 
 OPTION_PATTERN = re.compile(r"--[a-zA-Z0-9_-]+")
 VALUE_PATTERN = re.compile(r"\s+([A-Z0-9_\[\]<>-]+)")
@@ -108,6 +110,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--append', action='store_true', help='Append the job to an existing bundle. '
                                                               'If not provided, a new unique bundle is created using current timestamp.')
     parser.add_argument('--submit', action='store_true', help='Submit the job immediately after scheduling it.')
+    parser.add_argument('--autoslurm-debug', action='store_true', help='Show original AutoSlurm authoring validation exceptions.')
     parser.add_argument('--dependencies', required=False, nargs='+', help='List of jobs that this job depends on to run.')
     # parser.add_argument('--dependency_type', nargs="+", default='afterany', choices=['afterany', 'afterok', 'afternotok', 'singleton'],
                             # help='Type of dependency to use for SLURM job submission.')
@@ -142,7 +145,7 @@ def parse_args(argv=None):
     return args, script_args
 
 
-def main(argv=None):
+def _main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
     if not argv:
@@ -173,3 +176,12 @@ def main(argv=None):
     if args.submit:
         machine_name, config = machine_config(args)
         submit_jobs(bundle, machine=machine_name, machine_overrides=config)
+
+
+def main(argv=None):
+    selected = list(sys.argv[1:] if argv is None else argv)
+    own_options = selected[:selected.index('--')] if '--' in selected else selected
+    try:
+        return _main(selected)
+    except InvalidRequestError as error:
+        exit_with_error(error, debug='--autoslurm-debug' in own_options)

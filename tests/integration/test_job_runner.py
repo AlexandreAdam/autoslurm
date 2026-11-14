@@ -3,6 +3,7 @@ import os
 import json
 import sys
 import pytest
+from autoslurm import InvalidRequestError
 from contextlib import contextmanager
 from unittest.mock import patch, MagicMock
 from autoslurm import save_bundle, submit_jobs
@@ -99,7 +100,7 @@ mock_jobs_error = {
 def test_integration_schedule_jobs_with_error(
     mock_run_script_remotely, mock_ssh_client, mock_machine_config, mock_load_config
 ):
-    with pytest.raises(KeyError):
+    with pytest.raises(InvalidRequestError):
         save_bundle(mock_jobs_error, mock_job_name)
         submit_jobs(mock_job_name, machine="local", machine_overrides=mock_machine_config)
 

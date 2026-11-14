@@ -8,7 +8,7 @@ jobs. This recipe ships with the package. Retrieve it with
 ## Supported public interface
 
 ```python
-from autoslurm import CommandContract, CommandOption, from_typer
+from autoslurm import CommandContract, CommandOption, from_typer, InvalidRequestError
 ```
 
 `CommandContract` is framework-free. `from_typer` derives one from a trusted,
@@ -25,6 +25,10 @@ it rejects groups/app callbacks, custom flags/classes/contexts, option callbacks
 prompts/env/default factories, custom parsers, forward annotations, optional/list/
 tuple values and default-on booleans. It does not parse help or execute callbacks.
 Unsupported/version-mismatched declarations fail explicitly; no guessing/fallback.
+Known authoring failures raise InvalidRequestError (ValueError/DiagnosticError
+compatible). Read `.diagnostic.to_dict()` for field/option/job/stage and corrective
+action; preserve original causes. See installed `15_diagnostics` for adopted
+boundaries, CLI presentation and remaining path/selection/publication limits.
 
 For an unsupported CLI framework, declare a CommandContract with CommandOption
 values explicitly and check that contract against the real parser in client tests.

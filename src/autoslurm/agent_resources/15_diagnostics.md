@@ -3,6 +3,7 @@
 MVP10.2 implements the foundation. MVP10.3a adopts local configuration read/profile/
 setting/selection failures and the config CLI. Other AutoSlurm services/CLI/ACP
 have not adopted it universally; `.diagnostic is None` is normal on legacy errors.
+MVP10.3b.1 also adopts the authoring boundaries described below.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -13,7 +14,7 @@ Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
 from autoslurm.errors import (
     Diagnostic, DiagnosticCause, DiagnosticError, diagnostic_catalog,
     invalid_argument, missing_resource, command_failure,
-    ConfigurationError, configuration_failure,
+    ConfigurationError, configuration_failure, InvalidRequestError,
 )
 from autoslurm.apps.error_output import render_diagnostic, exit_with_error
 ```
@@ -24,6 +25,7 @@ next action. Operation/stage and effect-step names are 1–64 character identifi
 (letters first; then letters, digits, underscore, dot or hyphen). The category
 property comes from the catalogue. Overrides `summary=` and `next_action=` are
 supported, with nonempty wording. `invalid_argument` names the bad field;
+it also accepts explicit optional `cause=` and `effects=` facts.
 `missing_resource` requires an **observed absence**, resource label and path;
 `command_failure` requires a nonzero observed return code and explicit effects.
 Launch errors, timeouts, malformed responses and unknown acceptance use their
@@ -100,6 +102,49 @@ Bundle authoring/selection/path diagnostics, record publication, configuration
 validation's external commands, stale-venv probing and other CLI/ACP parity are
 later adoption work. Invalid storage selectors can still fail during eager package
 import before this interface is available. Do not hide those limitations.
+
+## Authoring adoption in MVP10.3b.1
+
+Catch `InvalidRequestError` from `autoslurm` or `autoslurm.errors` for known
+command-contract/option/adapter, literal argument, dependency graph, historical
+software-intent and bundle input/preparation failures. It inherits DiagnosticError/
+RuntimeError and ValueError. Diagnostic code is invalid_argument, operation is
+authoring, and stage identifies validate_command, derive_command,
+compile_arguments, validate_graph, validate_software, save_bundle, schedule_job
+or prepare_bundle. Inspect context.field and, when known, option/job/project/
+command/bundle_path/machine. Raw option values, entire jobs and manifests are not
+copied into diagnostics. Original shell-tokenizer, repository-parser, import and
+cycle exceptions remain in __cause__ and safe cause facts.
+
+Validate through the trusted command before saving. `validate_job` still rejects
+missing explicit saved options instead of injecting new defaults. Every setting
+remains named/readable in script_args. This error contract does not discover a
+command signature for raw jobs, alter boolean/list styles, repair definitions or
+resubmit. Graph validation rejects malformed/unknown dependencies and cycles.
+Empty drafts remain saveable, but cannot be submitted.
+
+**Dev exception boundary:** these known authoring failures now use
+InvalidRequestError, including old TypeError/KeyError save guards and CycleError
+from invalid DAGs. Existing ValueError catches work. Cycles are checked by
+dependency_graph itself, not only by later sorting. Missing/blank/nonstring
+commands are rejected before new save/schedule publication. JSON, filesystem,
+external-command and unexpected code failures are not broadly converted. Existing
+records are retained; saved JSON formats do not change.
+
+Read/validate/compile services are pure or read-only; they make no blanket effect
+claim. Early save/schedule shape/command guards record bundle_write=not_started.
+No diagnostic grants permission to retry an earlier submission or implies earlier
+actions had no effect. Public preview/submit attaches exact bundle/machine identity
+to adopted authoring errors and stops before staging/dispatch. Snapshot selection,
+path/render failures, file read/publication, transport and ACP parity remain later
+slices. The submit CLI uses shared rendering when an adopted authoring error reaches
+its preparation boundary; its earlier broken-snapshot gate is not yet migrated.
+
+The schedule CLI/root/installed entry point renders adopted errors once to stderr
+and exits 1. `--autoslurm-debug` re-raises the original error/cause chain; ordinary
+application `--debug` retains its previous forwarding behavior. Parser misuse stays
+exit 2 and unexpected programming errors propagate. Its legacy help-text discovery
+is unchanged and does not gain typed signature validation or new process diagnostics.
 
 ## At a client boundary
 

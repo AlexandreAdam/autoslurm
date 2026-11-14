@@ -13,8 +13,11 @@ and all 18 broad catches. **MVP10.2 is implemented locally:** stdlib-only errors
 the opt-in terminal adapter and additive diagnostics on existing domain exceptions.
 **MVP10.3a is implemented locally:** configuration read/profile/selection validation
 and the config CLI adopt the shared core. Current coverage is 251 routes/129 owners;
-other service adoption remains pending. MVP10.3 was split before implementation
-into configuration (a), authoring/selection/paths (b) and publication (c).
+other service adoption remains pending. **MVP10.3b.1 is implemented locally:**
+authoring adopts InvalidRequestError, with 253 routes/130 owners now registered.
+MVP10.3 was split before implementation into configuration (a), authoring/selection/
+paths (b) and publication (c); b was then split into authoring (b.1), snapshot
+selection (b.2) and pure path/render preparation (b.3) before its implementation.
 The current API/policy is documented below without claiming formal acceptance
 of every proposed technical decision or universal CLI/ACP migration.
 [PLAN.md](../../PLAN.md#mvp10-actionable-failures-with-preserved-evidence) owns tasks.
@@ -184,6 +187,50 @@ The stale-venv executable check and external validation/probes remain MVP10.4.
 No repair, alternate profile/environment, automatic retry or broad CLI/ACP
 migration is added by configuration adoption.
 
+### MVP10.3b.1 implemented authoring boundary
+
+`InvalidRequestError`, exported at root and errors module, is a DiagnosticError/
+RuntimeError and ValueError subclass. Its constructor accepts an explicit field,
+stage, scalar context and optional DiagnosticCause/effects. It reuses invalid_argument
+and the existing catalogue. `invalid_argument` now also accepts explicit cause/
+effects; these remain caller facts. No new code catalogue, generic exception
+translation, I/O or backend dependency is introduced in the shared error module.
+
+Known CommandOption/CommandContract, literal compiler and Typer capability guards
+use the type. Job construction and exact saved-job validation attach job/command
+identity; no scientific callback executes and saved settings/defaults remain
+explicit. Shell tokenization and missing optional imports retain native causes.
+Graph validation checks container/job/name/dependency shapes and cycles at its own
+public boundary; original CycleError and named cycle remain available. Historical
+software-intent checks attach field/project/job; repository parsing has generic
+safe diagnostic detail while retaining its original cause for debugging. It never
+reintroduces runtime selection or deployment.
+
+Save/schedule known input guards replace old TypeError/KeyError failures with this
+explicit **dev exception-family boundary**. Missing/blank/nonstring commands now
+fail before new publication. Empty draft saving remains supported. Existing
+ValueError catches work; direct graph callers now receive InvalidRequestError
+for cycles rather than waiting for consumer sorting. Original records/schemas and
+readable argument/render styles are unchanged. Unexpected TypeError/KeyError/
+ValueError code bugs, raw serialization/publication and external process failures
+are not broadly converted. Invalid dependency scalars no longer pass as an empty list.
+
+Pure/read-only functions make no blanket effect claim; early save/schedule
+shape/command guards explicitly report bundle_write=not_started. Preview/submit
+adds exact bundle/machine identity to adopted authoring failures before staging/
+dispatch. Schedule root/standalone routes use shared stderr/exit 1 and an explicit
+--autoslurm-debug, preserving application --debug forwarding. The submit CLI adopts
+errors reaching preparation; its earlier broken-snapshot gate remains b.2 work.
+Help-text discovery, arbitrary signature inference and broader CLI/ACP parity are
+unchanged. Nested enrichment compares identities in their stored redacted/bounded
+representation so repeated long identifiers do not mask the original failure;
+genuinely different represented identity still raises a programming error.
+
+MVP10.3b.2 covers snapshot/filter selection and per-entry broken/unavailable data;
+MVP10.3b.3 covers pure paths/rendering. Local record reads/publication stay 3c;
+external readiness/transport/software and stale-venv checks stay 10.4. Lower-level
+bulk submission callback/accepted-ID mapping errors remain 10.5.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -305,7 +352,9 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.1 complete | Exhaustive public API/action/entry-point and broad-catch register; current effects/outcomes and recommended translation contracts; exact model decisions remain in MVP10.2 |
 | MVP10.2 complete | Dedicated diagnostic module, isolated tests, opt-in terminal adapter and additive exception/JSON conventions; service/ACP-wide adoption pending |
 | MVP10.3a complete | Config read/profile/selection validation, retained-file protection and config CLI aliases/standalone/debug |
-| MVP10.3b | Authoring, snapshot/filter selection, argument/graph/manifest/path/render preparation diagnostics |
+| MVP10.3b.1 complete | Typed/raw authoring guards, graphs/software intent, bundle preparation and schedule CLI diagnostics |
+| MVP10.3b.2 | Snapshot/filter selection and per-entry broken/unavailable evidence |
+| MVP10.3b.3 | Pure paths/render preparation diagnostics |
 | MVP10.3c | Record read/publication diagnostics, including config writes and pre/post-publication effects |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
@@ -435,3 +484,19 @@ AST register matches 251 routes/129 owners/18 retained broad catches. No base
 install, daily state/config, cluster, external client, persisted-format or rollback
 change. Publication effects and general authoring/selection/path diagnostics stay
 open in MVP10.3b/c; stale-venv remains MVP10.4.
+
+2026-11-14, MVP10.3b.1: split b before implementation, then adopted authoring
+guards with InvalidRequestError, field/option/job/project/native-cause context,
+unchanged readable settings and exact bundle/machine identity. Graph cycles and
+malformed jobs now diagnose at their owner; known save guards stop publication.
+Schedule CLI/root/standalone uses shared stderr/exit 1 and --autoslurm-debug;
+unexpected bugs remain visible. 54 new contract cases; full offline suite 905
+passed, 43 expected collision warnings, 11.45 s;
+`.development/test-runs/authoring-diagnostics.xml`. Clean-source offline wheel/
+temporary-target API/graph/retained-record/root/standalone/debug/optional-Typer/
+installed-recipe smoke passed, SHA256
+`5d8685e83105132dc763100306945e286444d796a020738296adba27e5fa0187`.
+AST register matches 253 routes/130 owners/18 retained broad catches. No actual
+cluster commands, daily state/config, dependency installation, saved-format,
+external-client or rollback changes. Snapshot selection b.2 is next; b.3 paths/
+rendering, 3c publication and 10.4 stale-venv remain open.

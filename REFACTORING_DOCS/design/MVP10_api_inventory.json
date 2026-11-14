@@ -1,7 +1,7 @@
 {
   "audited_revision": "61043722c4758cb188994f996e7e46ef8140003d",
   "audited_date": "2026-11-13",
-  "scope": "MVP10.1 source inventory, amended for MVP10.2 diagnostics and MVP10.3a configuration read/validation adoption. Authoring/selection/path adoption and publication I/O remain pending in MVP10.3b/c. Owner rows inherit their named contracts; aliases resolve to the same owner. Regression anchors establish only the explicitly recorded adoption, not universal diagnostic coverage.",
+  "scope": "MVP10.1 source inventory, amended for MVP10.2 diagnostics, MVP10.3a configuration and MVP10.3b.1 authoring adoption. Snapshot selection, paths/rendering, publication and other domains remain pending. Owner rows inherit named contracts; aliases resolve to the same owner. Regression anchors prove only explicitly recorded adoption, not universal diagnostic coverage.",
   "interfaces": {
     "acp:gather_context": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
@@ -74,6 +74,7 @@
     "python:autoslurm.ConfigurationError": "autoslurm.errors.ConfigurationError",
     "python:autoslurm.DATE_FORMAT": "autoslurm.definitions.DATE_FORMAT",
     "python:autoslurm.ExecutionContext": "autoslurm.execution.ExecutionContext",
+    "python:autoslurm.InvalidRequestError": "autoslurm.errors.InvalidRequestError",
     "python:autoslurm.LevelSubmitResult": "autoslurm.bulk_submit.LevelSubmitResult",
     "python:autoslurm.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
     "python:autoslurm.SoftwareUpdateError": "autoslurm.software_update.SoftwareUpdateError",
@@ -126,6 +127,7 @@
     "python:autoslurm.errors.Diagnostic": "autoslurm.errors.Diagnostic",
     "python:autoslurm.errors.DiagnosticCause": "autoslurm.errors.DiagnosticCause",
     "python:autoslurm.errors.DiagnosticError": "autoslurm.errors.DiagnosticError",
+    "python:autoslurm.errors.InvalidRequestError": "autoslurm.errors.InvalidRequestError",
     "python:autoslurm.errors.command_failure": "autoslurm.errors.command_failure",
     "python:autoslurm.errors.configuration_failure": "autoslurm.errors.configuration_failure",
     "python:autoslurm.errors.diagnostic_catalog": "autoslurm.errors.diagnostic_catalog",
@@ -343,7 +345,7 @@
       "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema."
     },
     "authoring": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3b.1 (command/literal/definition guards); MVP10.3b.3 (paths/rendering pending)",
       "failures": "Invalid declarations, unknown/missing/duplicate options, types/ranges/nonfinite values, unsafe tokens, command/path-role mismatch.",
       "translation_owner": "CommandOption/CommandContract and argument_compilation validation, retaining option/job context.",
       "desired_diagnostic": "Exact field/job/option and expected versus supplied type/constraint, without importing or executing job code.",
@@ -351,33 +353,36 @@
       "regression_evidence": [
         "tests/unit/test_command_contract.py",
         "tests/unit/test_argument_compilation.py",
-        "tests/integration/test_typed_authoring_workflow.py"
+        "tests/integration/test_typed_authoring_workflow.py",
+        "tests/integration/test_authoring_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Known command/option/argument guards use InvalidRequestError with field/option/job/command context, explicit native causes and no inferred effects. Saved job validation retains explicit settings. Raw dictionaries still need trusted client signature validation. Path/render/selector and external readiness errors remain pending."
     },
     "typer": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3b.1",
       "failures": "Missing optional Typer, unsupported version/app/metadata/type/parser behavior, discovery failure.",
       "translation_owner": "typer_adapter capability checks; no callback execution or dynamic import by name.",
       "desired_diagnostic": "Adapter capability/option and installed versus supported version; chain parser-discovery exceptions.",
       "next_action": "Use supported static declarations or manual CommandContract; installation is an explicit authoring-environment action.",
       "regression_evidence": [
         "tests/integration/test_typed_authoring_workflow.py",
-        "tests/unit/test_public_exports.py"
+        "tests/unit/test_public_exports.py",
+        "tests/integration/test_authoring_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Explicit adapter capability guards use InvalidRequestError and field/option/stage; missing optional import retains native and diagnostic cause. Unsupported versions retain installed/supported numbers in wording. Unanticipated discovery/programming failures propagate, never arbitrary ValueError translation or callback execution."
     },
     "graph": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3b.1 (dependency_graph); MVP10.5 (bulk callbacks/mapping pending)",
       "failures": "Malformed job/graph, unknown dependency, name mismatch, cycle, missing script/job ID mapping.",
       "translation_owner": "job_dependency validation and bulk_submit topological/callback boundaries.",
       "desired_diagnostic": "Named job/dependency or missing mapping; distinguish invalid graph before dispatch from missing response after callback.",
       "next_action": "Correct the graph before submission; after any callback, inspect accepted/unknown outcomes before retrying.",
       "regression_evidence": [
         "tests/unit/test_job_dependency.py",
-        "tests/unit/test_bulk_submit.py"
+        "tests/unit/test_bulk_submit.py",
+        "tests/integration/test_authoring_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "dependency_graph validates container/job/dependency shapes and names, then rejects cycles with a chained CycleError and shared diagnosis. Parent-to-children result unchanged. Lower-level bulk_submit callback/ID mapping and post-dispatch evidence remain MVP10.5."
     },
     "persistence": {
       "implementation_task": "MVP10.3",
@@ -484,15 +489,16 @@
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
     },
     "software_intent": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3b.1",
       "failures": "Invalid historical manifest shape/version/name/revision/repository/subdirectory, differing job intents.",
       "translation_owner": "software_manifest pure validation; do not revive deployment/release machinery.",
       "desired_diagnostic": "Job/project/field and invalid request; redact credentials before serializing rejected repository values.",
       "next_action": "Correct retained metadata or use operator-prepared environment; this API does not clone/install/select a runtime.",
       "regression_evidence": [
-        "tests/unit/test_software_manifest.py"
+        "tests/unit/test_software_manifest.py",
+        "tests/integration/test_authoring_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "Known pure historical-intent validation uses InvalidRequestError with field/project/job when known. Repository parser failures retain native cause and generic safe diagnostic detail, excluding raw rejected addresses. No deployment machinery or automatic runtime selection."
     },
     "software_status": {
       "implementation_task": "MVP10.4",
@@ -612,9 +618,10 @@
       "regression_evidence": [
         "tests/unit/test_errors.py",
         "tests/unit/test_error_output.py",
-        "tests/integration/test_configuration_diagnostics.py"
+        "tests/integration/test_configuration_diagnostics.py",
+        "tests/integration/test_authoring_diagnostics.py"
       ],
-      "adoption": "MVP10.2 foundation implemented; MVP10.3a adds ConfigurationError and configuration_failure with configuration CLI adoption. Other domains and universal CLI/ACP parity remain pending."
+      "adoption": "MVP10.2 foundation; MVP10.3a ConfigurationError/configuration_failure; MVP10.3b.1 InvalidRequestError and optional explicit cause/effects on invalid_argument. Identity enrichment compares against the same bounded/redacted representation. Other domains and universal CLI/ACP parity remain pending."
     }
   },
   "owners": {
@@ -705,7 +712,7 @@
     "autoslurm.apps.schedule.main": {
       "contract": "persistence",
       "inputs": "Script, Slurm options, application arguments, optional append/submit.",
-      "current": "Parses help-text by executing script --help; raw ValueError/OSError; saves then optionally submit_jobs, errors can follow saved bundle.",
+      "current": "Parses help text by executing script --help; adopted authoring InvalidRequestError renders shared stderr/exit 1, --autoslurm-debug re-raises original. Application --debug still forwards. Raw help-process/publication/other service failures remain; save can precede optional submit failure.",
       "effects": "Application --help is executed (unlike typed adapter); bundle write precedes optional dispatch."
     },
     "autoslurm.apps.software.main": {
@@ -729,7 +736,7 @@
     "autoslurm.apps.submit.main": {
       "contract": "submission",
       "inputs": "Name/date or file/latest/index plus machine overrides.",
-      "current": "Selection/preflight/execution errors inconsistently SystemExit string; some machine_config errors outside catch. Receipt only in text, no JSON.",
+      "current": "Adopted InvalidRequestError reaching preparation uses shared rendering/exit 1. Earlier broken-snapshot and selection gates and other error/result/receipt routes retain their existing policies until later slices. No universal diagnostic parity or JSON added.",
       "effects": "Preview/selection reads then submission; accepted receipt must survive rendering error."
     },
     "autoslurm.apps.sync.main": {
@@ -855,7 +862,7 @@
     "autoslurm.command_contract.CommandContract": {
       "contract": "authoring",
       "inputs": "Literal command prefix, CommandOption sequence and input/path roles.",
-      "current": "Frozen copied declarations or ValueError.",
+      "current": "Frozen copied declarations or InvalidRequestError (ValueError-compatible).",
       "effects": "Pure, no import by command name."
     },
     "autoslurm.command_contract.CommandContract.describe": {
@@ -867,31 +874,31 @@
     "autoslurm.command_contract.CommandContract.job": {
       "contract": "authoring",
       "inputs": "Job name, script_args, optional Slurm mapping/dependencies.",
-      "current": "Readable job dict or ValueError.",
+      "current": "Readable job dict or InvalidRequestError (ValueError-compatible). Named job/command context enriches nested validation; no broad exception catch.",
       "effects": "Pure; no save, preview, submit or remote readiness."
     },
     "autoslurm.command_contract.CommandContract.validate": {
       "contract": "authoring",
       "inputs": "Named script_args mapping.",
-      "current": "Complete settings with declared defaults; ValueError for missing/unknown/type/range.",
+      "current": "Complete settings with declared defaults; InvalidRequestError (ValueError-compatible) for missing/unknown/type/range.",
       "effects": "Pure."
     },
     "autoslurm.command_contract.CommandContract.validate_job": {
       "contract": "authoring",
       "inputs": "Exact saved job and trusted existing contract.",
-      "current": "Copied validated job; ValueError for incomplete settings or command/path-role drift.",
+      "current": "Copied validated job; InvalidRequestError (ValueError-compatible) for incomplete settings or command/path-role drift.",
       "effects": "Pure; does not replace old explicit defaults."
     },
     "autoslurm.command_contract.CommandOption": {
       "contract": "authoring",
       "inputs": "Name, native kind, required/default and numeric limits.",
-      "current": "Frozen dataclass; constructor validation ValueError.",
+      "current": "Frozen dataclass; constructor validation InvalidRequestError (ValueError-compatible).",
       "effects": "No I/O or callback."
     },
     "autoslurm.command_contract.CommandOption.validate": {
       "contract": "authoring",
       "inputs": "One scalar value against declared option.",
-      "current": "Validated scalar or ValueError with option constraint.",
+      "current": "Validated scalar or InvalidRequestError (ValueError-compatible) with option constraint.",
       "effects": "Pure."
     },
     "autoslurm.config.activation_command_from_config": {
@@ -1059,8 +1066,8 @@
     "autoslurm.job_dependency.dependency_graph": {
       "contract": "graph",
       "inputs": "Dictionary of jobs and dependencies.",
-      "current": "Parent-to-children dict; ValueError for names/dependencies; malformed job can AttributeError.",
-      "effects": "Pure; cycle checked by consumer topological sort."
+      "current": "Parent-to-children dict; InvalidRequestError for malformed containers/jobs/names/dependencies and cycles. Original CycleError retained in __cause__ and safe diagnostic facts.",
+      "effects": "Pure; validates cycles before returning. Consumer topological sorting retains its ordering role."
     },
     "autoslurm.job_dependency.update_slurm_with_dependencies": {
       "contract": "persistence",
@@ -1071,13 +1078,13 @@
     "autoslurm.job_runner.preview_bundle": {
       "contract": "authoring",
       "inputs": "Exact bundle path, optional machine/overrides.",
-      "current": "Machine/path/rendered jobs dict; selection/graph/command/path/readiness errors propagate.",
+      "current": "Machine/path/rendered jobs dict; adopted authoring InvalidRequestError enriched with exact bundle_path/machine before external preflight/staging/dispatch. Other path/readiness/file/render failures retain existing behavior pending their slices.",
       "effects": "No submission or receipt; can run remote readiness/root checks and local bash -n, so not a purely offline API."
     },
     "autoslurm.job_runner.submit_jobs": {
       "contract": "submission",
       "inputs": "Bundle name, optional exact path/date/machine/overrides or context.",
-      "current": "Receipt on success; pre-dispatch plain exceptions; execute_prepared_bundle raises SubmissionError.receipt for post-receipt failures.",
+      "current": "Receipt on success; adopted pre-dispatch authoring InvalidRequestError enriched with exact bundle_path/machine. Other pre-dispatch errors remain staged adoption. execute_prepared_bundle still preserves SubmissionError.receipt after receipt creation.",
       "effects": "Preflight then staging and dispatch once; evidence printed after receipt return; printing failure cannot undo accepted jobs."
     },
     "autoslurm.job_to_slurm.create_slurm_script": {
@@ -1143,37 +1150,37 @@
     "autoslurm.save_load_jobs.load_bundle_from_path": {
       "contract": "persistence",
       "inputs": "Exact JSON path.",
-      "current": "(jobs,graph,date); missing FileNotFoundError, invalid JSON converted to OSError, malformed shape/graph TypeError/AttributeError/ValueError/CycleError.",
+      "current": "(jobs,graph,date); adopted graph/shape/cycle failures use InvalidRequestError with exact bundle_path. File absence, decode, filesystem and other record-publication diagnostics remain MVP10.3c.",
       "effects": "Reads and normalizes loaded objects only."
     },
     "autoslurm.save_load_jobs.save_bundle": {
       "contract": "persistence",
       "inputs": "Job dict, bundle name and append flag.",
-      "current": "Exact Path; TypeError/KeyError/ValueError plus serialization/publication failures; collision warnings and saved message.",
+      "current": "Exact Path; known bundle/job/key/script/name input guards use InvalidRequestError, replacing old TypeError/KeyError guards. Commands must be nonempty strings. Empty drafts retained. Serialization/publication failures still raw (MVP10.3c).",
       "effects": "Mutates input job name/kind defaults; append replaces snapshot atomically; publication may have happened on error."
     },
     "autoslurm.save_load_jobs.schedule_job": {
       "contract": "persistence",
       "inputs": "One job, optional bundle name and append flag.",
-      "current": "(effective job,exact path); missing script KeyError, shape/type errors, raw publication errors; prints saved location.",
+      "current": "(effective job,exact path); known malformed job or missing/blank/nonstring script uses InvalidRequestError before publication. Name validation uses same family. Raw publication errors remain; prints saved location.",
       "effects": "Mutates supplied job defaults; publishes/appends once; no scheduler."
     },
     "autoslurm.software_manifest.attach_software_manifest": {
       "contract": "software_intent",
       "inputs": "Nonempty bundle and software mapping.",
-      "current": "Copied bundle or ValueError.",
+      "current": "Copied bundle or InvalidRequestError (ValueError-compatible).",
       "effects": "Pure; never deploys."
     },
     "autoslurm.software_manifest.bundle_software_manifest": {
       "contract": "software_intent",
-      "inputs": "Sequence of job dicts.",
-      "current": "Shared normalized request or None, ValueError inconsistent requests.",
+      "inputs": "Iterable of job dictionaries; excludes a dictionary/string masquerading as a job sequence.",
+      "current": "Shared normalized request or None, InvalidRequestError (ValueError-compatible) inconsistent requests.",
       "effects": "Pure."
     },
     "autoslurm.software_manifest.normalize_software_manifest": {
       "contract": "software_intent",
       "inputs": "Historical software mapping.",
-      "current": "Normalized copied request or ValueError.",
+      "current": "Normalized copied request or InvalidRequestError (ValueError-compatible).",
       "effects": "Pure."
     },
     "autoslurm.software_requirements.software_expectations": {
@@ -1287,7 +1294,7 @@
     "autoslurm.typer_adapter.from_typer": {
       "contract": "typer",
       "inputs": "Trusted already-imported static leaf Typer app; literal script and path roles.",
-      "current": "CommandContract; ValueError for unsupported/missing optional metadata, cause chained for import failure; parser-discovery exceptions can escape.",
+      "current": "CommandContract; InvalidRequestError for explicit unsupported/missing metadata guards; optional import failure retains native/structured cause. Unexpected parser discovery errors propagate unchanged.",
       "effects": "Inspects static declarations only; no callback/help command or command-name imports."
     },
     "autoslurm.errors.Diagnostic": {
@@ -1391,6 +1398,12 @@
       "inputs": "Explicit stage, problem=invalid/missing/unreadable/corrupt, optional safe scalar context, cause, summary and caller-supplied effects.",
       "current": "Configuration Diagnostic using existing catalogue codes; no inferred side effects, no raw config. Unknown problem is programming ValueError.",
       "effects": "Pure; no environment lookup, filesystem access, backend import, command execution or retry."
+    },
+    "autoslurm.errors.InvalidRequestError": {
+      "contract": "diagnostics",
+      "inputs": "Known validation message and named field; optional explicit stage/context/DiagnosticCause/effects.",
+      "current": "DiagnosticError/RuntimeError and ValueError subclass with authoring operation and invalid_argument code. No generic exception classifier. Existing TypeError/KeyError authoring guards and DAG CycleError now use this family; native causes retained.",
+      "effects": "Pure construction; no I/O, backend imports, printing, exit, retry, repair or inferred effects."
     }
   },
   "catch_reviews": {
@@ -1531,6 +1544,12 @@
       "date": "2026-11-13",
       "base_revision": "6e6cf7b",
       "note": "Configuration read/JSON/profile/selection validation adopts the shared core; ConfigurationError exported at root and leaf, configuration_failure exported at leaf. CLI aliases/standalone/debug and retained-file regressions added. Authoring/selection/path and publication adoption split into MVP10.3b/c. Historical audit revision remains unchanged."
+    },
+    {
+      "task": "MVP10.3b.1",
+      "date": "2026-11-14",
+      "base_revision": "23b66a8",
+      "note": "Authoring adoption and explicit InvalidRequestError dev boundary; command/literal/graph/software-intent/save-preparation guards, shared schedule rendering and native cause preservation. MVP10.3b split before implementation; snapshot selection and path/render slices remain open, as does publication3c."
     }
   ]
 }

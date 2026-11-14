@@ -1,5 +1,11 @@
 ## CLI Reference for Agents
 
+`asl schedule` uses shared diagnostics for adopted authoring failures (stderr,
+exit 1). `--autoslurm-debug` preserves original errors; application `--debug`
+retains its forwarding behavior. Help discovery remains heuristic; prefer trusted
+typed contracts for client integration. Selection/path/publication and process
+diagnostics are separate adoption tasks; this is not universal CLI/ACP parity.
+
 - `asl software status --machine NAME`: read Git project status under the configured
   software_root; `--project` is relative to that root. Add `--local-project PATH`
   or `--requirements FILE` for focused environment comparisons, and `--dependency`
