@@ -94,3 +94,15 @@ Validate against the actual CLI signature before saving; literal/shell checks
 cannot detect an unknown application option or wrong scientific setting. The
 same compiler is used by `preview_bundle` and submitted scripts. This changes
 new script rendering without rewriting saved bundles or historical receipts.
+
+## Dependency failure default
+
+Jobs that declare a nonempty `dependencies` list automatically include
+`#SBATCH --kill-on-invalid-dep=yes` in their generated script. Slurm cancels the
+dependent job if its dependency can never be satisfied; it does not leave it
+pending indefinitely. See the [Slurm option reference](https://slurm.schedmd.com/sbatch.html#OPT_kill-on-invalid-dep).
+
+To keep pending behavior for a particular dependent job, set
+`"slurm": {"kill_on_invalid_dep": "no"}`. Jobs without dependencies receive no
+automatic directive. The policy appears in previews and applies to new submissions
+locally and through SSH; existing queued jobs and historical scripts are untouched.

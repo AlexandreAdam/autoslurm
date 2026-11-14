@@ -38,6 +38,13 @@ arbitrary command signatures still need client validation. Existing raw bundles
 retain space-style lists and positionals, now safely quoted, but the recommended
 client pattern remains named scalars/CSV. Historical bundles are not rewritten.
 
+For a nonempty job `dependencies` list, the generated script defaults to
+`#SBATCH --kill-on-invalid-dep=yes`. An impossible dependency is then cancelled
+by Slurm rather than left pending indefinitely. Set job
+`slurm.kill_on_invalid_dep` to the string `"no"` to opt out. Root jobs have no
+automatic directive; an explicit Slurm setting remains authoritative. No retry
+or change to an already queued job occurs.
+
 To plan a new workload, gather the relevant CLI usage, resource guidance, and ACP action:
 
 - `04_project_map.md` and `05_cli_reference.md` describe scheduling flags. The Python API `autoslurm.schedule_job` takes a job dictionary with `script`, `script_args`, `dependencies` and `slurm` fields. Do not rely on `pre_commands`: the current renderer does not execute it.

@@ -127,6 +127,16 @@ quoted. New integrations follow the named scalar/CSV pattern above. Do not rely
 on shell expansion inside any argument value; `script` remains an operator-owned
 shell command prefix and must not contain untrusted settings.
 
+## Dependency failure default
+
+Jobs with a nonempty `dependencies` list default to
+`#SBATCH --kill-on-invalid-dep=yes`. Slurm then cancels a dependent job whose
+dependency can never be satisfied, instead of leaving it pending indefinitely.
+To retain pending behavior for a particular job, set
+`"slurm": {"kill_on_invalid_dep": "no"}`. Jobs without dependencies receive no
+automatic directive. Preview shows the effective policy; actual dependency IDs
+are still bound at submission. Existing queued jobs and saved scripts are unchanged.
+
 ## Application paths
 
 Client definitions keep paths relative. These are the current bases:

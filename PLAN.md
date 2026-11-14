@@ -12,6 +12,7 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
+  FIX.DEPENDENCY.1 defaults dependent jobs to kill-on-invalid-dep=yes.
   MVP9.1 typed-command proof and MVP9.2 shared literal compiler are complete;
   MVP9.3 public authoring/adoption remains open.
   MVP7 single-checkout software updates are complete. The user has
@@ -19,14 +20,13 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 723 passed, 42 expected
+  rollback source remains unchanged. Full offline suite: 741 passed, 42 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP9.2 extracts one pure argument compiler, quotes
-  every literal after existing path resolution, and shares that output through
-  preview/submission preparation. Actual parser/shell/reference execution and
-  clean-wheel checks pass. Named scalar/CSV/default-off guidance remains; strings
-  can now contain spaces/metacharacters without pre-escaping. Saved formats and
-  historical evidence are unchanged. No cluster or external client change.
+- **Latest completed task:** FIX.DEPENDENCY.1 adds the requested default
+  `#SBATCH --kill-on-invalid-dep=yes` to scripts with declared dependencies.
+  Explicit per-job overrides win; root jobs are unchanged. Preview and dispatched
+  scripts remain identical, without saved-definition mutation. Full offline and
+  wheel checks pass; no cluster or historical/queued job change.
 - **Next task:** MVP9.3 supported authoring routes and adoption, including public
   helper and saved-command validation boundaries. MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
@@ -575,6 +575,14 @@ Design: [readable command/job pattern](REFACTORING_DOCS/design/job_command_patte
   installation through the local/fake-SSH fixture. Update docs/rules, full offline
   checks and package smoke; no cluster operation or daily environment/config edit.
 
+## FIX.DEPENDENCY.1 Cancel jobs with impossible dependencies by default
+
+- [x] Add `#SBATCH --kill-on-invalid-dep=yes` when a job declares dependencies,
+  preserving explicit per-job Slurm overrides and leaving root jobs unchanged.
+  Keep preview/staged scripts identical across local/remote execution, do not
+  mutate saved definitions, and retain command-line dependency ID binding.
+  Verify mocked submission and offline regressions; update human/agent guidance.
+
 ## MVP9 Readable command arguments without duplicated client plumbing
 
 Design: [command/job pattern and MVP9 scope](REFACTORING_DOCS/design/job_command_pattern.md#mvp9-delivery-scope-planned).
@@ -819,6 +827,7 @@ product. Early MVPs support bounded parts, not every outcome in that map.
 
 | Date | Decision | Reason |
 |---|---|---|
+| 2026-11-13 | Dependent jobs default to kill-on-invalid-dep=yes | User requested Slurm cancel jobs whose dependencies can never be satisfied; explicit per-job Slurm overrides remain authoritative, roots and already queued scripts are unchanged |
 | 2026-11-13 | Schedule readable status reasons and reusable Gaia workflow services | User requested same-row pending explanations and generic Gaia behavior in supported APIs with everyday human/agent documentation. PLAN.3 scopes MVP11/12; exact APIs, data and runtime packaging remain proposed, existing retrieval/update boundaries retained |
 | 2026-11-13 | Expand MVP10 to full API failure review, a dedicated error module and strategic integration across all public operations | User rejected a narrow message/updater fix; shared error ownership and complete failure contracts must be independently maintainable. Exact error API details remain proposed; implementation follows MVP9 |
 | 2026-11-13 | Investigate a concrete low-friction pattern while preserving human-readable cluster execution | User prioritized readable settings/scripts and less agent integration glue. DOCS.3 records a proposed single-declaration builder/command pattern with experiment evidence; no architecture or argument-policy change is accepted yet |
@@ -901,6 +910,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | MVP9.1 Single-declaration command proof | 674 full offline tests passed in 10.53 s (42 expected collision warnings), report `.development/test-runs/command-proof.xml`; 40 new cases. Experimental command-contract/optional Typer 0.27 adapter derives scalar options/defaults/ranges, rejects unsupported side-effectful/dynamic semantics before discovery, and builds current readable jobs. Reference CLI/parser/native-value round-trips, invalid options without writes, preview/mock submission identity and actual local science output passed. No contract serialized or top-level public API added. Clean wheel optional-dependency/contract/JSON smoke passed, SHA256 `17e2ab6c8a97b16a9eea104285a80082280f680e490b84750babb13171db9221`. Docs and links reviewed; no cluster, base install, daily state, external application or rollback changes. User's status/workflow planning requests remain next. Task commit: `git log --grep '^MVP9.1:'`; push completed dev commit. |
 | 2026-11-13 | PLAN.3 Status explanations and reusable Gaia workflow roadmap | Preserved the supplied proposal unchanged; read representative Gaia bundle/command/registry/run code at `8eaffec` without executing it. Scheduled MVP11 reason/projection/table slices and MVP12 resource/offline/review/run/preparation/retry/optional-runtime services with per-slice public API, CLI/agent discovery, evidence and human examples. Mapped MVP9/10/11 and completed-update overlaps; retained separate fetch/runtime/data decisions and low-level submit boundaries. Reviewed diff, relative links and task references; documentation-only, no test rerun. Existing baseline remains 674 passing offline tests from MVP9.1. No cluster, config/state, external client, installation or rollback changes. Task commit: `git log --grep '^PLAN.3:'`; push completed dev commit. |
 | 2026-11-13 | MVP9.2 Shared literal argument compiler | 723 full offline tests passed in 10.01 s (42 expected collision warnings), report `.development/test-runs/argument-compiler.xml`; 105 focused checks passed. One pure owner compiles resolved values into literal argv groups and shell-quotes them; retired the old renderer formatter. Actual Bash capture and Typer parsing preserve spaces/quotes/substitutions as text; reference preview matches dispatched script and actual scientific output, while invalid raw values stop before staging. Plain output and raw list/positional/omission semantics remain, typed authoring stays scalar/CSV/default-off. No saved shape change; new rendering does not expand expressions or rewrite old artifacts. Clean wheel import/path/actual-shell smoke passed without Typer, SHA256 `d8d846ed99b780dde236a8beb5c4e6e69d422aa1f7598991dd59c460177d9f9a`. Agent/human guidance and links updated. No cluster, base install, daily config/state, external scientific application or rollback edits. Task commit: `git log --grep '^MVP9.2:'`; push completed dev commit. |
+| 2026-11-13 | FIX.DEPENDENCY.1 Default cancellation for impossible dependencies | 741 full offline tests passed in 9.69 s (42 expected collision warnings), report `.development/test-runs/invalid-dependency.xml`; 18 new renderer cases plus preview/dispatch assertions and updated dependent-script fixtures. Shared renderer adds one default yes directive only for nonempty dependencies, preserves underscore/hyphen explicit overrides, handles arrays and leaves definitions unchanged in local/remote contexts. Full-suite fixture mismatches were updated for the intended directive. Clean wheel/default/nonmutation/actual-shell smoke passed, SHA256 `62579a91072cc8989df90da81c178d4b83eca46242490d067c046440f9011e8a`. Human/agent docs and MVP4 design amended; links/diff checked. No cluster, configuration, daily state, base installation or historical/queued script change. Task commit: `git log --grep '^FIX.DEPENDENCY.1:'`; push completed dev commit. |
 
 ## How we work
 

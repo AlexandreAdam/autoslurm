@@ -87,6 +87,10 @@ def test_dispatch_uses_exact_preview_scripts_and_prepared_execution_paths(local_
     for name, (path, text) in submitted.items():
         assert text == preview["jobs"][name]["script"] == path.read_text()
         assert "#SBATCH --dependency" not in text
+        if name == "B":
+            assert text.count("#SBATCH --kill-on-invalid-dep=yes\n") == 1
+        else:
+            assert "#SBATCH --kill-on-invalid-dep" not in text
         assert snapshot[name]["_autoslurm_execution"] == {key: value for key, value in preview["jobs"][name].items() if key != "script"}
     assert selected.read_bytes() == before
     assert [command[0] for command in commands] == ["sbatch", "sbatch"]

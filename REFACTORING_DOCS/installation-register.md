@@ -12,6 +12,12 @@ is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
+FIX.DEPENDENCY.1 (2026-11-13): 741 full offline tests passed (42 expected collision
+warnings), report `.development/test-runs/invalid-dependency.xml`; clean wheel
+dependent-job default/nonmutation/actual-shell smoke passed. Main editable source
+adds kill-on-invalid-dep=yes for new dependent-job scripts unless explicitly
+overridden. No base install, config/state, cluster or historical/queued job changes.
+
 MVP9.2 (2026-11-13): 723 full offline tests passed (42 expected collision warnings),
 report `.development/test-runs/argument-compiler.xml`; clean wheel literal-compiler/
 path/actual-shell smoke passed with Typer deliberately unavailable. Base editable

@@ -3,6 +3,33 @@ from io import StringIO
 from autoslurm.job_to_slurm import write_slurm_content
 from unittest.mock import patch
 import os
+import copy
+
+
+@pytest.mark.parametrize("remote", [False, True])
+@pytest.mark.parametrize("dependencies,options,expected", [
+    (None, {}, None),
+    ([], {}, None),
+    (["parent"], {}, "yes"),
+    (["parent", "other"], {"array": "0-3"}, "yes"),
+    (["parent"], {"kill_on_invalid_dep": "no"}, "no"),
+    (["parent"], {"kill-on-invalid-dep": "no"}, "no"),
+    (["parent"], {"kill_on_invalid_dep": "yes"}, "yes"),
+    (["parent"], {"kill_on_invalid_dep": None}, "yes"),
+    ([], {"kill_on_invalid_dep": "no"}, "no"),
+])
+def test_invalid_dependency_policy_is_a_nonmutating_render_default(remote, dependencies, options, expected):
+    from autoslurm.execution import resolve_execution_context
+
+    config = {"ssh_alias": "fake-cluster"} if remote else {}
+    context = resolve_execution_context("mock", config, root_resolver=lambda *args: "/mock/storage")
+    job = {"name": "sample", "script": "science", "slurm": options, "dependencies": dependencies}
+    before = copy.deepcopy(job)
+    output = StringIO()
+    write_slurm_content(output, job, config, context=context)
+    directives = [line for line in output.getvalue().splitlines() if line.startswith("#SBATCH --kill-on-invalid-dep")]
+    assert directives == ([] if expected is None else [f"#SBATCH --kill-on-invalid-dep={expected}"])
+    assert job == before
 
 
 @pytest.fixture

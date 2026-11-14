@@ -74,7 +74,13 @@ def write_slurm_content(file: TextIOWrapper, job: dict, machine_config: dict, *,
         file.write(f"#SBATCH --chdir={shlex.quote(resolved['working_directory'])}\n")
 
     # SLURM directives
-    for key, value in job["slurm"].items():
+    slurm_options = dict(job["slurm"])
+    if job.get("dependencies") and all(
+        slurm_options.get(key) is None
+        for key in ("kill_on_invalid_dep", "kill-on-invalid-dep")
+    ):
+        slurm_options["kill_on_invalid_dep"] = "yes"
+    for key, value in slurm_options.items():
         if value is not None and key != "output":
             file.write(f"#SBATCH --{key.replace('_', '-')}={value}\n")
 

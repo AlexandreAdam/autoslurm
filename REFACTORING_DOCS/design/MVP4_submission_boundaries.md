@@ -34,6 +34,13 @@ storage includes transfer. Those are follow-up MVP5/MVP6 scopes, not prerequisit
 - **D3 Stable scripts.** Dependencies use `sbatch --dependency afterok:...` for
   local and remote execution. Validated/rendered scripts remain byte-identical
   through execution. Dependency graph rules remain in the existing graph driver.
+  **FIX.DEPENDENCY.1 amendment (2026-11-13):** Alexandre requests dependent jobs
+  default to `#SBATCH --kill-on-invalid-dep=yes`. The shared renderer adds it for
+  nonempty declared dependencies, preserving explicit Slurm overrides (including
+  `kill_on_invalid_dep: "no"`). Root jobs gain no implicit option. Defaults are
+  applied to a copy, not saved definitions; IDs still bind at dispatch. Slurm
+  cancellation of impossible dependencies is separate from submission rejection
+  or automatic retry. Historical/queued scripts are unchanged.
 - **D4 Evidence before progress.** Preserve the driver's per-job receipt writes,
   exclusive claim, known-ID guards, no fallback/retry and uncertainty window.
   Failure after dispatch remains distinct from failure before dispatch; a final
@@ -95,6 +102,7 @@ separate tasks. Maintain truthful exceptions and do not promise exactly-once.
 
 | Date | Event |
 |---|---|
+| 2026-11-13 | FIX.DEPENDENCY.1 adds a nonmutating dependent-job kill-on-invalid-dep=yes render default; explicit overrides/root jobs and dispatch-time ID binding retained. 741 offline tests passed in 9.69 s (42 expected warnings); clean wheel/default/actual-shell smoke passed. No actual cluster or historical/queued script change |
 | 2026-11-11 | MVP4.0 scopes shared preparation and submission stage boundaries; follow-up inspection/persistence MVPs added |
 | 2026-11-11 | MVP4.1 shared preparation and explicit preflight implemented; preview parity regressions pass |
 | 2026-11-11 | MVP4.2 operation stages and dispatch phases extracted; dependencies no longer mutate scripts; persistence interruption retains known IDs |
