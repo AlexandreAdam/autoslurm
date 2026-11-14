@@ -21,18 +21,22 @@ Apply this when generating jobs and when reviewing or helping client software.
   lists of argument names; they are not application argument values.
 - Boolean options default to off: real `True` emits `--flag`, while real `False`
   is omitted. Record false settings in JSON; a default-on CLI option cannot be
-  disabled by omission. String values are single shell-safe words, because the
-  current renderer leaves non-path arguments unquoted. Do not hand-escape values
-  or permit whitespace, shell metacharacters, substitutions or glob patterns.
+  disabled by omission. Strings are literal values, including spaces and shell
+  metacharacters; AutoSlurm quotes them after path resolution. Do not hand-escape
+  values. Reject control characters. `$VAR`, substitutions and glob patterns are
+  literal text; use runtime_environment or CLI environment defaults for runtime
+  values, never shell expressions hidden in script_args.
 - **Before saving or submitting**, validate every job against its command's
   typed signature: unknown names, required options, types (including CSV
-  elements), boolean defaults and unsafe values. Use the public path/shell
+  elements), boolean defaults and invalid/control-character values. Use the public path/shell
   preview in addition to client validation; it does not check arbitrary CLI
   signatures. Errors must fail locally before writing/submitting the workload.
 
 See the [client argument contract and example](01_client_workflow.md#explicit-named-job-arguments).
-These are lasting client-design rules; they do not claim new AutoSlurm runtime
-enforcement or authorize rewriting historical bundles.
+These are client-design rules. AutoSlurm checks structural/literal validity;
+arbitrary command signatures still need client validation. Existing raw bundles
+retain space-style lists and positionals, now safely quoted, but the recommended
+client pattern remains named scalars/CSV. Historical bundles are not rewritten.
 
 To plan a new workload, gather the relevant CLI usage, resource guidance, and ACP action:
 

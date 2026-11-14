@@ -12,20 +12,23 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP8 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
-  MVP9.1 typed-command proof is complete; MVP9.2–3 remain open.
+  MVP9.1 typed-command proof and MVP9.2 shared literal compiler are complete;
+  MVP9.3 public authoring/adoption remains open.
   MVP7 single-checkout software updates are complete. The user has
   superseded the source-copy/installed-release architecture because cluster file
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 674 passed, 42 expected
+  rollback source remains unchanged. Full offline suite: 723 passed, 42 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** PLAN.3 schedules MVP11 readable status reasons and
-  MVP12 reusable scientific-workflow services from the supplied Gaia proposal.
-  Public API, CLI/agent discovery, human examples and outcome contracts are
-  completion requirements for each workflow slice. Planning only; implementation
-  remains at MVP9.1's experimental typed-command proof. No runtime/client change.
-- **Next task:** continue MVP9.2's shared argument compiler. MVP11 and MVP12 are
+- **Latest completed task:** MVP9.2 extracts one pure argument compiler, quotes
+  every literal after existing path resolution, and shares that output through
+  preview/submission preparation. Actual parser/shell/reference execution and
+  clean-wheel checks pass. Named scalar/CSV/default-off guidance remains; strings
+  can now contain spaces/metacharacters without pre-escaping. Saved formats and
+  historical evidence are unchanged. No cluster or external client change.
+- **Next task:** MVP9.3 supported authoring routes and adoption, including public
+  helper and saved-command validation boundaries. MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
   MVP9 implements readable command integration; MVP10 follows with
@@ -586,12 +589,14 @@ architecture sketches remain proposals until each task settles its interface.
   Reject unknown/unsupported options without running science, callbacks, prompts
   or dynamic defaults. Keep Typer optional and capability-checked; core contracts
   contain plain data. Settle the public helper syntax and saved-data boundary.
-- [ ] **MVP9.2 One argument compiler.** Resolve declared paths through existing
+- [x] **MVP9.2 One argument compiler.** Resolve declared paths through existing
   policy, compile literal argument tokens once, then quote for Slurm shell output.
   Preview and submission consume the same result. Verify parser round-trips,
   including spaces/metacharacters, static defaults, booleans and path values.
   For this small release retain scalar/CSV/default-off guidance; reject unsupported
-  list/tuple/default-on boolean semantics rather than silently guessing.
+  list/tuple/default-on boolean semantics in the typed authoring contract rather
+  than silently guessing. Raw bundles retain existing space-style lists and
+  positionals with literal quoting; no new list/boolean style is introduced.
 - [ ] **MVP9.3 Supported authoring routes and adoption.** Expose the agreed builder
   to Python/client CLI/agent recipes, alongside existing raw-script authoring.
   Avoid help-text guessing for supported declarations. Demonstrate one client
@@ -895,6 +900,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | FIX.SOFTWARE.1 Plain isolated editable builds and setup before venv activation | 634 full offline tests passed in 9.16 s (41 expected collision warnings), report `.development/test-runs/plain-editable.xml`; 11 added cases plus updated command/script expectations. Real local/fake-SSH Git/venv fixture uses a no-download standard-library backend and a conflicting runtime package to prove build isolation, same/new-commit CLI refresh, single checkout and unchanged non-project distributions. Pip failures expose last 20 lines/about 4 KiB with URL-userinfo lines omitted; shell tests verify setup precedes activation and failure stops rooted jobs. Config editor preserves setup; single-setting behavior retained. Clean wheel smoke and guidance checks passed. No actual cluster contact, network build, daily config/venv install or rollback edit. Broad MVP10 remains planned. Task commit: `git log --grep '^FIX.SOFTWARE.1:'`; push completed dev commit. |
 | 2026-11-13 | MVP9.1 Single-declaration command proof | 674 full offline tests passed in 10.53 s (42 expected collision warnings), report `.development/test-runs/command-proof.xml`; 40 new cases. Experimental command-contract/optional Typer 0.27 adapter derives scalar options/defaults/ranges, rejects unsupported side-effectful/dynamic semantics before discovery, and builds current readable jobs. Reference CLI/parser/native-value round-trips, invalid options without writes, preview/mock submission identity and actual local science output passed. No contract serialized or top-level public API added. Clean wheel optional-dependency/contract/JSON smoke passed, SHA256 `17e2ab6c8a97b16a9eea104285a80082280f680e490b84750babb13171db9221`. Docs and links reviewed; no cluster, base install, daily state, external application or rollback changes. User's status/workflow planning requests remain next. Task commit: `git log --grep '^MVP9.1:'`; push completed dev commit. |
 | 2026-11-13 | PLAN.3 Status explanations and reusable Gaia workflow roadmap | Preserved the supplied proposal unchanged; read representative Gaia bundle/command/registry/run code at `8eaffec` without executing it. Scheduled MVP11 reason/projection/table slices and MVP12 resource/offline/review/run/preparation/retry/optional-runtime services with per-slice public API, CLI/agent discovery, evidence and human examples. Mapped MVP9/10/11 and completed-update overlaps; retained separate fetch/runtime/data decisions and low-level submit boundaries. Reviewed diff, relative links and task references; documentation-only, no test rerun. Existing baseline remains 674 passing offline tests from MVP9.1. No cluster, config/state, external client, installation or rollback changes. Task commit: `git log --grep '^PLAN.3:'`; push completed dev commit. |
+| 2026-11-13 | MVP9.2 Shared literal argument compiler | 723 full offline tests passed in 10.01 s (42 expected collision warnings), report `.development/test-runs/argument-compiler.xml`; 105 focused checks passed. One pure owner compiles resolved values into literal argv groups and shell-quotes them; retired the old renderer formatter. Actual Bash capture and Typer parsing preserve spaces/quotes/substitutions as text; reference preview matches dispatched script and actual scientific output, while invalid raw values stop before staging. Plain output and raw list/positional/omission semantics remain, typed authoring stays scalar/CSV/default-off. No saved shape change; new rendering does not expand expressions or rewrite old artifacts. Clean wheel import/path/actual-shell smoke passed without Typer, SHA256 `d8d846ed99b780dde236a8beb5c4e6e69d422aa1f7598991dd59c460177d9f9a`. Agent/human guidance and links updated. No cluster, base install, daily config/state, external scientific application or rollback edits. Task commit: `git log --grep '^MVP9.2:'`; push completed dev commit. |
 
 ## How we work
 

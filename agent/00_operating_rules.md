@@ -49,7 +49,7 @@ Respect Alexandre's lasting preference: job settings are individual named scalar
 Typer commands per job kind; never hide settings in encoded/config-file payloads.
 Validate option names/types/safe values against each CLI signature before saving
 or submitting. See the full [client argument contract](01_client_workflow.md#explicit-named-job-arguments)
-for comma-separated lists, default-off boolean flags and unquoted string limits.
+for comma-separated lists, default-off boolean flags and literal string quoting.
 When helping/reviewing a client, identify encoded configuration to replace.
 
 Keep scientific computation independent of submission glue. Prefer an installed

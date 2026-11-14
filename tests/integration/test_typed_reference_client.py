@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import shutil
-import shlex
 import subprocess
 import sys
 
@@ -13,7 +12,7 @@ import pytest
 from typer.main import get_command
 
 from autoslurm import load_bundle_from_path, preview_bundle, save_bundle, save_config, submit_jobs
-from autoslurm.job_to_slurm import _format_script_args
+from autoslurm.argument_compilation import compile_script_arguments
 from autoslurm.storage import jobs_dir, storage_root
 from autoslurm.typer_adapter import from_typer
 
@@ -29,13 +28,15 @@ def typed_client(monkeypatch):
 
 
 @pytest.mark.parametrize('include_values', [False, True])
-def test_saved_scalar_values_round_trip_through_the_actual_cli(typed_client, include_values):
+@pytest.mark.parametrize('label', ['g,r', 'two words', "a'b", '$(touch injected)', '*?[x]', '--other=value'])
+def test_saved_scalar_values_round_trip_through_the_actual_cli(typed_client, include_values, label):
     app, contract = typed_client
     job = contract.job(name='sample', script_args={'input_file': 'data/measurements.json',
-                       'output_dir': 'trial/run', 'repeat': 2, 'label': 'g,r', 'include_values': include_values})
+                       'output_dir': 'trial/run', 'repeat': 2, 'label': label, 'include_values': include_values})
     # Parameter parsing is safe for this explicitly prechecked callback-free CLI.
     # The production adapter never uses make_context to validate native values.
-    with get_command(app).make_context('science-typed', shlex.split('\n'.join(_format_script_args(job['script_args'])))) as parsed:
+    tokens = [token for group in compile_script_arguments(job['script_args']) for token in group]
+    with get_command(app).make_context('science-typed', tokens) as parsed:
         assert parsed.params == job['script_args']
     selected = save_bundle({'sample': job}, 'typed-proof')
     persisted = json.loads(selected.read_text())['sample']
@@ -67,8 +68,9 @@ def test_typed_job_uses_existing_preview_submission_and_scientific_execution(typ
     (data / 'inputs').mkdir(parents=True)
     shutil.copyfile(EXAMPLE / 'data/measurements.json', data / 'inputs/data.json')
     save_config({'machines': {'mock': {'env_command': 'true', 'results_root': str(data)}}, 'default_machine': 'mock'})
-    job = contract.job(name='sample', script_args={'input_file': 'inputs/data.json', 'output_dir': 'typed/run',
-                       'repeat': 2, 'offset': 0.5, 'label': 'pilot', 'include_values': True},
+    label = "pilot's trial; $(touch injected); `touch injected-too` * $HOME"
+    job = contract.job(name='sample', script_args={'input_file': 'inputs/data.json', 'output_dir': 'typed/run with spaces',
+                       'repeat': 2, 'offset': 0.5, 'label': label, 'include_values': True},
                        slurm={'time': '00:01:00', 'mem': '64M'})
     selected = save_bundle({'sample': job}, 'typed-proof')
     original = selected.read_bytes()
@@ -93,5 +95,6 @@ def test_typed_job_uses_existing_preview_submission_and_scientific_execution(typ
     assert selected.read_bytes() == original
     jobs, _, _ = load_bundle_from_path(receipt['bundle_path'])
     assert jobs[0]['script_args'] == job['script_args']
-    result = json.loads((data / 'typed/run/summary.json').read_text())
-    assert (result['count'], result['sum_squares'], result['label'], result['values']) == (8, 82, 'pilot', [1, 2, 3, 4])
+    result = json.loads((data / 'typed/run with spaces/summary.json').read_text())
+    assert (result['count'], result['sum_squares'], result['label'], result['values']) == (8, 82, label, [1, 2, 3, 4])
+    assert not (data / 'injected').exists() and not (data / 'injected-too').exists()

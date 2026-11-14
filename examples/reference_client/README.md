@@ -109,7 +109,7 @@ planned_path = save_bundle({"sample": job}, "typed-demo")
 
 `command.describe()` exposes JSON-serializable option/default/range/path metadata.
 `command.validate(values)` and `.job(...)` reject unknown/missing names, wrong
-native types, non-finite numbers, out-of-range values and unsafe strings before
+native types, non-finite numbers, out-of-range values and control characters before
 save. Integers are accepted for numeric/float options and materialized as floats;
 booleans are never accepted as integers. Static defaults, including False, remain
 visible in script_args. Input availability, machine roots, Slurm resources and
@@ -120,9 +120,12 @@ flag names and scalar annotations. It inspects metadata without parsing options
 or running scientific/parameter callbacks. It rejects app/option callbacks,
 prompts, environment/default factories, custom parsers, forward annotations,
 custom flags, lists/tuples and default-on booleans; a version/capability mismatch
-fails explicitly. Ordinary non-path strings must still be shell-safe single
-words (CSV strings work); declared paths use existing quoting/resolution. The
-shared literal argument compiler and strings with spaces are MVP9.2.
+fails explicitly. Nonempty strings can contain spaces, quotes and shell
+metacharacters. The shared MVP9.2 compiler receives resolved paths and quotes
+every literal value; no manual shell escaping or runtime expression goes in
+script_args. CSV remains the list convention. Default-off booleans remain flags.
+For example, `label: "pilot's first run"` stays readable in JSON and becomes
+one quoted CLI value. The reference execution test verifies the exact label.
 
 This proof is not a public authoring API or a replacement for the supported
 client recipe. It is intentionally absent from AutoSlurm's top-level exports.

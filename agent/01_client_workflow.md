@@ -70,11 +70,12 @@ writing/reviewing bundles or helping an existing application adopt AutoSlurm.
   `"True"`/`"False"`: `True` emits `--flag`, and `False` emits nothing. Record
   `False` in JSON for readability; its omission in the rendered command relies
   on the CLI's default being off. Do not use omission to disable a default-on flag.
-- String values are single shell-safe words. The current renderer quotes
-  declared path arguments but leaves ordinary arguments unquoted. Keep client
-  string values safe without adding manual shell escaping: reject whitespace,
-  control characters, quotes, shell operators, substitutions and glob patterns.
-  Keep application paths relative under the path contract below.
+- String values are literal data. Spaces, quotes, dollar signs and shell
+  metacharacters are supported: AutoSlurm quotes every value after resolving
+  declared paths. Supply the original value, without manual shell escaping;
+  reject control characters. `"$(command)"`, `"$HOME"` and `"*.fits"` remain text,
+  not substitution or wildcard expressions. Use `runtime_environment` or a CLI's
+  environment defaults for runtime values. Keep application paths relative.
 
 For example, a job can declare its complete, readable option mapping:
 
@@ -102,7 +103,7 @@ remain lists of argument names under AutoSlurm's path declaration contract.
 
 **Validate before writing a bundle.** The client's bundle builder must check
 each job against the actual typed command signature: reject unknown option names,
-missing required options, wrong scalar/CSV element types, unsafe strings and
+missing required options, wrong scalar/CSV element types, control characters and
 incompatible boolean defaults. Map Python-style names consistently to CLI names
 (`n_stars` becomes `--n-stars`) and preserve valid native scalar values rather
 than blindly stringifying everything. Run this before `save_bundle` or
@@ -114,8 +115,17 @@ contain an unknown option or the wrong CLI value type.
 During reviews, flag encoded configuration and suggest a concrete replacement:
 one job-specific typed command plus a flat named argument mapping. Read both the
 saved JSON and previewed invocation to confirm that settings stay understandable.
-This guidance is a client design requirement; this documentation change does not
-add a runtime validator or change existing bundle records.
+Client signature checks remain distinct from AutoSlurm's structural/literal
+checks. No command schema is stored or rediscovered automatically on loading a
+bundle. The experimental typed adapter in the reference client is not yet a
+supported public authoring API (MVP9.3).
+
+MVP9.2 changes rendering for newly generated scripts only; saved job fields and
+historical scripts/receipts are retained. Legacy raw bundles still support
+space-separated lists and trailing `__positionals__`, with each element now
+quoted. New integrations follow the named scalar/CSV pattern above. Do not rely
+on shell expansion inside any argument value; `script` remains an operator-owned
+shell command prefix and must not contain untrusted settings.
 
 ## Application paths
 

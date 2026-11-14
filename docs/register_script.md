@@ -58,4 +58,39 @@ Example:
 
 Rules:
 - relative path values in declared `path_args` are resolved against the machine `results_root` (or `<storage>/results` fallback),
-- absolute path values are left unchanged.
+- rooted profiles and explicit path contracts require relative paths without
+  `..` traversal; historical unrooted profiles retain their absolute-path behavior.
+- required input files use `input_args`; preview/submission checks their availability.
+
+## Readable named arguments
+
+Prefer one typed CLI command per job kind, with individual scalar settings in
+`script_args`. A fixed command such as `train-model fit` belongs in `script`;
+the job's settings remain visible in the saved bundle:
+
+```json
+{
+  "name": "fit",
+  "script": "train-model fit",
+  "script_args": {"label": "pilot's first run", "seed": 17, "bands": "g,r", "verbose": false},
+  "slurm": {"time": "00:05:00"}
+}
+```
+
+AutoSlurm compiles literal arguments after resolving paths, then shell-quotes
+each value. Plain words remain unquoted; spaces, quotes and metacharacters stay
+within one value. Supply ordinary strings without manual escaping. Control
+characters, nested values and malformed option names fail locally. `True` emits
+`--flag`; `False` is omitted, so boolean CLI defaults must be off. Keep effective
+defaults visible in JSON. Use CSV strings for lists in Typer clients; existing
+raw bundles retain `--flag a b` lists and trailing positionals, now quoted too.
+
+Shell expressions in values are literal: `$HOME`, `$(command)` and `*.fits` are
+not expanded. For runtime values, let the command read its environment or use
+the job's explicit `runtime_environment` mapping. The `script` prefix itself
+retains shell-command semantics; keep job settings in named arguments.
+
+Validate against the actual CLI signature before saving; literal/shell checks
+cannot detect an unknown application option or wrong scientific setting. The
+same compiler is used by `preview_bundle` and submitted scripts. This changes
+new script rendering without rewriting saved bundles or historical receipts.

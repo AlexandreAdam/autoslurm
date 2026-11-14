@@ -24,14 +24,15 @@ modules to use the package correctly.
 Alexandre explicitly requires readable, individual named job arguments, typed CLI
 commands per job kind (Typer preferred), and a flat scalar `script_args` mapping.
 Opaque base64/JSON/config-file configuration payloads are to be replaced. Lists
-use one comma-separated scalar, booleans default to off, and strings stay single
-shell-safe words under the current renderer. Client builders validate actual CLI
+use one comma-separated scalar and booleans default to off. MVP9.2 supersedes the
+original safe-word restriction: all argument strings are literal, shell-quoted
+after path resolution, with control characters rejected. Client builders validate actual CLI
 signatures, required/unknown options, types and unsafe values before saving or
 submitting. This is a lasting preference for integration, bundle generation and
 client reviews. The [current client recipe](../agent/01_client_workflow.md#explicit-named-job-arguments)
 and [bundle recipe](../agent/10_task_schedule.md) carry the operational contract;
-AGENTS.md carries the contributor reminder. Recording this policy changes no
-renderer/validator or saved data. Other proposed designs below remain proposals.
+AGENTS.md carries the contributor reminder. No saved shape changes; other
+proposed designs below remain proposals.
 
 ### Context discovery
 

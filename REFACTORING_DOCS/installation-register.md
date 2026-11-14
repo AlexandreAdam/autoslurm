@@ -12,6 +12,14 @@ is `mvp8`; this amendment does not advance prior milestone/rollback tags.
 No cluster installation or live
 job was changed.
 
+MVP9.2 (2026-11-13): 723 full offline tests passed (42 expected collision warnings),
+report `.development/test-runs/argument-compiler.xml`; clean wheel literal-compiler/
+path/actual-shell smoke passed with Typer deliberately unavailable. Base editable
+commands gain literal quoting for newly generated scripts without reinstall.
+Saved shapes and historical scripts/receipts are unchanged; no base environment,
+daily config/tracking, cluster, external client or rollback change. Public typed
+authoring integration remains MVP9.3.
+
 MVP9.1 (2026-11-13): 674 full offline tests passed (42 expected collision warnings),
 report `.development/test-runs/command-proof.xml`; clean wheel optional-dependency/
 typed-contract/JSON smoke passed. New internal contracts/adapter and reference

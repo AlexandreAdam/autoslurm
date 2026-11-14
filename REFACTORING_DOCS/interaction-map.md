@@ -126,7 +126,7 @@ pipeline; an earlier preview does not freeze paths, software or machine state.
 |---|---|---|
 | Author and save | schedule CLI, client, ACP; save_load_jobs | Command, script_args, declared paths/cwd, environment, resources, dependencies. Saving performs basic structure/default handling, not full arbitrary-CLI signature validation |
 | Select and prepare | job_runner, bundle_preparation, execution | Load an exact bundle, validate structural/graph/path rules, bind one machine, retain logical/resolved paths, render scripts, check required paths and shell syntax |
-| Compile application invocation | job_to_slurm | Emit environment activation/exports, cwd and an ordinary command. The renderer currently combines CLI argument conventions with shell formatting |
+| Compile application invocation | argument_compilation, job_to_slurm | MVP9.2 separates literal argv/quoting from script writing; existing execution resolves paths first. Emit activation/exports, cwd and an ordinary command |
 | Record and dispatch | submission_operation, bulk_submit_driver | Create a producing snapshot/receipt, stage exact scripts, submit jobs with scheduler dependencies, persist accepted IDs and uncertain/rejected outcomes |
 | Execute | Prepared environment, Slurm, application CLI | Application receives process arguments, environment, cwd and Slurm array variables; no automatic application import/call through AutoSlurm, no job-time Git/install |
 | Observe and resume | submission, inspection, scheduler, log_files | Submission receipts, task states/reasons/exit codes and bounded recorded logs, with timestamps/errors/freshness; no automatic scientific result validation |
@@ -153,11 +153,12 @@ commit/path does not freeze mutable source or environments until the job starts.
    local file or one executable name, not a general program/subcommand argument
    vector; a multiword script string accepted by a Python-built job does not
    automatically have an equivalent terminal discovery path.
-3. The command is currently free-form script text. Scalar/list/boolean expansion
-   and quoting happen inside the renderer. There is no shared, recorded argument
-   token contract. Lists use one flag and several words; False/None/empty lists
-   are omitted; ordinary strings/list elements are unquoted. The requested
-   list_style/bool_style fields are not implemented.
+3. The command remains free-form script text. MVP9.2's shared compiler now
+   validates literal values and quotes scalar/list/positional tokens after path
+   resolution. Raw lists retain one flag and several words; False/None/empty
+   lists are omitted. Tokens are internal, not a new saved record. Typed authoring
+   remains an experimental narrow scalar/default-off proof until MVP9.3; raw CLI
+   discovery still has the limitations above. list_style/bool_style remain unimplemented.
 4. Shell syntax validity does not establish CLI validity or preserve intent.
    Omitted, explicitly false and explicitly empty can select different defaults.
    A command's list conventions and positive/negative flag names cannot reliably

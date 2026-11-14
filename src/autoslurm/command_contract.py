@@ -1,6 +1,6 @@
 """Experimental, in-memory named-option contract; no parser or host dependencies.
 
-MVP9.1 proof only. Saved jobs remain ordinary dictionaries, without a persisted
+MVP9 internal proof. Saved jobs remain ordinary dictionaries, without a persisted
 contract or any promise of semantic revalidation after loading them.
 """
 
@@ -8,6 +8,8 @@ from dataclasses import asdict, dataclass
 import math
 import re
 import shlex
+
+from .argument_compilation import literal_argument
 
 
 @dataclass(frozen=True)
@@ -80,12 +82,9 @@ class CommandContract:
 
     def _validate_value(self, option, value):
         value = option.validate(value)
-        if isinstance(value, str):
-            if not value or any(ord(char) < 32 for char in value):
-                raise ValueError(f'{option.name}: provide a nonempty value without control characters.')
-            paths = self.input_args + self.path_args + ('output_dir',)
-            if option.name not in paths and shlex.quote(value) != value:
-                raise ValueError(f'{option.name}: this proof requires a shell-safe single word; literal quoting is MVP9.2.')
+        literal_argument(value, name=option.name)
+        if isinstance(value, str) and not value:
+            raise ValueError(f'{option.name}: provide a nonempty value.')
         return value
 
     def validate(self, script_args):

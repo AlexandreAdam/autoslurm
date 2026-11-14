@@ -43,8 +43,7 @@ def test_contract_has_plain_metadata_and_materializes_supported_defaults(command
     ({'enabled': 1}, 'enabled'), ({'enabled': 'false'}, 'enabled'),
     ({'offset': True}, 'offset'), ({'offset': float('nan')}, 'finite'),
     ({'offset': float('inf')}, 'finite'), ({'label': ['g', 'r']}, 'label'),
-    ({'label': 'two words'}, 'single word'), ({'label': 'x;touch'}, 'single word'),
-    ({'label': '$(whoami)'}, 'single word'), ({'label': 'a\nb'}, 'control'),
+    ({'label': 'a\nb'}, 'control'), ({'label': 'a\x00b'}, 'control'),
     ({'label': ''}, 'nonempty'), ({'input_file': None}, 'input_file'),
 ])
 def test_native_values_fail_locally_and_specifically(command, values, match):

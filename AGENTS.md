@@ -42,8 +42,10 @@ operate from the workstation; compute nodes use already-prepared environments.
   - Boolean CLI options default to off: `True` renders as `--flag`, while `False`
     is omitted. Keep effective settings visible in the bundle, including false
     values; do not rely on omission to turn off a default-on option.
-  - String values are single shell-safe words. Ordinary non-path values are
-    unquoted by the current renderer; reject unsafe values locally.
+  - String values are literal data, including spaces, quotes and metacharacters.
+    AutoSlurm quotes them after path resolution; do not pre-escape them. Reject
+    control characters. Argument strings do not expand shell variables or commands;
+    use runtime_environment or a CLI's environment defaults for runtime values.
   - Validate every job's option names, types and values against its command's
     signature **before saving a bundle**, and validate again before submission
     if the command/definition changed. This is a client requirement, not a claim
