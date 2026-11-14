@@ -9,7 +9,8 @@ This file is the source of truth for active scope, task order and progress.
 
 ## Status
 
-- **Current milestone:** MVP9 complete locally; MVP7.2f editable-update amendment
+- **Current milestone:** MVP10 in progress; MVP10.1 public interface/failure audit
+  complete. MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
   FIX.DEPENDENCY.1 defaults dependent jobs to kill-on-invalid-dep=yes.
@@ -22,13 +23,16 @@ This file is the source of truth for active scope, task order and progress.
   install; tests use `.development/python` and separate temporary state. Pinned
   rollback source remains unchanged. Full offline suite: 761 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP9.3 exposes CommandContract/CommandOption and
-  optional from_typer, adds explicit complete saved-job revalidation, and delivers
-  a packaged agent recipe plus a public-API reference CLI with arrays/dependencies.
-  Full offline and clean AutoSlurm/client-wheel checks pass. No new persisted
-  schema, command auto-import, automatic submission, cluster or external client edit.
-- **Next task:** MVP10.1 API and failure inventory, including the new authoring
-  exports. Settle the full audit before dedicated error-module implementation.
+- **Latest completed task:** MVP10.1 audits 233 Python/CLI/ACP routes, 112 distinct
+  owners and all 18 broad catches. The coverage register records current outcomes,
+  effects, proposed translation/diagnosis/next actions and regression sources;
+  18 findings guide the adoption slices. Read-only AST coverage and four drift
+  controls pass; full offline suite remains 761 passing (43 expected warnings).
+  No package runtime, public contract, daily configuration or cluster change.
+- **Next task:** MVP10.2 dedicated diagnostic module and thin terminal adapter,
+  using the [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
+  Settle exact diagnostic/exception/envelope/debug/exit conventions in that slice;
+  module implementation and all operation adoption remain pending.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
@@ -628,12 +632,15 @@ The user's PLAN.2 amendment expands this from selected message fixes into a
 full public-interface reliability milestone. The initial failure/placement map
 is in the design; every callable/action and its outcome contract must be reviewed.
 
-- [ ] **MVP10.1 API and failure inventory.** Account for every supported Python
+- [x] **MVP10.1 API and failure inventory.** Account for every supported Python
   export, CLI action/alias/standalone entry point and ACP action. For each record
   inputs, failure types, effect boundaries, current exception/returned-error shape,
   translation owner, desired diagnostic, next action and regression evidence.
   Identify broad catches, swallowed causes, false 'missing' results, inconsistent
   exit behavior and loss of partial success; finalize the coverage register.
+  Completed [audit and priorities](REFACTORING_DOCS/design/MVP10_api_failure_audit.md)
+  with a per-owner plain-data register, canonical alias mapping and read-only
+  AST coverage checker. Diagnostic adoption remains pending in MVP10.2–9.
 - [ ] **MVP10.2 Dedicated error module.** Add one dependency-light owner for error
   codes/categories, structured diagnostics, context/cause preservation, named
   diagnostic constructors and safe serialization. Keep CLI rendering in a thin
@@ -916,6 +923,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | MVP9.2 Shared literal argument compiler | 723 full offline tests passed in 10.01 s (42 expected collision warnings), report `.development/test-runs/argument-compiler.xml`; 105 focused checks passed. One pure owner compiles resolved values into literal argv groups and shell-quotes them; retired the old renderer formatter. Actual Bash capture and Typer parsing preserve spaces/quotes/substitutions as text; reference preview matches dispatched script and actual scientific output, while invalid raw values stop before staging. Plain output and raw list/positional/omission semantics remain, typed authoring stays scalar/CSV/default-off. No saved shape change; new rendering does not expand expressions or rewrite old artifacts. Clean wheel import/path/actual-shell smoke passed without Typer, SHA256 `d8d846ed99b780dde236a8beb5c4e6e69d422aa1f7598991dd59c460177d9f9a`. Agent/human guidance and links updated. No cluster, base install, daily config/state, external scientific application or rollback edits. Task commit: `git log --grep '^MVP9.2:'`; push completed dev commit. |
 | 2026-11-13 | FIX.DEPENDENCY.1 Default cancellation for impossible dependencies | 741 full offline tests passed in 9.69 s (42 expected collision warnings), report `.development/test-runs/invalid-dependency.xml`; 18 new renderer cases plus preview/dispatch assertions and updated dependent-script fixtures. Shared renderer adds one default yes directive only for nonempty dependencies, preserves underscore/hyphen explicit overrides, handles arrays and leaves definitions unchanged in local/remote contexts. Full-suite fixture mismatches were updated for the intended directive. Clean wheel/default/nonmutation/actual-shell smoke passed, SHA256 `62579a91072cc8989df90da81c178d4b83eca46242490d067c046440f9011e8a`. Human/agent docs and MVP4 design amended; links/diff checked. No cluster, configuration, daily state, base installation or historical/queued script change. Task commit: `git log --grep '^FIX.DEPENDENCY.1:'`; push completed dev commit. |
 | 2026-11-13 | MVP9.3 Public authoring, saved validation and installed recipe | 761 full offline tests passed in 11.08 s (43 expected collision warnings), report `.development/test-runs/typed-authoring.xml`; 83 focused checks passed, 20 added cases. Public contracts/optional Typer adapter, strict no-default-injection saved-job checks, detached values and dependency authoring verified. Reference plan/validate/preview CLI runs four original-index tasks plus reducer through existing preview/dispatch/receipts/cached inspection and actual local science under mocked Slurm. Packaged recipe is discoverable through CLI/ACP without a checkout; complete historical guidance packaging remains L3. Clean AutoSlurm/client wheels verify optional Typer absence, public imports, installed recipe/action metadata, client CLI and scientific entry point; SHA256 `dbcca8ede6c0135729aead31aa83b1da75a24489542bc646dffdaec9ba167ccb`. Human/agent guides and links/diff checked. MVP9 complete locally, local tag `mvp9` at closure; no schema migration, cluster, base install, daily state/config, external client or rollback change. Task commit: `git log --grep '^MVP9.3:'`; push completed dev commit. |
+| 2026-11-13 | MVP10.1 Complete public interface/failure inventory | Audited revision `6104372`: 233 routes (Python exports/methods, root/alias/subaction/standalone/helper CLI and eight ACP actions), 112 owners, 24 failure contracts and all 18 broad catches individually reviewed. Register records inputs/current outcomes/effects plus translation owner, desired diagnosis, next action, regression sources and pending adoption task. E01–E18 cover swallowed causes, false missing, publication/partial/unknown effects and presentation gaps; preserve evidence-saving catches. Read-only AST checker passed and rejected four drift controls (missing export, wrong alias, missing effects, unreviewed catch). Full offline suite: 761 passed, 43 expected collision warnings, 10.53 s; `.development/test-runs/error-inventory.xml`. Documentation links/diff reviewed. No package runtime, dependencies, daily state/config, external client, cluster or rollback changes; no artifact rebuild needed for an audit-only task. MVP10.2 is next; proposed diagnostic APIs are not accepted/implemented by this audit. Task commit: `git log --grep '^MVP10.1:'`; push completed dev commit. |
 
 ## How we work
 

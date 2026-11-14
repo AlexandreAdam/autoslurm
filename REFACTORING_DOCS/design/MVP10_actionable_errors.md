@@ -6,8 +6,11 @@ Scheduled after MVP9 by the user on 2026-11-13. **PLAN.2 expands PLAN.1's narrow
 scope:** review the entire public API and its possible failures, centralize error
 handling in its own maintainable module, and integrate it strategically. This
 broader scope and dedicated ownership are explicit user requirements. It is no
-longer a one-to-two-day updater/message patch. No runtime implementation yet;
-exact field/helper/type names remain proposed until MVP10.1–2 settle them.
+longer a one-to-two-day updater/message patch. **MVP10.1 is complete:** the
+[full audit](MVP10_api_failure_audit.md) and
+[coverage register](MVP10_api_inventory.json) account for 233 routes, 112 owners
+and all 18 broad catches. No runtime implementation yet; exact field/helper/type
+names and exception/envelope/debug/exit conventions remain proposed for MVP10.2.
 [PLAN.md](../../PLAN.md#mvp10-actionable-failures-with-preserved-evidence) owns tasks.
 
 ## Problems and evidence
@@ -37,6 +40,9 @@ and returns only its string. Submission's broad catch, by contrast, also protect
 receipts and accepted IDs: narrowing it mechanically would lose critical evidence.
 The audit must examine purpose and effect at each catch, not replace all catches
 with one decorator or require every negative observation to become an exception.
+MVP10.1 now records that review, including per-owner contracts, 18 concrete findings,
+regression anchors and a read-only AST coverage check. The initial family map below
+remains a design reference; the linked register owns exhaustive surface coverage.
 
 ## Decisions and proposed contract
 
@@ -221,7 +227,7 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 
 | Task | Deliverable |
 |---|---|
-| MVP10.1 | Complete public API/action/entry-point failure and catch-site register; agree result/exception and effect contracts |
+| MVP10.1 complete | Exhaustive public API/action/entry-point and broad-catch register; current effects/outcomes and recommended translation contracts; exact model decisions remain in MVP10.2 |
 | MVP10.2 | Dedicated error module, isolated tests, shared terminal adapter and JSON/Python/ACP conventions |
 | MVP10.3 | Config, selection, arguments/paths, bundle/preflight and persistence adoption |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
@@ -251,7 +257,8 @@ inventory; the original one-to-two-day estimate no longer applies.
 ## Open questions and forward constraints
 
 Settle diagnostic field names, compatibility with existing result JSON, exact
-error module exports and the debug/CLI exit conventions in MVP10.1–2. Keep additive fields where possible; an actual
+error module exports and the debug/CLI exit conventions in MVP10.2, using the
+completed MVP10.1 register. Keep additive fields where possible; an actual
 breaking shape needs an explicit release/data policy. Public exception properties
 remain readable. Clients should display the provided diagnosis instead of
 assembling their own misleading 'pull failed' labels; demonstrate that in the
@@ -308,3 +315,17 @@ boundary implementations; seeded the failure map and expanded to nine staged
 tasks. This does not claim the per-callable audit is complete. Dedicated ownership
 and the larger scope are requested; exact model/API names remain proposed.
 Documentation review only; no implementation, environment or runtime-state change.
+
+2026-11-13, MVP10.1: completed source audit against `6104372`, including new typed
+authoring exports, every explicit Python export/reexport, nine public methods,
+all root/alias/software subaction/console/helper routes and eight ACP actions.
+233 routes resolve to 112 owners with 24 inherited failure contracts; all 18 broad
+handlers have individual reviews. E01–E18 identify translation and regression work,
+while retaining existing receipt/accepted-ID safeguards. Read-only AST check and
+four negative drift controls pass. Full offline suite: 761 passed, 43 expected
+collision warnings, 10.53 s; `.development/test-runs/error-inventory.xml`.
+Documentation links/diff reviewed. No package runtime, persisted-format, daily
+state/config, environment, cluster or external-client change. MVP10.2 follows;
+diagnostic adoption remains pending. Audit effort allowance is 7–13 focused days
+for remaining model/adoption/parity work, with per-slice re-estimation and separate
+deployment; it supersedes any narrow updater-only estimate.

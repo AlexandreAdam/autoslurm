@@ -1,0 +1,1381 @@
+{
+  "audited_revision": "61043722c4758cb188994f996e7e46ef8140003d",
+  "audited_date": "2026-11-13",
+  "scope": "MVP10.1 source inventory. No diagnostic module/adoption implemented. Owner rows inherit failures, translation_owner, desired_diagnostic, next_action, regression_evidence and implementation_task from their named contract. Alias routes inherit that owner's full row. Regression paths are existing behavior evidence, not proof that proposed diagnostics pass.",
+  "interfaces": {
+    "acp:gather_context": "autoslurm.acp.execute_acp",
+    "acp:inspect_experiments": "autoslurm.acp.execute_acp",
+    "acp:inspect_run": "autoslurm.acp.execute_acp",
+    "acp:inspect_submission": "autoslurm.acp.execute_acp",
+    "acp:list_experiments": "autoslurm.acp.execute_acp",
+    "acp:list_runs": "autoslurm.acp.execute_acp",
+    "acp:list_submissions": "autoslurm.acp.execute_acp",
+    "acp:schedule": "autoslurm.acp.execute_acp",
+    "cli-alias:agent-context": "autoslurm.apps.agent_context.main",
+    "cli-alias:configuration": "autoslurm.apps.config.main",
+    "cli-alias:context": "autoslurm.apps.inspect.main",
+    "cli-alias:experiment-context": "autoslurm.apps.inspect.main",
+    "cli-alias:kill": "autoslurm.apps.cancel.main",
+    "cli-alias:stat": "autoslurm.apps.status.main",
+    "cli-subaction:software status": "autoslurm.apps.software.main",
+    "cli-subaction:software update": "autoslurm.apps.software.main",
+    "cli:agent": "autoslurm.apps.agent_context.main",
+    "cli:cancel": "autoslurm.apps.cancel.main",
+    "cli:clean": "autoslurm.apps.clean.main",
+    "cli:config": "autoslurm.apps.config.main",
+    "cli:filter": "autoslurm.apps.filter.main",
+    "cli:initialize": "autoslurm.apps.initialize.main",
+    "cli:inspect": "autoslurm.apps.inspect.main",
+    "cli:logs": "autoslurm.apps.logs.main",
+    "cli:scan": "autoslurm.apps.scan.main",
+    "cli:schedule": "autoslurm.apps.schedule.main",
+    "cli:software": "autoslurm.apps.software.main",
+    "cli:status": "autoslurm.apps.status.main",
+    "cli:submission": "autoslurm.apps.submission.main",
+    "cli:submit": "autoslurm.apps.submit.main",
+    "cli:sync": "autoslurm.apps.sync.main",
+    "console:asl": "autoslurm.apps.root.main",
+    "console:autoslurm": "autoslurm.apps.root.main",
+    "console:autoslurm-agent": "autoslurm.apps.agent_context.main",
+    "console:autoslurm-agent-context": "autoslurm.apps.agent_context.main",
+    "console:autoslurm-config": "autoslurm.apps.config.main",
+    "console:autoslurm-configuration": "autoslurm.apps.config.main",
+    "console:autoslurm-context": "autoslurm.apps.inspect.main",
+    "console:autoslurm-experiment-context": "autoslurm.apps.inspect.main",
+    "console:autoslurm-initialize": "autoslurm.apps.initialize.main",
+    "console:autoslurm-inspect": "autoslurm.apps.inspect.main",
+    "console:autoslurm-logs": "autoslurm.apps.logs.main",
+    "console:autoslurm-scan": "autoslurm.apps.scan.main",
+    "console:autoslurm-schedule": "autoslurm.apps.schedule.main",
+    "console:autoslurm-status": "autoslurm.apps.status.main",
+    "console:autoslurm-submit": "autoslurm.apps.submit.main",
+    "console:autoslurm-sync": "autoslurm.apps.sync.main",
+    "method:autoslurm.command_contract.CommandContract.describe": "autoslurm.command_contract.CommandContract.describe",
+    "method:autoslurm.command_contract.CommandContract.job": "autoslurm.command_contract.CommandContract.job",
+    "method:autoslurm.command_contract.CommandContract.validate": "autoslurm.command_contract.CommandContract.validate",
+    "method:autoslurm.command_contract.CommandContract.validate_job": "autoslurm.command_contract.CommandContract.validate_job",
+    "method:autoslurm.command_contract.CommandOption.validate": "autoslurm.command_contract.CommandOption.validate",
+    "method:autoslurm.execution.ExecutionContext.resolve_job": "autoslurm.execution.ExecutionContext.resolve_job",
+    "method:autoslurm.execution.ExecutionContext.resolve_path": "autoslurm.execution.ExecutionContext.resolve_path",
+    "method:autoslurm.execution.ExecutionContext.validate_jobs": "autoslurm.execution.ExecutionContext.validate_jobs",
+    "method:autoslurm.execution.ExecutionContext.validate_resolved_jobs": "autoslurm.execution.ExecutionContext.validate_resolved_jobs",
+    "module:autoslurm.apps.bulk_submit_driver": "autoslurm.apps.bulk_submit_driver.main",
+    "python:autoslurm.BulkSubmitDriverResult": "autoslurm.bulk_submit_driver.BulkSubmitDriverResult",
+    "python:autoslurm.BulkSubmitPayload": "autoslurm.bulk_submit_driver.BulkSubmitPayload",
+    "python:autoslurm.CONFIG_FILE_PATH": "autoslurm.definitions.CONFIG_FILE_PATH",
+    "python:autoslurm.CommandContract": "autoslurm.command_contract.CommandContract",
+    "python:autoslurm.CommandOption": "autoslurm.command_contract.CommandOption",
+    "python:autoslurm.DATE_FORMAT": "autoslurm.definitions.DATE_FORMAT",
+    "python:autoslurm.ExecutionContext": "autoslurm.execution.ExecutionContext",
+    "python:autoslurm.LevelSubmitResult": "autoslurm.bulk_submit.LevelSubmitResult",
+    "python:autoslurm.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
+    "python:autoslurm.SoftwareUpdateError": "autoslurm.software_update.SoftwareUpdateError",
+    "python:autoslurm.SubmissionError": "autoslurm.submission.SubmissionError",
+    "python:autoslurm.SubmissionRequest": "autoslurm.bulk_submit.SubmissionRequest",
+    "python:autoslurm.acp.action_definitions": "autoslurm.acp.action_definitions",
+    "python:autoslurm.acp.execute_acp": "autoslurm.acp.execute_acp",
+    "python:autoslurm.acp.list_bundles": "autoslurm.acp.list_bundles",
+    "python:autoslurm.action_definitions": "autoslurm.acp.action_definitions",
+    "python:autoslurm.activation_command_from_config": "autoslurm.config.activation_command_from_config",
+    "python:autoslurm.all_bundle_snapshots": "autoslurm.bundle_selection.all_bundle_snapshots",
+    "python:autoslurm.attach_software_manifest": "autoslurm.software_manifest.attach_software_manifest",
+    "python:autoslurm.bulk_submit_driver.BulkSubmitDriverResult": "autoslurm.bulk_submit_driver.BulkSubmitDriverResult",
+    "python:autoslurm.bulk_submit_driver.BulkSubmitPayload": "autoslurm.bulk_submit_driver.BulkSubmitPayload",
+    "python:autoslurm.bulk_submit_driver.parse_job_id_from_parsable": "autoslurm.bulk_submit_driver.parse_job_id_from_parsable",
+    "python:autoslurm.bulk_submit_driver.submit_payload": "autoslurm.bulk_submit_driver.submit_payload",
+    "python:autoslurm.bundle_selection.all_bundle_snapshots": "autoslurm.bundle_selection.all_bundle_snapshots",
+    "python:autoslurm.bundle_selection.bundle_snapshot_state": "autoslurm.bundle_selection.bundle_snapshot_state",
+    "python:autoslurm.bundle_selection.bundle_snapshots": "autoslurm.bundle_selection.bundle_snapshots",
+    "python:autoslurm.bundle_selection.get_bundle_filter_mode": "autoslurm.bundle_selection.get_bundle_filter_mode",
+    "python:autoslurm.bundle_selection.inactive_bundle_snapshots": "autoslurm.bundle_selection.inactive_bundle_snapshots",
+    "python:autoslurm.bundle_selection.latest_bundle_summaries": "autoslurm.bundle_selection.latest_bundle_summaries",
+    "python:autoslurm.bundle_selection.list_saved_bundles": "autoslurm.bundle_selection.list_saved_bundles",
+    "python:autoslurm.bundle_selection.nearest_bundle_filename": "autoslurm.bundle_selection.nearest_bundle_filename",
+    "python:autoslurm.bundle_selection.select_bundle_snapshot": "autoslurm.bundle_selection.select_bundle_snapshot",
+    "python:autoslurm.bundle_selection.set_bundle_filter_mode": "autoslurm.bundle_selection.set_bundle_filter_mode",
+    "python:autoslurm.bundle_selection.stale_bundle_snapshots": "autoslurm.bundle_selection.stale_bundle_snapshots",
+    "python:autoslurm.bundle_snapshot_state": "autoslurm.bundle_selection.bundle_snapshot_state",
+    "python:autoslurm.bundle_snapshots": "autoslurm.bundle_selection.bundle_snapshots",
+    "python:autoslurm.bundle_software_manifest": "autoslurm.software_manifest.bundle_software_manifest",
+    "python:autoslurm.command_contract.CommandContract": "autoslurm.command_contract.CommandContract",
+    "python:autoslurm.command_contract.CommandOption": "autoslurm.command_contract.CommandOption",
+    "python:autoslurm.config.activation_command_from_config": "autoslurm.config.activation_command_from_config",
+    "python:autoslurm.config.load_config": "autoslurm.config.load_config",
+    "python:autoslurm.config.machine_config": "autoslurm.config.machine_config",
+    "python:autoslurm.config.save_config": "autoslurm.config.save_config",
+    "python:autoslurm.configuration.activation_command_from_config": "autoslurm.config.activation_command_from_config",
+    "python:autoslurm.configuration.load_config": "autoslurm.config.load_config",
+    "python:autoslurm.configuration.machine_config": "autoslurm.config.machine_config",
+    "python:autoslurm.configuration.save_config": "autoslurm.config.save_config",
+    "python:autoslurm.context.agent_context": "autoslurm.context.agent_context",
+    "python:autoslurm.context.agent_context_paths": "autoslurm.context.agent_context_paths",
+    "python:autoslurm.definitions.CONFIG_FILE_PATH": "autoslurm.definitions.CONFIG_FILE_PATH",
+    "python:autoslurm.definitions.DATE_FORMAT": "autoslurm.definitions.DATE_FORMAT",
+    "python:autoslurm.definitions.MACHINE_KEYS": "autoslurm.definitions.MACHINE_KEYS",
+    "python:autoslurm.dependency_graph": "autoslurm.job_dependency.dependency_graph",
+    "python:autoslurm.execute_acp": "autoslurm.acp.execute_acp",
+    "python:autoslurm.execution.ExecutionContext": "autoslurm.execution.ExecutionContext",
+    "python:autoslurm.execution.execution_context_from_snapshot": "autoslurm.execution.execution_context_from_snapshot",
+    "python:autoslurm.execution.recorded_execution": "autoslurm.execution.recorded_execution",
+    "python:autoslurm.execution.resolve_execution_context": "autoslurm.execution.resolve_execution_context",
+    "python:autoslurm.execution_context_from_snapshot": "autoslurm.execution.execution_context_from_snapshot",
+    "python:autoslurm.experiment_context": "autoslurm.experiment_context.experiment_context",
+    "python:autoslurm.experiment_context.experiment_context": "autoslurm.experiment_context.experiment_context",
+    "python:autoslurm.experiment_context.job_context": "autoslurm.experiment_context.job_context",
+    "python:autoslurm.experiment_context.latest_log_context": "autoslurm.experiment_context.latest_log_context",
+    "python:autoslurm.file_transfer.transfer_bundle_to_remote": "autoslurm.file_transfer.transfer_bundle_to_remote",
+    "python:autoslurm.file_transfer.transfer_slurm_to_remote": "autoslurm.file_transfer.transfer_slurm_to_remote",
+    "python:autoslurm.file_transfer.transfer_slurms_to_remote": "autoslurm.file_transfer.transfer_slurms_to_remote",
+    "python:autoslurm.from_typer": "autoslurm.typer_adapter.from_typer",
+    "python:autoslurm.get_bundle_filter_mode": "autoslurm.bundle_selection.get_bundle_filter_mode",
+    "python:autoslurm.get_job_id_from_sbatch_output": "autoslurm.run_slurm.get_job_id_from_sbatch_output",
+    "python:autoslurm.inactive_bundle_snapshots": "autoslurm.bundle_selection.inactive_bundle_snapshots",
+    "python:autoslurm.inspect_bundle": "autoslurm.inspection.inspect_bundle",
+    "python:autoslurm.inspect_bundles": "autoslurm.inspection.inspect_bundles",
+    "python:autoslurm.inspect_logs": "autoslurm.inspection.inspect_logs",
+    "python:autoslurm.inspect_software": "autoslurm.software_status.inspect_software",
+    "python:autoslurm.inspection.inspect_bundle": "autoslurm.inspection.inspect_bundle",
+    "python:autoslurm.inspection.inspect_bundles": "autoslurm.inspection.inspect_bundles",
+    "python:autoslurm.inspection.inspect_logs": "autoslurm.inspection.inspect_logs",
+    "python:autoslurm.inspection.list_runs": "autoslurm.inspection.list_runs",
+    "python:autoslurm.job_context": "autoslurm.experiment_context.job_context",
+    "python:autoslurm.job_dependency.dependency_graph": "autoslurm.job_dependency.dependency_graph",
+    "python:autoslurm.job_dependency.update_slurm_with_dependencies": "autoslurm.job_dependency.update_slurm_with_dependencies",
+    "python:autoslurm.job_runner.preview_bundle": "autoslurm.job_runner.preview_bundle",
+    "python:autoslurm.job_runner.submit_jobs": "autoslurm.job_runner.submit_jobs",
+    "python:autoslurm.job_to_slurm.create_slurm_script": "autoslurm.job_to_slurm.create_slurm_script",
+    "python:autoslurm.latest_bundle_summaries": "autoslurm.bundle_selection.latest_bundle_summaries",
+    "python:autoslurm.latest_log_context": "autoslurm.experiment_context.latest_log_context",
+    "python:autoslurm.list_bundles": "autoslurm.acp.list_bundles",
+    "python:autoslurm.list_runs": "autoslurm.inspection.list_runs",
+    "python:autoslurm.list_saved_bundles": "autoslurm.bundle_selection.list_saved_bundles",
+    "python:autoslurm.list_submissions": "autoslurm.submission.list_submissions",
+    "python:autoslurm.load_bundle": "autoslurm.save_load_jobs.load_bundle",
+    "python:autoslurm.load_bundle_from_path": "autoslurm.save_load_jobs.load_bundle_from_path",
+    "python:autoslurm.load_config": "autoslurm.config.load_config",
+    "python:autoslurm.load_submission": "autoslurm.submission.load_submission",
+    "python:autoslurm.logs.experiment_context": "autoslurm.experiment_context.experiment_context",
+    "python:autoslurm.logs.job_context": "autoslurm.experiment_context.job_context",
+    "python:autoslurm.logs.latest_log_context": "autoslurm.experiment_context.latest_log_context",
+    "python:autoslurm.machine_config": "autoslurm.config.machine_config",
+    "python:autoslurm.nearest_bundle_filename": "autoslurm.bundle_selection.nearest_bundle_filename",
+    "python:autoslurm.normalize_software_manifest": "autoslurm.software_manifest.normalize_software_manifest",
+    "python:autoslurm.parse_job_id_from_parsable": "autoslurm.bulk_submit_driver.parse_job_id_from_parsable",
+    "python:autoslurm.path_exists": "autoslurm.remote_fs.path_exists",
+    "python:autoslurm.preview_bundle": "autoslurm.job_runner.preview_bundle",
+    "python:autoslurm.probe_submission_helper": "autoslurm.run_slurm.probe_submission_helper",
+    "python:autoslurm.recorded_execution": "autoslurm.execution.recorded_execution",
+    "python:autoslurm.refresh_submission": "autoslurm.submission.refresh_submission",
+    "python:autoslurm.remote_fs.path_exists": "autoslurm.remote_fs.path_exists",
+    "python:autoslurm.remote_fs.resolve_results_path": "autoslurm.remote_fs.resolve_results_path",
+    "python:autoslurm.remote_storage_root_from_config": "autoslurm.transport.remote_storage_root_from_config",
+    "python:autoslurm.resolve_execution_context": "autoslurm.execution.resolve_execution_context",
+    "python:autoslurm.resolve_results_path": "autoslurm.remote_fs.resolve_results_path",
+    "python:autoslurm.run_bulk_submit_driver_remotely": "autoslurm.run_slurm.run_bulk_submit_driver_remotely",
+    "python:autoslurm.run_slurm.get_job_id_from_sbatch_output": "autoslurm.run_slurm.get_job_id_from_sbatch_output",
+    "python:autoslurm.run_slurm.probe_submission_helper": "autoslurm.run_slurm.probe_submission_helper",
+    "python:autoslurm.run_slurm.run_bulk_submit_driver_remotely": "autoslurm.run_slurm.run_bulk_submit_driver_remotely",
+    "python:autoslurm.run_slurm.run_slurm_locally": "autoslurm.run_slurm.run_slurm_locally",
+    "python:autoslurm.run_slurm.run_slurm_remotely": "autoslurm.run_slurm.run_slurm_remotely",
+    "python:autoslurm.run_slurm.ssh_submission_session": "autoslurm.run_slurm.ssh_submission_session",
+    "python:autoslurm.run_slurm_locally": "autoslurm.run_slurm.run_slurm_locally",
+    "python:autoslurm.run_slurm_remotely": "autoslurm.run_slurm.run_slurm_remotely",
+    "python:autoslurm.save_bundle": "autoslurm.save_load_jobs.save_bundle",
+    "python:autoslurm.save_config": "autoslurm.config.save_config",
+    "python:autoslurm.save_load_jobs.all_bundle_snapshots": "autoslurm.bundle_selection.all_bundle_snapshots",
+    "python:autoslurm.save_load_jobs.bundle_snapshot_state": "autoslurm.bundle_selection.bundle_snapshot_state",
+    "python:autoslurm.save_load_jobs.bundle_snapshots": "autoslurm.bundle_selection.bundle_snapshots",
+    "python:autoslurm.save_load_jobs.get_bundle_filter_mode": "autoslurm.bundle_selection.get_bundle_filter_mode",
+    "python:autoslurm.save_load_jobs.inactive_bundle_snapshots": "autoslurm.bundle_selection.inactive_bundle_snapshots",
+    "python:autoslurm.save_load_jobs.latest_bundle_summaries": "autoslurm.bundle_selection.latest_bundle_summaries",
+    "python:autoslurm.save_load_jobs.list_saved_bundles": "autoslurm.bundle_selection.list_saved_bundles",
+    "python:autoslurm.save_load_jobs.load_bundle": "autoslurm.save_load_jobs.load_bundle",
+    "python:autoslurm.save_load_jobs.load_bundle_from_path": "autoslurm.save_load_jobs.load_bundle_from_path",
+    "python:autoslurm.save_load_jobs.nearest_bundle_filename": "autoslurm.bundle_selection.nearest_bundle_filename",
+    "python:autoslurm.save_load_jobs.save_bundle": "autoslurm.save_load_jobs.save_bundle",
+    "python:autoslurm.save_load_jobs.schedule_job": "autoslurm.save_load_jobs.schedule_job",
+    "python:autoslurm.save_load_jobs.select_bundle_snapshot": "autoslurm.bundle_selection.select_bundle_snapshot",
+    "python:autoslurm.save_load_jobs.set_bundle_filter_mode": "autoslurm.bundle_selection.set_bundle_filter_mode",
+    "python:autoslurm.save_load_jobs.stale_bundle_snapshots": "autoslurm.bundle_selection.stale_bundle_snapshots",
+    "python:autoslurm.save_load_jobs.transfer_bundle_to_remote": "autoslurm.file_transfer.transfer_bundle_to_remote",
+    "python:autoslurm.save_load_jobs.transfer_slurm_to_remote": "autoslurm.file_transfer.transfer_slurm_to_remote",
+    "python:autoslurm.save_load_jobs.transfer_slurms_to_remote": "autoslurm.file_transfer.transfer_slurms_to_remote",
+    "python:autoslurm.schedule_job": "autoslurm.save_load_jobs.schedule_job",
+    "python:autoslurm.select_bundle_snapshot": "autoslurm.bundle_selection.select_bundle_snapshot",
+    "python:autoslurm.set_bundle_filter_mode": "autoslurm.bundle_selection.set_bundle_filter_mode",
+    "python:autoslurm.software_expectations": "autoslurm.software_requirements.software_expectations",
+    "python:autoslurm.software_update.SoftwareUpdateError": "autoslurm.software_update.SoftwareUpdateError",
+    "python:autoslurm.software_update.update_software": "autoslurm.software_update.update_software",
+    "python:autoslurm.ssh_submission_session": "autoslurm.run_slurm.ssh_submission_session",
+    "python:autoslurm.stale_bundle_snapshots": "autoslurm.bundle_selection.stale_bundle_snapshots",
+    "python:autoslurm.storage.STORAGE_ROOT_ENVIRONMENT_VARIABLE": "autoslurm.storage.STORAGE_ROOT_ENVIRONMENT_VARIABLE",
+    "python:autoslurm.storage.config_file_path": "autoslurm.storage.config_file_path",
+    "python:autoslurm.storage.ensure_storage_dirs": "autoslurm.storage.ensure_storage_dirs",
+    "python:autoslurm.storage.jobs_dir": "autoslurm.storage.jobs_dir",
+    "python:autoslurm.storage.out_dir": "autoslurm.storage.out_dir",
+    "python:autoslurm.storage.set_storage_root": "autoslurm.storage.set_storage_root",
+    "python:autoslurm.storage.slurm_dir": "autoslurm.storage.slurm_dir",
+    "python:autoslurm.storage.storage_root": "autoslurm.storage.storage_root",
+    "python:autoslurm.submission.SubmissionError": "autoslurm.submission.SubmissionError",
+    "python:autoslurm.submission.list_submissions": "autoslurm.submission.list_submissions",
+    "python:autoslurm.submission.load_submission": "autoslurm.submission.load_submission",
+    "python:autoslurm.submission.refresh_submission": "autoslurm.submission.refresh_submission",
+    "python:autoslurm.submit_dag_by_levels": "autoslurm.bulk_submit.submit_dag_by_levels",
+    "python:autoslurm.submit_jobs": "autoslurm.job_runner.submit_jobs",
+    "python:autoslurm.submit_payload": "autoslurm.bulk_submit_driver.submit_payload",
+    "python:autoslurm.sync.sync_machine": "autoslurm.sync.sync_machine",
+    "python:autoslurm.topological_levels": "autoslurm.bulk_submit.topological_levels",
+    "python:autoslurm.transfer_bundle_to_remote": "autoslurm.file_transfer.transfer_bundle_to_remote",
+    "python:autoslurm.transfer_slurm_to_remote": "autoslurm.file_transfer.transfer_slurm_to_remote",
+    "python:autoslurm.transfer_slurms_to_remote": "autoslurm.file_transfer.transfer_slurms_to_remote",
+    "python:autoslurm.typer_adapter.from_typer": "autoslurm.typer_adapter.from_typer",
+    "python:autoslurm.update_slurm_with_dependencies": "autoslurm.job_dependency.update_slurm_with_dependencies",
+    "python:autoslurm.update_software": "autoslurm.software_update.update_software",
+    "python:autoslurm.utils.activation_command_from_config": "autoslurm.config.activation_command_from_config",
+    "python:autoslurm.utils.load_config": "autoslurm.config.load_config",
+    "python:autoslurm.utils.machine_config": "autoslurm.config.machine_config",
+    "python:autoslurm.utils.remote_storage_root_from_config": "autoslurm.transport.remote_storage_root_from_config",
+    "python:autoslurm.utils.save_config": "autoslurm.config.save_config"
+  },
+  "broad_catches": {
+    "autoslurm.acp._load_action_definitions": [
+      "Exception"
+    ],
+    "autoslurm.acp.execute_acp": [
+      "Exception"
+    ],
+    "autoslurm.apps.bulk_submit_driver.main": [
+      "Exception"
+    ],
+    "autoslurm.apps.clean.main": [
+      "Exception",
+      "Exception"
+    ],
+    "autoslurm.apps.submit.main": [
+      "Exception"
+    ],
+    "autoslurm.bulk_submit_driver.submit_payload.persist": [
+      "(Exception, KeyboardInterrupt)"
+    ],
+    "autoslurm.bulk_submit_driver.submit_payload.submit_level": [
+      "(Exception, KeyboardInterrupt)",
+      "Exception"
+    ],
+    "autoslurm.bundle_selection.get_bundle_filter_mode": [
+      "Exception"
+    ],
+    "autoslurm.log_files._query_remote_tails": [
+      "Exception"
+    ],
+    "autoslurm.run_slurm.ssh_submission_session": [
+      "Exception"
+    ],
+    "autoslurm.scheduler.query_scheduler": [
+      "Exception"
+    ],
+    "autoslurm.submission.refresh_submission": [
+      "Exception",
+      "Exception"
+    ],
+    "autoslurm.submission_operation.execute_prepared_bundle": [
+      "(Exception, KeyboardInterrupt)",
+      "(Exception, KeyboardInterrupt)",
+      "(Exception, KeyboardInterrupt)"
+    ]
+  },
+  "contracts": {
+    "constants": {
+      "implementation_task": "MVP10.3",
+      "failures": "No operation on reading a constant; package import can fail on an invalid storage-root selector.",
+      "translation_owner": "Storage/config resolver at import or first operation; no exception wrapper around constants.",
+      "desired_diagnostic": "Identify AUTOSLURM_STORAGE_ROOT and the invalid value, rather than blaming the requested job.",
+      "next_action": "Correct the explicit storage selector; do not choose another lane.",
+      "regression_evidence": [
+        "tests/unit/test_storage.py",
+        "tests/unit/test_public_exports.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "storage": {
+      "implementation_task": "MVP10.3",
+      "failures": "Invalid/relative/empty root, expansion/resolution failure, denied directory creation, partial directory creation.",
+      "translation_owner": "storage path validation and directory creation; errors.py holds facts, not filesystem operations.",
+      "desired_diagnostic": "Setting and attempted local path, errno and which directories already exist.",
+      "next_action": "Correct the selected root/permissions explicitly; preserve existing records.",
+      "regression_evidence": [
+        "tests/unit/test_storage.py",
+        "tests/unit/test_storage_isolation.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "config": {
+      "implementation_task": "MVP10.3",
+      "failures": "Absent/unreadable/corrupt config, invalid profile/root/alias/account, missing selected machine or activation, failed atomic publication.",
+      "translation_owner": "config normalization/selection/read/write, with presentation at config CLI.",
+      "desired_diagnostic": "Config path, selected machine, setting and cause; distinguish missing/corrupt/denied and publication phase.",
+      "next_action": "Edit the identified setting in the selected storage lane; never replace unreadable config with a fresh one implicitly.",
+      "regression_evidence": [
+        "tests/integration/test_configuration.py",
+        "tests/integration/test_config_roots.py",
+        "tests/integration/test_optional_account.py",
+        "tests/unit/test_activation.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "authoring": {
+      "implementation_task": "MVP10.3",
+      "failures": "Invalid declarations, unknown/missing/duplicate options, types/ranges/nonfinite values, unsafe tokens, command/path-role mismatch.",
+      "translation_owner": "CommandOption/CommandContract and argument_compilation validation, retaining option/job context.",
+      "desired_diagnostic": "Exact field/job/option and expected versus supplied type/constraint, without importing or executing job code.",
+      "next_action": "Correct the named declaration/setting; revalidate the exact saved job with its trusted contract before saving.",
+      "regression_evidence": [
+        "tests/unit/test_command_contract.py",
+        "tests/unit/test_argument_compilation.py",
+        "tests/integration/test_typed_authoring_workflow.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "typer": {
+      "implementation_task": "MVP10.3",
+      "failures": "Missing optional Typer, unsupported version/app/metadata/type/parser behavior, discovery failure.",
+      "translation_owner": "typer_adapter capability checks; no callback execution or dynamic import by name.",
+      "desired_diagnostic": "Adapter capability/option and installed versus supported version; chain parser-discovery exceptions.",
+      "next_action": "Use supported static declarations or manual CommandContract; installation is an explicit authoring-environment action.",
+      "regression_evidence": [
+        "tests/integration/test_typed_authoring_workflow.py",
+        "tests/unit/test_public_exports.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "graph": {
+      "implementation_task": "MVP10.3",
+      "failures": "Malformed job/graph, unknown dependency, name mismatch, cycle, missing script/job ID mapping.",
+      "translation_owner": "job_dependency validation and bulk_submit topological/callback boundaries.",
+      "desired_diagnostic": "Named job/dependency or missing mapping; distinguish invalid graph before dispatch from missing response after callback.",
+      "next_action": "Correct the graph before submission; after any callback, inspect accepted/unknown outcomes before retrying.",
+      "regression_evidence": [
+        "tests/unit/test_job_dependency.py",
+        "tests/unit/test_bulk_submit.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "persistence": {
+      "implementation_task": "MVP10.3",
+      "failures": "Missing/unreadable/corrupt bundle, invalid names/shapes/graph, JSON serialization, collision and publication failures.",
+      "translation_owner": "save_load_jobs and record_files, not blanket CLI catches.",
+      "desired_diagnostic": "Exact bundle path/field and publication phase; serialization and permissions distinct; note any existing published snapshot.",
+      "next_action": "Repair input/access explicitly; inspect exact path if publication may have happened before retrying save/append.",
+      "regression_evidence": [
+        "tests/unit/test_save_load_jobs.py",
+        "tests/integration/test_persistence_boundaries.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "selection": {
+      "implementation_task": "MVP10.3",
+      "failures": "Invalid/conflicting selector/date/index, missing exact file, broken payload, directory access and malformed filter config.",
+      "translation_owner": "bundle_selection discovery/selection; bad entries need per-item facts, not an empty listing.",
+      "desired_diagnostic": "Exact selector and storage root, broken-entry evidence, empty versus unavailable listing; retain filename-only selection policy.",
+      "next_action": "Select a listed exact snapshot; repair unreadable records/config without deleting historical evidence.",
+      "regression_evidence": [
+        "tests/unit/test_bundle_listing.py",
+        "tests/unit/test_filter_clean_cli.py",
+        "tests/integration/test_persistence_boundaries.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "paths": {
+      "implementation_task": "MVP10.3",
+      "failures": "Invalid base/traversal/absolute logical path, overlapping path roles, absent recorded paths, bad producing identity; remote readiness may fail.",
+      "translation_owner": "ExecutionContext for pure resolution; execution adapter for existence checks; transport for discovery.",
+      "desired_diagnostic": "Logical and attempted resolved path, selected/producing machine, field and check; transport failure is not FileNotFound.",
+      "next_action": "Fix the selected profile/logical path or verify access explicitly; never discover a replacement machine for historical jobs.",
+      "regression_evidence": [
+        "tests/unit/test_execution.py",
+        "tests/unit/test_remote_fs.py",
+        "tests/integration/test_execution_paths.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "transport": {
+      "implementation_task": "MVP10.4",
+      "failures": "Process launch/permission, SSH nonzero/timeout/interruption, malformed helper/root response, unavailable configured interpreter.",
+      "translation_owner": "transport/run_slurm session/probe adapters with operation/stage supplied by caller.",
+      "desired_diagnostic": "Alias, executable/helper/path, return code or errno, bounded safe detail; do not infer password/2FA diagnosis from generic SSH failure.",
+      "next_action": "Verify operator-owned SSH/profile/helper explicitly; no alternate host/local fallback, key handling or automatic action retry.",
+      "regression_evidence": [
+        "tests/unit/test_ssh_submission_session.py",
+        "tests/integration/test_ssh_alias.py",
+        "tests/integration/test_submission_boundaries.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "transfer": {
+      "implementation_task": "MVP10.4",
+      "failures": "Remote mkdir failure, missing source, scp/rsync launch/nonzero/interruption, partial transfer and local target creation.",
+      "translation_owner": "file_transfer adapters, with per-target progress passed to sync/submission coordinator.",
+      "desired_diagnostic": "Selected machine/source/target, transfer phase and known/unknown copied files; bounded safe command detail.",
+      "next_action": "Inspect destination/receipt before retrying staging; scientific datasets are outside log retrieval.",
+      "regression_evidence": [
+        "tests/unit/test_sync.py",
+        "tests/integration/test_submission_boundaries.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "submission": {
+      "implementation_task": "MVP10.5",
+      "failures": "Invalid request/preflight, staging/session failure, scheduler rejection, malformed accepted-ID response, lost dispatch response, tracking publication/cleanup failure, interrupts.",
+      "translation_owner": "submission_operation + bulk_submit_driver side-effect boundaries; keep SubmissionError.receipt and original cause.",
+      "desired_diagnostic": "Receipt/reference, accepted IDs, failed/unattempted/unknown jobs, dispatched phase and secondary tracking/cleanup errors.",
+      "next_action": "Retain exact receipt and inspect/refresh it; never rerun an uncertain submission automatically.",
+      "regression_evidence": [
+        "tests/integration/test_submission_safety.py",
+        "tests/integration/test_submission_boundaries.py",
+        "tests/unit/test_bulk_submit_driver.py",
+        "tests/unit/test_bulk_submit_driver_app.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "receipt": {
+      "implementation_task": "MVP10.5",
+      "failures": "Absent/corrupt/incompatible receipt, identity mismatch, failed remote refresh, failed local projection/publication.",
+      "translation_owner": "submission validation/refresh and record_files; preserve primary evidence before translating.",
+      "desired_diagnostic": "Exact receipt path/identity, safe cause, original jobs/IDs and observation/tracking errors; no invented rejection.",
+      "next_action": "Inspect exact local/remote receipt read-only; preserve known IDs, no automatic resubmission.",
+      "regression_evidence": [
+        "tests/integration/test_submission_safety.py",
+        "tests/integration/test_submission_boundaries.py",
+        "tests/integration/test_persistence_boundaries.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "inspection": {
+      "implementation_task": "MVP10.6",
+      "failures": "Invalid selectors/bounds, corrupt/changed bundle or receipt, unavailable profiles/scheduler, malformed response, missing/unreadable/changing logs, denied/corrupt cache.",
+      "translation_owner": "inspection_collection/scheduler/log_files/cache adapters return facts; projection preserves per-item/freshness semantics.",
+      "desired_diagnostic": "Operation errors versus broken item, absent/empty/not_cached/stale/failed/unknown; include timestamps, bounds and retained good evidence.",
+      "next_action": "Use exact run/job/task and bounded logs; explicitly refresh unavailable/stale evidence; failed science is a successful observation, not an inspection exception.",
+      "regression_evidence": [
+        "tests/unit/test_log_retrieval.py",
+        "tests/unit/test_inspection_state.py",
+        "tests/integration/test_inspection_boundaries.py",
+        "tests/integration/test_shared_inspection.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "software_intent": {
+      "implementation_task": "MVP10.3",
+      "failures": "Invalid historical manifest shape/version/name/revision/repository/subdirectory, differing job intents.",
+      "translation_owner": "software_manifest pure validation; do not revive deployment/release machinery.",
+      "desired_diagnostic": "Job/project/field and invalid request; redact credentials before serializing rejected repository values.",
+      "next_action": "Correct retained metadata or use operator-prepared environment; this API does not clone/install/select a runtime.",
+      "regression_evidence": [
+        "tests/unit/test_software_manifest.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "software_status": {
+      "implementation_task": "MVP10.4",
+      "failures": "Invalid project/root/requirements/limits, unreadable declarations, unavailable Git/interpreter, malformed/nonzero/timed-out probe, version or commit mismatch.",
+      "translation_owner": "software_requirements local readers and software_status/environment probe adapters.",
+      "desired_diagnostic": "Selected machine/project, expected and observed identity/dependency, warnings and unknown checks; mismatch is a result requiring attention, not necessarily a failed request.",
+      "next_action": "Inspect the named project/environment and update explicitly; never install machine dependencies to make comparison pass.",
+      "regression_evidence": [
+        "tests/unit/test_software_status.py",
+        "tests/unit/test_software_requirements.py",
+        "tests/integration/test_software_status.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "software_update": {
+      "implementation_task": "MVP10.4",
+      "failures": "Missing/nonexecutable/wrong-prefix venv Python, missing/dirty checkout/upstream/Git, preflight timeout; pull/install failure/interruption/lost response.",
+      "translation_owner": "software_update_probe returns stdlib facts; software_update translates and retains SoftwareUpdateError.evidence and chained cause.",
+      "desired_diagnostic": "Attempted configured Python/setting/alias, stage, errno/returncode and safe bounded detail; before/after commit and installation state; unknown only after possible action.",
+      "next_action": "Fix the identified profile/preflight failure; if pull/install may have started inspect checkout/environment before any explicit retry. No reset/reclone/extra environment.",
+      "regression_evidence": [
+        "tests/unit/test_software_update.py",
+        "tests/integration/test_software_update.py",
+        "tests/unit/test_activation.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "context": {
+      "implementation_task": "MVP10.7",
+      "failures": "Missing/unreadable packaged or checkout guidance, unmatched selectors, unavailable action metadata, bad exact job/task selector.",
+      "translation_owner": "context resource reader and experiment_context facade; route runtime reads through inspection.",
+      "desired_diagnostic": "Recipe/section/run/job/task identity; distinguish no match from unavailable files and preserve underlying inspection evidence.",
+      "next_action": "Use the installed recipe/listed sections or exact run; do not substitute another machine/job.",
+      "regression_evidence": [
+        "tests/unit/test_context.py",
+        "tests/unit/test_experiment_context.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "cancel": {
+      "implementation_task": "MVP10.7",
+      "failures": "Invalid selection/config, unavailable status, scancel launch/nonzero/lost response; earlier target requests may already be accepted.",
+      "translation_owner": "cancel selection + local/SSH cancellation adapters; coordinator accumulates per-target effects.",
+      "desired_diagnostic": "Exact producing machine/IDs, preview versus request acceptance versus observed terminal cancellation; retain successful and unknown targets.",
+      "next_action": "Inspect affected IDs before any further cancellation; unavailable state must not become safe-to-delete evidence.",
+      "regression_evidence": [
+        "tests/unit/test_cancel_cli.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "clean": {
+      "implementation_task": "MVP10.7",
+      "failures": "Invalid selector, broken/unreadable or changed snapshot, unavailable status, denied unlink, partial deletion.",
+      "translation_owner": "clean preview/selection and per-file deletion boundary; retain conservative receipt protection.",
+      "desired_diagnostic": "Exact files retained/deleted/failed/unknown, selection evidence and errors even when other items succeed.",
+      "next_action": "Review fresh preview and retained submission evidence; no automatic deletion/retry of uncertain files.",
+      "regression_evidence": [
+        "tests/unit/test_filter_clean_cli.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "sync": {
+      "implementation_task": "MVP10.7",
+      "failures": "Config/discovery errors, absent source directory versus failed SSH test, denied local target/rsync, earlier directories partially copied.",
+      "translation_owner": "sync_machine coordinator over file_transfer.pull_storage_directory.",
+      "desired_diagnostic": "Per-directory source/destination, missing/failed/partial states and completed copies; preserve producing paths.",
+      "next_action": "Inspect local mirror and retry an explicitly selected sync only after resolving access; no submission or scientific-result interpretation.",
+      "regression_evidence": [
+        "tests/unit/test_sync.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "discovery": {
+      "implementation_task": "MVP10.7",
+      "failures": "Missing repository/pyproject, invalid TOML/catalog, unreadable/syntactically invalid source summary, failed catalog save.",
+      "translation_owner": "apps.scan static readers + catalog publication; no importing discovered application code.",
+      "desired_diagnostic": "Exact repository/catalog path, bad entry and read/parse/write phase; preserve existing valid catalog if another scan fails.",
+      "next_action": "Correct path/metadata or explicitly rebuild catalog; do not treat unreadable catalog as empty then overwrite it.",
+      "regression_evidence": [
+        "tests/unit/test_apps_cli.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "cli": {
+      "implementation_task": "MVP10.8",
+      "failures": "Usage/selector errors; inherited operation diagnostics; JSON serialization/terminal/clipboard failures; unexpected bugs.",
+      "translation_owner": "Thin apps/error_output presentation adapter (proposed), domain owner retains effects; root only dispatches.",
+      "desired_diagnostic": "Render expected diagnostic once, stable JSON envelope and explicit exit policy; retain evidence and chained/debug-visible unexpected bugs.",
+      "next_action": "Follow the underlying operation next action; a clipboard/printing failure does not authorize repeating side effects.",
+      "regression_evidence": [
+        "tests/unit/test_root_cli.py",
+        "tests/unit/test_apps_cli.py",
+        "tests/unit/test_cli_help_on_empty_args.py",
+        "tests/unit/test_logs_cli.py",
+        "tests/unit/test_status_cli.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    },
+    "acp": {
+      "implementation_task": "MVP10.8",
+      "failures": "Malformed request, missing/unknown action/parameters, underlying domain errors, unavailable metadata, unexpected bugs.",
+      "translation_owner": "acp dispatch validates envelope; domain operation supplies diagnostic/evidence; errors module never dispatches.",
+      "desired_diagnostic": "Equivalent Python/CLI diagnostic plus per-item result/receipt; top-level success means request completed, not science succeeded.",
+      "next_action": "Correct action/fields or follow the domain action; inspect partial/unknown evidence instead of replaying schedule/refresh.",
+      "regression_evidence": [
+        "tests/unit/test_acp.py",
+        "tests/integration/test_shared_inspection.py"
+      ],
+      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+    }
+  },
+  "owners": {
+    "autoslurm.acp.action_definitions": {
+      "contract": "acp",
+      "inputs": "No arguments; import-loaded action metadata.",
+      "current": "Live metadata dict; load exceptions earlier silently set empty dict.",
+      "effects": "Metadata read at package import, not remote."
+    },
+    "autoslurm.acp.execute_acp": {
+      "contract": "acp",
+      "inputs": "Request mapping with action and action-specific fields.",
+      "current": "status success/result or error/message; SubmissionError result retains receipt, other Exception becomes string; nonmapping input can fail before catch.",
+      "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
+    },
+    "autoslurm.acp.list_bundles": {
+      "contract": "selection",
+      "inputs": "Bundle name and optional date.",
+      "current": "JSON-friendly snapshot rows; inherits list_saved_bundles masking and discovery errors.",
+      "effects": "Local dirs/reads only."
+    },
+    "autoslurm.apps.agent_context.main": {
+      "contract": "context",
+      "inputs": "--sections optional selectors; explicit invocation/help.",
+      "current": "Empty help0; prints selected context; missing match empty success; unreadable resource raw OSError.",
+      "effects": "Local reads only."
+    },
+    "autoslurm.apps.bulk_submit_driver.main": {
+      "contract": "submission",
+      "inputs": "Internal --capabilities, JSON stdin/file and storage/receipt protocol.",
+      "current": "JSON ok/result/receipt on expected protocol path; broad Exception -> ok false/error/optional receipt exit1; KeyboardInterrupt can escape.",
+      "effects": "Capabilities read-only; execution may claim/persist/submit. Human CLI envelope must not replace helper wire protocol."
+    },
+    "autoslurm.apps.cancel.main": {
+      "contract": "cancel",
+      "inputs": "Bundle, filters/ranges, machine and --yes.",
+      "current": "Default preview; raw selection/command errors; successful scancel prints Cancelled though only request acceptance known.",
+      "effects": "Queries during preview; --yes scancel per group, earlier groups may succeed before later failure. Current named profile is used for dispatch."
+    },
+    "autoslurm.apps.clean.main": {
+      "contract": "clean",
+      "inputs": "Snapshot scope/selectors, optional --yes.",
+      "current": "Default preview; broad load exceptions skip entries; raw unlink errors can follow earlier deletions.",
+      "effects": "May query status even during preview; --yes deletes per path. Receipt-bearing/unreadable candidates conservatively retained."
+    },
+    "autoslurm.apps.config.main": {
+      "contract": "config",
+      "inputs": "view/summary; settings update; set-default; interactive editor.",
+      "current": "Help on empty; ValueError -> SystemExit(message), other OSError can traceback; optional validation prints bool. Interactive EnvironmentError load fallback creates fresh config.",
+      "effects": "View local-only; save writes; interactive validation may SSH. An unreadable existing config can trigger replacement workflow."
+    },
+    "autoslurm.apps.filter.main": {
+      "contract": "selection",
+      "inputs": "Optional active/all mode.",
+      "current": "Prints current mode/default; invalid parser choice exit2; config write errors raw.",
+      "effects": "Read mode silently defaults on config failure; explicit mode writes config."
+    },
+    "autoslurm.apps.initialize.main": {
+      "contract": "persistence",
+      "inputs": "Bundle name.",
+      "current": "Empty help0; save_bundle({},name), raw save errors.",
+      "effects": "Writes empty snapshot; no dispatch."
+    },
+    "autoslurm.apps.inspect.main": {
+      "contract": "inspection",
+      "inputs": "Names/indices or file, status/script/log/task options; optional clipboard/JSON.",
+      "current": "Views or legacy text; failures inconsistently raw; bad per-item view generally exit0; clipboard failure after successful print can raise.",
+      "effects": "Observation/cache effects; requested clipboard writes are secondary presentation effect."
+    },
+    "autoslurm.apps.logs.main": {
+      "contract": "inspection",
+      "inputs": "Status-like bundle/job/task selectors, stream, tail/bytes/files, cached/JSON.",
+      "current": "Expected selection/read errors printed then exit1; error-view entries also exit1; healthy/empty/missing logs distinguishable.",
+      "effects": "Bounded log/status reads; refresh caches; no dataset retrieval."
+    },
+    "autoslurm.apps.root.main": {
+      "contract": "cli",
+      "inputs": "argv: action plus arguments.",
+      "current": "Empty/help prints help exit0; unknown action parser exit2; domain handler SystemExit/raw errors propagate.",
+      "effects": "Dispatch only; no global error catch or replay."
+    },
+    "autoslurm.apps.scan.main": {
+      "contract": "discovery",
+      "inputs": "Required repository path.",
+      "current": "Argparse exit2 missing repo; scan table or raw parse/read/write errors; no registered catalog-list mode.",
+      "effects": "Static AST/pyproject scan writes catalog via direct write_text; unreadable/corrupt catalog currently replaced with empty then saved."
+    },
+    "autoslurm.apps.schedule.main": {
+      "contract": "persistence",
+      "inputs": "Script, Slurm options, application arguments, optional append/submit.",
+      "current": "Parses help-text by executing script --help; raw ValueError/OSError; saves then optionally submit_jobs, errors can follow saved bundle.",
+      "effects": "Application --help is executed (unlike typed adapter); bundle write precedes optional dispatch."
+    },
+    "autoslurm.apps.software.main": {
+      "contract": "software_update",
+      "inputs": "status or update subaction; machine/project/expectations/JSON.",
+      "current": "Status errors -> unavailable JSON/text exit1; compatibility concern also exit1. Update SoftwareUpdateError evidence retained exit1; generic errors use different failed envelope. Empty/incomplete command help exit0.",
+      "effects": "status read-only probes; update pull+editable install. Neither changes machine scientific dependencies."
+    },
+    "autoslurm.apps.status.main": {
+      "contract": "inspection",
+      "inputs": "Names/indices/date or exact bundle-file; array and cached/JSON options.",
+      "current": "Views text/JSON; broken/partial evidence normally exit0, raw selection/read failures can traceback; post-inspect bundle reload can fail.",
+      "effects": "Fresh scheduler queries/cache; --cached no scheduler; filename listing still creates dirs."
+    },
+    "autoslurm.apps.submission.main": {
+      "contract": "receipt",
+      "inputs": "Exact receipt or list filter; optional --refresh/--json.",
+      "current": "Only SubmissionError caught, receipt printed then exit1; missing/corrupt read/list can traceback; parser misuse exit2.",
+      "effects": "List/read local; refresh remote read plus local projection/receipt writes."
+    },
+    "autoslurm.apps.submit.main": {
+      "contract": "submission",
+      "inputs": "Name/date or file/latest/index plus machine overrides.",
+      "current": "Selection/preflight/execution errors inconsistently SystemExit string; some machine_config errors outside catch. Receipt only in text, no JSON.",
+      "effects": "Preview/selection reads then submission; accepted receipt must survive rendering error."
+    },
+    "autoslurm.apps.sync.main": {
+      "contract": "sync",
+      "inputs": "Optional machine/default.",
+      "current": "Delegates sync_machine; raw failures, no structured per-directory result.",
+      "effects": "Empty argv starts default sync, does not just print help; partial copies possible."
+    },
+    "autoslurm.bulk_submit.LevelSubmitResult": {
+      "contract": "graph",
+      "inputs": "Request fields job/script/dependency IDs; result fields IDs/levels/round trips respectively.",
+      "current": "Dataclass constructors perform no field validation beyond Python signature TypeError.",
+      "effects": "Data containers only."
+    },
+    "autoslurm.bulk_submit.SubmissionRequest": {
+      "contract": "graph",
+      "inputs": "Request fields job/script/dependency IDs; result fields IDs/levels/round trips respectively.",
+      "current": "Dataclass constructors perform no field validation beyond Python signature TypeError.",
+      "effects": "Data containers only."
+    },
+    "autoslurm.bulk_submit.submit_dag_by_levels": {
+      "contract": "submission",
+      "inputs": "Graph, script mapping and submit_level callback.",
+      "current": "LevelSubmitResult; KeyError missing script/response ID, ValueError graph; callback errors propagate, no receipt owned here.",
+      "effects": "Callback can have accepted earlier jobs; missing response is not proof of rejection."
+    },
+    "autoslurm.bulk_submit.topological_levels": {
+      "contract": "graph",
+      "inputs": "Parent-to-children adjacency.",
+      "current": "List of levels or ValueError cycle; malformed input may TypeError/AttributeError.",
+      "effects": "Pure."
+    },
+    "autoslurm.bulk_submit_driver.BulkSubmitDriverResult": {
+      "contract": "submission",
+      "inputs": "Payload graph/scripts/dir/optional receipt/parsable; result IDs/levels/round trips/receipt.",
+      "current": "Dataclasses without field validation beyond Python call signature.",
+      "effects": "Constructors are data only; payload construction is not submission."
+    },
+    "autoslurm.bulk_submit_driver.BulkSubmitPayload": {
+      "contract": "submission",
+      "inputs": "Payload graph/scripts/dir/optional receipt/parsable; result IDs/levels/round trips/receipt.",
+      "current": "Dataclasses without field validation beyond Python call signature.",
+      "effects": "Constructors are data only; payload construction is not submission."
+    },
+    "autoslurm.bulk_submit_driver.parse_job_id_from_parsable": {
+      "contract": "submission",
+      "inputs": "Captured sbatch stdout.",
+      "current": "ID string or ValueError including raw output; does not decide whether scheduler accepted.",
+      "effects": "Pure parser; caller must retain possible prior acceptance."
+    },
+    "autoslurm.bulk_submit_driver.submit_payload": {
+      "contract": "submission",
+      "inputs": "BulkSubmitPayload and optional run_command adapter.",
+      "current": "BulkSubmitDriverResult; validations/raw pre-claim errors; SubmissionError with receipt after tracked dispatch, callback errors without receipt.",
+      "effects": "Claims once, incremental receipts and sbatch calls; later persistence failure retains accepted IDs in memory; no replay."
+    },
+    "autoslurm.bundle_selection.all_bundle_snapshots": {
+      "contract": "selection",
+      "inputs": "Optional reference date for relevant listings; selected root/filter.",
+      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
+      "effects": "ensure_storage_dirs even for listing; no scheduler."
+    },
+    "autoslurm.bundle_selection.bundle_snapshot_state": {
+      "contract": "selection",
+      "inputs": "Exact timestamped snapshot path.",
+      "current": "Metadata including broken state; FileNotFoundError/ValueError invalid path/name/date, corrupt/unreadable payload becomes broken without cause.",
+      "effects": "Read only."
+    },
+    "autoslurm.bundle_selection.bundle_snapshots": {
+      "contract": "selection",
+      "inputs": "Optional reference date for relevant listings; selected root/filter.",
+      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
+      "effects": "ensure_storage_dirs even for listing; no scheduler."
+    },
+    "autoslurm.bundle_selection.get_bundle_filter_mode": {
+      "contract": "selection",
+      "inputs": "Selected config.",
+      "current": "active/all string; any Exception currently silently defaults to active.",
+      "effects": "Reads only; masks missing/corrupt/permission/bug distinctions."
+    },
+    "autoslurm.bundle_selection.inactive_bundle_snapshots": {
+      "contract": "selection",
+      "inputs": "Optional reference date for relevant listings; selected root/filter.",
+      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
+      "effects": "ensure_storage_dirs even for listing; no scheduler."
+    },
+    "autoslurm.bundle_selection.latest_bundle_summaries": {
+      "contract": "selection",
+      "inputs": "Optional reference date for relevant listings; selected root/filter.",
+      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
+      "effects": "ensure_storage_dirs even for listing; no scheduler."
+    },
+    "autoslurm.bundle_selection.list_saved_bundles": {
+      "contract": "selection",
+      "inputs": "Optional desired date/name.",
+      "current": "Rows with jobs; JSON/OSError/AttributeError replaced by jobs=[], not an error record.",
+      "effects": "Discovery ensures dirs; local reads only."
+    },
+    "autoslurm.bundle_selection.nearest_bundle_filename": {
+      "contract": "selection",
+      "inputs": "Name and optional desired date.",
+      "current": "Filename/date via select_bundle_snapshot(prefer_draft=False); missing FileNotFoundError.",
+      "effects": "Discovery may create dirs; no content read for filename-only choice."
+    },
+    "autoslurm.bundle_selection.select_bundle_snapshot": {
+      "contract": "selection",
+      "inputs": "Name or exact path/latest/index, date and draft preference.",
+      "current": "Exact selected row; ValueError conflict/out-of-range, FileNotFoundError absent; invalid payload can affect draft preference.",
+      "effects": "Listings may create dirs; no dispatch."
+    },
+    "autoslurm.bundle_selection.set_bundle_filter_mode": {
+      "contract": "selection",
+      "inputs": "active/all mode.",
+      "current": "Saved normalized string; ValueError invalid mode, config/publication errors propagate.",
+      "effects": "Writes config; publication uncertainty applies."
+    },
+    "autoslurm.bundle_selection.stale_bundle_snapshots": {
+      "contract": "selection",
+      "inputs": "Optional reference date for relevant listings; selected root/filter.",
+      "current": "List of snapshot metadata; corrupt payload becomes state=broken without cause, invalid filenames skipped; filesystem/config failures may escape or be defaulted.",
+      "effects": "ensure_storage_dirs even for listing; no scheduler."
+    },
+    "autoslurm.command_contract.CommandContract": {
+      "contract": "authoring",
+      "inputs": "Literal command prefix, CommandOption sequence and input/path roles.",
+      "current": "Frozen copied declarations or ValueError.",
+      "effects": "Pure, no import by command name."
+    },
+    "autoslurm.command_contract.CommandContract.describe": {
+      "contract": "authoring",
+      "inputs": "Existing contract instance.",
+      "current": "Plain metadata dict; no expected operation failure for a valid instance.",
+      "effects": "Pure."
+    },
+    "autoslurm.command_contract.CommandContract.job": {
+      "contract": "authoring",
+      "inputs": "Job name, script_args, optional Slurm mapping/dependencies.",
+      "current": "Readable job dict or ValueError.",
+      "effects": "Pure; no save, preview, submit or remote readiness."
+    },
+    "autoslurm.command_contract.CommandContract.validate": {
+      "contract": "authoring",
+      "inputs": "Named script_args mapping.",
+      "current": "Complete settings with declared defaults; ValueError for missing/unknown/type/range.",
+      "effects": "Pure."
+    },
+    "autoslurm.command_contract.CommandContract.validate_job": {
+      "contract": "authoring",
+      "inputs": "Exact saved job and trusted existing contract.",
+      "current": "Copied validated job; ValueError for incomplete settings or command/path-role drift.",
+      "effects": "Pure; does not replace old explicit defaults."
+    },
+    "autoslurm.command_contract.CommandOption": {
+      "contract": "authoring",
+      "inputs": "Name, native kind, required/default and numeric limits.",
+      "current": "Frozen dataclass; constructor validation ValueError.",
+      "effects": "No I/O or callback."
+    },
+    "autoslurm.command_contract.CommandOption.validate": {
+      "contract": "authoring",
+      "inputs": "One scalar value against declared option.",
+      "current": "Validated scalar or ValueError with option constraint.",
+      "effects": "Pure."
+    },
+    "autoslurm.config.activation_command_from_config": {
+      "contract": "config",
+      "inputs": "Profile with optional env_command/venv_path.",
+      "current": "String with setup before activation; invalid nonstring entries are currently ignored, malformed profile can AttributeError.",
+      "effects": "Pure formatting, does not activate or verify environment."
+    },
+    "autoslurm.config.load_config": {
+      "contract": "config",
+      "inputs": "Selected storage config JSON, optional legacy location.",
+      "current": "Normalized dict; missing/invalid topology EnvironmentError, JSONDecodeError, ValueError, OSError or shape TypeError.",
+      "effects": "Reads only; no connection."
+    },
+    "autoslurm.config.machine_config": {
+      "contract": "config",
+      "inputs": "Optional argparse namespace, exact machine and overrides.",
+      "current": "(name,profile); missing machine EnvironmentError, missing activation AttributeError, normalization ValueError.",
+      "effects": "Reads selected local config only."
+    },
+    "autoslurm.config.save_config": {
+      "contract": "config",
+      "inputs": "machines/default/filter dict.",
+      "current": "None; normalization ValueError, malformed mapping KeyError/TypeError, serialization/publication OSError/TypeError.",
+      "effects": "Creates parent; atomic publication may already have occurred before directory fsync/cleanup failure."
+    },
+    "autoslurm.context.agent_context": {
+      "contract": "context",
+      "inputs": "Optional resource filename/substrings.",
+      "current": "Concatenated guide string; no-match gives empty text, missing resource tree can empty; OSError on unreadable file.",
+      "effects": "Local installed/checkout resources only."
+    },
+    "autoslurm.context.agent_context_paths": {
+      "contract": "context",
+      "inputs": "Installed and checkout guidance locations.",
+      "current": "Ordered Path list; unavailable resource directory can yield fewer/no sections.",
+      "effects": "Local path discovery only."
+    },
+    "autoslurm.definitions.CONFIG_FILE_PATH": {
+      "contract": "constants",
+      "inputs": "Read exported import-time configuration Path, legacy key list or timestamp format.",
+      "current": "Import-time Path from config_file_path(); invalid storage selector can fail package import before any requested operation. Retained constant is not a dynamic root selector.",
+      "effects": "Reading format/key constants has no effects; path resolution can fail before an operation."
+    },
+    "autoslurm.definitions.DATE_FORMAT": {
+      "contract": "constants",
+      "inputs": "Read exported import-time configuration Path, legacy key list or timestamp format.",
+      "current": "Values; CONFIG_FILE_PATH resolves the selected storage path on use.",
+      "effects": "Reading format/key constants has no effects; path resolution can fail before an operation."
+    },
+    "autoslurm.definitions.MACHINE_KEYS": {
+      "contract": "constants",
+      "inputs": "Read exported import-time configuration Path, legacy key list or timestamp format.",
+      "current": "Values; CONFIG_FILE_PATH resolves the selected storage path on use.",
+      "effects": "Reading format/key constants has no effects; path resolution can fail before an operation."
+    },
+    "autoslurm.execution.ExecutionContext": {
+      "contract": "paths",
+      "inputs": "Selected identity/config, resolved roots and remote flag.",
+      "current": "Frozen dataclass; constructor itself does not validate all supplied facts.",
+      "effects": "Data only; creation is not readiness evidence."
+    },
+    "autoslurm.execution.ExecutionContext.resolve_job": {
+      "contract": "paths",
+      "inputs": "Job options/path roles/cwd/Slurm settings.",
+      "current": "Logical/resolved execution dict; ValueError invalid role/path/log/cwd, malformed mappings may TypeError/AttributeError.",
+      "effects": "Pure, preserving selected context."
+    },
+    "autoslurm.execution.ExecutionContext.resolve_path": {
+      "contract": "paths",
+      "inputs": "Logical string, named base and relative_only.",
+      "current": "Resolved string; ValueError invalid value/base/traversal/required relative path.",
+      "effects": "Pure."
+    },
+    "autoslurm.execution.ExecutionContext.validate_jobs": {
+      "contract": "paths",
+      "inputs": "Job definitions or already-resolved execution records respectively.",
+      "current": "None or FileNotFoundError; remote ANY nonzero including SSH255 currently converted to FileNotFoundError; launch OSError propagates.",
+      "effects": "Local path tests or remote read-only SSH tests; no timeout currently."
+    },
+    "autoslurm.execution.ExecutionContext.validate_resolved_jobs": {
+      "contract": "paths",
+      "inputs": "Job definitions or already-resolved execution records respectively.",
+      "current": "None or FileNotFoundError; remote ANY nonzero including SSH255 currently converted to FileNotFoundError; launch OSError propagates.",
+      "effects": "Local path tests or remote read-only SSH tests; no timeout currently."
+    },
+    "autoslurm.execution.execution_context_from_snapshot": {
+      "contract": "paths",
+      "inputs": "Exact saved snapshot/job.",
+      "current": "Context from producing evidence; loader/ValueError and malformed evidence KeyError/TypeError.",
+      "effects": "Local read only."
+    },
+    "autoslurm.execution.recorded_execution": {
+      "contract": "paths",
+      "inputs": "Exact saved snapshot and optional one job name.",
+      "current": "Recorded dict; ValueError ambiguous/missing evidence; loader failures propagate.",
+      "effects": "Local read only; does not use today's remote profile."
+    },
+    "autoslurm.execution.resolve_execution_context": {
+      "contract": "paths",
+      "inputs": "Machine/profile or optional resolver.",
+      "current": "ExecutionContext; config/path/discovery errors propagate.",
+      "effects": "Local read; remote root discovery may run SSH/environment activation."
+    },
+    "autoslurm.experiment_context.experiment_context": {
+      "contract": "inspection",
+      "inputs": "Bundle name/date.",
+      "current": "Compatibility inspection dict; selection/core failures propagate; fresh per-item evidence retained.",
+      "effects": "Selects exact snapshot then shared inspection; may query scheduler/cache."
+    },
+    "autoslurm.experiment_context.job_context": {
+      "contract": "inspection",
+      "inputs": "Bundle/job name or numeric job index, date, script/log/status options.",
+      "current": "Job context; KeyError absent job/index, selection errors, returned inspection evidence.",
+      "effects": "Status/log options determine reads; scripts local; no submission."
+    },
+    "autoslurm.experiment_context.latest_log_context": {
+      "contract": "inspection",
+      "inputs": "Bundle name/date/job/task.",
+      "current": "Bounded log context; ValueError no exact run, selector failures; log errors returned.",
+      "effects": "Bounded source log reads and cache; no dataset copy."
+    },
+    "autoslurm.file_transfer.transfer_bundle_to_remote": {
+      "contract": "transfer",
+      "inputs": "Saved bundle filename, selected profile/context.",
+      "current": "None; mkdir/scp/config failures as script transfer.",
+      "effects": "Creates remote jobs dir and copies/overwrites bundle."
+    },
+    "autoslurm.file_transfer.transfer_slurm_to_remote": {
+      "contract": "transfer",
+      "inputs": "One saved script, selected profile/context.",
+      "current": "None; RuntimeError mkdir, ValueError scp nonzero, OSError launch/read.",
+      "effects": "Creates remote directory and copies/overwrites script; failure may leave partial file."
+    },
+    "autoslurm.file_transfer.transfer_slurms_to_remote": {
+      "contract": "transfer",
+      "inputs": "Script sequence, selected profile/context.",
+      "current": "None; empty sequence returns; mkdir/scp/config failures as single transfer.",
+      "effects": "May copy some scripts before failure; no per-file result currently."
+    },
+    "autoslurm.inspection.inspect_bundle": {
+      "contract": "inspection",
+      "inputs": "Exactly one bundle path or receipt path; refresh/artifact/job/task/bound options.",
+      "current": "Shared view; selector/bounds errors raise; broken run and failed queries return per-item evidence; receipt-load errors can raise.",
+      "effects": "Refresh may query scheduler/logs and write caches; cached mode no source log/scheduler queries."
+    },
+    "autoslurm.inspection.inspect_bundles": {
+      "contract": "inspection",
+      "inputs": "Exact path sequence, refresh/artifact selectors and bounds.",
+      "current": "Views list retaining broken/partial/fresh/stale/error evidence; invalid global request can raise.",
+      "effects": "Batched per producing-machine scheduler observation; bounded artifacts; per-view cache writes on refresh."
+    },
+    "autoslurm.inspection.inspect_logs": {
+      "contract": "inspection",
+      "inputs": "Exact bundle or receipt and bounded job/task/stream selectors.",
+      "current": "Same inspection view with logs; validation raises, log failures normally retained entries.",
+      "effects": "Only execution logs, no scientific-result copy; fresh reads cache excerpts."
+    },
+    "autoslurm.inspection.list_runs": {
+      "contract": "selection",
+      "inputs": "Optional name and date.",
+      "current": "Plain snapshot identities; inherits list_saved_bundles empty-jobs masking.",
+      "effects": "Local discovery creates storage dirs."
+    },
+    "autoslurm.job_dependency.dependency_graph": {
+      "contract": "graph",
+      "inputs": "Dictionary of jobs and dependencies.",
+      "current": "Parent-to-children dict; ValueError for names/dependencies; malformed job can AttributeError.",
+      "effects": "Pure; cycle checked by consumer topological sort."
+    },
+    "autoslurm.job_dependency.update_slurm_with_dependencies": {
+      "contract": "persistence",
+      "inputs": "Saved Slurm filename and dependency IDs.",
+      "current": "None; OSError read/write, TypeError on nonstring join elements despite int annotation.",
+      "effects": "Creates storage dirs, rewrites file nonatomically; truncation/partial writes possible."
+    },
+    "autoslurm.job_runner.preview_bundle": {
+      "contract": "authoring",
+      "inputs": "Exact bundle path, optional machine/overrides.",
+      "current": "Machine/path/rendered jobs dict; selection/graph/command/path/readiness errors propagate.",
+      "effects": "No submission or receipt; can run remote readiness/root checks and local bash -n, so not a purely offline API."
+    },
+    "autoslurm.job_runner.submit_jobs": {
+      "contract": "submission",
+      "inputs": "Bundle name, optional exact path/date/machine/overrides or context.",
+      "current": "Receipt on success; pre-dispatch plain exceptions; execute_prepared_bundle raises SubmissionError.receipt for post-receipt failures.",
+      "effects": "Preflight then staging and dispatch once; evidence printed after receipt return; printing failure cannot undo accepted jobs."
+    },
+    "autoslurm.job_to_slurm.create_slurm_script": {
+      "contract": "persistence",
+      "inputs": "Job, date, machine profile and optional resolved context.",
+      "current": "Saved script filename; argument/path/environment ValueError, raw OSError or malformed data errors.",
+      "effects": "Opens/truncates local output BEFORE render validation; optional remote root discovery while writing."
+    },
+    "autoslurm.remote_fs.path_exists": {
+      "contract": "transport",
+      "inputs": "Path and selected current/recorded context.",
+      "current": "Bool returncode==0; ANY nonzero including SSH failure becomes False; launch OSError propagates.",
+      "effects": "Local test or read-only SSH; never creates tested path."
+    },
+    "autoslurm.remote_fs.resolve_results_path": {
+      "contract": "paths",
+      "inputs": "Logical path plus optional current context/machine or exact producing snapshot/job.",
+      "current": "Resolved path or selector/context errors. Absolute path alone has legacy fast path.",
+      "effects": "May discover selected remote root, except saved-context or legacy absolute fast path."
+    },
+    "autoslurm.run_slurm.get_job_id_from_sbatch_output": {
+      "contract": "submission",
+      "inputs": "Captured human-readable sbatch stdout.",
+      "current": "ID or ValueError with raw output.",
+      "effects": "Pure parser; acceptance may already have occurred outside function."
+    },
+    "autoslurm.run_slurm.probe_submission_helper": {
+      "contract": "transport",
+      "inputs": "Resolved context with venv_path and selected storage.",
+      "current": "None or generic helper RuntimeError, config ValueError/OSError; bad JSON collapses capability failure.",
+      "effects": "Read-only helper --capabilities; no dispatch or install."
+    },
+    "autoslurm.run_slurm.run_bulk_submit_driver_remotely": {
+      "contract": "submission",
+      "inputs": "Graph/scripts/receipt payload, profile/context and SSH options.",
+      "current": "Validated receipt or legacy job IDs; SubmissionError on helper rejection with receipt; RuntimeError malformed/no response, raw protocol shape errors possible.",
+      "effects": "Single helper dispatch; no response can mean unknown scheduler effect; high-level coordinator retains receipt."
+    },
+    "autoslurm.run_slurm.run_slurm_locally": {
+      "contract": "submission",
+      "inputs": "Saved script filename.",
+      "current": "ID or stdout parse ValueError; ignores sbatch return code/stderr; launch errors propagate.",
+      "effects": "Direct sbatch without receipt; rejection versus unparseable acceptance not differentiated."
+    },
+    "autoslurm.run_slurm.run_slurm_remotely": {
+      "contract": "submission",
+      "inputs": "Saved script, profile/context and optional SSH options.",
+      "current": "ID; nonzero ValueError with stderr, parse errors/launch/context failures; no receipt.",
+      "effects": "SSH sbatch; lost/unparseable response may conceal acceptance."
+    },
+    "autoslurm.run_slurm.ssh_submission_session": {
+      "contract": "transport",
+      "inputs": "Profile, machine, enabled flag.",
+      "current": "Context manager yields None/local or []/borrowed or owned SSH options; setup RuntimeError/OSError.",
+      "effects": "ssh -G advisory fallback; borrowed master untouched; owned /tmp master opened/closed; cleanup exceptions and nonzero close suppressed."
+    },
+    "autoslurm.save_load_jobs.load_bundle": {
+      "contract": "persistence",
+      "inputs": "Name and optional desired date.",
+      "current": "(ordered jobs,graph,date); selection FileNotFoundError, loader errors propagate.",
+      "effects": "Discovery creates storage dirs, then local reads; no scheduler."
+    },
+    "autoslurm.save_load_jobs.load_bundle_from_path": {
+      "contract": "persistence",
+      "inputs": "Exact JSON path.",
+      "current": "(jobs,graph,date); missing FileNotFoundError, invalid JSON converted to OSError, malformed shape/graph TypeError/AttributeError/ValueError/CycleError.",
+      "effects": "Reads and normalizes loaded objects only."
+    },
+    "autoslurm.save_load_jobs.save_bundle": {
+      "contract": "persistence",
+      "inputs": "Job dict, bundle name and append flag.",
+      "current": "Exact Path; TypeError/KeyError/ValueError plus serialization/publication failures; collision warnings and saved message.",
+      "effects": "Mutates input job name/kind defaults; append replaces snapshot atomically; publication may have happened on error."
+    },
+    "autoslurm.save_load_jobs.schedule_job": {
+      "contract": "persistence",
+      "inputs": "One job, optional bundle name and append flag.",
+      "current": "(effective job,exact path); missing script KeyError, shape/type errors, raw publication errors; prints saved location.",
+      "effects": "Mutates supplied job defaults; publishes/appends once; no scheduler."
+    },
+    "autoslurm.software_manifest.attach_software_manifest": {
+      "contract": "software_intent",
+      "inputs": "Nonempty bundle and software mapping.",
+      "current": "Copied bundle or ValueError.",
+      "effects": "Pure; never deploys."
+    },
+    "autoslurm.software_manifest.bundle_software_manifest": {
+      "contract": "software_intent",
+      "inputs": "Sequence of job dicts.",
+      "current": "Shared normalized request or None, ValueError inconsistent requests.",
+      "effects": "Pure."
+    },
+    "autoslurm.software_manifest.normalize_software_manifest": {
+      "contract": "software_intent",
+      "inputs": "Historical software mapping.",
+      "current": "Normalized copied request or ValueError.",
+      "effects": "Pure."
+    },
+    "autoslurm.software_requirements.software_expectations": {
+      "contract": "software_status",
+      "inputs": "Local pyproject/requirements paths, optional project path/commit and dependency allowlist.",
+      "current": "Expectation dict with warnings; read/parse/invalid version errors raise; unavailable local Git becomes warning.",
+      "effects": "Reads declarations and optional bounded local Git metadata, no remote or dependency installs."
+    },
+    "autoslurm.software_status.inspect_software": {
+      "contract": "software_status",
+      "inputs": "Machine/project selector, optional expectations and bound.",
+      "current": "Observation with project/environment/check states; input ValueError; generic chained RuntimeError for some transport/protocol errors, nonzero SSH RuntimeError.",
+      "effects": "Read-only metadata/Git probes on selected machine; no imports of science packages/pull/install."
+    },
+    "autoslurm.software_update.SoftwareUpdateError": {
+      "contract": "software_update",
+      "inputs": "Message and plain update evidence.",
+      "current": "RuntimeError subclass with .evidence.",
+      "effects": "No I/O; property retained."
+    },
+    "autoslurm.software_update.update_software": {
+      "contract": "software_update",
+      "inputs": "Machine and relative project selecting existing checkout/environment.",
+      "current": "Successful evidence dict or SoftwareUpdateError.evidence; profile/path errors can be plain ValueError/OSError. Remote launch/timeout/JSON/interrupt collapse to unknown with lost cause.",
+      "effects": "Preflight then ff-only pull then default --no-deps editable install; no checkout/env copies. Before/after/installation evidence retained when observed."
+    },
+    "autoslurm.storage.STORAGE_ROOT_ENVIRONMENT_VARIABLE": {
+      "contract": "constants",
+      "inputs": "Read storage environment-variable name.",
+      "current": "Literal AUTOSLURM_STORAGE_ROOT string.",
+      "effects": "None."
+    },
+    "autoslurm.storage.config_file_path": {
+      "contract": "storage",
+      "inputs": "Optional process override or AUTOSLURM_STORAGE_ROOT; otherwise source default.",
+      "current": "Returns Path; invalid selector ValueError, path resolution OSError.",
+      "effects": "Path discovery only; no directory creation."
+    },
+    "autoslurm.storage.ensure_storage_dirs": {
+      "contract": "storage",
+      "inputs": "Selected storage root.",
+      "current": "mkdir for jobs/slurm/out; raw OSError.",
+      "effects": "Earlier directories can exist if a later mkdir fails."
+    },
+    "autoslurm.storage.jobs_dir": {
+      "contract": "storage",
+      "inputs": "Optional process override or AUTOSLURM_STORAGE_ROOT; otherwise source default.",
+      "current": "Returns Path; invalid selector ValueError, path resolution OSError.",
+      "effects": "Path discovery only; no directory creation."
+    },
+    "autoslurm.storage.out_dir": {
+      "contract": "storage",
+      "inputs": "Optional process override or AUTOSLURM_STORAGE_ROOT; otherwise source default.",
+      "current": "Returns Path; invalid selector ValueError, path resolution OSError.",
+      "effects": "Path discovery only; no directory creation."
+    },
+    "autoslurm.storage.set_storage_root": {
+      "contract": "storage",
+      "inputs": "Absolute path or None.",
+      "current": "Mutates process override, returns None; invalid path ValueError/OSError.",
+      "effects": "Process-local root selection changes; invalid input leaves previous override."
+    },
+    "autoslurm.storage.slurm_dir": {
+      "contract": "storage",
+      "inputs": "Optional process override or AUTOSLURM_STORAGE_ROOT; otherwise source default.",
+      "current": "Returns Path; invalid selector ValueError, path resolution OSError.",
+      "effects": "Path discovery only; no directory creation."
+    },
+    "autoslurm.storage.storage_root": {
+      "contract": "storage",
+      "inputs": "Optional process override or AUTOSLURM_STORAGE_ROOT; otherwise source default.",
+      "current": "Returns Path; invalid selector ValueError, path resolution OSError.",
+      "effects": "Path discovery only; no directory creation."
+    },
+    "autoslurm.submission.SubmissionError": {
+      "contract": "receipt",
+      "inputs": "Message and plain receipt.",
+      "current": "RuntimeError subclass with .receipt, no formatting or validation module yet.",
+      "effects": "Exception construction has no I/O; retain property/chaining compatibility."
+    },
+    "autoslurm.submission.list_submissions": {
+      "contract": "receipt",
+      "inputs": "Optional bundle filter.",
+      "current": "Sorted receipts; one malformed/unreadable receipt aborts whole listing; updated_at shape errors can KeyError.",
+      "effects": "Local reads only; filter occurs after loading records."
+    },
+    "autoslurm.submission.load_submission": {
+      "contract": "receipt",
+      "inputs": "Exact local receipt path.",
+      "current": "Validated receipt dict; raw OSError/JSONDecodeError/ValueError.",
+      "effects": "Reads only."
+    },
+    "autoslurm.submission.refresh_submission": {
+      "contract": "receipt",
+      "inputs": "Exact local receipt path.",
+      "current": "Refreshed receipt; initial load raw failures; later failures SubmissionError with observation_error and optional tracking_error.",
+      "effects": "No scheduler dispatch; remote receipt read then local receipt/projection writes; failed local write may follow good remote observation."
+    },
+    "autoslurm.sync.sync_machine": {
+      "contract": "sync",
+      "inputs": "Optional exact machine/default.",
+      "current": "None plus progress text; local no-op; missing remote directory skipped, other errors propagate.",
+      "effects": "Creates local mirror and copies jobs/slurm/out; earlier directories remain on failure."
+    },
+    "autoslurm.transport.remote_storage_root_from_config": {
+      "contract": "transport",
+      "inputs": "Selected profile/alias, optional explicit storage root or legacy checkout.",
+      "current": "Absolute remote root; ValueError invalid root, RuntimeError nonzero/malformed/mismatched probe, OSError launch.",
+      "effects": "Remote read/probe when no configured root; no install or silent fallback."
+    },
+    "autoslurm.typer_adapter.from_typer": {
+      "contract": "typer",
+      "inputs": "Trusted already-imported static leaf Typer app; literal script and path roles.",
+      "current": "CommandContract; ValueError for unsupported/missing optional metadata, cause chained for import failure; parser-discovery exceptions can escape.",
+      "effects": "Inspects static declarations only; no callback/help command or command-name imports."
+    }
+  },
+  "catch_reviews": {
+    "autoslurm.acp._load_action_definitions": [
+      "Narrow file/JSON failures and expose unavailable metadata; do not silently turn any bug into no actions. MVP10.7/8."
+    ],
+    "autoslurm.acp.execute_acp": [
+      "Translate known domain diagnostics without dropping result/receipt; distinguish unexpected bugs and malformed requests. Current catch loses cause/debug details. MVP10.8."
+    ],
+    "autoslurm.apps.bulk_submit_driver.main": [
+      "Keep protocol error response and any receipt after dispatch; preserve debug cause separately, include interrupted execution policy. Do not replace helper JSON with terminal rendering. MVP10.5/8."
+    ],
+    "autoslurm.apps.clean.main": [
+      "Selecting CANCELLED snapshots: a load failure currently skips an entry without evidence; retain per-file diagnosis and conservative selection. MVP10.7.",
+      "Selecting failed snapshots: broad load skip hides corruption/bugs; report retained/skipped entry rather than deleting on unknown. MVP10.7."
+    ],
+    "autoslurm.apps.submit.main": [
+      "Snapshot classification catch converts all exceptions to SystemExit text. Narrow expected input failures, retain cause/debug path and exact selector. MVP10.3/8."
+    ],
+    "autoslurm.bulk_submit_driver.submit_payload.persist": [
+      "RETAIN evidence-protection catch including KeyboardInterrupt. On persistence failure keep current IDs, phase and original storage cause; don't dispatch another job. MVP10.5."
+    ],
+    "autoslurm.bulk_submit_driver.submit_payload.submit_level": [
+      "RETAIN catch including KeyboardInterrupt around sbatch: record rejection versus uncertain acceptance, prior IDs and blocked descendants; persistence error must not erase scheduler cause. MVP10.5.",
+      "RETAIN post-acceptance protection: accepted ID remains in memory even if tracking fails; distinguish persistence failure from scheduler failure, keep initiating cause and secondary errors. MVP10.5."
+    ],
+    "autoslurm.bundle_selection.get_bundle_filter_mode": [
+      "Config access/parse/bug currently collapses to active. Missing optional preference can default explicitly; unreadable/corrupt config needs visible diagnosis. MVP10.3."
+    ],
+    "autoslurm.log_files._query_remote_tails": [
+      "Keep per-reference failed observations on transport/protocol problems, narrow expected catches and retain bounded safe stderr/returncode; unexpected bugs need debug visibility. MVP10.6."
+    ],
+    "autoslurm.run_slurm.ssh_submission_session": [
+      "RETAIN cleanup protection for owned session; do not exit borrowed connections. Cleanup failures/nonzero close become secondary diagnostics, never overwrite receipt/dispatch error. MVP10.4/5."
+    ],
+    "autoslurm.scheduler.query_scheduler": [
+      "Keep batched remote-query failure as unavailable observation, not failed science/missing job; narrow expected parse/transport catches, preserve command/returncode and debug unexpected bugs. MVP10.6."
+    ],
+    "autoslurm.submission.refresh_submission": [
+      "RETAIN original receipt/known IDs and report failed observation after remote read/projection; classify known domain versus unexpected errors and handle interrupt boundary deliberately. MVP10.5.",
+      "RETAIN secondary tracking-error catch; original refresh cause and receipt cannot be replaced by failure to save the diagnostic. MVP10.5."
+    ],
+    "autoslurm.submission_operation.execute_prepared_bundle": [
+      "RETAIN evidence-saving catch including KeyboardInterrupt around staging/dispatch. Preserve operation phase, local receipt and accepted/unknown outcomes, not generic failed submission. MVP10.5.",
+      "RETAIN secondary persistence catch including KeyboardInterrupt: keep primary error plus tracking_error; never retry dispatch. MVP10.5.",
+      "RETAIN post-dispatch publication catch including KeyboardInterrupt: successful/partial scheduler evidence survives projection failure. MVP10.5."
+    ]
+  },
+  "route_notes": {
+    "acp:gather_context": {
+      "inputs": "sections list or task keyword",
+      "current": "success/result text; unmatched task selects all sections; missing metadata can be hidden",
+      "effects": "Local resource reads only",
+      "contract": "context"
+    },
+    "acp:inspect_experiments": {
+      "inputs": "required bundle, optional ISO/timestamp date",
+      "current": "success/result experiment context or error/message; per-item inspection errors can be inside success",
+      "effects": "Selection, scheduler observation and cache writes",
+      "contract": "inspection"
+    },
+    "acp:inspect_run": {
+      "inputs": "bundle_path or receipt_path; refresh default true, include_logs default false; job/task/tail/bytes/files/stream",
+      "current": "success/result view even when evidence is partial; invalid request error/message",
+      "effects": "Scheduler and optional bounded logs, refresh cache",
+      "contract": "inspection"
+    },
+    "acp:inspect_submission": {
+      "inputs": "required receipt_path, refresh default false",
+      "current": "success/result receipt, SubmissionError error/message/result receipt, other load errors message only",
+      "effects": "Local read; refresh may read remote receipt and write local receipt/projection, never submits",
+      "contract": "receipt"
+    },
+    "acp:list_experiments": {
+      "inputs": "required bundle",
+      "current": "success/result serialized rows, broken payload can appear jobs=[]",
+      "effects": "Local discovery/directories/reads",
+      "contract": "selection"
+    },
+    "acp:list_runs": {
+      "inputs": "optional bundle",
+      "current": "success/result identities or error/message",
+      "effects": "Local discovery/directories/reads",
+      "contract": "selection"
+    },
+    "acp:list_submissions": {
+      "inputs": "optional bundle",
+      "current": "success/result receipt list; a malformed unrelated receipt can produce error/message",
+      "effects": "Local reads only",
+      "contract": "receipt"
+    },
+    "acp:schedule": {
+      "inputs": "required job mapping and bundle (or job.bundle), optional append truthy flag",
+      "current": "success/result bundle/file or error/message; saves raw job, no trusted typed contract validation; package print remains possible",
+      "effects": "Local snapshot publication/append; no submit",
+      "contract": "persistence"
+    },
+    "console:autoslurm-experiment-context": {
+      "current": "Compatibility module reexports apps.inspect.main; same canonical handler as root experiment-context/context and standalone autoslurm-context."
+    },
+    "cli:software": {
+      "current": "Two subactions: status and update; their distinct outcomes/envelopes/exit behavior are in the owner row and audit narrative."
+    },
+    "cli:scan": {
+      "current": "Only repository scan is routed; no apps or catalog-list action is registered despite old help strings."
+    },
+    "module:autoslurm.apps.bulk_submit_driver": {
+      "current": "Internal protocol executable, not a scientific client command; keep helper capabilities/response schema separate from human presentation."
+    },
+    "cli-subaction:software status": {
+      "inputs": "machine, optional project/limit, local-project/requirements/package/version/commit/dependency expectations; JSON",
+      "current": "Observed/missing/unavailable/compatibility evidence. Concern and failed operation both currently exit1.",
+      "effects": "Read-only Git/environment probes; no pull/install.",
+      "contract": "software_status"
+    },
+    "cli-subaction:software update": {
+      "inputs": "machine, required relative project, JSON",
+      "current": "Update evidence or SoftwareUpdateError.evidence; incomplete invocation help0.",
+      "effects": "Preflight then ff-only pull and editable --no-deps reinstall; no dependency repair.",
+      "contract": "software_update"
+    }
+  }
+}
