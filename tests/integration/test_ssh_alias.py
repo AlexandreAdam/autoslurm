@@ -49,7 +49,7 @@ def test_config_alias_edit_is_local_and_replaces_legacy_connection_fields(monkey
 def test_editor_only_prompts_for_alias_and_summary_shows_it(monkeypatch, capsys):
     from autoslurm.apps import config
     prompts = []
-    values = iter(["/env", "account", "/software", "/data", "research-gpu"])
+    values = iter(["/env", "", "account", "/software", "/data", "research-gpu"])
     def prompt(text, *args, **kwargs):
         prompts.append(text)
         return next(values)

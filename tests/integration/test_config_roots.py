@@ -60,7 +60,7 @@ def test_config_is_canonical_action_with_legacy_alias():
 
 def test_config_editor_and_summary_expose_only_two_scientific_roots(tmp_path, monkeypatch, capsys):
     from autoslurm.apps import config
-    answers = iter(["/env", "account", str(tmp_path / "software"), str(tmp_path / "data")])
+    answers = iter(["/env", "", "account", str(tmp_path / "software"), str(tmp_path / "data")])
     monkeypatch.setattr(config, "_prompt_text", lambda *a, **k: next(answers))
     monkeypatch.setattr(config, "_prompt_yes_no", lambda *a, **k: False)
     profile = config._prompt_machine_details()

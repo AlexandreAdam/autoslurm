@@ -13,6 +13,15 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FIX.CONFIG.2 (2026-11-13): 803 full offline tests passed (43 expected collision
+warnings); `.development/test-runs/config-env-command.xml`. Main editable
+`asl config --interactive` gains an env_command prompt without reinstalling.
+Clean-source wheel/temporary-target interactive add/clear, alias, validation and
+render smoke passed; SHA256
+`61c2233cdd76b0107bc148111060e6349a7f3adaf7d64493b8e8206509d58a24`.
+Validation commands were mocked; no daily profile/environment, cluster or pinned
+rollback-source edit. Existing user documents/evidence remain excluded.
+
 MVP9.3 (2026-11-13): 761 full offline tests passed (43 expected collision warnings),
 report `.development/test-runs/typed-authoring.xml`; clean AutoSlurm/reference-client
 wheels verify public authoring imports, optional Typer absence, installed agent

@@ -140,6 +140,11 @@ checkout/environment; source and installation are mutable, not pinned per job.
 When `env_command` and `venv_path` are both set, jobs run the setup command first
 (for example a module load), then source the venv activation script using `&&`.
 Updates select the interpreter directly; they do not run that job setup command.
+Set/update/clear that command through `asl config --interactive` → **Edit machine
+fields** → **Environment setup command** (after the venv path). Enter keeps the
+current setup; `-` removes it from the profile. This edits the existing machine
+profile, not the venv's activation script. Interactive edits still validate the
+saved setup/environment through the normal configured connection.
 
 The removed surfaces are `prepare_software_sources`, `prepare_software`,
 `inspect_software_release`, `SoftwarePreparationError`, `asl software prepare`,

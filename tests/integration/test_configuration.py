@@ -224,6 +224,7 @@ def test_autoslurm_configuration_interactive_creates_config(
         [
             "rorqual",
             "/path/to/venv",
+            "",
             "def-bengioy",
             "n",
             "",
@@ -251,6 +252,7 @@ def test_autoslurm_configuration_short_interactive_flag(
         [
             "rorqual",
             "/path/to/venv",
+            "",
             "def-bengioy",
             "n",
             "",

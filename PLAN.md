@@ -21,14 +21,14 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 797 passed, 43 expected
+  rollback source remains unchanged. Full offline suite: 803 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.2 implements the stdlib-only diagnostic core,
-  catalogue, safe serialization, immutable effects/context and opt-in terminal
-  adapter. Existing domain exceptions retain their messages/payloads/causes with
-  optional diagnostic=. 36 focused/797 full offline tests and clean-wheel API/
-  installed-recipe checks pass; no package install into daily/base environments.
-  Coverage is 248 routes/127 owners; all 18 existing broad catches remain.
+- **Latest completed task:** FIX.CONFIG.2 makes env_command editable during
+  interactive profile creation/update: add/replace, Enter keep, `-` remove. The
+  saved setup is used before venv activation in validation and jobs. 84 focused/
+  803 full offline tests and a clean-wheel interactive/render check pass.
+  No daily profile, environment, cluster or rollback change. MVP10.2 diagnostic
+  foundation remains complete; coverage stays 248 routes/127 owners/18 broad catches.
 - **Next task:** MVP10.3 configuration/authoring/persistence adoption, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
@@ -556,6 +556,16 @@ Design: [readable command/job pattern](REFACTORING_DOCS/design/job_command_patte
 - [x] Verify config persistence, preview and mocked submission without an account;
   run the full offline suite, update human/agent docs and the config design.
 
+## FIX.CONFIG.2 Edit environment setup interactively
+
+Requested ahead of MVP10.3; no MVP10.3 implementation started.
+
+- [x] Prompt for optional env_command when creating/editing a machine; Enter
+  retains it and `-` clears it. Persist through the existing config writer and
+  retain setup-before-activation and post-save validation behavior.
+- [x] Verify public interactive creation/editing, saved settings, validation and
+  rendered preambles offline; update human/agent guidance and configuration design.
+
 ## FIX.LOGS.1 Logs navigation consistent with status
 
 - [x] Accept status bundle names/indices/ranges, latest/date selection and job
@@ -928,6 +938,7 @@ or migration decision has already been accepted.
 | 2026-11-13 | MVP9.3 Public authoring, saved validation and installed recipe | 761 full offline tests passed in 11.08 s (43 expected collision warnings), report `.development/test-runs/typed-authoring.xml`; 83 focused checks passed, 20 added cases. Public contracts/optional Typer adapter, strict no-default-injection saved-job checks, detached values and dependency authoring verified. Reference plan/validate/preview CLI runs four original-index tasks plus reducer through existing preview/dispatch/receipts/cached inspection and actual local science under mocked Slurm. Packaged recipe is discoverable through CLI/ACP without a checkout; complete historical guidance packaging remains L3. Clean AutoSlurm/client wheels verify optional Typer absence, public imports, installed recipe/action metadata, client CLI and scientific entry point; SHA256 `dbcca8ede6c0135729aead31aa83b1da75a24489542bc646dffdaec9ba167ccb`. Human/agent guides and links/diff checked. MVP9 complete locally, local tag `mvp9` at closure; no schema migration, cluster, base install, daily state/config, external client or rollback change. Task commit: `git log --grep '^MVP9.3:'`; push completed dev commit. |
 | 2026-11-13 | MVP10.1 Complete public interface/failure inventory | Audited revision `6104372`: 233 routes (Python exports/methods, root/alias/subaction/standalone/helper CLI and eight ACP actions), 112 owners, 24 failure contracts and all 18 broad catches individually reviewed. Register records inputs/current outcomes/effects plus translation owner, desired diagnosis, next action, regression sources and pending adoption task. E01–E18 cover swallowed causes, false missing, publication/partial/unknown effects and presentation gaps; preserve evidence-saving catches. Read-only AST checker passed and rejected four drift controls (missing export, wrong alias, missing effects, unreviewed catch). Full offline suite: 761 passed, 43 expected collision warnings, 10.53 s; `.development/test-runs/error-inventory.xml`. Documentation links/diff reviewed. No package runtime, dependencies, daily state/config, external client, cluster or rollback changes; no artifact rebuild needed for an audit-only task. MVP10.2 is next; proposed diagnostic APIs are not accepted/implemented by this audit. Task commit: `git log --grep '^MVP10.1:'`; push completed dev commit. |
 | 2026-11-13 | MVP10.2 Shared diagnostic foundation | Stdlib-only errors.py owns 17 codes/categories/default wording, immutable context/effects, named fact constructors, safe bounded serialization and primary/secondary facts; apps/error_output.py is opt-in text/JSON/exit/debug presentation. SubmissionError/SoftwareUpdateError retain positional messages, payload identity, RuntimeError compatibility and native causes with optional diagnostic=. 36 focused tests and 797 full offline tests passed (43 expected collision warnings), 10.62 s; `.development/test-runs/error-core.xml`. Clean-source offline wheel/temporary-target smoke verifies APIs, legacy payloads, redacted JSON and installed recipe via CLI/ACP without Typer; SHA256 `f6734a18963e0f64b64cd4c0365bcd0ba1572e96bae795e80402f939e53ae2cc`. Coverage checker: 248 routes/127 owners/18 retained broad catches. Human/agent docs and links reviewed. No cluster, base install, daily config/state, persisted-format or rollback change. Operation adoption, stale-venv fix and universal CLI/ACP parity remain pending; MVP10.3 is next. Task commit: `git log --grep '^MVP10.2:'`; push completed dev commit. |
+| 2026-11-13 | FIX.CONFIG.2 Interactive environment setup | Added optional env_command prompt immediately after venv_path for profile creation/editing; Enter keeps, a command replaces, and `-` removes the key. Shared persistence/activation/validation are reused. Six new regressions reproduced the missing prompt, then verified public config/configuration interactive flows, exact profile preservation, quoted venv paths, mocked SSH/Python/helper-root validation and rendered setup-before-activation. Existing prompt fixtures updated. 84 focused tests and 803 full offline tests passed in 10.98 s (43 expected collision warnings), report `.development/test-runs/config-env-command.xml`. Clean-source offline wheel/temporary-target interactive/alias/clear/render smoke passed, SHA256 `61c2233cdd76b0107bc148111060e6349a7f3adaf7d64493b8e8206509d58a24`. Human/agent guidance, design, installation register and API audit updated; relative links/diff checked. No actual SSH, daily config/environment, base install or rollback edits. MVP10.3 remains unstarted. Task commit: `git log --grep '^FIX.CONFIG.2:'`; push completed dev commit. |
 
 ## How we work
 

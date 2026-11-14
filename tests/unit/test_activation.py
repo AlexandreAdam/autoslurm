@@ -23,7 +23,7 @@ def test_activation_preserves_single_setting_and_composes_both(profile, expected
 
 def test_config_editor_preserves_existing_module_setup(monkeypatch):
     from autoslurm.apps.config import _prompt_machine_details
-    answers = iter(['', '', 'n', '', ''])
+    answers = iter(['', '', '', 'n', '', ''])
     monkeypatch.setattr('builtins.input', lambda prompt: next(answers))
     profile = _prompt_machine_details({'venv_path': '/env', 'env_command': 'module load jax/0.11.0'})
     assert profile == {'venv_path': '/env', 'env_command': 'module load jax/0.11.0'}

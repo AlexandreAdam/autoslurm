@@ -17,11 +17,16 @@ its environment/connectivity validation behavior, including remote SSH checks.
 The default machine is used when an operation omits its machine selection.
 `venv_path` selects the environment. An optional `env_command` in that profile
 provides shell setup before activation, such as `module load jax/0.11.0`.
+To set it, run `asl config --interactive`, choose **1) Edit machine fields** and
+select the machine. The **Environment setup command** prompt follows the venv
+path: type the command to add/replace it, press Enter to keep it, or enter `-`
+to remove it. The same prompt appears when creating a profile. Clearing it
+removes `env_command` from the saved profile and keeps `venv_path` unchanged.
 When both are present, jobs and config validation run the setup followed by
 `source <venv_path>/bin/activate`, joined by `&&`; either setting alone keeps
 its existing behavior. Software updates use the venv's Python directly.
 In text prompts, Enter keeps the current value and `-` clears an optional field
-(account or either root). Required fields such as the environment and SSH alias
+(environment setup command, account or either root). Required fields such as the environment and SSH alias
 cannot be cleared. Clearing a root restores its default location for future runs.
 To update the roots or alias of an existing profile without remote commands:
 

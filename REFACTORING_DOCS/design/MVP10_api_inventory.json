@@ -333,7 +333,8 @@
         "tests/integration/test_configuration.py",
         "tests/integration/test_config_roots.py",
         "tests/integration/test_optional_account.py",
-        "tests/unit/test_activation.py"
+        "tests/unit/test_activation.py",
+        "tests/integration/test_interactive_env_command.py"
       ],
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
     },
@@ -656,7 +657,7 @@
     },
     "autoslurm.apps.config.main": {
       "contract": "config",
-      "inputs": "view/summary; settings update; set-default; interactive editor.",
+      "inputs": "view/summary; settings update; set-default; interactive editor. Interactive env_command prompt supports add/replace/keep/clear.",
       "current": "Help on empty; ValueError -> SystemExit(message), other OSError can traceback; optional validation prints bool. Interactive EnvironmentError load fallback creates fresh config.",
       "effects": "View local-only; save writes; interactive validation may SSH. An unreadable existing config can trigger replacement workflow."
     },
@@ -1501,6 +1502,12 @@
       "date": "2026-11-13",
       "base_revision": "78ad308",
       "note": "Added explicit diagnostic module/adapter exports and members. Legacy domain exceptions optionally carry diagnostics; operation adoption is still pending. Historical MVP10.1 audited_revision stays unchanged."
+    },
+    {
+      "task": "FIX.CONFIG.2",
+      "date": "2026-11-13",
+      "base_revision": "ed13a2a",
+      "note": "Interactive profile creation/editing now prompts for env_command, with Enter keep and '-' remove. Error-adoption status is unchanged; no MVP10.3 implementation."
     }
   ]
 }

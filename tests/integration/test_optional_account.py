@@ -84,7 +84,7 @@ def test_setting_other_fields_keeps_account_and_empty_account_override_clears_on
 @pytest.mark.parametrize("answer,cleared", [("", False), ("-", True)])
 def test_interactive_editor_can_keep_or_clear_optional_fields(monkeypatch, answer, cleared):
     existing = save_profiles()["machines"]["remote"]
-    answers = iter(["", answer, "", answer, answer, ""])
+    answers = iter(["", "", answer, "", answer, answer, ""])
     monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
     monkeypatch.setattr("subprocess.run", lambda *a, **k: pytest.fail("Prompting must not connect"))
     edited = config._prompt_machine_details(existing)
@@ -96,7 +96,7 @@ def test_interactive_editor_can_keep_or_clear_optional_fields(monkeypatch, answe
 
 
 def test_new_profile_can_omit_account_and_required_fields_cannot_be_cleared(monkeypatch):
-    answers = iter(["-", "/env", "", "n", "", ""])
+    answers = iter(["-", "/env", "", "", "n", "", ""])
     monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
     assert config._prompt_machine_details() == {"venv_path": "/env"}
 
@@ -151,7 +151,7 @@ def test_remote_script_omits_account_without_requiring_a_connection(monkeypatch)
 
 def test_interactive_edit_saves_account_removal_and_retains_validation(monkeypatch):
     expected = save_profiles()
-    answers = iter(["1", "1", "", "-", "", "", "", "", "6"])
+    answers = iter(["1", "1", "", "", "-", "", "", "", "", "6"])
     monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
     validated = []
     monkeypatch.setattr(config, "_validate_machine", lambda profile, name: validated.append((name, dict(profile))))

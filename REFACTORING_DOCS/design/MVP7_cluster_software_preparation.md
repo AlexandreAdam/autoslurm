@@ -2,6 +2,10 @@
 
 ## Status
 
+FIX.CONFIG.2 (2026-11-13) exposes env_command in interactive creation/editing;
+Enter keeps the value and `-` removes it. The existing shared activation and
+post-save validation are reused. See the interactive setup amendment below.
+
 FIX.CONFIG.1 (2026-11-13) amends machine configuration: the user requires an
 optional Slurm account and a way to clear it. See the account amendment below;
 this is separate from the proposed command/job interface investigation.
@@ -288,3 +292,31 @@ Artifact `.development/artifacts/plain-editable/autoslurm-0.1.0-py3-none-any.whl
 SHA256 `afb047beeba30dc7ba3c512bb5cfc8c7420d5abda2f5dfd21870d479aea071b3`.
 No network dependency download in tests, base Conda install, cluster contact,
 daily configuration/tracking mutation or pinned rollback source change.
+
+## Interactive environment setup amendment (FIX.CONFIG.2, 2026-11-13)
+
+The user reported that the package supports env_command but the editor only
+preserves an existing value silently. _prompt_machine_details now asks for an
+optional **Environment setup command** immediately after the required venv path,
+for both new profiles and edits. Existing prompt semantics apply: Enter retains
+the current command; a new nonempty value replaces it; `-` removes the key.
+Clearing setup keeps venv activation. Existing root/alias/account settings and
+the shared writer remain in use; no extra environment or alternate config owner.
+
+Validation and job rendering already compose env_command then venv activation
+with `&&`. The editor continues to validate after saving an edit, including the
+selected SSH/helper-root checks for a remote profile; tests mock all commands.
+Software updates still invoke the configured venv Python directly. This fix
+adds no direct env-command CLI flag and never edits a venv's bin/activate.
+
+Six regressions cover add/replace/keep/clear/unset through the public interactive
+CLI, exact saved profiles, quoted venv paths, actual validation command construction,
+rendered preambles and creation through the configuration alias. Existing prompt
+fixtures are updated for the additional field. Full-suite/package results are
+recorded in PLAN.md; no actual SSH, daily config, environment or rollback edit.
+
+Verification: 84 focused tests passed; full offline suite 803 passed in 10.98 s,
+43 expected collision warnings; `.development/test-runs/config-env-command.xml`.
+Clean-source wheel interactive/alias/save/clear/validation/render smoke passed;
+SHA256 `61c2233cdd76b0107bc148111060e6349a7f3adaf7d64493b8e8206509d58a24`.
+MVP10.3 remains unstarted; this requested editor fix is separate.
