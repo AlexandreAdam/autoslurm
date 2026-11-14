@@ -23,9 +23,9 @@ def _select_context(machine, overrides, context=None):
         name, config = resolve_machine_config(args=None, machine=machine, overrides=overrides)
         return resolve_execution_context(name, config, root_resolver=remote_storage_root_from_config)
     if machine is not None and machine != context.machine_name:
-        raise ValueError("Selected machine conflicts with the supplied execution context.")
+        raise InvalidRequestError("Selected machine conflicts with the supplied execution context.", field="machine", stage="select_context", context={"machine": context.machine_name})
     if overrides is not None and overrides != context.config:
-        raise ValueError("Machine overrides conflict with the supplied execution context.")
+        raise InvalidRequestError("Machine overrides conflict with the supplied execution context.", field="machine_overrides", stage="select_context", context={"machine": context.machine_name})
     return context
 
 
@@ -33,10 +33,10 @@ def _prepare_selected_bundle(path, context):
     try:
         jobs, children_by_job, _ = load_bundle_from_path(path)
         prepared = prepare_bundle(jobs, children_by_job, context)
+        validate_prepared_bundle(prepared, context)
     except InvalidRequestError as error:
         error.diagnostic = error.diagnostic.with_context(bundle_path=str(path), machine=context.machine_name)
         raise
-    validate_prepared_bundle(prepared, context)
     return prepared
 
 
@@ -60,8 +60,8 @@ def submit_jobs(
     *, context=None,
 ):
     """Submit once, returning a receipt; SubmissionError carries partial evidence."""
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
-        raise ValueError("Bundle name must be a simple nonempty name without path separators.")
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
+        raise InvalidRequestError("Bundle name must be a simple nonempty name without path separators.", field="name", stage="submit_jobs")
     context = _select_context(machine, machine_overrides, context)
     selected = select_bundle_snapshot(name, bundle_path=bundle_path, desired_date=date, prefer_draft=False)
     planned_path = Path(selected["path"]).resolve()

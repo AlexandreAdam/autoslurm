@@ -343,7 +343,7 @@
       "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema. MVP10.3b.2 validates bundle_filter_mode through one config owner; absence alone defaults reads to active, while invalid/unreadable/corrupt configuration is visible."
     },
     "authoring": {
-      "implementation_task": "MVP10.3b.1 (command/literal/definition guards); MVP10.3b.3 (paths/rendering pending)",
+      "implementation_task": "MVP10.3b.1; MVP10.3b.3 (pure paths/render)",
       "failures": "Invalid declarations, unknown/missing/duplicate options, types/ranges/nonfinite values, unsafe tokens, command/path-role mismatch.",
       "translation_owner": "CommandOption/CommandContract and argument_compilation validation, retaining option/job context.",
       "desired_diagnostic": "Exact field/job/option and expected versus supplied type/constraint, without importing or executing job code.",
@@ -352,9 +352,10 @@
         "tests/unit/test_command_contract.py",
         "tests/unit/test_argument_compilation.py",
         "tests/integration/test_typed_authoring_workflow.py",
-        "tests/integration/test_authoring_diagnostics.py"
+        "tests/integration/test_authoring_diagnostics.py",
+        "tests/integration/test_preparation_diagnostics.py"
       ],
-      "adoption": "Known command/option/argument guards use InvalidRequestError with field/option/job/command context, explicit native causes and no inferred effects. Saved job validation retains explicit settings. Raw dictionaries still need trusted client signature validation. Path/render/selector and external readiness errors remain pending."
+      "adoption": "Known command/option/argument guards use InvalidRequestError with field/option/job/command context, explicit native causes and no inferred effects. Saved job validation retains explicit settings. Raw dictionaries still need trusted client signature validation. MVP10.3b.3 adopts known path/render guards with named job/machine/field, safe syntax evidence and exact bundle context; external readiness remains 10.4."
     },
     "typer": {
       "implementation_task": "MVP10.3b.1",
@@ -391,9 +392,10 @@
       "regression_evidence": [
         "tests/unit/test_save_load_jobs.py",
         "tests/integration/test_persistence_boundaries.py",
-        "tests/integration/test_selection_diagnostics.py"
+        "tests/integration/test_selection_diagnostics.py",
+        "tests/integration/test_preparation_diagnostics.py"
       ],
-      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c."
+      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c."
     },
     "selection": {
       "implementation_task": "MVP10.3b.2",
@@ -410,7 +412,7 @@
       "adoption": "Known selection/discovery failures use SelectionError with selection operation and invalid_argument/resource_missing/resource_inaccessible/record_invalid codes. A missing selection replaces FileNotFoundError explicitly at this dev boundary. Per-entry state/plain diagnostic preserves healthy neighbours; unknown jobs/counts are None, not empty/zero. File/nearest selection remains payload-free. Bad filter config never defaults silently. No source fallback, implicit directory creation, deletion, scheduler query or retry."
     },
     "paths": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3b.3 (pure resolution/producing context); MVP10.4 (discovery/readiness); MVP10.6 (observations)",
       "failures": "Invalid base/traversal/absolute logical path, overlapping path roles, absent recorded paths, bad producing identity; remote readiness may fail.",
       "translation_owner": "ExecutionContext for pure resolution; execution adapter for existence checks; transport for discovery.",
       "desired_diagnostic": "Logical and attempted resolved path, selected/producing machine, field and check; transport failure is not FileNotFound.",
@@ -418,9 +420,10 @@
       "regression_evidence": [
         "tests/unit/test_execution.py",
         "tests/unit/test_remote_fs.py",
-        "tests/integration/test_execution_paths.py"
+        "tests/integration/test_execution_paths.py",
+        "tests/integration/test_preparation_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.3b.3: InvalidRequestError for pure path roles/base/traversal/cwd/log and render guards; machine/job/field/option/logical/attempted resolved context where known. Saved context lookup uses SelectionError for absent/ambiguous/invalid evidence and validates producing roots/transport without current-profile discovery. Historical roots/transport retained. Existence/root-discovery adapters and observation-side producing_machine remain separately planned; no blanket effect inference."
     },
     "transport": {
       "implementation_task": "MVP10.4",
@@ -431,7 +434,8 @@
       "regression_evidence": [
         "tests/unit/test_ssh_submission_session.py",
         "tests/integration/test_ssh_alias.py",
-        "tests/integration/test_submission_boundaries.py"
+        "tests/integration/test_submission_boundaries.py",
+        "tests/integration/test_preparation_diagnostics.py"
       ],
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
     },
@@ -739,7 +743,7 @@
     "autoslurm.apps.submit.main": {
       "contract": "submission",
       "inputs": "Name/date or file/latest/index plus machine overrides.",
-      "current": "Central selector and strict snapshot read/graph guard before machine selection; known SelectionError/ConfigurationError render shared stderr/exit1 with --debug. Adopted authoring handling retained. Unexpected selection/graph bugs propagate after removing broad snapshot catch; later domain/receipt/presentation policies remain pending.",
+      "current": "Strict selected-record gate before machine selection. Shared stderr/exit1/debug for adopted SelectionError/ConfigurationError/InvalidRequestError, including path/render preparation. Other legacy post-dispatch exception policy remains staged.",
       "effects": "Preview/selection reads then submission; accepted receipt must survive rendering error."
     },
     "autoslurm.apps.sync.main": {
@@ -967,13 +971,13 @@
     "autoslurm.execution.ExecutionContext.resolve_job": {
       "contract": "paths",
       "inputs": "Job options/path roles/cwd/Slurm settings.",
-      "current": "Logical/resolved execution dict; ValueError invalid role/path/log/cwd, malformed mappings may TypeError/AttributeError.",
+      "current": "Logical/resolved dict; InvalidRequestError for known shape/path-role/cwd/log guards, named machine/job/field/option and logical/attempted resolved paths when known; no mutation/discovery.",
       "effects": "Pure, preserving selected context."
     },
     "autoslurm.execution.ExecutionContext.resolve_path": {
       "contract": "paths",
       "inputs": "Logical string, named base and relative_only.",
-      "current": "Resolved string; ValueError invalid value/base/traversal/required relative path.",
+      "current": "Resolved string or InvalidRequestError for known base/value/control/traversal/relative/root guards, retaining machine/field and logical/attempted resolved paths where known. Legacy permitted absolute paths remain supported.",
       "effects": "Pure."
     },
     "autoslurm.execution.ExecutionContext.validate_jobs": {
@@ -991,13 +995,13 @@
     "autoslurm.execution.execution_context_from_snapshot": {
       "contract": "paths",
       "inputs": "Exact saved snapshot/job.",
-      "current": "Context from producing evidence; loader/ValueError and malformed evidence KeyError/TypeError.",
+      "current": "Context from validated producing evidence via recorded_execution; distinct historical input/results roots and legacy transport retained, no current-profile lookup. Raw loader I/O/JSON remains 3c.",
       "effects": "Local read only."
     },
     "autoslurm.execution.recorded_execution": {
       "contract": "paths",
       "inputs": "Exact saved snapshot and optional one job name.",
-      "current": "Recorded dict; ValueError ambiguous/missing evidence; loader failures propagate.",
+      "current": "Recorded evidence validated for producing roots/transport; SelectionError for absent/ambiguous/invalid metadata, with exact bundle/job/field/machine where known. Invalid job selector uses InvalidRequestError. Direct loader read/JSON failures remain 3c.",
       "effects": "Local read only; does not use today's remote profile."
     },
     "autoslurm.execution.resolve_execution_context": {
@@ -1081,31 +1085,31 @@
     "autoslurm.job_runner.preview_bundle": {
       "contract": "authoring",
       "inputs": "Exact bundle path, optional machine/overrides.",
-      "current": "Machine/path/rendered jobs dict; adopted authoring InvalidRequestError enriched with exact bundle_path/machine before external preflight/staging/dispatch. Other path/readiness/file/render failures retain existing behavior pending their slices.",
+      "current": "Shared path/render InvalidRequestError retains exact bundle/machine/job/field and safe shell syntax cause; producing validation is pure, while external discovery/readiness retains existing behavior pending 10.4.",
       "effects": "No submission or receipt; can run remote readiness/root checks and local bash -n, so not a purely offline API."
     },
     "autoslurm.job_runner.submit_jobs": {
       "contract": "submission",
       "inputs": "Bundle name, optional exact path/date/machine/overrides or context.",
-      "current": "Receipt on success; adopted pre-dispatch authoring InvalidRequestError enriched with exact bundle_path/machine. Other pre-dispatch errors remain staged adoption. execute_prepared_bundle still preserves SubmissionError.receipt after receipt creation.",
+      "current": "Receipt on success; known name/context/path/render InvalidRequestError before dispatch, exact bundle/machine/job context where known. Unexpected bugs propagate. External readiness stays 10.4; SubmissionError.receipt behavior after receipt creation remains unchanged.",
       "effects": "Preflight then staging and dispatch once; evidence printed after receipt return; printing failure cannot undo accepted jobs."
     },
     "autoslurm.job_to_slurm.create_slurm_script": {
       "contract": "persistence",
       "inputs": "Job, date, machine profile and optional resolved context.",
-      "current": "Saved script filename; argument/path/environment ValueError, raw OSError or malformed data errors.",
-      "effects": "Opens/truncates local output BEFORE render validation; optional remote root discovery while writing."
+      "current": "Saved filename; known structure/path/export/directive/render guards use InvalidRequestError. Renders in memory before destination open, preserving existing/absent script on render validation failure. No new syntax-check call in this legacy API; raw file/publication failures remain 3c.",
+      "effects": "Optional root discovery and pure rendering before local file creation/truncation. Successful render then directory/file write; atomic publication and file-error effects remain 3c."
     },
     "autoslurm.remote_fs.path_exists": {
       "contract": "transport",
       "inputs": "Path and selected current/recorded context.",
-      "current": "Bool returncode==0; ANY nonzero including SSH failure becomes False; launch OSError propagates.",
+      "current": "Pure validation adopts InvalidRequestError and saved-context SelectionError. Probe behavior unchanged: bool returncode==0, ANY nonzero including SSH failure still becomes False; launch OSError propagates pending 10.4/6.",
       "effects": "Local test or read-only SSH; never creates tested path."
     },
     "autoslurm.remote_fs.resolve_results_path": {
       "contract": "paths",
       "inputs": "Logical path plus optional current context/machine or exact producing snapshot/job.",
-      "current": "Resolved path or selector/context errors. Absolute path alone has legacy fast path.",
+      "current": "Shared path validation via ExecutionContext and InvalidRequestError for context selector conflict; absolute fast path remains discovery-free. Saved-context evidence uses SelectionError; external discovery remains 10.4.",
       "effects": "May discover selected remote root, except saved-context or legacy absolute fast path."
     },
     "autoslurm.run_slurm.get_job_id_from_sbatch_output": {
@@ -1573,6 +1577,12 @@
           "Config access/parse/bug currently collapses to active. Missing optional preference can default explicitly; unreadable/corrupt config needs visible diagnosis. MVP10.3."
         ]
       }
+    },
+    {
+      "task": "MVP10.3b.3",
+      "date": "2026-11-14",
+      "base_revision": "bfa69ca",
+      "note": "Pure paths/render adoption, validated producing context and render-before-open direct script creation. Reuses shared InvalidRequestError/SelectionError without new codes/routes/schemas. Bash status2 syntax rejection omits arbitrary stderr literals; other checker failures remain process adoption. No cluster readiness, publication I/O or universal CLI/ACP completion."
     }
   ]
 }

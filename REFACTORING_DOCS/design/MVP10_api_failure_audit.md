@@ -18,7 +18,8 @@ actions and routes whose semantics need separate explanation. These are explicit
 references, not additional implementations of each alias.
 
 At the original audit, all diagnostic adoption was pending. MVP10.2, MVP10.3a and
-MVP10.3b.1–2 amendments below record foundation, configuration, authoring and selection adoption. Other regression
+MVP10.3b.1–3 amendments below record foundation, configuration, authoring,
+selection and pure path/render adoption. Other regression
 anchors prove only their current tested behavior, not the proposed contract.
 Use the owner row plus its contract and any route note when closing a later task.
 An owner may need several regressions and more than one implementation slice.
@@ -318,3 +319,31 @@ preservation, cleanup protection, Python/CLI/JSON/debug/ACP and visible programm
 bugs. Full offline suite: 965 passed, 43 expected warnings. Clean-source offline
 wheel/temporary-target discovery/selection/retained-record/CLI/JSON/debug/ACP/agent
 smoke passed. Source coverage still does not establish broad MVP10 completion.
+
+## MVP10.3b.3 adoption amendment (2026-11-14)
+
+Base `bfa69ca`; 256 routes/132 owners/16 broad catches remain registered. Pure
+ExecutionContext resolution, path-selector conflicts, render/export/directive
+guards and shared preview/submit shell validation use InvalidRequestError with
+named field/job/machine and logical/attempted resolved paths where known. Exact
+bundle identity survives shell rejection; arbitrary Bash stderr literals do not.
+Status 2 is syntax rejection; killed/failed checkers retain process failures for
+10.4. One structural render guard serves preparation and direct script creation.
+
+Saved execution lookup validates producing roots/transport using SelectionError,
+distinguishing absent/ambiguous/invalid evidence and retaining historical roots/
+legacy transport without current-profile discovery. Direct loader I/O stays 3c;
+observation-side producing_machine remains 10.6. The direct script renderer now
+finishes before opening its destination, addressing E06's pre-render truncation
+gap; file-write atomicity/publication effects remain 3c. Submit --debug now also
+preserves preparation errors. No new error catalogue, public route or record schema.
+
+`tests/integration/test_preparation_diagnostics.py` adds 61 checks: pure path/role/
+mapping/base guards, readable evidence, preview/submit parity, environment/directive
+errors without value disclosure, saved producing metadata, legacy roots, retained
+script files, named late-job shell rejection, process-versus-syntax separation,
+CLI/debug and unclassified programming bugs. Full offline suite: 1026 passed,
+43 expected warnings. Clean-source offline wheel/temporary-target public path/
+render/producing-context/retained-script/CLI/debug/ACP/installed-recipe smoke passed.
+External readiness, generic record I/O/publication and universal observation/CLI/
+ACP adoption remain pending.

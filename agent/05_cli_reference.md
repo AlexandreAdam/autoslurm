@@ -5,12 +5,14 @@ diagnostics: stderr and exit 1, `--debug` for original causes; existing `--json`
 status/inspect/logs modes return the shared error envelope. Parser usage remains
 exit 2. Failed discovery entries carry a diagnostic and remain visible; unknown
 contents are not empty jobs. These additions cover selection/configuration, not
-all scheduler/log/post-dispatch errors. Installed `15_diagnostics` describes limits.
+all scheduler/log/post-dispatch errors. `asl submit` also renders adopted path/render
+preparation failures with job/field/machine/bundle identity and supports `--debug`.
+Installed `15_diagnostics` describes limits.
 
 `asl schedule` uses shared diagnostics for adopted authoring failures (stderr,
 exit 1). `--autoslurm-debug` preserves original errors; application `--debug`
 retains its forwarding behavior. Help discovery remains heuristic; prefer trusted
-typed contracts for client integration. Selection/path/publication and process
+typed contracts for client integration. Publication and process
 diagnostics are separate adoption tasks; this is not universal CLI/ACP parity.
 
 - `asl software status --machine NAME`: read Git project status under the configured

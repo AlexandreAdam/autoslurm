@@ -13,6 +13,20 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3b.3 (2026-11-14): 1026 full offline tests passed in 10.20 s (43 expected
+collision warnings); `.development/test-runs/preparation-diagnostics.xml`.
+Pure path/render diagnostics and validated producing-context lookup use the main
+editable source without reinstalling. Existing direct scripts survive render
+validation failures; saved formats/history remain unchanged. Clean-source offline
+wheel/temporary-target path/render/producing-context/retained-script/CLI/debug/ACP/
+installed-recipe smoke passed; artifact
+`.development/artifacts/preparation-diagnostics/autoslurm-0.1.0-py3-none-any.whl`,
+SHA256 `98345cd7e42c890ca3f32979addc82d3a02d6a41b3d33a7cb69f639106c3e9a6`.
+No base/test dependency installation, daily config/state, actual cluster command,
+external client or rollback-source edit. User documents/software_preparations
+evidence remain excluded. MVP10.3b is complete; 3c record read/publication is next,
+with external readiness/stale-venv and broader observation/CLI/ACP adoption pending.
+
 MVP10.3b.2 (2026-11-14): 965 full offline tests passed in 10.00 s (43 expected
 collision warnings); `.development/test-runs/selection-diagnostics.xml`.
 Snapshot/filter diagnostics use the main editable source without reinstalling.

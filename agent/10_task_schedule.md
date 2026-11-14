@@ -46,6 +46,13 @@ New save/schedule guards reject missing/blank/nonstring commands; graph validati
 reports malformed/unknown dependencies and cycles. Saved settings stay explicit;
 never replace them or inject new defaults to suppress validation errors. See
 installed `15_diagnostics` for the exact dev exception boundary and pending layers.
+
+Path/render failures also use InvalidRequestError: retain the exact bundle/job/
+machine and logical/attempted resolved path, correct the named field and preview
+that same bundle. Invalid environment/Slurm values are not echoed. Shared rendering
+protects existing direct scripts from truncation on render failure; this does not
+make file publication atomic. External readiness/process errors remain staged
+adoption, and a validation failure never authorizes blind resubmission.
 These are client-design rules. AutoSlurm checks structural/literal validity;
 arbitrary command signatures still need client validation. Existing raw bundles
 retain space-style lists and positionals, now safely quoted, but the recommended

@@ -48,7 +48,7 @@ historical software-intent metadata and bundle input/preparation guards. It reta
 ValueError compatibility, replacing old TypeError/KeyError authoring guards and
 CycleError for invalid DAGs at this dev boundary. Missing/blank/nonstring commands
 fail before new save/schedule publication. No saved format or history is rewritten.
-Paths/rendering, publication, process and universal CLI/ACP adoption remain separate
+Publication, process and universal CLI/ACP adoption remain separate
 tasks. `asl schedule` renders adopted errors to stderr
 and exits 1; add `--autoslurm-debug` for original exceptions. Ordinary application
 `--debug` still forwards. Unknown code bugs propagate.
@@ -72,6 +72,25 @@ silently changing visible indices. Filter/submit/status/inspect/logs render adop
 selection/configuration failures once and support `--debug`; existing JSON modes
 return the same facts. `asl submit` checks the exact record before connecting.
 Other inspection and post-dispatch error policies remain staged adoption.
+
+Path and render preparation now use `InvalidRequestError` too. A rejected input,
+output, working directory or custom log path identifies the field, job, machine,
+logical path and attempted resolved path where available. A candidate containing
+`..` is rejected evidence, not an approved destination. Correct the relative path
+under the selected root and preview the exact bundle again. Environment and Slurm
+directive validation names the setting without echoing its values. Preview and
+submission share these checks; `asl submit --debug` preserves preparation errors.
+
+Shell syntax rejection reports the affected job and line when available, without
+copying application or environment literals from Bash's output. Failed or killed
+syntax-check processes remain process errors. Direct script creation renders in
+memory before opening the output, so render failures preserve an existing script;
+file publication failures and atomic writes remain separate work. Saved execution
+lookup reports missing evidence versus malformed roots/transport through
+`SelectionError`, retaining the exact file/job and historical producing roots.
+It never substitutes today's profile. Pure validation makes no blanket claim about
+submission effects. External readiness/SSH/existence errors retain their existing
+behavior until MVP10.4; this slice does not fix the stale-venv message.
 
 The opt-in `autoslurm.apps.error_output` adapter renders these same facts as text
 or JSON. It exits 1 for a diagnosed operation failure, writes text to stderr or

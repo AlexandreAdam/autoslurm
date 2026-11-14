@@ -10,7 +10,7 @@ This file is the source of truth for active scope, task order and progress.
 ## Status
 
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
-  foundation, MVP10.3a configuration and MVP10.3b.1–2 authoring/selection diagnostics complete
+  foundation, MVP10.3a configuration and MVP10.3b authoring/selection/path/render diagnostics complete
   locally. MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
@@ -22,21 +22,21 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 965 passed, 43 expected
+  rollback source remains unchanged. Full offline suite: 1026 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.3b.2 unifies snapshot analysis and adopts
-  selection/filter diagnostics. Invalid/missing/inaccessible selections are typed;
-  failed entries keep plain diagnostics and unknown counts instead of empty jobs.
-  Newer failures block draft fallback and remain visible beside history. Filter
-  reads default only on absent config. CLI/JSON/debug and ACP discovery retain
-  the same facts; two broad masking catches removed. 965 full offline tests and
-  clean-wheel smoke pass. Coverage: 256 routes/132 owners/16 broad catches. No daily profile,
+- **Latest completed task:** MVP10.3b.3 adopts pure path/render diagnostics with
+  machine/job/field/logical/attempted resolved identity and exact bundle context.
+  Shared renderer guards reject malformed directives/exports without echoing values;
+  safe shell rejection retains the named job and line. Saved producing context is
+  validated without profile fallback. Direct scripts render before destination open,
+  preserving existing files on render failure; submit honors preparation --debug.
+  1026 full offline tests and clean-wheel smoke pass.
+  Coverage: 256 routes/132 owners/16 broad catches. No daily profile,
   environment, cluster, persisted-format or rollback change.
-- **Next task:** MVP10.3b.3 pure path/render preparation diagnostics, using the
+- **Next task:** MVP10.3c record read/publication diagnostics, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
-  service errors still have no diagnostic. Pure paths/rendering remain MVP10.3b.3;
-  publication effects remain MVP10.3c;
+  service errors still have no diagnostic. Publication effects remain MVP10.3c;
   stale-venv correction is MVP10.4.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
@@ -676,7 +676,7 @@ is in the design; every callable/action and its outcome contract must be reviewe
     aliases/standalone entry points; preserve unreadable/corrupt existing files,
     explicit root selection and original causes. Unexpected bugs stay visible.
     Publication I/O effects remain with MVP10.3c.
-  - [ ] **MVP10.3b Authoring, selection and paths.** Adopt diagnostics in command/
+  - [x] **MVP10.3b Authoring, selection and paths.** Adopt diagnostics in command/
     argument/graph/manifest validation, snapshot selection and pure path/render
     preparation; keep invalid requests distinct from per-entry broken evidence.
     Split before implementation into independently verified boundaries:
@@ -688,7 +688,7 @@ is in the design; every callable/action and its outcome contract must be reviewe
     - [x] **MVP10.3b.2 Snapshot selection diagnostics.** Exact/index/latest/filter
       selection and per-entry broken/unavailable evidence, without silently
       turning unreadable records into empty jobs or choosing a different bundle.
-    - [ ] **MVP10.3b.3 Path/render preparation diagnostics.** Pure path resolution,
+    - [x] **MVP10.3b.3 Path/render preparation diagnostics.** Pure path resolution,
       logical/resolved/job identity and render validation; keep external readiness
       failures and record publication with their separately planned owners.
   - [ ] **MVP10.3c Record persistence.** Adopt local JSON read/publication diagnostics
@@ -972,6 +972,7 @@ or migration decision has already been accepted.
 | 2026-11-14 | MVP10.3b.1 Authoring diagnostics | Split b into authoring, snapshot selection and pure path/render tasks before implementation. Public InvalidRequestError reuses the shared core for known command/option/adapter/literal/graph/software-intent/input/preparation failures, retaining field/option/job/project/stage, exact bundle/machine and native causes. Save/schedule input guards replace old TypeError/KeyError; blank/nonstring commands stop before publication. dependency_graph now rejects cycles itself, retaining CycleError and named cycle. Explicit settings, raw argument styles and saved formats remain unchanged; no callbacks or blanket bug catches. Schedule root/standalone routes use shared stderr/exit 1 and --autoslurm-debug, preserving application --debug. Bounded identity enrichment no longer masks a repeated long identity. 54 new contract/evidence cases; 905 full offline tests passed in 11.45 s (43 expected collision warnings), `.development/test-runs/authoring-diagnostics.xml`. Clean-source offline wheel/temporary-target API/graph/retained-record/root/standalone/debug/optional-Typer/installed-recipe smoke passed; SHA256 `5d8685e83105132dc763100306945e286444d796a020738296adba27e5fa0187`. AST register: 253 routes/130 owners/18 broad catches. Human/agent docs, design and installation register updated. No actual cluster commands, daily config/state, dependency installation, external client or rollback edit; user documents/evidence excluded. Snapshot selection b.2 is next; b.3 paths/rendering, 3c publication and 10.4 stale-venv remain open. Task commit: `git log --grep '^MVP10.3b.1:'`; push completed dev commit. |
 
 | 2026-11-14 | MVP10.3b.2 Snapshot/filter selection diagnostics | Shared snapshot analysis replaces duplicated graph checks and failure-to-empty listing. Public SelectionError/selection_failure retain exact selectors/paths, safe causes and absent/access/invalid distinctions; missing selections explicitly replace FileNotFoundError. Discovery returns per-entry state/diagnostic, unknown jobs/counts=None, healthy neighbours and observed graph-invalid counts. No directory creation; regular-file/nonblocking checks reject special files. Newest failures remain visible and block older-draft fallback; stable filename tie-breaks preserve equal-date index ordering. Config owns active/all validation and defaults only after absence. Internal save/append fallback checks resource_missing only; automatic stale/unsubmitted cleanup excludes unknown counts. Filter/submit/status/inspect/logs text/JSON/debug routes and ACP discovery retain adopted facts; submit validates strictly before connecting. Two masking broad catches removed. 60 new regressions; 965 full offline tests passed in 10.00 s (43 expected collision warnings), `.development/test-runs/selection-diagnostics.xml`. Clean-source offline wheel/temporary-target discovery/selection/retained-record/CLI/JSON/debug/ACP/installed-recipe smoke passed; SHA256 `b0b224f02f50fa2154b2f50349297e0263ff691e1e3d98ac73259d46cf2202cc`. AST register: 256 routes/132 owners/16 broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, persisted-format, external client or rollback changes; user documents/evidence excluded. Path/render b.3 is next; generic publication/read, readiness/stale-venv and universal observation/CLI/ACP adoption remain pending. Task commit: `git log --grep '^MVP10.3b.2:'`; push completed dev commit. |
+| 2026-11-14 | MVP10.3b.3 Path/render preparation diagnostics | ExecutionContext reuses shared InvalidRequestError for known path/base/role/cwd/log guards, retaining job/machine/field/option/logical/attempted resolved identity; preview/submit add exact bundle context. Shared render guards diagnose malformed directives/exports without echoing values. Bash syntax rejection retains safe line/named-job evidence; other checker failures remain process errors. Saved producing-context lookup distinguishes missing/ambiguous/invalid evidence via SelectionError and preserves historical roots/transport without profile discovery. Direct scripts render before destination open, preserving existing/absent files on render failures; atomic publication stays 3c. Submit honors preparation --debug. 61 new regressions; 1026 full offline tests passed in 10.20 s (43 expected collision warnings), `.development/test-runs/preparation-diagnostics.xml`. Clean-source offline wheel/temporary-target path/render/producing-context/retained-script/CLI/debug/ACP/installed-recipe smoke passed; SHA256 `98345cd7e42c890ca3f32979addc82d3a02d6a41b3d33a7cb69f639106c3e9a6`. AST register: 256 routes/132 owners/16 broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, schema/history rewrite, external client or rollback edit; user documents/evidence excluded. MVP10.3b complete; 3c record read/publication is next, 10.4 readiness/stale-venv and broader observation/CLI/ACP remain pending. Task commit: `git log --grep '^MVP10.3b.3:'`; push completed dev commit. |
 
 ## How we work
 

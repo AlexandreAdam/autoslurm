@@ -19,7 +19,7 @@ def parse_args(argv=None):
     """
     parser = argparse.ArgumentParser(description="Run scripts on a SLURM cluster.")
     parser.add_argument("name", nargs="?", help="Name of the job")
-    parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
+    parser.add_argument('--debug', action='store_true', help='Show original selection, configuration or preparation errors.')
     # parser.add_argument('date', required=False, help='If provided, will look for job closest to this date. Otherwise, latest job is ran.'
     # 'Provide in the format [Y]YYYY-[M]MM-[D]DD-[H]HH-[m]mm-[s]ss.'
     # 'E.g., Y2021 will yield the latest job of 2021. M09 will yield the latest job of last September.'
@@ -101,7 +101,7 @@ def _main(argv=None):
             context=resolve_execution_context(machine_name, config),
         )
     except InvalidRequestError as error:
-        exit_with_error(error)
+        exit_with_error(error, debug=args.debug)
     except (SubmissionError, ValueError, RuntimeError, OSError) as exc:
         raise SystemExit(str(exc)) from exc
 

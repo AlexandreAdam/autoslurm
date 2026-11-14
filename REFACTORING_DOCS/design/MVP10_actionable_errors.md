@@ -15,6 +15,9 @@ the opt-in terminal adapter and additive diagnostics on existing domain exceptio
 and the config CLI adopt the shared core. **MVP10.3b.1 is implemented locally:**
 authoring adopts InvalidRequestError. **MVP10.3b.2 is implemented locally:**
 snapshot/filter selection and per-entry discovery use shared diagnostics.
+**MVP10.3b.3 is implemented locally:** pure path/render preparation and saved
+producing-context validation adopt the same error families. MVP10.3b is complete;
+record publication/read effects remain MVP10.3c.
 Current coverage is 256 routes/132 owners/16 remaining broad catches; two masking
 handlers were removed. Other service adoption remains pending.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
@@ -278,6 +281,35 @@ listings retain per-entry state/diagnostic. Broader observation/post-dispatch/AC
 bug policies are still later slices. Removing broad get-filter and submit-snapshot
 catches leaves 16 broad handlers; receipt-saving safeguards remain untouched.
 
+### MVP10.3b.3 implemented path/render boundary
+
+ExecutionContext owns pure path resolution and its diagnostics. Explicit base,
+role, shape, control-character, traversal, cwd and custom-log guards now use
+InvalidRequestError with machine/job/field/option and logical/attempted resolved
+paths where known. Public lookup/submit context conflicts use the same type.
+Candidates outside a root remain rejected evidence, never accepted destinations.
+Pure validation reports no inferred effects. Legacy permitted absolute paths and
+the scientific input/output/cwd bases remain unchanged.
+
+One shared structural renderer guard serves preparation and direct creation.
+Environment/runtime export and Slurm directive errors identify their setting
+without copying values. Preview and submit retain exact bundle/job/machine context,
+including named late-job shell rejection. Bash status 2 reports safe line evidence
+without arbitrary stderr literals; launch/interruption/other status remains a
+process failure for 10.4. Unknown code bugs propagate, not invalid requests.
+Direct script creation renders in memory before opening the destination, protecting
+existing/absent files on render failure. It retains its old lack of syntax checking;
+atomic writes and publication failure facts remain 3c.
+
+Saved context lookup validates producing roots/transport once before reconstruction,
+with SelectionError for absence, ambiguity and invalid data. Known file/job/machine/
+field and native alias-validation cause are retained. Historical separate project/
+results roots and legacy transport remain readable. No current profile discovery,
+replacement root or schema rewrite. Direct loader I/O stays 3c; observation-side
+producing_machine and external existence/readiness remain later owners. The submit
+CLI now honors --debug for adopted preparation errors too. No new code catalogue,
+error family, dependency or universal CLI/ACP adoption is introduced.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -401,7 +433,7 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.3a complete | Config read/profile/selection validation, retained-file protection and config CLI aliases/standalone/debug |
 | MVP10.3b.1 complete | Typed/raw authoring guards, graphs/software intent, bundle preparation and schedule CLI diagnostics |
 | MVP10.3b.2 complete | Snapshot/filter selection and per-entry broken/unavailable evidence |
-| MVP10.3b.3 | Pure paths/render preparation diagnostics |
+| MVP10.3b.3 complete | Pure paths/render diagnostics, validated producing context and render-before-open script creation |
 | MVP10.3c | Record read/publication diagnostics, including config writes and pre/post-publication effects |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
@@ -562,3 +594,19 @@ AST register: 256 routes/132 owners/16 remaining broad catches. Human/agent docs
 and installation register updated; no actual cluster commands, base dependency
 installation, daily config/state, persisted-format, external client or rollback
 changes. b.3 paths/rendering is next; other domain/observation adoption remains open.
+
+2026-11-14, MVP10.3b.3: implemented pure path/render diagnostics, validated saved
+producing contexts, shared structural render guards, safe named shell rejection,
+render-before-open direct script creation and submit preparation --debug. Existing
+path bases, literal argument styles, historical roots/transport and record formats
+remain unchanged. No blanket effect inference or bug-to-validation catch. 61 new
+regressions; 1026 full offline tests passed in 10.20 s, 43 expected warnings;
+`.development/test-runs/preparation-diagnostics.xml`. Clean-source offline wheel/
+temporary-target public path/render/producing-context/retained-script/CLI/debug/
+ACP/installed-recipe smoke passed; SHA256
+`98345cd7e42c890ca3f32979addc82d3a02d6a41b3d33a7cb69f639106c3e9a6`.
+AST register: 256 routes/132 owners/16 broad catches. Human/agent docs and
+installation register updated. No actual cluster commands, dependency installation,
+daily config/state, external client or rollback-source changes. MVP10.3b complete;
+3c record read/publication is next; external readiness/stale-venv and broader
+observation/CLI/ACP adoption remain pending.

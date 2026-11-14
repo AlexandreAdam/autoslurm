@@ -58,7 +58,20 @@ diagnostic field/option/job/stage and correct the definition before saving or
 submitting. Preserve explicit saved settings; a missing setting is not permission
 to insert a new default. It is ValueError/DiagnosticError compatible; old
 TypeError/KeyError authoring guards and cycle errors now use this class. Read/
-publication, snapshot selection, path/render and transport adoption remain pending.
+publication and transport adoption remain pending. Snapshot selection and path/
+render preparation now adopt the shared diagnostic contract as described below.
+
+MVP10.3b.3 extends InvalidRequestError to pure path/render preparation. Inspect
+field/option/job/machine, logical_path and attempted resolved_path where known;
+rejected candidate paths are not destinations. Correct the explicit definition
+and preview the same bundle again. Preview/submit enrich these failures with the
+exact bundle_path. Environment/directive errors omit values; syntax errors retain
+the job/line without copying Bash's arbitrary literals. `asl submit --debug`
+re-raises adopted preparation failures. Saved execution lookup uses SelectionError
+for missing evidence (resource_missing) or malformed roots/transport (record_invalid),
+preserving historical producing roots without current-profile discovery. Preserve
+the original file. No inferred effects, automatic repair or resubmission follows.
+Readiness/existence/process diagnostics remain MVP10.4, publication MVP10.3c.
 
 ## Adapt scientific software
 
@@ -299,7 +312,7 @@ it replaces FileNotFoundError for missing selections and remains ValueError/
 DiagnosticError compatible. Only absent config defaults the visibility filter;
 corrupt/unreadable/invalid config must be corrected explicitly. Exact filename-
 only selection does not validate contents. Strict bundle_snapshot_state is used
-by the submit CLI before connecting. Paths/rendering, publication, readiness and
+by the submit CLI before connecting. Publication, readiness and
 inspection observation-policy migration remain separate tasks.
 
 Before submission, `preview_bundle(planned_path, machine="target")` validates and

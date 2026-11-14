@@ -5,6 +5,7 @@ setting/selection failures and the config CLI. Other AutoSlurm services/CLI/ACP
 have not adopted it universally; `.diagnostic is None` is normal on legacy errors.
 MVP10.3b.1 also adopts the authoring boundaries described below.
 MVP10.3b.2 adds snapshot/filter selection and per-entry discovery diagnostics.
+MVP10.3b.3 adds pure path/render preparation and saved producing-context validation.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -205,6 +206,46 @@ failures remain their existing policies until later adoption. Discovery state is
 separate from the inspection pipeline's scheduler/observation state; this is not
 universal observation or CLI/ACP parity. Unexpected bugs at the adopted selection
 boundaries propagate; no broad catch converts them into empty/broken records.
+
+## Path/render preparation in MVP10.3b.3
+
+ExecutionContext.resolve_path/resolve_job and preview_bundle/submit_jobs use
+InvalidRequestError for known path/role/cwd/log and render validation guards.
+Stages include resolve_path, resolve_job, prepare_bundle, render_script and
+validate_shell. Context retains field, option where applicable, job, machine and
+logical_path/attempted resolved_path when known; preview/submit also retain the
+exact bundle_path. A rejected traversal candidate is evidence, not an approved
+destination. Correct the named setting and revalidate that exact definition.
+No existence, permission or cluster readiness is proved by pure resolution.
+
+Environment/runtime exports and Slurm directive shapes/control characters are
+validated without serializing their values. Shared structural guards serve direct
+rendering and preparation. Literal quoting and readable argument styles are
+unchanged. Bash syntax rejection retains safe line information and observed status
+2 without copying stderr's application/environment literals. A checker launch
+failure or other return status remains an external process error for MVP10.4.
+Unexpected programming exceptions propagate. Pure validation leaves effects empty.
+
+Direct create_slurm_script renders completely before opening its destination;
+render validation cannot truncate a previous script or leave a new partial file.
+It does not add shell-syntax checking to that legacy direct API. Publication I/O/
+atomic replacement remains MVP10.3c. Preview/submit still validate generated shell
+syntax through their shared existing pipeline before staging/dispatch. Their
+external root discovery/readiness checks are not migrated by this slice.
+
+recorded_execution/execution_context_from_snapshot and saved-context result lookup
+use SelectionError at read_execution: absent evidence/exact job is resource_missing,
+ambiguous selection invalid_argument, malformed producing roots/transport
+record_invalid. Known bundle/job/machine/field is retained; native alias-validation
+causes remain chained. Legacy producing project/results roots and transport stay
+readable and distinct. No current profile, fallback machine or replacement root is
+discovered. Raw loader I/O/JSON failures remain MVP10.3c; observation-side producing
+metadata and readiness/existence probes remain their separately planned owners.
+
+`asl submit` and its standalone entry point render adopted preparation diagnostics
+once to stderr/exit 1; --debug re-raises the original exception. Schedule keeps its
+--autoslurm-debug behavior. Universal ACP/CLI adoption remains MVP10.8. Retain
+receipts and original history; never infer a safe resubmission from validation alone.
 
 ## At a client boundary
 
