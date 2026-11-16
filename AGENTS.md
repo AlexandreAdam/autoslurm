@@ -133,6 +133,13 @@ operate from the workstation; compute nodes use already-prepared environments.
   exact run selectors and bounded excerpts; cached means no scheduler/source-log
   access locally or remotely. Scientific results/datasets remain application-owned.
 - Update human and agent documentation when public behavior changes.
+- Package checkpoints follow [the versioning policy](docs/versioning.md).
+  `src/autoslurm/version.py::__version__` is the only version source. Complete
+  behavior-changing tasks with a version bump and dated CHANGELOG.md entry;
+  docs/test-only notes may stay Unreleased. During the current refactor advance
+  0.2.0.devN. Verify artifact/runtime/CLI identity before immutable annotated
+  v-prefixed package tags; preserve historical MVP tags and independent record/
+  helper protocol versions. PyPI publication remains explicitly authorized work.
 - Treat client integration guidance and durable agent handoff as interface
   requirements, not late documentation polish. Map each service to an interaction
   and include its recipe, outcome/evidence contract, and behavior checks.

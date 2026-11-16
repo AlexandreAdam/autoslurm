@@ -136,3 +136,30 @@ Compute nodes execute prepared software without an installation step in each job
 Keep the simple installation path and relevant recipes working throughout.
 Avoid source-layout/state assumptions that would make later packaging expensive,
 but do not require full distribution or site completion before shipping an MVP.
+
+## VERSION.1 implemented identity foundation (2026-11-16)
+
+The user prioritized careful versioning ahead of continued error adoption. The
+refactor now starts at 0.2.0.dev1. One literal in src/autoslurm/version.py supplies
+setuptools dynamic metadata, root Python __version__ and asl/autoslurm --version.
+Unused setuptools-scm build dependency is removed; static attribute extraction
+needs neither Git metadata nor application imports. Existing MVP tags and helper/
+record versions retain their separate meaning. No general release automation.
+
+[Versioning policy](../docs/versioning.md), [changelog](../CHANGELOG.md), working
+rules and installed 16_versioning recipe define dated behavior checkpoints,
+pre-1.0 compatibility notes, immutable annotated v-prefixed tags and a separate
+explicit public-index gate. Existing editable distribution metadata can lag moved
+source until normal reinstall; running-code identity does not conceal that fact.
+Base CLI source identity is verified without changing its installed metadata.
+
+Verification: 1062 offline tests passed (43 expected collision warnings), 10.23 s;
+`.development/test-runs/versioning.xml`. Narrow clean-source metadata/wheel/sdist
+builds with no Git and metadata extraction with a deliberately unimportable package
+initializer passed. A wheel rebuilt from the source archive installs outside the
+repository with matching metadata/Python/actual asl+autoslurm console versions,
+no state creation/commands, and the installed agent recipe accessible through ACP.
+The version file and changelog/policy are retained in source distributions.
+Artifact hashes/installation limits are in the installation register. This does
+not complete L3: name ownership, truthful Python-support metadata/matrix, licensing,
+broader clean installs/upgrade checks and explicit PyPI publication remain pending.

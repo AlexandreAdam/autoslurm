@@ -4,6 +4,8 @@ import argparse
 import sys
 from typing import Callable
 
+from ..version import __version__
+
 from . import (
     agent_context,
     cancel,
@@ -83,6 +85,10 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--version", action="version", version=f"autoslurm {__version__}",
+        help="Show the running AutoSlurm code version and exit.",
+    )
+    parser.add_argument(
         "action",
         nargs="?",
         choices=sorted({*ACTION_HANDLERS, *ACTION_ALIASES}),
@@ -97,6 +103,9 @@ def main(argv: list[str] | None = None) -> None:
 
     if not args:
         parser.print_help()
+        return
+    if args[0] == "--version":
+        parser.parse_args(args)
         return
     if args[0] in {"-h", "--help"}:
         parser.print_help()

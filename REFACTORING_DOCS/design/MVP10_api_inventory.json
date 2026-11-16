@@ -82,6 +82,7 @@
     "python:autoslurm.SoftwareUpdateError": "autoslurm.software_update.SoftwareUpdateError",
     "python:autoslurm.SubmissionError": "autoslurm.submission.SubmissionError",
     "python:autoslurm.SubmissionRequest": "autoslurm.bulk_submit.SubmissionRequest",
+    "python:autoslurm.__version__": "autoslurm.version.__version__",
     "python:autoslurm.acp.action_definitions": "autoslurm.acp.action_definitions",
     "python:autoslurm.acp.execute_acp": "autoslurm.acp.execute_acp",
     "python:autoslurm.acp.list_bundles": "autoslurm.acp.list_bundles",
@@ -262,7 +263,8 @@
     "python:autoslurm.utils.load_config": "autoslurm.config.load_config",
     "python:autoslurm.utils.machine_config": "autoslurm.config.machine_config",
     "python:autoslurm.utils.remote_storage_root_from_config": "autoslurm.transport.remote_storage_root_from_config",
-    "python:autoslurm.utils.save_config": "autoslurm.config.save_config"
+    "python:autoslurm.utils.save_config": "autoslurm.config.save_config",
+    "python:autoslurm.version.__version__": "autoslurm.version.__version__"
   },
   "broad_catches": {
     "autoslurm.acp._load_action_definitions": [
@@ -650,6 +652,18 @@
         "tests/integration/test_persistence_boundaries.py"
       ],
       "adoption": "MVP10.3c.1 implemented: typed OSError-compatible writer failures; serialization replaces raw TypeError/ValueError explicitly. Exclusive collisions remain FileExistsError-compatible; only clean collisions may select another snapshot timestamp. Native bugs/interrupts propagate; cleanup evidence cannot erase primary or original cause. Domain reads/enrichment/CLI and receipt/cache/script policies remain c.2/c.3/10.5/10.6."
+    },
+    "package_version": {
+      "implementation_task": "VERSION.1",
+      "failures": "Static version/import configuration drift; metadata can lag source in an existing editable install. Console output/usage failures retain existing parser/IO behavior.",
+      "translation_owner": "version.py literal supplies setuptools dynamic attribute and Python/CLI identity; root CLI owns --version exit/help, without discovery.",
+      "desired_diagnostic": "Running code version is explicit; metadata/source mismatch is documented, not hidden by automatic reinstall or Git lookup. Packaging gates verify fresh-install parity.",
+      "next_action": "Retain version and exact revision/dirty evidence for editable code; refresh metadata with an explicit normal install. Use separate helper/record capability versions.",
+      "regression_evidence": [
+        "tests/unit/test_version.py",
+        "tests/unit/test_root_cli.py"
+      ],
+      "adoption": "One literal version exported at root/leaf; --version exits0 without config/command effects and application --version forwarding remains intact. Installed wheel/sdist rebuild/console metadata parity gate. No new diagnostic wrapper or protocol/schema mapping."
     }
   },
   "owners": {
@@ -727,8 +741,8 @@
     },
     "autoslurm.apps.root.main": {
       "contract": "cli",
-      "inputs": "argv: action plus arguments.",
-      "current": "Empty/help prints help exit0; unknown action parser exit2; domain handler SystemExit/raw errors propagate.",
+      "inputs": "argv: action plus arguments. Root --version reports running package version.",
+      "current": "Empty/help prints help exit0; unknown action parser exit2; domain handler SystemExit/raw errors propagate. VERSION.1: --version exits0 with shared version; action arguments including application --version are still forwarded.",
       "effects": "Dispatch only; no global error catch or replay."
     },
     "autoslurm.apps.scan.main": {
@@ -1462,6 +1476,12 @@
       "inputs": "Explicit stage/path/effects/cause; problem storage/serialization/collision.",
       "current": "Shared Diagnostic using existing storage_failed/invalid_argument codes; unknown problem remains programming ValueError.",
       "effects": "Pure facts construction; never reads files, classifies arbitrary exceptions or infers rollback."
+    },
+    "autoslurm.version.__version__": {
+      "contract": "package_version",
+      "inputs": "Read running code package version.",
+      "current": "Literal PEP440 public version; shared build/Python/CLI source. Editable installation metadata can retain an older value until explicit reinstall.",
+      "effects": "Pure constant; no filesystem discovery, Git, subprocess, environment mutation or network."
     }
   },
   "catch_reviews": {
@@ -1632,6 +1652,12 @@
       "date": "2026-11-14",
       "base_revision": "0e51823",
       "note": "Split c before implementation. Shared atomic JSON writer owns publication/durability facts, safe typed failures and evidence-preserving cleanup; two explicitly reviewed BaseException safeguards added. Only clean exclusive collisions advance snapshot timestamps. Raw serialization exception family changes to RecordWriteError; no record schema, universal CLI adoption or scheduler outcome change."
+    },
+    {
+      "task": "VERSION.1",
+      "date": "2026-11-16",
+      "base_revision": "ef4b199",
+      "note": "User-priority versioning foundation before MVP10.3c.2. One static version source supplies build/Python/root --version; new constant routes only, no diagnostic catch changes. Existing metadata/editable mismatch and independent protocol/schema identities documented; source/wheel/console identity verified offline. No automatic reinstall or PyPI publication."
     }
   ]
 }

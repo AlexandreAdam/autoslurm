@@ -18,6 +18,11 @@ shell scripts and provides the following features:
 
 ## Documentation
 
+Use `asl --version` or `autoslurm.__version__` to identify the running code.
+The refactor uses `0.2.0.devN` checkpoints; see the
+[changelog](CHANGELOG.md) and [versioning policy](docs/versioning.md) for
+compatibility notes and the future PyPI release process.
+
 You can find the full documentation [here](https://autoslurm.readthedocs.io/en/latest/).
 
 For the local development refactor, start with the

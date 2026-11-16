@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,7 +11,7 @@ description = "The AutoSlurm project job scheduler designed for HPC cluster sche
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = ["packaging>=23", "tomli; python_version < '3.11'"]
-version = "0.1.0"
+dynamic = ["version"]
 
 [project.optional-dependencies]
 commands = ["typer>=0.27,<0.28"]
@@ -46,3 +46,6 @@ autoslurm-agent-context = "autoslurm.apps.agent_context:main"
 
 [tool.setuptools.package-data]
 autoslurm = ["acp_action.json", "agent_resources/*.md"]
+
+[tool.setuptools.dynamic]
+version = {attr = "autoslurm.version.__version__"}

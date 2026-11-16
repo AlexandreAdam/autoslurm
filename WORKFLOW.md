@@ -120,6 +120,18 @@ changes; do not sweep user edits into a task commit to clean the working tree.
 
 ## Test and release gates
 
+Package checkpoints follow [docs/versioning.md](docs/versioning.md). Edit the
+single literal in `src/autoslurm/version.py`, with a dated CHANGELOG.md entry, for
+each completed task changing supported package behavior. Documentation/test-only
+work can remain Unreleased. During the current line advance 0.2.0.devN; use the
+documented pre-1.0 compatibility rules rather than task/MVP numbers as versions.
+Before adding an immutable annotated `v<VERSION>` tag, verify wheel/sdist metadata,
+runtime/CLI parity and applicable offline behavior outside the repository. Keep
+MVP tags and record/helper protocol versions independent. Tags and pushes do not
+authorize PyPI publication, deployment or cluster updates. A moved editable source
+can report a newer runtime version than its last installed distribution metadata;
+refresh the latter through the normal explicitly selected editable install.
+
 | Change or boundary | Minimum evidence |
 |---|---|
 | Documentation/rules | Read back the result; check relative links, task references and conflicting instructions |

@@ -1,5 +1,7 @@
 """Supported Python entry points; backend helpers are not exported implicitly."""
 
+from .version import __version__
+
 from .definitions import (
     CONFIG_FILE_PATH,
     MACHINE_KEYS,
@@ -103,6 +105,7 @@ from .typer_adapter import from_typer
 from .errors import ConfigurationError, InvalidRequestError, SelectionError, RecordWriteError
 
 __all__ = [
+    '__version__',
     'ConfigurationError',
     'InvalidRequestError',
     'SelectionError', 'RecordWriteError',

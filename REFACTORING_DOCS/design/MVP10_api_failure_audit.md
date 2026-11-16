@@ -377,3 +377,17 @@ Full offline suite: 1058 passed, 43 expected warnings; clean-source offline whee
 temporary-target API/publication/durability/cleanup/retained-record/JSON/debug/ACP/
 installed-recipe smoke passed. Register matches 260 routes/135 owners/18 individually
 reviewed broad catches. No record schema rewrite or scheduler outcome inference.
+
+## VERSION.1 package identity amendment (2026-11-16)
+
+Base `ef4b199`. Two Python routes expose one version constant owner; 262 total
+routes/136 owners/18 unchanged broad catches. Root --version exits0 with the
+running code version, without config/Git/cluster/command effects. It is handled
+only before action dispatch, preserving application --version forwarding. Static
+version imports add no diagnostic family. Console output/usage failures retain
+their existing parser/I/O behavior. Editable metadata can lag source; fresh wheel/
+sdist installs must match metadata/runtime/console identity. Existing helper/
+record capability versions are independent. tests/unit/test_version.py covers
+single-source static configuration/changelog, canonical version, effect-free
+version output and forwarding; artifact smoke verifies installed parity/guidance.
+Current error adoption still resumes at MVP10.3c.2, without a PyPI release.

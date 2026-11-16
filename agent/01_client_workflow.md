@@ -86,6 +86,13 @@ handling until those owners adopt the richer contract. See installed 15_diagnost
 
 ## Adapt scientific software
 
+Record `autoslurm.__version__` (or `asl --version`) alongside the client's exact
+bundle/receipt when reporting integration issues. Development versions identify
+checkpoints; add commit/dirty evidence for a moving editable checkout. Installed
+distribution metadata can lag source until editable reinstall. Consult the
+[versioning policy](../docs/versioning.md), [changelog](../CHANGELOG.md) or installed
+`16_versioning` recipe; protocol/schema compatibility remains separately checked.
+
 Keep computation independent of AutoSlurm. Expose an installed command with
 explicit arguments, useful `--help`, a cheap smoke run and nonzero exits for
 invalid input or failed computation. A thin adapter may read

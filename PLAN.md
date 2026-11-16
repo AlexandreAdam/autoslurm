@@ -23,16 +23,16 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1058 passed, 43 expected
+  rollback source remains unchanged. Full offline suite: 1062 passed, 43 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.3c.1 adopts shared JSON publication diagnostics.
-  RecordWriteError retains destination/stage/native cause and separates publication
-  from directory durability; syscall failures keep unknown outcomes. Cleanup cannot
-  mask primary errors or interruption. Only clean exclusive collisions advance a
-  snapshot timestamp. Serialization now uses this explicit dev exception family.
-  1058 full offline tests and clean-wheel smoke pass.
-  Coverage: 260 routes/135 owners/18 broad catches; two new resource/evidence
-  safeguards explicitly reviewed. No daily profile,
+- **Latest completed task:** VERSION.1 establishes package checkpoint 0.2.0.dev1
+  from one literal shared by build metadata, Python and root --version. Changelog,
+  development bump/tag rules and installed agent recipe are documented. Git-free
+  wheel/sdist-to-wheel builds and installed metadata/Python/console parity pass;
+  the existing base CLI reports the new source version without reinstalling.
+  Last installed editable metadata remains 0.1.0 until explicit reinstall.
+  1062 full offline tests pass. Coverage: 262 routes/136 owners/18 broad catches.
+  No PyPI publication, base reinstall or daily profile,
   environment, cluster, persisted-format or rollback change.
 - **Next task:** MVP10.3c.2 bundle/config record boundaries, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
@@ -55,7 +55,7 @@ This file is the source of truth for active scope, task order and progress.
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
   the operator coordinates update timing for jobs using it.
-- **Last updated:** 2026-11-14.
+- **Last updated:** 2026-11-16.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
   `dev`; GitHub repository settings and documentation integrations stay as they were.
@@ -840,6 +840,21 @@ No recursive result mirror or automatic retry/deployment is included.
   identify offline planning, runtime import and result-fetch scope boundaries.
   Review links/diff. Planning only; no status/workflow implementation or Gaia edit.
 
+## VERSION.1 Package versioning foundation
+
+User priority added 2026-11-16 before resuming MVP10.3c.2. Establish identifiable
+development checkpoints now; public index publication remains a separate action.
+
+- [x] One literal package version supplies build metadata, Python __version__
+  and `asl --version`/`autoslurm --version`, without Git or network at runtime/build.
+- [x] Start the refactor line at 0.2.0.dev1, document development/pre-release/final
+  version rules, immutable v-prefixed package tags and changelog maintenance.
+  Preserve MVP milestones and independent protocol/record schema versions.
+- [x] Verify offline wheel and sdist-to-wheel builds without Git metadata, runtime/
+  installed-metadata parity, CLI forwarding and installed agent guidance. Update
+  the interface register, installation evidence and working rules. Commit/push
+  the tested checkpoint; retain PyPI publication as explicit future work.
+
 ## Scientific reference case
 
 Use a cheap application with an installed command, relative inputs/outputs,
@@ -987,6 +1002,7 @@ or migration decision has already been accepted.
 | 2026-11-14 | MVP10.3b.2 Snapshot/filter selection diagnostics | Shared snapshot analysis replaces duplicated graph checks and failure-to-empty listing. Public SelectionError/selection_failure retain exact selectors/paths, safe causes and absent/access/invalid distinctions; missing selections explicitly replace FileNotFoundError. Discovery returns per-entry state/diagnostic, unknown jobs/counts=None, healthy neighbours and observed graph-invalid counts. No directory creation; regular-file/nonblocking checks reject special files. Newest failures remain visible and block older-draft fallback; stable filename tie-breaks preserve equal-date index ordering. Config owns active/all validation and defaults only after absence. Internal save/append fallback checks resource_missing only; automatic stale/unsubmitted cleanup excludes unknown counts. Filter/submit/status/inspect/logs text/JSON/debug routes and ACP discovery retain adopted facts; submit validates strictly before connecting. Two masking broad catches removed. 60 new regressions; 965 full offline tests passed in 10.00 s (43 expected collision warnings), `.development/test-runs/selection-diagnostics.xml`. Clean-source offline wheel/temporary-target discovery/selection/retained-record/CLI/JSON/debug/ACP/installed-recipe smoke passed; SHA256 `b0b224f02f50fa2154b2f50349297e0263ff691e1e3d98ac73259d46cf2202cc`. AST register: 256 routes/132 owners/16 broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, persisted-format, external client or rollback changes; user documents/evidence excluded. Path/render b.3 is next; generic publication/read, readiness/stale-venv and universal observation/CLI/ACP adoption remain pending. Task commit: `git log --grep '^MVP10.3b.2:'`; push completed dev commit. |
 | 2026-11-14 | MVP10.3b.3 Path/render preparation diagnostics | ExecutionContext reuses shared InvalidRequestError for known path/base/role/cwd/log guards, retaining job/machine/field/option/logical/attempted resolved identity; preview/submit add exact bundle context. Shared render guards diagnose malformed directives/exports without echoing values. Bash syntax rejection retains safe line/named-job evidence; other checker failures remain process errors. Saved producing-context lookup distinguishes missing/ambiguous/invalid evidence via SelectionError and preserves historical roots/transport without profile discovery. Direct scripts render before destination open, preserving existing/absent files on render failures; atomic publication stays 3c. Submit honors preparation --debug. 61 new regressions; 1026 full offline tests passed in 10.20 s (43 expected collision warnings), `.development/test-runs/preparation-diagnostics.xml`. Clean-source offline wheel/temporary-target path/render/producing-context/retained-script/CLI/debug/ACP/installed-recipe smoke passed; SHA256 `98345cd7e42c890ca3f32979addc82d3a02d6a41b3d33a7cb69f639106c3e9a6`. AST register: 256 routes/132 owners/16 broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, schema/history rewrite, external client or rollback edit; user documents/evidence excluded. MVP10.3b complete; 3c record read/publication is next, 10.4 readiness/stale-venv and broader observation/CLI/ACP remain pending. Task commit: `git log --grep '^MVP10.3b.3:'`; push completed dev commit. |
 | 2026-11-14 | MVP10.3c.1 Shared JSON publication diagnostics | Split c into shared writer, bundle/config and receipt/cache/script boundaries before implementation. RecordWriteError/RecordCollisionError and pure fact constructor reuse the core catalogue; native causes and safe kind/errno/path/stage retained. Serialization explicitly replaces raw TypeError/ValueError at this dev boundary, while OSError and exclusive FileExistsError compatibility remain. Publication not_started/unknown/succeeded is separate from directory durability; post-publication failures preserve complete records, failed syscalls never imply rollback. Explicit temp/directory close and all cleanup retain primary plus bounded secondary/native evidence, including bugs/interrupts; two resource/evidence-only broad catches reviewed. Only clean exclusive collisions advance snapshot timestamps. 32 new cases and updated legacy failure assertions; 1058 full offline tests passed in 10.04 s (43 expected collision warnings), `.development/test-runs/record-publication-diagnostics.xml`. Clean-source offline wheel/temporary-target API/publication/durability/cleanup/retained-record/JSON/debug/ACP/installed-recipe smoke passed; SHA256 `fa3340a99969341c1498f11d521fc875db47d5a6f66d250a7981024f0153168b`. AST register: 260 routes/135 owners/18 reviewed broad catches; human/agent docs, design and installation register updated. No cluster, dependency installation, daily config/state, persisted-format, external client or rollback edit; user documents/evidence excluded. c.2 bundle/config boundaries next, c.3 receipt/cache/script and broader transport/submission/observation/CLI/ACP remain open. Task commit: `git log --grep '^MVP10.3c.1:'`; push completed dev commit. |
+| 2026-11-16 | VERSION.1 Package versioning foundation | User priority before MVP10.3c.2. Current source checkpoint 0.2.0.dev1 has one literal in version.py, shared by setuptools dynamic metadata, Python root/leaf __version__ and root --version. Removed unused setuptools-scm build dependency; Git/branch/MVP tags are not runtime version sources. Changelog, pre-1.0 bump rules, immutable v-prefixed checkpoint tags, independent helper/record versions and explicit PyPI gates documented in human/installed agent guidance and working rules. Four new identity/forwarding/effect checks; 1062 full offline tests passed in 10.23 s (43 expected collision warnings), `.development/test-runs/versioning.xml`; final focused 10 checks passed after changelog guard. Clean-source metadata extraction with no Git/executables and an unimportable package initializer passed; wheel and source archive build, sdist-to-wheel rebuild and installed metadata/Python/actual asl+autoslurm version/ACP recipe parity passed outside the repo without state/commands. Wheel SHA256 `93d0f1b26977fc870f2244af5e9fe97dbc7d8d49afdf5d90bb4e67db62319354`; sdist SHA256 `7673ec978964a042833d45ffe44e1cf63b3df38c10e370c62c3e3ed1868bfd37`; rebuilt wheel matches direct wheel. AST register 262 routes/136 owners/18 broad catches. Base CLI follows new source version; existing installed metadata remains 0.1.0 until explicit reinstall. No base/test dependency installation, cluster, daily config/state, schema/history, external client or rollback edit; user documents/evidence excluded. Annotated v0.2.0.dev1 marks tested development checkpoint; historical mvp tags unchanged. No PyPI upload or GitHub Actions; publication/Python support/license/name ownership remain separate gates. Next implementation MVP10.3c.2. Task commit: `git log --grep '^VERSION.1:'`; push dev and the checkpoint tag. |
 
 ## How we work
 

@@ -13,6 +13,32 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+VERSION.1 (2026-11-16): running package checkpoint is 0.2.0.dev1, replacing the
+ambiguous 0.1.0 source label. Main base `asl --version` reports 0.2.0.dev1 through
+the existing editable checkout. Last installed distribution metadata still says
+0.1.0; no base/test editable reinstall was performed. This distinction is explicit
+in the human/agent guidance. Pinned rollback source and remote installs are unchanged.
+1062 full offline tests passed in 10.23 s, 43 expected warnings;
+`.development/test-runs/versioning.xml`. Clean-source no-Git/no-runtime-import
+metadata extraction, wheel and sdist-to-wheel builds passed. Temporary-target
+sdist-built wheel verifies runtime/distribution/actual console parity, no state/
+external commands and installed agent recipe through ACP. Artifacts:
+
+- `.development/artifacts/versioning/autoslurm-0.2.0.dev1-py3-none-any.whl`:
+  SHA256 `93d0f1b26977fc870f2244af5e9fe97dbc7d8d49afdf5d90bb4e67db62319354`.
+- `.development/artifacts/versioning/autoslurm-0.2.0.dev1.tar.gz`:
+  SHA256 `7673ec978964a042833d45ffe44e1cf63b3df38c10e370c62c3e3ed1868bfd37`.
+- `.development/artifacts/versioning/from-sdist/autoslurm-0.2.0.dev1-py3-none-any.whl`:
+  SHA256 `93d0f1b26977fc870f2244af5e9fe97dbc7d8d49afdf5d90bb4e67db62319354`.
+
+Only disposable build/install targets were created; no dependency installation
+into base/test environments, daily config/state, actual cluster command, external
+client, record schema/history or rollback edit. Existing user documents/evidence
+remain excluded. `v0.2.0.dev1` identifies this tested development checkpoint;
+MVP milestone tags remain historical. Public index/name/license/Python-support
+release gates remain pending; no PyPI upload or publication workflow was created.
+Next implementation returns to MVP10.3c.2.
+
 MVP10.3c.1 (2026-11-14): 1058 full offline tests passed in 10.04 s (43 expected
 collision warnings); `.development/test-runs/record-publication-diagnostics.xml`.
 Shared JSON publication now reports phase effects and secondary cleanup while
