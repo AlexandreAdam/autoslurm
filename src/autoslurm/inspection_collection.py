@@ -34,20 +34,7 @@ def _load_selected(path):
     for reference in receipt_refs:
         try:
             receipt = load_submission(reference)
-            if set(receipt["jobs"]) != {job["name"] for job in jobs}:
-                raise ValueError("Receipt and selected bundle jobs disagree.")
-            for job in jobs:
-                if job.get(SUBMISSION_METADATA_KEY, {}).get("submission_id") != receipt["submission_id"]:
-                    raise ValueError("Receipt and selected bundle identity disagree.")
-            for job in jobs:
-                outcome = receipt["jobs"][job["name"]]
-                if job.get("id") and outcome.get("id") != str(job["id"]):
-                    raise ValueError("Receipt would discard a known scheduler ID.")
-            for job in jobs:
-                outcome = receipt["jobs"][job["name"]]
-                if outcome.get("id"):
-                    job["id"] = outcome["id"]
-                job[SUBMISSION_METADATA_KEY] = {**job[SUBMISSION_METADATA_KEY], **outcome}
+            apply_receipt_to_jobs(jobs, receipt)
             receipts.append({"submission_id": receipt["submission_id"], "state": receipt["state"], "receipt_path": reference})
         except (OSError, ValueError, KeyError) as exc:
             entry = {"source": "receipt", "message": str(exc), "path": reference}
@@ -55,6 +42,22 @@ def _load_selected(path):
                 entry["diagnostic"] = exc.diagnostic.to_dict()
             errors.append(entry)
     return jobs, date, receipts, errors
+
+
+def apply_receipt_to_jobs(jobs, receipt):
+    """Overlay validated receipt facts in memory without losing known IDs."""
+    if set(receipt['jobs']) != {job['name'] for job in jobs}:
+        raise ValueError('Receipt and selected bundle jobs disagree.')
+    for job in jobs:
+        if job.get(SUBMISSION_METADATA_KEY, {}).get('submission_id') != receipt['submission_id']:
+            raise ValueError('Receipt and selected bundle identity disagree.')
+        if job.get('id') and receipt['jobs'][job['name']].get('id') != str(job['id']):
+            raise ValueError('Receipt would discard a known scheduler ID.')
+    for job in jobs:
+        outcome = receipt['jobs'][job['name']]
+        if outcome.get('id'):
+            job['id'] = outcome['id']
+        job[SUBMISSION_METADATA_KEY] = {**job[SUBMISSION_METADATA_KEY], **outcome}
 
 
 def load_run(path):

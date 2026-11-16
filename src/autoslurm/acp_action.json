@@ -155,5 +155,32 @@
       "observe",
       "diagnose"
     ]
+  },
+  {
+    "name": "fetch_run",
+    "description": "Refresh exact linked submission receipts, then fetch status and bounded execution-log excerpts into existing local caches. Partial errors remain in result.errors; no scientific results or job mutations.",
+    "parameters": {
+      "bundle_path": "Select exactly one of bundle_path or receipt_path; exact saved tracking snapshot.",
+      "receipt_path": "Exact local submission receipt selecting its tracking snapshot.",
+      "refresh": "Boolean, default true; false reads cached evidence with no receipt/scheduler/source-log access or projection writes.",
+      "job_name": "Optional job name for log selection; receipt/status remain run-level.",
+      "task_index": "Optional actual array task index.",
+      "stream": "both/stdout/stderr, default both.",
+      "tail": "Nonnegative line count, default 40.",
+      "max_log_bytes": "1..1048576 bytes per log, default 65536.",
+      "max_logs": "1..100 logs per run, default 20."
+    },
+    "context_sections": [
+      "18_fetching.md",
+      "01_client_workflow.md",
+      "09_task_inspect.md"
+    ],
+    "keywords": [
+      "fetch",
+      "retrieve",
+      "receipt",
+      "logs",
+      "offline"
+    ]
   }
 ]

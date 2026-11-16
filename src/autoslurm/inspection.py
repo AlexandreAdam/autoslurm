@@ -9,8 +9,10 @@ from .inspection_state import resolve_jobs, project_run
 from .bundle_selection import list_saved_bundles
 from .storage import storage_root
 from .submission import load_submission
+from .inspection_receipts import refresh_run_receipts
+from .errors import InvalidRequestError
 
-__all__ = ["inspect_bundle", "inspect_bundles", "inspect_logs", "list_runs"]
+__all__ = ["inspect_bundle", "inspect_bundles", "inspect_logs", "fetch_run", "list_runs"]
 
 
 def observe_job_statuses(jobs):
@@ -55,7 +57,11 @@ def _fresh_view(run, observations, profiles, profile_error, cache):
 
 def inspect_bundles(bundle_paths, *, refresh=True, include_logs=False, job_name=None,
                     task_index=None, tail=40, max_log_bytes=65536, max_logs=20,
-                    include_script=False, refresh_logs=None, stream="both", task_indices=None):
+                    include_script=False, refresh_logs=None, stream="both", task_indices=None,
+                    refresh_receipts=False):
+    if type(refresh_receipts) is not bool or (refresh_receipts and refresh is not True):
+        raise InvalidRequestError('Receipt refresh requires refresh=True; cached inspection never fetches receipts.',
+                                  field='refresh_receipts', stage='fetch_evidence')
     runs = [load_run(path) for path in bundle_paths]
     request = ArtifactRequest(
         include_logs=include_logs, include_script=include_script, job_name=job_name,
@@ -65,7 +71,9 @@ def inspect_bundles(bundle_paths, *, refresh=True, include_logs=False, job_name=
         task_indices=task_indices,
     )
     for run in runs:
-        request.validate(run)
+        request.validate(run, before_receipt_refresh=refresh_receipts)
+    if refresh_receipts:
+        runs = refresh_run_receipts(runs)
     jobs = [job for run in runs for job in run.jobs]
     profiles, profile_error = load_machine_profiles(jobs)
     observations = collect_observations(jobs, profiles) if refresh else {}
@@ -103,3 +111,18 @@ def inspect_logs(bundle_path=None, *, receipt_path=None, job_name=None, task_ind
     return inspect_bundle(bundle_path, receipt_path=receipt_path, include_logs=True,
         job_name=job_name, task_index=task_index, stream=stream, tail=tail,
         max_log_bytes=max_log_bytes, max_logs=max_logs, refresh=refresh)
+
+
+def fetch_run(bundle_path=None, *, receipt_path=None, job_name=None, task_index=None,
+              stream="both", tail=40, max_log_bytes=65536, max_logs=20, refresh=True):
+    """Refresh linked receipts, scheduler status and bounded logs for one run.
+
+    Uses existing receipt/tracking and inspection caches. refresh=False reads
+    cached evidence only. Never fetches scientific results or complete logs.
+    """
+    if type(refresh) is not bool:
+        raise InvalidRequestError('refresh must be a boolean.', field='refresh', stage='fetch_evidence')
+    return inspect_bundle(bundle_path, receipt_path=receipt_path, include_logs=True,
+        job_name=job_name, task_index=task_index, stream=stream, tail=tail,
+        max_log_bytes=max_log_bytes, max_logs=max_logs, refresh=refresh,
+        refresh_receipts=refresh)

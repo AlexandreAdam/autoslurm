@@ -16,6 +16,7 @@ from . import (
     inspect,
     initialize,
     logs,
+    fetch,
     scan,
     schedule,
     status,
@@ -41,6 +42,7 @@ ACTION_HELP = {
     "scan": "Scan and list your own package apps.",
     "inspect": "Inspect bundle jobs and output logs.",
     "logs": "Read stdout/stderr with job status and failure evidence.",
+    "fetch": "Fetch run receipts, status and bounded log excerpts.",
     "agent": "Print the agent documentation context.",
 }
 
@@ -59,6 +61,7 @@ ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
     "scan": scan.main,
     "inspect": inspect.main,
     "logs": logs.main,
+    "fetch": fetch.main,
     "agent": agent_context.main,
 }
 

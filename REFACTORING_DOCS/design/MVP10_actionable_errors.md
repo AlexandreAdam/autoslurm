@@ -45,6 +45,15 @@ with shared diagnostics and ordered job initialization/setup/activation guards.
 This does not close 10.4b or change helper launch policy, activation preflight or
 receipt discovery. Runtime Bash failure wording and config detection diagnostic
 construction live in errors.py; generation and discovery have separate owners.
+**FETCH.1 is implemented locally** in 0.2.0.dev6 as a focused user-prioritized
+fetching slice: exact linked receipt refresh before shared status/bounded logs,
+partial evidence and recovered IDs retained, no-contact cached reads. Remote
+receipt reads now have regular-file/size/time/encoding/identity guards and shared
+diagnostics; broad submission/recovery adoption remains 10.5, broader observation
+adoption remains 10.6. See [the fetch design](FETCH_1_execution_evidence.md).
+49 new cases, 1337 offline tests and installed artifact checks pass. The reviewed
+inventory is now 266 routes/138 owners/20 broad catches. No full-log/dataset fetch,
+legacy-sync change or remote-only receipt discovery was introduced.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
 paths (b) and publication (c); b was then split into authoring (b.1), snapshot
 selection (b.2) and pure path/render preparation (b.3) before its implementation.

@@ -9,6 +9,23 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev6 — 2026-11-16
+
+- `asl fetch`, public `fetch_run` and ACP `fetch_run` refresh exact linked receipts
+  before status and bounded log excerpts, reusing existing selectors, inspection
+  and caches. Cached fetch has no remote receipt or source-log reads, and no
+  projection/cache writes.
+- Partial receipt/persistence failures retain known or newly recovered IDs and
+  available logs. Error/freshness fields remain explicit; CLI JSON/text retains
+  partial results and exits 1 for collection failures. No submission retry.
+- Remote receipt refresh replaces unbounded cat with the existing standalone
+  regular-file reader, capped at 1 MiB and 30 seconds, with shared diagnostics for
+  missing, unreadable, changing, oversized/malformed and transport failures.
+  Remote python3 is required; no remote AutoSlurm installation is needed.
+- Log bounds and inspect/logs defaults are unchanged. Fetch follows recorded
+  paths/transport and exact receipt links, without scientific-result transfer,
+  receipt guessing or whole-directory mirroring. Legacy sync remains separate.
+
 ## 0.2.0.dev5 — 2026-11-16
 
 - Optional machine module_init records an absolute trusted module initialization

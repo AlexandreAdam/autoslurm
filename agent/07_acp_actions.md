@@ -8,6 +8,7 @@ in `src/autoslurm/acp_action.json`. Use the owning installation's metadata.
 |---|---|
 | `list_runs` | Discover local exact run paths; optional `bundle` filter |
 | `inspect_run` | Structured exact inspection by `bundle_path` or `receipt_path`; fresh by default |
+| `fetch_run` | Refresh linked receipts before status and bounded logs; same exact selectors/bounds, cached mode with refresh false |
 | `list_submissions` | Discover local incremental submission receipts |
 | `inspect_submission` | Read an exact receipt; explicit `refresh` fetches execution-side evidence |
 | `schedule` | Save a definition; never dispatches work |

@@ -5,13 +5,11 @@ import json
 import os
 from pathlib import Path
 import re
-import shlex
-import subprocess
 
 from .record_files import atomic_json, read_json, _read_error
 from .storage import storage_root
-from .transport import ssh_command
-from .errors import DiagnosticError, SelectionError, RecordWriteError
+from .errors import DiagnosticError, DiagnosticCause, SelectionError, RecordWriteError, _receipt_fetch_failure
+from .receipt_fetch import read_execution_receipt
 
 __all__ = ["SubmissionError", "load_submission", "list_submissions", "refresh_submission"]
 SUBMISSION_METADATA_KEY = "_autoslurm_submission"
@@ -167,16 +165,21 @@ def refresh_submission(receipt_path):
         if not execution["is_remote"]:
             project_receipt(current)
             return current
-        result = subprocess.run(ssh_command(execution["transport"], current["machine"], "cat -- " + shlex.quote(current["execution_receipt_path"])), capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(result.stderr.strip() or "Execution receipt is unavailable.")
-        observed = validate_receipt(json.loads(result.stdout), current)
+        text = read_execution_receipt(current)
+        try:
+            observed = validate_receipt(json.loads(text), current)
+        except ValueError as native:
+            facts = {key: current[key] for key in ('machine', 'submission_id', 'receipt_path')}
+            facts.update(path=current['execution_receipt_path'], resource='execution_receipt')
+            raise DiagnosticError(_receipt_fetch_failure('protocol', facts,
+                DiagnosticCause(type(native).__name__, 'Receipt JSON or selected submission identity was invalid.'))) from native
         # Retain workstation identity/paths even if a helper receives stale data.
         for key in ("bundle", "bundle_path", "planned_path", "receipt_path", "execution_receipt_path", "machine", "execution"):
             observed[key] = current[key]
         if not observed["execution_finished"]:
             mark_unobserved(observed, "Helper has not recorded a final submission outcome.")
         current = observed
+        current.pop("observation_error", None)
         write_receipt(receipt_path, observed)
         project_receipt(observed)
         return observed

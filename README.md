@@ -181,6 +181,20 @@ autoslurm-schedule my-script --submit --machine=machine\
 
 ### Inspect jobs and logs
 
+Fetch a selected run's linked submission receipts, status and bounded logs with
+the same indices used by status:
+
+```sh
+asl status
+asl fetch 1
+asl fetch 1 --job 2 --task 7
+asl fetch 1 --cached
+```
+
+Fetching saves excerpts in AutoSlurm's existing local caches. It preserves
+available evidence on partial failures and never downloads scientific datasets
+or full log directories. See [fetching and logs](docs/logs.md).
+
 Read execution logs with scheduler status, failure reasons and exit codes for
 one exact saved run:
 

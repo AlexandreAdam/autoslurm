@@ -133,6 +133,21 @@ invalid input or failed computation. A thin adapter may read
 a distinct output. A reducer validates all expected shards and their input
 compatibility before reporting success.
 
+## Fetch execution evidence
+
+Use public `fetch_run(receipt_path=...)` or `fetch_run(bundle_path=...)` to refresh
+linked receipts before status and bounded logs. The exact snapshot's receipt
+links and recorded producing transport/paths remain authoritative; no guessing
+by bundle name or scientific-result transfer occurs. `asl fetch` shares status/
+log selectors; `--cached` or Python `refresh=False` reads local cached evidence
+without source/remote reads or writes. Receipt reads are limited to 1 MiB/30
+seconds; log defaults remain 40 lines, 64 KiB/file, 20 files/run. Check errors and
+freshness; retain known IDs and readable logs on partial failure. Persistence
+failure may leave new IDs only in returned evidence. Never resubmit because
+fetching failed. ACP `fetch_run` exposes the same result and per-item errors;
+installed section `18_fetching` documents the recipe. Legacy `asl sync` mirrors
+whole jobs/scripts/out directories and is not equivalent to bounded fetching.
+
 ## Explicit named job arguments
 
 **Alexandre's lasting preference, 2026-11-13:** job arguments are explicit,

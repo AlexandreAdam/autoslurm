@@ -105,9 +105,13 @@ def test_remote_receipts_survive_response_loss_and_refresh_without_resubmission(
             return subprocess.CompletedProcess(command, 0, str(remote) + "\n", "")
         elif "--capabilities" in command[-1]:
             return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1}', "")
-        elif command[-1].startswith("cat -- "):
+        elif command[-1] == "python3 -B -":
             assert "producing-host" in command
-            return subprocess.CompletedProcess(command, 0, Path(shlex.split(command[-1])[-1]).read_text(), "")
+            import contextlib, io
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                exec(kwargs["input"], {})  # Exact read-only worker against temporary receipt files.
+            return subprocess.CompletedProcess(command, 0, output.getvalue(), "")
         elif "autoslurm.apps.bulk_submit_driver" in command[-1]:
             payload = json.loads(kwargs["input"])
             dispatches.append(payload)

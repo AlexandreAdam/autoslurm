@@ -13,6 +13,35 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FETCH.1 (2026-11-16): running checkpoint 0.2.0.dev6; daily commands follow dev
+in this checkout. Installed editable metadata remains 0.1.0 without reinstall.
+Selected-run fetch uses exact linked receipt refresh before status/bounded logs,
+with shared in-memory overlay retaining recovered IDs if persistence fails.
+Cached fetching reads local evidence only. Receipts use the same standalone
+regular-file worker as logs, capped at 1 MiB/30 s; python3 required remotely.
+No scientific/full-log fetch, mirror change, scheduler mutation or job retry.
+49 new cases; 1337 full offline tests passed in 10.37 s, 47 expected collision
+warnings; `.development/test-runs/fetch-evidence.xml`. Inventory reviewed four
+new routes/two owners: 266 routes/138 owners/20 broad catches. No-Git/no-runtime-
+import metadata, wheel/sdist-to-wheel and disposable installed identity/recovery/
+exact-worker/partial/cached/API/CLI/ACP/packaged-guidance18 checks pass:
+
+- `.development/artifacts/fetch-evidence/autoslurm-0.2.0.dev6-py3-none-any.whl`:
+  SHA256 `761ec926c2339a67ab30b9773f396f69454aa54b7b6f31de0020715695fa5f36`.
+- `.development/artifacts/fetch-evidence/autoslurm-0.2.0.dev6.tar.gz`:
+  SHA256 `6f619a0b787e496bf5d604357eba42899d8f63a291b3eb182e7052299b9a00ac`.
+- `.development/artifacts/fetch-evidence/from-sdist/autoslurm-0.2.0.dev6-py3-none-any.whl`:
+  SHA256 `f2cd6fa7c7479f61013b104a5f50e54e435c50e8d690f66a292c785df04111ae`.
+
+Direct/rebuilt wheel member contents match; ZIP archive hashes are separate.
+Annotated v0.2.0.dev6 identifies the checkpoint. No real cluster contact,
+remote installation, scientific result/dataset transfer, base/test dependency
+install, daily config/state, external client, saved history/schema or pinned
+rollback edit. User documents/reports and software_preparations remain excluded.
+Legacy sync still mirrors jobs/slurm/out wholesale and is not bounded fetching;
+cluster-only receipt discovery remains separate. MVP10.4b stays next. No PyPI
+publication, deployment or new installation promotion.
+
 FIX.ENVIRONMENT.1 (2026-11-16): running checkpoint 0.2.0.dev5. Main daily
 commands import the moving dev source; installed editable metadata stays 0.1.0
 without reinstall. Optional module_init records a trusted site initializer;

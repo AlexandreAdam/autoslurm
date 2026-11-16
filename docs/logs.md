@@ -5,6 +5,68 @@ agent can investigate a job without rediscovering its cluster paths. Scientific
 datasets and results stay with the application. A completed scheduler job still
 needs application checks to establish scientific success.
 
+## Fetch a run for investigation
+
+`asl fetch` brings together the run's submission records, current scheduler
+status and bounded log excerpts. Use it after a lost submission response, or
+before taking execution evidence offline:
+
+```sh
+asl status
+asl fetch 1
+asl fetch 1 --job 2 --task 7
+asl fetch study --tail 100
+asl fetch 1 --cached
+```
+
+It uses the same selectors as `asl logs`, including `--array` expanded rows,
+history/date, ranges, `--latest`, exact `--bundle-file` and `--receipt`. A bare
+`asl fetch` shows help; `asl fetch --view --cached` lists local runs.
+
+For fresh fetches, AutoSlurm first updates only the submission receipts already
+linked to the selected tracking snapshots. This can recover accepted scheduler
+IDs after a lost response, before querying status or locating logs. It then uses
+the existing inspection pipeline, saving observations and excerpts into the
+existing local caches. It never submits/retries jobs, discovers receipts by
+bundle name or fetches scientific results. A planned bundle without a linked
+submission stays unsubmitted. Job/task filters restrict logs; receipt/status
+refresh stays at run level, and file/byte limits apply per run.
+
+```python
+from autoslurm import fetch_run
+
+view = fetch_run(receipt_path=receipt_path, job_name="fit", task_index=7,
+                 tail=40, max_log_bytes=65536, max_logs=20)
+# Keep partial evidence and inspect errors before interpreting missing data.
+for error in view["errors"]:
+    print(error["source"], error["message"])
+offline = fetch_run(receipt_path=receipt_path, refresh=False)
+```
+
+ACP action `fetch_run` accepts the same exact selectors and bounds. Its result
+is the inspection object, with partial failures in `result.errors`; protocol
+`status: success` alone does not establish that every source was available.
+Python likewise returns useful partial evidence. The CLI prints that evidence
+and exits 1 for collection errors; `--json` retains the structured result.
+
+Execution-receipt reads use one exact recorded path, the same standalone regular-
+file reader as logs, a 1 MiB limit and a 30-second timeout. Remote reads require
+`python3`, without installing AutoSlurm remotely. Malformed/oversized/changing,
+missing or unreadable receipts and failed transport preserve known IDs. Readable
+logs remain usable even when receipts or scheduler observations fail. A local
+persistence failure retains recovered IDs in the returned evidence, with an
+explicit error; do not assume they were saved successfully.
+
+`--cached` never refreshes receipts, projects snapshots, queries the scheduler or
+reads source logs. It reads local saved records/caches, marks excerpts stale and
+reports `not_cached` when absent. Fetching saves bounded excerpts, not complete
+`.out` files or an exported directory. Limits below apply to both commands.
+
+`asl sync` remains the older whole-directory mirror of jobs/scripts/out. It can
+transfer full large logs and does not include submission receipts. Use `asl fetch`
+for selected, bounded execution evidence; sync is not an equivalent bounded
+fetch. Changing that legacy mirror is separate work.
+
 ## Select a run and read
 
 Use the same indices as `asl status`; no paths are needed:

@@ -5,6 +5,8 @@ from pathlib import Path
 
 from .log_files import read_job_logs, validate_log_bounds
 from .utils import name_slurm_script
+from .array_status import declared_array_indices
+from .errors import InvalidRequestError
 
 
 @dataclass(frozen=True)
@@ -25,7 +27,7 @@ class ArtifactRequest:
         if isinstance(self.task_index, str) and self.task_index.isdecimal():
             object.__setattr__(self, "task_index", int(self.task_index))
 
-    def validate(self, run):
+    def validate(self, run, *, before_receipt_refresh=False):
         if not isinstance(self.stream, str) or self.stream not in {"both", "stdout", "stderr"}:
             raise ValueError("Log stream must be both, stdout or stderr.")
         if self.include_logs:
@@ -39,6 +41,17 @@ class ArtifactRequest:
                 raise ValueError("Select one task or a set of tasks, not both.")
         if self.job_name is not None and self.job_name not in {job["name"] for job in run.jobs}:
             raise ValueError("Selected job is absent from this exact snapshot.")
+        if before_receipt_refresh and self.task_index is not None:
+            self._validate_declared_task(run)
+
+    def _validate_declared_task(self, run):
+        jobs = [job for job in run.jobs if self.job_name is None or job['name'] == self.job_name]
+        arrays = [declared_array_indices((job.get('slurm') or {}).get('array')) for job in jobs]
+        # Historical definitions may rely on observed rather than declared tasks.
+        # Validate those after scheduler collection, as ordinary inspection does.
+        if arrays and all(indices is not None for indices in arrays) and not any(self.task_index in indices for indices in arrays):
+            raise InvalidRequestError('Selected task is absent from the declared array indices.',
+                                      field='task_index', stage='fetch_evidence')
 
 
 def _read_scripts(jobs, date, job_name, root):

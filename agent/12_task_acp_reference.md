@@ -13,6 +13,7 @@ For any tool that speaks ACP, rely on this distilled reference:
 | `gather_context` | Return the entire `agent/` folder (docs, schema, examples) as one string. | None. |
 | `list_runs` | Discover exact local saved paths without scheduler queries. | Optional `bundle`. |
 | `inspect_run` | Shared structured status, tasks, errors and optional bounded logs. | Exactly one `bundle_path` or `receipt_path`; optional `refresh` (default true), `include_logs`, `job_name`, `task_index`, `tail`, `max_log_bytes`, `max_logs`. |
+| `fetch_run` | Refresh linked receipts before status/bounded logs; preserve partial evidence in result.errors. | Exactly one `bundle_path` or `receipt_path`; optional boolean `refresh` (default true), `job_name`, `task_index`, `stream`, `tail`, `max_log_bytes`, `max_logs`. |
 | `list_submissions` | List local submission receipts without scheduler queries. | Optional `bundle`. |
 | `inspect_submission` | Read an exact receipt; explicit refresh fetches its execution-side record without submitting. | `receipt_path`; optional boolean `refresh`. |
 

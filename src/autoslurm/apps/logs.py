@@ -13,7 +13,13 @@ from .error_output import exit_with_error
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog='asl logs', description='Read job stdout/stderr with status, exit codes and failure reasons.')
+    return _main(argv)
+
+
+def _main(argv=None, *, fetch=False):
+    parser = argparse.ArgumentParser(prog='asl fetch' if fetch else 'asl logs',
+        description=('Fetch linked receipts, status and bounded stdout/stderr into existing local evidence caches.' if fetch
+                     else 'Read job stdout/stderr with status, exit codes and failure reasons.'))
     parser.add_argument('bundle', nargs='*', help='Bundle name/index from asl status; supports ranges like 1-3.')
     parser.add_argument('--latest', '-l', action='store_true', help='Read the latest visible saved bundle.')
     parser.add_argument('--view', action='store_true', help='List bundles with the same indices as asl status.')
@@ -77,7 +83,8 @@ def main(argv=None):
         views = inspect_bundles(paths, job_name=job_name, task_index=task_index,
                                task_indices=array_tasks if task_index is None else None,
                                include_logs=True, stream=args.stream, tail=args.tail,
-                               max_log_bytes=args.max_bytes, max_logs=args.max_logs, refresh=not args.cached)
+                               max_log_bytes=args.max_bytes, max_logs=args.max_logs, refresh=not args.cached,
+                               refresh_receipts=fetch and not args.cached)
     except (SelectionError, ConfigurationError) as error:
         exit_with_error(error, json_output=args.json, debug=args.debug)
     except (ValueError, RuntimeError, OSError, argparse.ArgumentTypeError) as error:

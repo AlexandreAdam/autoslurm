@@ -510,3 +510,17 @@ public routes or broad catches: 262 routes, 136 owners, 20 reviewed catches.
 49 new regressions and 1288 full offline tests pass; installed section17 documents
 the recipe/limits. General helper/SSH readiness remains MVP10.4b; this is not an
 activation preflight, compute-readiness guarantee or receipt discovery change.
+
+## FETCH.1 amendment (2026-11-16)
+
+Reviewed four additions: root/module fetch_run exports, root fetch CLI, and ACP
+fetch_run. Two canonical owners delegate to existing inspection/selection/cache
+rather than a second retrieval engine. Total 266 routes/138 owners/20 broad
+catches; route/owner facts and regression anchors are in the register. Bounded
+receipt transport owns command/size/regular-file/encoding response facts; errors.py
+owns diagnostic construction. Receipt refresh retains authoritative evidence;
+inspection_receipts validates links and reuses one in-memory receipt overlay to
+retain IDs after persistence failure. Cached fetch performs no source/remote
+reads or writes. 49 new cases, 1337 offline tests and installed API/CLI/ACP/worker/
+partial/cached/guidance checks pass. Wider transport/submission/observation and
+universal diagnostic route parity remain staged, not completed by this slice.

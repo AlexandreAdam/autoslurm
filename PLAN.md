@@ -13,7 +13,8 @@ This file is the source of truth for active scope, task order and progress.
   foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
   and MVP10.3c.1–3 local record/script persistence diagnostics complete;
   MVP10.4a software-update diagnostics complete
-  locally. FIX.ENVIRONMENT.1 machine module initialization complete locally.
+  locally. FIX.ENVIRONMENT.1 machine module initialization complete locally;
+  FETCH.1 selected-run evidence fetching complete locally.
   MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
@@ -25,19 +26,19 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1288 passed, 46 expected
+  rollback source remains unchanged. Full offline suite: 1337 passed, 47 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.ENVIRONMENT.1 adds optional machine module_init
-  and explicit config detection/set/clear/editor/summary controls in 0.2.0.dev5.
-  Jobs initialize module only when missing, run env_command then activate venv_path,
-  with shared generation and per-step failure guards even without a cwd. Detection
-  only checks readable site files and preserves config on failure. 49 new cases;
-  1288 offline tests pass. No-Git metadata, wheel/sdist rebuild and installed
-  identity/setup/failure/mock-submit/config/guidance smoke pass. Source follows
-  dev5; last installed editable metadata remains 0.1.0 without reinstall. No actual
-  cluster contact, daily profile/state change, activation preflight, base reinstall,
-  saved-history rewrite or pinned rollback edit. Audit: 262 routes/136 owners/20
-  broad catches. Receipt discovery and helper launch policy remain separate.
+- **Latest completed task:** FETCH.1 adds asl fetch, public fetch_run and ACP
+  fetch_run in 0.2.0.dev6. Exact linked receipts refresh before status/bounded logs;
+  shared selection/projection/cache owners retain partial evidence and recovered
+  IDs even if persistence fails. Cached mode performs no source/remote reads or
+  writes. Receipt reads use the existing regular-file worker, max 1 MiB/30 s,
+  with shared diagnostics and no blind job retry. 49 new cases; 1337 full offline
+  tests pass. Git-free metadata, wheel/sdist rebuild and installed API/CLI/ACP/
+  cached/partial/worker/guidance checks pass. Audit: 266 routes/138 owners/20 broad
+  catches. No actual cluster, scientific results, daily state/config, base install,
+  history/schema migration or rollback change. Legacy whole-directory sync and
+  cluster-only receipt discovery remain separate. Editable metadata stays 0.1.0.
 - **Next task:** MVP10.4b SSH/session/helper readiness, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
@@ -504,6 +505,13 @@ The user explicitly narrowed retrieval to AutoSlurm execution evidence:
 stdout/stderr, Slurm `.out` files and scheduler status explaining job outcomes.
 Scientific datasets/results stay application-owned. No generic result downloader,
 file-type allowlist or recursive output-directory scan is included.
+
+- [x] **FETCH.1 Selected-run execution evidence.** Reuse receipt refresh and
+  inspection for `asl fetch` / fetch_run, with status-compatible job/task/run
+  selectors, bounded receipt/log reads, cached no-contact inspection and partial
+  failures retaining known IDs and readable logs. No dataset retrieval, receipt
+  discovery by name, full-log download or change to legacy whole-directory sync.
+  Verify public Python/CLI/ACP, failed transports/receipts and installed guidance.
 
 - [x] **MVP8.1 Clear log interface.** Expose `inspect_logs` and make `asl logs`
   retrieve logs by default for one exact saved bundle/receipt. Support job, task,
@@ -1035,6 +1043,8 @@ or migration decision has already been accepted.
 | 2026-11-16 | MVP10.4a Software-update diagnostics | Split 10.4 before implementation. Stale venv names attempted Python/venv_path/correction and confirms no pull/install. Native local causes and validated stdlib remote facts share errors.py normalization. Separate target selection/remote dispatch/protocol/enrichment owners retain actual check, observed commits, partial install and unknown responses; arbitrary Git failures do not fabricate checkout conditions. Generic communication errors remain unknown, no retry or host/Python fallback. SoftwareUpdateError retains evidence plus diagnostic; update CLI uses stderr/exit1, JSON evidence with diagnostic and --debug. Known request guards typed, unexpected local bugs visible. 66 new cases plus actual temporary Git/stdin missing-environment regression; 1239 full offline tests passed in 10.89 s (44 expected collision warnings), `.development/test-runs/software-update-diagnostics.xml`. No-Git metadata, wheel/sdist-to-wheel and installed version/stale-venv/local-cause/remote-facts/partial-effects/CLI/debug/guidance checks passed for 0.2.0.dev4. Wheel SHA256 `07f87ba4d8afb4c2f625f4fb8dd8a526a1420fd867a124ca8a8584eaf1a27eaf`; archive/rebuilt-wheel hashes in installation register; member contents match. AST register 262 routes/136 owners/20 broad catches. Existing single checkout, editable --no-deps install and dependency ownership unchanged. No cluster, base/test dependency install, daily config/state, external client, saved-format/history or rollback edit; user documents/reports/evidence excluded. Source follows dev4, installed metadata remains 0.1.0 without reinstall. Annotated v0.2.0.dev4 checkpoint; no PyPI publication. b SSH/helper readiness is next; c/d and parent10.4 stay open. Task commit: `git log --grep '^MVP10.4a:'`; push dev and checkpoint tag. |
 
 | 2026-11-16 | FIX.ENVIRONMENT.1 Machine module initialization | Added optional module_init, explicit read-only detect/set/clear/editor/action7/summary controls, shared ordered initialization/setup/activation and unconditional job failure guards. Existing module skips initializer; plain venv profiles require none. Failed detection preserves config and emits shared missing/SSH/launch/timeout/protocol diagnostics; no arbitrary setup execution. 49 new cases; 1288 full offline tests passed in 10.75 s, 46 expected collision warnings, `.development/test-runs/module-initialization.xml`. Git-free metadata, direct wheel/sdist-to-wheel and disposable installed identity/clean-shell/failure/preview-dispatch/mock-detection/preservation/agent17 smoke passed for 0.2.0.dev5. Wheel SHA256 `54f682e8c04022d102955ef37cd879661f35aea4a4aec2d7e622236348de3065`; archive hash in installation register; rebuilt wheel matches exactly. AST register 262 routes/136 owners/20 broad catches. No live cluster, daily config/state, base/test dependency install, external client, history/receipt/schema or rollback edits. User documents/reports/software_preparations preserved. No activation preflight or remote helper launch-policy change; MVP10.4b next, receipt discovery separate. Task commit: `git log --grep '^FIX.ENVIRONMENT.1:'`; push dev and annotated v0.2.0.dev5 checkpoint tag. |
+
+| 2026-11-16 | FETCH.1 Selected-run execution evidence | Added asl fetch/public fetch_run/ACP fetch_run with existing status/log selection and presentation. Exact validated links refresh before observation; shared receipt overlay retains known/recovered IDs even when publication/projection fails, while good logs and other runs survive collection errors. Cached mode has no remote/source reads or writes. Remote receipts use the existing regular-file worker capped at 1 MiB/30 s and errors.py facts instead of unbounded cat; requires python3, no remote AutoSlurm. 49 new cases; 1337 full offline tests passed in 10.37 s, 47 expected collision warnings, `.development/test-runs/fetch-evidence.xml`. No-Git metadata, wheel/sdist rebuild and installed version/recovery/worker/partial/cached/CLI/ACP/guidance checks pass for 0.2.0.dev6. Wheel SHA256 `761ec926c2339a67ab30b9773f396f69454aa54b7b6f31de0020715695fa5f36`; archive/rebuilt-wheel hashes in installation register, member contents match. Reviewed additions: two Python exports, one CLI and one ACP route; AST 266 routes/138 owners/20 broad catches. No real cluster, scientific data/full-log fetch, daily config/state, base/test dependency install, external-client/history/schema/rollback edit. No job mutation/retry or receipt guessing. Legacy sync remains separate. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev6 checkpoint; task commit: `git log --grep '^FETCH.1:'`; push dev and version tag. |
 
 ## How we work
 

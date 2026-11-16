@@ -360,6 +360,26 @@ def _environment_setup_failure_message(field):
     return f"AutoSlurm {messages[field]}; application not started."
 
 
+def _receipt_fetch_failure(problem, context, cause=None):
+    facts = {
+        'identity': ('record_invalid', 'The execution receipt has no valid recorded transport; no host fallback was attempted.'),
+        'missing': ('resource_missing', 'The recorded execution receipt is missing.'),
+        'unreadable': ('resource_inaccessible', 'The execution receipt cannot be read; availability is unknown.'),
+        'not_regular': ('record_invalid', 'The execution receipt path is not a regular file.'),
+        'read': ('observation_unavailable', 'Reading the execution receipt failed.'),
+        'changed': ('observation_unavailable', 'The execution receipt changed during reading; the previous evidence is retained.'),
+        'transport': ('transport_failed', 'SSH could not fetch the recorded execution receipt.'),
+        'command': ('command_failed', 'Execution receipt reader failed; verify python3 on the recorded machine.'),
+        'timeout': ('command_timeout', 'Fetching the execution receipt timed out.'),
+        'launch': ('command_unavailable', 'The execution receipt transport could not be started.'),
+        'protocol': ('protocol_invalid', 'Execution receipt response is invalid, incomplete or exceeds 1 MiB.'),
+    }
+    code, summary = facts[problem]
+    return Diagnostic(code, 'fetch_evidence', 'read_execution_receipt', context=context,
+        cause=cause, summary=summary, effects={'remote_mutation': 'not_started', 'receipt_refresh': 'failed'},
+        next_action='Retain known scheduler IDs and inspect their status/logs. Verify the recorded receipt path, SSH alias and python3; explicitly refresh again when available. Do not resubmit because fetching failed.')
+
+
 class InvalidRequestError(DiagnosticError, ValueError):
     """Known authoring validation failure; original causes remain chained.
 

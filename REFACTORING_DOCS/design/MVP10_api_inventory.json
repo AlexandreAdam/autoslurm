@@ -3,6 +3,7 @@
   "audited_date": "2026-11-13",
   "scope": "MVP10.1 source inventory, amended through MVP10.3b.2 snapshot/filter selection. Configuration, authoring and selection adoption is recorded per owner/contract; paths/rendering, generic record publication/reads, external operations and universal route parity remain pending. Aliases share canonical owners; source coverage is not diagnostic completion.",
   "interfaces": {
+    "acp:fetch_run": "autoslurm.acp.execute_acp",
     "acp:gather_context": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
     "acp:inspect_run": "autoslurm.acp.execute_acp",
@@ -23,6 +24,7 @@
     "cli:cancel": "autoslurm.apps.cancel.main",
     "cli:clean": "autoslurm.apps.clean.main",
     "cli:config": "autoslurm.apps.config.main",
+    "cli:fetch": "autoslurm.apps.fetch.main",
     "cli:filter": "autoslurm.apps.filter.main",
     "cli:initialize": "autoslurm.apps.initialize.main",
     "cli:inspect": "autoslurm.apps.inspect.main",
@@ -151,6 +153,7 @@
     "python:autoslurm.experiment_context.experiment_context": "autoslurm.experiment_context.experiment_context",
     "python:autoslurm.experiment_context.job_context": "autoslurm.experiment_context.job_context",
     "python:autoslurm.experiment_context.latest_log_context": "autoslurm.experiment_context.latest_log_context",
+    "python:autoslurm.fetch_run": "autoslurm.inspection.fetch_run",
     "python:autoslurm.file_transfer.transfer_bundle_to_remote": "autoslurm.file_transfer.transfer_bundle_to_remote",
     "python:autoslurm.file_transfer.transfer_slurm_to_remote": "autoslurm.file_transfer.transfer_slurm_to_remote",
     "python:autoslurm.file_transfer.transfer_slurms_to_remote": "autoslurm.file_transfer.transfer_slurms_to_remote",
@@ -162,6 +165,7 @@
     "python:autoslurm.inspect_bundles": "autoslurm.inspection.inspect_bundles",
     "python:autoslurm.inspect_logs": "autoslurm.inspection.inspect_logs",
     "python:autoslurm.inspect_software": "autoslurm.software_status.inspect_software",
+    "python:autoslurm.inspection.fetch_run": "autoslurm.inspection.fetch_run",
     "python:autoslurm.inspection.inspect_bundle": "autoslurm.inspection.inspect_bundle",
     "python:autoslurm.inspection.inspect_bundles": "autoslurm.inspection.inspect_bundles",
     "python:autoslurm.inspection.inspect_logs": "autoslurm.inspection.inspect_logs",
@@ -685,6 +689,18 @@
         "tests/unit/test_root_cli.py"
       ],
       "adoption": "One literal version exported at root/leaf; --version exits0 without config/command effects and application --version forwarding remains intact. Installed wheel/sdist rebuild/console metadata parity gate. No new diagnostic wrapper or protocol/schema mapping."
+    },
+    "fetch_evidence": {
+      "implementation_task": "FETCH.1",
+      "failures": "Invalid selection/bounds, broken receipt links, missing/unreadable/nonregular/changing/oversized receipt, failed SSH/launch/timeout/protocol, scheduler/log/cache/persistence failures.",
+      "translation_owner": "receipt_fetch returns typed bounded-read facts via errors.py; refresh_submission retains authoritative receipt; inspection_receipts shares validated in-memory projection; existing inspection retains partial observations.",
+      "desired_diagnostic": "Keep known/recovered IDs and readable logs, source-specific errors/diagnostics, explicit partial freshness and bounded/omitted/stale excerpts.",
+      "next_action": "Retain exact run/receipt and partial evidence; explicitly fetch again when access is restored. Never resubmit because fetch failed.",
+      "regression_evidence": [
+        "tests/integration/test_fetch_evidence.py",
+        "tests/integration/test_submission_safety.py",
+        "tests/unit/test_log_retrieval.py"
+      ]
     }
   },
   "owners": {
@@ -1111,7 +1127,7 @@
     "autoslurm.inspection.inspect_bundles": {
       "contract": "inspection",
       "inputs": "Exact path sequence, refresh/artifact selectors and bounds.",
-      "current": "Views list retaining broken/partial/fresh/stale/error evidence; invalid global request can raise. MVP10.3c.3 retains structured receipt/cache errors without dropping snapshot IDs/live status/logs; broader observation semantics unchanged.",
+      "current": "Views list retaining broken/partial/fresh/stale/error evidence; invalid global request can raise. MVP10.3c.3 retains structured receipt/cache errors without dropping snapshot IDs/live status/logs; broader observation semantics unchanged. FETCH.1 optional refresh_receipts=True validates linked identities and refreshes them before observations; false preserves existing inspection behavior.",
       "effects": "Batched per producing-machine scheduler observation; bounded artifacts; per-view cache writes on refresh."
     },
     "autoslurm.inspection.inspect_logs": {
@@ -1339,7 +1355,7 @@
     "autoslurm.submission.refresh_submission": {
       "contract": "receipt",
       "inputs": "Exact local receipt path.",
-      "current": "Existing remote/local refresh policy retained. Adopted local read/projection/write diagnostic survives SubmissionError.receipt; secondary tracking_diagnostic additive. Remote launch/protocol/interruption policy remains 10.4/10.5.",
+      "current": "Existing remote/local refresh policy retained. Adopted local read/projection/write diagnostic survives SubmissionError.receipt; secondary tracking_diagnostic additive. Remote launch/protocol/interruption policy remains 10.4/10.5. FETCH.1 remote reads use shared regular-file worker capped at 1 MiB/30 seconds, requiring python3; typed missing/access/change/protocol/SSH/launch/timeout errors preserve known receipt facts. Successful refresh clears old observation_error.",
       "effects": "No scheduler dispatch; remote receipt read then local receipt/projection writes; failed local write may follow good remote observation."
     },
     "autoslurm.sync.sync_machine": {
@@ -1503,6 +1519,18 @@
       "inputs": "Read running code package version.",
       "current": "Literal PEP440 public version; shared build/Python/CLI source. Editable installation metadata can retain an older value until explicit reinstall.",
       "effects": "Pure constant; no filesystem discovery, Git, subprocess, environment mutation or network."
+    },
+    "autoslurm.inspection.fetch_run": {
+      "contract": "fetch_evidence",
+      "inputs": "One exact bundle_path or receipt_path; boolean refresh, job/task/stream and existing log bounds.",
+      "current": "Shared inspection view; linked receipts refreshed before scheduler/log lookup. Known or recovered IDs retained beside source/persistence errors; invalid refresh fails before contact. Cached mode uses existing records/caches only.",
+      "effects": "Fresh mode may update exact local receipts/tracking projections and observation/excerpt caches; remote reads only. No submit/retry, results transfer, receipt guessing, whole-directory mirror or changed-root fallback. Cached mode performs no source/remote reads or writes."
+    },
+    "autoslurm.apps.fetch.main": {
+      "contract": "fetch_evidence",
+      "inputs": "Status/log-compatible run/index/history/range/exact selectors, job/task/array/stream/bounds, cached and JSON.",
+      "current": "Delegates to existing logs selector/parser/presentation with receipt refresh enabled for fresh fetch. Bare help; partial text/JSON retained with exit1 for collection errors.",
+      "effects": "Same selected fresh/cache behavior as fetch_run; no new transfer engine or standalone console installation."
     }
   },
   "catch_reviews": {
@@ -1629,6 +1657,18 @@
     "cli:config": {
       "contract": "config",
       "note": "FIX.ENVIRONMENT.1: --module-init/--clear-module-init edit locally, --detect-module-init explicitly checks known readable site files on the selected machine without executing activation. Failures preserve configuration and shared diagnostics; installed section17 documents the contract. General readiness migration remains MVP10.4b."
+    },
+    "acp:fetch_run": {
+      "contract": "fetch_evidence",
+      "inputs": "Exact bundle_path or receipt_path, boolean refresh and existing job/task/stream/log bounds.",
+      "current": "ACP success/result contains the shared inspection view; source failures remain in result.errors with partial freshness. Expected selection/configuration errors use existing envelope.",
+      "effects": "Read remote execution evidence, update exact local records/caches in fresh mode; cached mode reads locally only. No scheduler mutation or results transfer."
+    },
+    "cli:fetch": {
+      "contract": "fetch_evidence",
+      "inputs": "Existing status/log selectors and limits.",
+      "current": "Shared logs parser/presentation, linked receipt refresh and partial text/JSON/exit1.",
+      "effects": "Fresh local evidence writes and bounded remote reads; cached reads only."
     }
   },
   "amendments": [

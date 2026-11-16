@@ -139,6 +139,12 @@ operate from the workstation; compute nodes use already-prepared environments.
   Slurm output and status/reason/exit codes. Use `inspect_logs` / `asl logs` with
   exact run selectors and bounded excerpts; cached means no scheduler/source-log
   access locally or remotely. Scientific results/datasets remain application-owned.
+  `fetch_run` / `asl fetch` / ACP fetch_run refresh exact linked receipts first,
+  then use the same status/log pipeline and caches. Receipts are capped at 1 MiB
+  and 30 seconds; failed fetching preserves known IDs/readable logs and errors.
+  Cached fetching performs no receipt refresh/projection or cache write. Legacy
+  sync is a whole-directory mirror, not bounded evidence fetching. See packaged
+  `18_fetching`; do not add another downloader or guess receipts by bundle name.
 - Update human and agent documentation when public behavior changes.
 - Package checkpoints follow [the versioning policy](docs/versioning.md).
   `src/autoslurm/version.py::__version__` is the only version source. Complete
