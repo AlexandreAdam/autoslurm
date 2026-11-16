@@ -32,7 +32,7 @@ a ValueError for existing validation catches. **Development API boundary:** miss
 unreadable config and missing activation settings now use ConfigurationError,
 replacing the old OSError/EnvironmentError/AttributeError mix. Catch it explicitly;
 the originating file error remains in `__cause__` with errno in the diagnostic.
-This does not change saved JSON or migrate records. Publication failures and invalid
+This does not change saved JSON or migrate records. Invalid
 storage-root selectors/package-import errors still await their later slices.
 
 Known authoring failures now raise `InvalidRequestError`, also exported from
@@ -48,7 +48,7 @@ historical software-intent metadata and bundle input/preparation guards. It reta
 ValueError compatibility, replacing old TypeError/KeyError authoring guards and
 CycleError for invalid DAGs at this dev boundary. Missing/blank/nonstring commands
 fail before new save/schedule publication. No saved format or history is rewritten.
-Publication, process and universal CLI/ACP adoption remain separate
+Receipt/cache/script publication, process and universal CLI/ACP adoption remain separate
 tasks. `asl schedule` renders adopted errors to stderr
 and exits 1; add `--autoslurm-debug` for original exceptions. Ordinary application
 `--debug` still forwards. Unknown code bugs propagate.
@@ -121,7 +121,30 @@ A failure after publication leaves the record in place. Inspect that exact file
 before repeating a save or append. Only a clean exclusive-name collision allows
 snapshot creation to choose another timestamp; uncertain publication or failed
 cleanup stops the operation. No record is rolled back or automatically removed.
-Direct record reads and broader receipt/cache/script policies remain later slices.
+Receipt/cache reads and broader receipt/cache/script policies remain later slices.
+
+Bundle/config record boundaries now adopt these diagnostics too. Direct bundle
+loading uses discovery's regular-file UTF-8 JSON reader: `SelectionError` codes
+distinguish missing files, inaccessible paths and malformed data. This replaces
+the direct loader's earlier FileNotFoundError/OSError mix; the original filesystem,
+JSON or Unicode cause remains available through `__cause__`. Invalid saved job/
+dependency graphs keep their existing `InvalidRequestError` with exact bundle path.
+No unreadable bundle becomes an empty definition. Append and metadata updates
+validate existing records before changing them, retaining known scheduler IDs.
+
+`RecordWriteError` now identifies the bundle/job or configuration being written
+and the calling operation in `context.source`. It keeps the shared publication,
+durability and cleanup facts unchanged. A complete write followed by sync failure
+is still a published record; inspect its exact path before repeating an append.
+Bundle names are file names, without path separators or control characters.
+
+Config (including `configuration`), filter, initialize, schedule and submit render
+adopted record errors once to stderr and exit 1. Use `--debug` for original causes;
+schedule uses `--autoslurm-debug`, preserving the application's `--debug` option.
+ACP includes shared write diagnostics in its error envelope. Receipt/cache/script
+persistence and universal command/ACP error policies remain later work; retain
+authoritative receipts and accepted IDs rather than inferring scheduler outcomes
+from a local file error.
 
 Agent developers should read the [packaged diagnostic recipe](../src/autoslurm/agent_resources/15_diagnostics.md)
 for supported fields, bounds, classification and integration examples. The

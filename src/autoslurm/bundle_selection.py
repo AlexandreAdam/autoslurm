@@ -142,7 +142,14 @@ def _read_snapshot(path):
                                        summary='The selected snapshot is not a regular file.')
             payload = json.load(stream)
     except FileNotFoundError as error:
-        raise _selection_error(field='bundle_path', stage='read_snapshot', problem='missing', path=path, cause=error) from error
+        # A raced-in dangling link or replacement is unavailable, not absent.
+        try:
+            _file_metadata(path)
+        except SelectionError as observed:
+            problem = 'missing' if observed.diagnostic.code == 'resource_missing' else 'unreadable'
+        else:
+            problem = 'unreadable'
+        raise _selection_error(field='bundle_path', stage='read_snapshot', problem=problem, path=path, cause=error) from error
     except OSError as error:
         raise _selection_error(field='bundle_path', stage='read_snapshot', problem='unreadable', path=path, cause=error) from error
     except (json.JSONDecodeError, UnicodeError) as error:
@@ -378,14 +385,19 @@ def _reference_date(value):
     return datetime.now() if value is None else value
 
 
-def _bundle_name(value):
-    if value is not None and (not isinstance(value, str) or not value.strip()):
-        raise _selection_error(field='name', summary='Bundle name must be a nonempty string.')
+def _bundle_name(value, *, required=False):
+    if value is None and not required:
+        return
+    if (not isinstance(value, str) or not value.strip() or value in {'.', '..'}
+            or any(char in value for char in ('/', '\\'))
+            or any(ord(char) < 32 or ord(char) == 127 for char in value)):
+        raise _selection_error(field='name', summary='Bundle name must be a nonempty file name without path separators or control characters.')
 
 
 def _selected_path(value):
-    if not isinstance(value, (str, Path)) or not str(value).strip():
-        raise _selection_error(field='bundle_path', summary='Bundle path must be a nonempty string or Path.')
+    if (not isinstance(value, (str, Path)) or not str(value).strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in str(value))):
+        raise _selection_error(field='bundle_path', summary='Bundle path must be a nonempty string or Path without control characters.')
     return Path(value)
 
 

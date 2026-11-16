@@ -4,7 +4,7 @@ import argparse
 import sys
 
 from ..bundle_selection import get_bundle_filter_mode, set_bundle_filter_mode
-from ..errors import ConfigurationError, SelectionError
+from ..errors import ConfigurationError, SelectionError, RecordWriteError
 from .error_output import exit_with_error
 
 
@@ -42,5 +42,5 @@ def main(argv: list[str] | None = None) -> None:
     selected = list(sys.argv[1:] if argv is None else argv)
     try:
         return _main(selected)
-    except (ConfigurationError, SelectionError) as error:
+    except (ConfigurationError, SelectionError, RecordWriteError) as error:
         exit_with_error(error, debug='--debug' in selected)

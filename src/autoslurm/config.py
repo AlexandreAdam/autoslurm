@@ -13,7 +13,7 @@ from .record_files import atomic_json
 from .definitions import MACHINE_KEYS
 from .storage import config_file_path, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .machine_paths import absolute_machine_path
-from .errors import ConfigurationError, DiagnosticCause, configuration_failure
+from .errors import ConfigurationError, DiagnosticCause, configuration_failure, RecordWriteError
 
 __all__ = ["load_config", "save_config", "machine_config", "activation_command_from_config"]
 
@@ -204,7 +204,11 @@ def save_config(config: dict) -> None:
         "default_machine": normalized["default_machine"],
         "bundle_filter_mode": normalized["bundle_filter_mode"],
     }
-    atomic_json(path, data, indent=4)
+    try:
+        atomic_json(path, data, indent=4)
+    except RecordWriteError as error:
+        error.diagnostic = error.diagnostic.with_context(resource="configuration", source="save_config")
+        raise
 
 
 def _read_config_file(path):

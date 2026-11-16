@@ -7,6 +7,7 @@ MVP10.3b.1 also adopts the authoring boundaries described below.
 MVP10.3b.2 adds snapshot/filter selection and per-entry discovery diagnostics.
 MVP10.3b.3 adds pure path/render preparation and saved producing-context validation.
 MVP10.3c.1 adds phase-aware shared JSON publication diagnostics.
+MVP10.3c.2 adopts direct bundle reads and bundle/config mutation boundaries.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -103,9 +104,9 @@ Explicit AUTOSLURM_STORAGE_ROOT never enables legacy-file fallback. Without that
 selector, only a missing primary file permits the old src/config.json lookup.
 No automatic profile/environment switch or submission retry is added.
 
-Bundle authoring/selection/path diagnostics, record publication, configuration
-validation's external commands, stale-venv probing and other CLI/ACP parity are
-later adoption work. Invalid storage selectors can still fail during eager package
+Bundle authoring/selection/path and bundle/config record diagnostics are adopted
+in the sections below. Configuration validation's external commands, stale-venv
+probing and universal CLI/ACP parity remain later work. Invalid storage selectors can still fail during eager package
 import before this interface is available. Do not hide those limitations.
 
 ## Authoring adoption in MVP10.3b.1
@@ -141,9 +142,9 @@ claim. Early save/schedule shape/command guards record bundle_write=not_started.
 No diagnostic grants permission to retry an earlier submission or implies earlier
 actions had no effect. Public preview/submit attaches exact bundle/machine identity
 to adopted authoring errors and stops before staging/dispatch. Snapshot selection,
-path/render failures, file read/publication, transport and ACP parity remain later
-slices. The submit CLI uses shared rendering when an adopted authoring error reaches
-its preparation boundary; its earlier broken-snapshot gate is not yet migrated.
+path/render and bundle/config record failures are adopted below; transport and
+universal ACP parity remain later slices. The submit CLI also adopts the earlier
+broken-snapshot gate and shared preparation/record rendering.
 
 The schedule CLI/root/installed entry point renders adopted errors once to stderr
 and exits 1. `--autoslurm-debug` re-raises the original error/cause chain; ordinary
@@ -164,8 +165,8 @@ Never infer submission effects from selection errors.
 
 **Dev exception boundary:** missing selections now raise SelectionError rather
 than FileNotFoundError, including `nearest_bundle_filename` and name-based loading.
-Catch this class and inspect diagnostic.code. Direct bundle file loading retains
-its older read exception policy until the record-read slice. Type/selector conflicts,
+Catch this class and inspect diagnostic.code. Direct bundle file loading also
+uses this read family from MVP10.3c.2. Type/selector conflicts,
 positive integer indices (excluding bool), and naive datetime reference dates are
 validated before discovery. Exact path and prefer_draft=False name/nearest lookup
 remain metadata/filename-only; they do not prove payload validity. Unversioned
@@ -241,7 +242,7 @@ ambiguous selection invalid_argument, malformed producing roots/transport
 record_invalid. Known bundle/job/machine/field is retained; native alias-validation
 causes remain chained. Legacy producing project/results roots and transport stay
 readable and distinct. No current profile, fallback machine or replacement root is
-discovered. Raw loader I/O/JSON failures remain MVP10.3c; observation-side producing
+discovered. Loader I/O/JSON failures adopt SelectionError in MVP10.3c.2; observation-side producing
 metadata and readiness/existence probes remain their separately planned owners.
 
 `asl submit` and its standalone entry point render adopted preparation diagnostics
@@ -287,11 +288,56 @@ Bundle/config/receipt/cache writers using the shared atomic primitive inherit th
 failure family. It describes one local record only, never submission acceptance,
 dependency state or an atomic transaction across files. Existing cache OSError
 handling remains nonfatal, with richer returned diagnostics still pending c.3.
-Domain enrichment/direct bundle reads and config/schedule CLI presentation remain
-c.2; receipt/cache/script persistence remains c.3. SubmissionError.receipt and
+Domain enrichment/direct bundle reads and config/schedule CLI presentation are
+adopted in c.2; receipt/cache/script persistence remains c.3. SubmissionError.receipt and
 SoftwareUpdateError.evidence stay authoritative; their higher-level adapters are
 not replaced by catching only RecordWriteError. Do not call private record_files
 helpers from scientific clients. Use supported save/config/submission operations.
+
+## Bundle/config records in MVP10.3c.2
+
+Direct load_bundle_from_path and name-based loading use discovery's shared
+regular-file, nonblocking UTF-8 JSON reader. Known failure codes: resource_missing
+for observed absence, resource_inaccessible for denied/unavailable/special files
+(including dangling links), record_invalid for JSON/UTF-8/top-level shape errors.
+SelectionError replaces the old direct-loader FileNotFoundError/OSError mix at
+this dev boundary. Exact bundle_path and original cause are retained; JSON detail
+contains location, not record contents. A replacement appearing after a failed
+read is unavailable rather than absent. Unknown programming errors propagate.
+Saved job/DAG validation retains InvalidRequestError and exact path/job/field;
+there is no generic ValueError-to-corrupt-data catch.
+
+save_bundle/schedule_job append and legacy metadata updates read and validate the
+original before mutation/publication. Broken files are never replaced with empty
+definitions; missing metadata records do not create directories. Metadata changes
+must preserve valid job/dependency identity and cannot replace or clear a known
+scheduler ID. Missing target jobs use SelectionError; metadata shape/identity
+guards use InvalidRequestError. These helpers do not replace supported receipt/
+submission services in scientific clients. Bundle names are file names without
+path separators/control characters. Scientific paths retain their existing policy.
+
+Shared write failures remain RecordWriteError, retaining cause and exact
+record_publication/record_durability/secondary cleanup facts. context.source names
+save_bundle, schedule_job, update_job_metadata or save_config; bundle writes add
+bundle/bundle_path and a job only when known, config writes add resource=configuration.
+A scheduled append reports its effective suffixed job name. A multi-job batch does
+not guess which job caused an opaque serializer failure. Unexpected failures after
+publication are never converted to not_started. Writer directory creation owns new
+snapshot parents; no separate all-storage setup masks its phase diagnostics.
+
+Config/configuration, filter, initialize, schedule and submit root/standalone paths
+render adopted failures once, stderr/exit 1, with --debug retaining the original
+exception. Schedule uses --autoslurm-debug and still forwards application --debug.
+Parser misuse remains exit 2. ACP's expected-error envelope includes shared write
+diagnostics without changing receipt/update payloads. Config validation still uses
+ConfigurationError; config publication uses RecordWriteError, not a wrapper that
+would falsely imply config_write=not_started after successful publication.
+
+Preview/submit add the selected machine to direct-read diagnostics when known.
+Read diagnostics have no inferred side-effect claims. Keep exact retained records,
+receipts and scheduler IDs; inspect a possibly published append before repeating it.
+Receipt/cache/script persistence remains c.3; external readiness, post-dispatch
+orchestration and universal observation/CLI/ACP policy remain their later tasks.
 
 ## At a client boundary
 

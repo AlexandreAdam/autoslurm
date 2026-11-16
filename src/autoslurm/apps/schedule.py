@@ -8,7 +8,7 @@ from typing import Dict, List, Sequence
 from ..job_runner import submit_jobs
 from ..save_load_jobs import schedule_job
 from ..config import machine_config
-from ..errors import InvalidRequestError
+from ..errors import InvalidRequestError, SelectionError, ConfigurationError, RecordWriteError
 from .error_output import exit_with_error
 
 OPTION_PATTERN = re.compile(r"--[a-zA-Z0-9_-]+")
@@ -183,5 +183,5 @@ def main(argv=None):
     own_options = selected[:selected.index('--')] if '--' in selected else selected
     try:
         return _main(selected)
-    except InvalidRequestError as error:
+    except (InvalidRequestError, SelectionError, ConfigurationError, RecordWriteError) as error:
         exit_with_error(error, debug='--autoslurm-debug' in own_options)

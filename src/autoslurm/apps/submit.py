@@ -6,7 +6,7 @@ from ..bundle_selection import bundle_snapshot_state, select_bundle_snapshot
 from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs
 from ..submission import SubmissionError
-from ..errors import ConfigurationError, InvalidRequestError, SelectionError
+from ..errors import ConfigurationError, InvalidRequestError, SelectionError, RecordWriteError
 from .error_output import exit_with_error
 
 
@@ -100,8 +100,8 @@ def _main(argv=None):
             bundle_path=args.bundle_file,
             context=resolve_execution_context(machine_name, config),
         )
-    except InvalidRequestError as error:
-        exit_with_error(error, debug=args.debug)
+    except (InvalidRequestError, SelectionError, ConfigurationError, RecordWriteError):
+        raise  # The outer boundary renders once and honors --debug.
     except (SubmissionError, ValueError, RuntimeError, OSError) as exc:
         raise SystemExit(str(exc)) from exc
 
@@ -110,5 +110,5 @@ def main(argv=None):
     selected = list(sys.argv[1:] if argv is None else argv)
     try:
         return _main(selected)
-    except (SelectionError, ConfigurationError) as error:
+    except (InvalidRequestError, SelectionError, ConfigurationError, RecordWriteError) as error:
         exit_with_error(error, debug='--debug' in selected)

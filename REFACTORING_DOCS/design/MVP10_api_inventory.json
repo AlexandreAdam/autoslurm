@@ -348,9 +348,10 @@
         "tests/unit/test_activation.py",
         "tests/integration/test_interactive_env_command.py",
         "tests/integration/test_configuration_diagnostics.py",
-        "tests/integration/test_selection_diagnostics.py"
+        "tests/integration/test_selection_diagnostics.py",
+        "tests/integration/test_bundle_record_diagnostics.py"
       ],
-      "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema. MVP10.3b.2 validates bundle_filter_mode through one config owner; absence alone defaults reads to active, while invalid/unreadable/corrupt configuration is visible."
+      "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema. MVP10.3b.2 validates bundle_filter_mode through one config owner; absence alone defaults reads to active, while invalid/unreadable/corrupt configuration is visible. MVP10.3c.2: config writes retain RecordWriteError (resource=configuration/source=save_config), never falsely reset to config_write=not_started. Config/filter CLI handles expected write failures and native debug."
     },
     "authoring": {
       "implementation_task": "MVP10.3b.1; MVP10.3b.3 (pure paths/render)",
@@ -394,7 +395,7 @@
       "adoption": "dependency_graph validates container/job/dependency shapes and names, then rejects cycles with a chained CycleError and shared diagnosis. Parent-to-children result unchanged. Lower-level bulk_submit callback/ID mapping and post-dispatch evidence remain MVP10.5."
     },
     "persistence": {
-      "implementation_task": "MVP10.3",
+      "implementation_task": "MVP10.3c.1/2 implemented; MVP10.3c.3 receipt/cache/script persistence pending",
       "failures": "Missing/unreadable/corrupt bundle, invalid names/shapes/graph, JSON serialization, collision and publication failures.",
       "translation_owner": "save_load_jobs and record_files, not blanket CLI catches.",
       "desired_diagnostic": "Exact bundle path/field and publication phase; serialization and permissions distinct; note any existing published snapshot.",
@@ -404,9 +405,10 @@
         "tests/integration/test_persistence_boundaries.py",
         "tests/integration/test_selection_diagnostics.py",
         "tests/integration/test_preparation_diagnostics.py",
-        "tests/integration/test_record_publication_diagnostics.py"
+        "tests/integration/test_record_publication_diagnostics.py",
+        "tests/integration/test_bundle_record_diagnostics.py"
       ],
-      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c. MVP10.3c split before implementation: c.1 shared writer implemented with RecordWriteError/effect-aware cleanup; c.2 domain reads/enrichment/CLI and c.3 receipt/cache/script persistence remain open."
+      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c. MVP10.3c split before implementation: c.1 shared writer implemented with RecordWriteError/effect-aware cleanup; c.2 domain reads/enrichment/CLI and c.3 receipt/cache/script persistence remain open. MVP10.3c.2 adopts direct bundle reads with shared snapshot SelectionError policy, append/metadata validation before mutation, bundle/config publication identity and related text/debug/ACP routes. Missing metadata job replaces KeyError; malformed saved DAG retains InvalidRequestError. Existing scheduler IDs cannot be cleared/replaced by metadata. New snapshot directory creation stays inside shared writer, preserving phase facts."
     },
     "selection": {
       "implementation_task": "MVP10.3b.2",
@@ -418,9 +420,10 @@
         "tests/unit/test_bundle_listing.py",
         "tests/unit/test_filter_clean_cli.py",
         "tests/integration/test_persistence_boundaries.py",
-        "tests/integration/test_selection_diagnostics.py"
+        "tests/integration/test_selection_diagnostics.py",
+        "tests/integration/test_bundle_record_diagnostics.py"
       ],
-      "adoption": "Known selection/discovery failures use SelectionError with selection operation and invalid_argument/resource_missing/resource_inaccessible/record_invalid codes. A missing selection replaces FileNotFoundError explicitly at this dev boundary. Per-entry state/plain diagnostic preserves healthy neighbours; unknown jobs/counts are None, not empty/zero. File/nearest selection remains payload-free. Bad filter config never defaults silently. No source fallback, implicit directory creation, deletion, scheduler query or retry."
+      "adoption": "Known selection/discovery failures use SelectionError with selection operation and invalid_argument/resource_missing/resource_inaccessible/record_invalid codes. A missing selection replaces FileNotFoundError explicitly at this dev boundary. Per-entry state/plain diagnostic preserves healthy neighbours; unknown jobs/counts are None, not empty/zero. File/nearest selection remains payload-free. Bad filter config never defaults silently. No source fallback, implicit directory creation, deletion, scheduler query or retry. MVP10.3c.2: direct bundle loads, append/metadata reuse the regular UTF-8 reader; failed reads with a raced-in replacement remain inaccessible. Required bundle names reject separators/controls and invalid explicit paths fail before file access."
     },
     "paths": {
       "implementation_task": "MVP10.3b.3 (pure resolution/producing context); MVP10.4 (discovery/readiness); MVP10.6 (observations)",
@@ -649,9 +652,10 @@
       "next_action": "Inspect exact destination and retained effects before repeating save/append; no blanket rollback or scheduler conclusion.",
       "regression_evidence": [
         "tests/integration/test_record_publication_diagnostics.py",
-        "tests/integration/test_persistence_boundaries.py"
+        "tests/integration/test_persistence_boundaries.py",
+        "tests/integration/test_bundle_record_diagnostics.py"
       ],
-      "adoption": "MVP10.3c.1 implemented: typed OSError-compatible writer failures; serialization replaces raw TypeError/ValueError explicitly. Exclusive collisions remain FileExistsError-compatible; only clean collisions may select another snapshot timestamp. Native bugs/interrupts propagate; cleanup evidence cannot erase primary or original cause. Domain reads/enrichment/CLI and receipt/cache/script policies remain c.2/c.3/10.5/10.6."
+      "adoption": "MVP10.3c.1 implemented: typed OSError-compatible writer failures; serialization replaces raw TypeError/ValueError explicitly. Exclusive collisions remain FileExistsError-compatible; only clean collisions may select another snapshot timestamp. Native bugs/interrupts propagate; cleanup evidence cannot erase primary or original cause. Domain reads/enrichment/CLI and receipt/cache/script policies remain c.2/c.3/10.5/10.6. MVP10.3c.2 enriches bundle/config writes without retyping or resetting publication/durability/cleanup facts; CLI config/filter/schedule/initialize/submit and ACP retain adopted diagnoses. Receipt/cache/script domain integration remains c.3."
     },
     "package_version": {
       "implementation_task": "VERSION.1",
@@ -676,7 +680,7 @@
     "autoslurm.acp.execute_acp": {
       "contract": "acp",
       "inputs": "Request mapping with action and action-specific fields.",
-      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending).",
+      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending). MVP10.3c.2 retains expected shared RecordWriteError diagnostic in error envelopes; generic bug/authoring and receipt policies remain staged.",
       "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
     },
     "autoslurm.acp.list_bundles": {
@@ -712,19 +716,19 @@
     "autoslurm.apps.config.main": {
       "contract": "config",
       "inputs": "view/summary; settings update; set-default; interactive editor. Interactive env_command prompt supports add/replace/keep/clear.",
-      "current": "Empty/debug-only invocation shows help. Known ConfigurationError renders shared stderr diagnostic/exit 1 across root/alias/standalone; --debug re-raises original chain. Parser usage remains exit 2; unexpected bugs propagate. --view retains raw JSON output shape.",
+      "current": "Shared stderr/exit1/debug for ConfigurationError and RecordWriteError on root/alias/standalone. Existing corrupt files never reset; write failure never triggers later validation or a no-write claim. External post-save readiness remains 10.4.",
       "effects": "View/read local-only; true missing config may enter first-use editor. Unreadable/corrupt/invalid/dangling or concurrently present entries stop without reset/write. Valid saves still use atomic publication, and optional existing validation may SSH (mocked in task tests). Publication diagnostics pending."
     },
     "autoslurm.apps.filter.main": {
       "contract": "selection",
       "inputs": "Optional active/all and --debug.",
-      "current": "Shared text/exit1 for known config/selection failures; --debug re-raises. Invalid parser choice exit2; publication errors retain old policy.",
+      "current": "Shared stderr/exit1/debug for configuration/selection/write failures. Invalid or failed filter write remains visible; no fallback to active after access/corruption failures.",
       "effects": "Read is local with absence-only default; explicit mode writes config."
     },
     "autoslurm.apps.initialize.main": {
       "contract": "persistence",
       "inputs": "Bundle name.",
-      "current": "Empty help0; save_bundle({},name), raw save errors.",
+      "current": "Empty help0; initialize exact empty snapshot. Shared selection/input/write diagnostics stderr/exit1 and --debug; parser usage2. One parser owns help/options.",
       "effects": "Writes empty snapshot; no dispatch."
     },
     "autoslurm.apps.inspect.main": {
@@ -754,7 +758,7 @@
     "autoslurm.apps.schedule.main": {
       "contract": "persistence",
       "inputs": "Script, Slurm options, application arguments, optional append/submit.",
-      "current": "Parses help text by executing script --help; adopted authoring InvalidRequestError renders shared stderr/exit 1, --autoslurm-debug re-raises original. Application --debug still forwards. Raw help-process/publication/other service failures remain; save can precede optional submit failure.",
+      "current": "Shared stderr/exit1 for adopted input/selection/config/write failures, --autoslurm-debug preserves original. Application --debug unchanged. Help-text discovery/process and post-dispatch policy remain later; a write may already have published before failure.",
       "effects": "Application --help is executed (unlike typed adapter); bundle write precedes optional dispatch."
     },
     "autoslurm.apps.software.main": {
@@ -778,7 +782,7 @@
     "autoslurm.apps.submit.main": {
       "contract": "submission",
       "inputs": "Name/date or file/latest/index plus machine overrides.",
-      "current": "Strict selected-record gate before machine selection. Shared stderr/exit1/debug for adopted SelectionError/ConfigurationError/InvalidRequestError, including path/render preparation. Other legacy post-dispatch exception policy remains staged.",
+      "current": "Strict selected-record gate before machine selection; shared stderr/exit1/debug for adopted preparation/read/config/write failures including those reaching inner call. SubmissionError/other legacy policy after dispatch unchanged.",
       "effects": "Preview/selection reads then submission; accepted receipt must survive rendering error."
     },
     "autoslurm.apps.sync.main": {
@@ -964,7 +968,7 @@
     "autoslurm.config.save_config": {
       "contract": "config",
       "inputs": "machines/default/filter dict.",
-      "current": "None; profile/topology normalization raises ConfigurationError before publication. Serialization/publication OSError/TypeError remain for MVP10.3c.",
+      "current": "Normalize before publication; validation stays ConfigurationError, publication stays RecordWriteError with exact path/resource=configuration/source=save_config. Native cause and real publication/durability/cleanup facts retained.",
       "effects": "Invalid settings do not start config_write; otherwise existing atomic writer owns parent creation/publication. Directory fsync/cleanup failure may follow publication; shared phase diagnostics pending."
     },
     "autoslurm.context.agent_context": {
@@ -1030,13 +1034,13 @@
     "autoslurm.execution.execution_context_from_snapshot": {
       "contract": "paths",
       "inputs": "Exact saved snapshot/job.",
-      "current": "Context from validated producing evidence via recorded_execution; distinct historical input/results roots and legacy transport retained, no current-profile lookup. Raw loader I/O/JSON remains 3c.",
+      "current": "Context from validated producing evidence; direct read failures use adopted SelectionError policy. Historical input/results roots and legacy transport stay distinct; no current-profile fallback.",
       "effects": "Local read only."
     },
     "autoslurm.execution.recorded_execution": {
       "contract": "paths",
       "inputs": "Exact saved snapshot and optional one job name.",
-      "current": "Recorded evidence validated for producing roots/transport; SelectionError for absent/ambiguous/invalid metadata, with exact bundle/job/field/machine where known. Invalid job selector uses InvalidRequestError. Direct loader read/JSON failures remain 3c.",
+      "current": "Validated producing evidence or SelectionError for saved read/selection/missing/invalid metadata. Historical roots/transport retained, original file causes chained. Known invalid job selector remains InvalidRequestError.",
       "effects": "Local read only; does not use today's remote profile."
     },
     "autoslurm.execution.resolve_execution_context": {
@@ -1120,13 +1124,13 @@
     "autoslurm.job_runner.preview_bundle": {
       "contract": "authoring",
       "inputs": "Exact bundle path, optional machine/overrides.",
-      "current": "Shared path/render InvalidRequestError retains exact bundle/machine/job/field and safe shell syntax cause; producing validation is pure, while external discovery/readiness retains existing behavior pending 10.4.",
+      "current": "Shared path/render InvalidRequestError retains exact bundle/machine/job/field and safe shell syntax cause; producing validation is pure, while external discovery/readiness retains existing behavior pending 10.4. MVP10.3c.2: direct-read SelectionError also enriched with exact bundle/machine.",
       "effects": "No submission or receipt; can run remote readiness/root checks and local bash -n, so not a purely offline API."
     },
     "autoslurm.job_runner.submit_jobs": {
       "contract": "submission",
       "inputs": "Bundle name, optional exact path/date/machine/overrides or context.",
-      "current": "Receipt on success; known name/context/path/render InvalidRequestError before dispatch, exact bundle/machine/job context where known. Unexpected bugs propagate. External readiness stays 10.4; SubmissionError.receipt behavior after receipt creation remains unchanged.",
+      "current": "Receipt on success; known name/context/path/render InvalidRequestError before dispatch, exact bundle/machine/job context where known. Unexpected bugs propagate. External readiness stays 10.4; SubmissionError.receipt behavior after receipt creation remains unchanged. MVP10.3c.2: direct-read SelectionError also enriched with exact bundle/machine.",
       "effects": "Preflight then staging and dispatch once; evidence printed after receipt return; printing failure cannot undo accepted jobs."
     },
     "autoslurm.job_to_slurm.create_slurm_script": {
@@ -1186,25 +1190,25 @@
     "autoslurm.save_load_jobs.load_bundle": {
       "contract": "persistence",
       "inputs": "Name and optional desired date.",
-      "current": "(ordered jobs,graph,date); name/nearest selection now raises SelectionError for known lookup failures. Direct loader read/publication exception adoption remains3c; authoring graph policy retained.",
+      "current": "Name/date selection then adopted direct loader; typed read/selection and saved-DAG failures preserve exact record. No raw FileNotFoundError/OSError direct-loader boundary.",
       "effects": "Local filename discovery/reads without directory creation; no scheduler."
     },
     "autoslurm.save_load_jobs.load_bundle_from_path": {
       "contract": "persistence",
       "inputs": "Exact JSON path.",
-      "current": "(jobs,graph,date); adopted graph/shape/cycle failures use InvalidRequestError with exact bundle_path. File absence, decode, filesystem and other record-publication diagnostics remain MVP10.3c.",
+      "current": "SelectionError for missing/inaccessible/invalid UTF-8/JSON/dictionary files via the shared nonblocking regular snapshot reader; native safe causes retained. Invalid saved job/DAG guards retain InvalidRequestError with exact path. Existing date/order policy unchanged.",
       "effects": "Reads and normalizes loaded objects only."
     },
     "autoslurm.save_load_jobs.save_bundle": {
       "contract": "persistence",
       "inputs": "Job dict, bundle name and append flag.",
-      "current": "Exact Path; known bundle/job/key/script/name input guards use InvalidRequestError, replacing old TypeError/KeyError guards. Commands must be nonempty strings. Empty drafts retained. Serialization/publication failures still raw (MVP10.3c). Shared writer failures now use RecordWriteError with exact destination and phase effects. Snapshot name advancement catches only clean RecordCollisionError, never ambiguous publication or failed cleanup.",
+      "current": "Exact saved path; known input guards unchanged. Append reads/validates original via shared snapshot reader before mutation, never resets broken data. Write failures preserve RecordWriteError with bundle/path/source and known publication facts. Only clean exclusive collisions advance timestamp. Required name is a safe file name.",
       "effects": "Mutates input job name/kind defaults; append replaces snapshot atomically; publication may have happened on error."
     },
     "autoslurm.save_load_jobs.schedule_job": {
       "contract": "persistence",
       "inputs": "One job, optional bundle name and append flag.",
-      "current": "(effective job,exact path); known malformed job or missing/blank/nonstring script uses InvalidRequestError before publication. Name validation uses same family. Raw publication errors remain; prints saved location. Shared writer failures now use RecordWriteError with exact destination and phase effects. Snapshot name advancement catches only clean RecordCollisionError, never ambiguous publication or failed cleanup.",
+      "current": "Effective job plus exact path; shared read/append/write guards and RecordWriteError with source=schedule_job and effective job identity. Known input failures remain InvalidRequestError, read/name failures SelectionError. No guessed job on opaque multi-job serializer failures.",
       "effects": "Mutates supplied job defaults; publishes/appends once; no scheduler."
     },
     "autoslurm.software_manifest.attach_software_manifest": {
@@ -1573,7 +1577,7 @@
     },
     "acp:schedule": {
       "inputs": "required job mapping and bundle (or job.bundle), optional append truthy flag",
-      "current": "success/result bundle/file or error/message; saves raw job, no trusted typed contract validation; package print remains possible",
+      "current": "success/result bundle/file or error/message; saves raw job, no trusted typed contract validation; package print remains possible Shared write failures now retain diagnostic including exact bundle/path/source/publication facts.",
       "effects": "Local snapshot publication/append; no submit",
       "contract": "persistence"
     },
@@ -1658,6 +1662,12 @@
       "date": "2026-11-16",
       "base_revision": "ef4b199",
       "note": "User-priority versioning foundation before MVP10.3c.2. One static version source supplies build/Python/root --version; new constant routes only, no diagnostic catch changes. Existing metadata/editable mismatch and independent protocol/schema identities documented; source/wheel/console identity verified offline. No automatic reinstall or PyPI publication."
+    },
+    {
+      "task": "MVP10.3c.2",
+      "date": "2026-11-16",
+      "base_revision": "91136fe",
+      "note": "Shared direct bundle reads and append/metadata validation, bundle/config write identity, known-ID guard and related CLI/debug/ACP presentation. Version 0.2.0.dev2. Explicit direct-read exception boundary, no new routes/codes/record formats/catches; saved DAG InvalidRequestError retained. c.3 receipt/cache/script and external/submission/observation adoption remain open."
     }
   ]
 }

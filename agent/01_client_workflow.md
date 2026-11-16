@@ -49,7 +49,7 @@ Invalid configuration stops preview/submission before commands; it never selects
 another profile or repairs an environment. The config CLI renders these failures
 once and supports `--debug`. Existing corrupt/unreadable files are preserved.
 Read failures/missing activation no longer use OSError/AttributeError; validation
-remains ValueError-compatible. Publication I/O and other services are not yet
+remains ValueError-compatible. Receipt/cache/script I/O and other services are not yet
 fully adopted; see the packaged diagnostic recipe.
 
 MVP10.3b.1 adds public `InvalidRequestError` for typed authoring, literal arguments,
@@ -58,7 +58,7 @@ diagnostic field/option/job/stage and correct the definition before saving or
 submitting. Preserve explicit saved settings; a missing setting is not permission
 to insert a new default. It is ValueError/DiagnosticError compatible; old
 TypeError/KeyError authoring guards and cycle errors now use this class. Read/
-publication and transport adoption remain pending. Snapshot selection and path/
+receipt/cache/script publication and transport adoption remain pending. Snapshot selection and path/
 render preparation now adopt the shared diagnostic contract as described below.
 
 MVP10.3b.3 extends InvalidRequestError to pure path/render preparation. Inspect
@@ -71,7 +71,8 @@ re-raises adopted preparation failures. Saved execution lookup uses SelectionErr
 for missing evidence (resource_missing) or malformed roots/transport (record_invalid),
 preserving historical producing roots without current-profile discovery. Preserve
 the original file. No inferred effects, automatic repair or resubmission follows.
-Readiness/existence/process diagnostics remain MVP10.4, publication MVP10.3c.
+Readiness/existence/process diagnostics remain MVP10.4; receipt/cache/script
+persistence remains MVP10.3c.3.
 
 MVP10.3c.1 adds shared JSON publication diagnostics. Catch public RecordWriteError
 (DiagnosticError and OSError), retain its `.diagnostic` and original `__cause__`,
@@ -80,9 +81,22 @@ now use this class too, replacing raw TypeError/ValueError at this dev boundary.
 record_publication distinguishes not_started/unknown/succeeded; record_durability
 is separate. Cleanup failures retain the primary and known publication effects.
 These facts cover one local record, not scheduler acceptance or a multi-file
-transaction. Bundle/config domain context/presentation and direct reads remain
-MVP10.3c.2; receipt/cache/script integration is c.3. Keep existing receipt/update
+transaction. Bundle/config domain context/presentation and direct reads are adopted
+in MVP10.3c.2; receipt/cache/script integration is c.3. Keep existing receipt/update
 handling until those owners adopt the richer contract. See installed 15_diagnostics.
+
+MVP10.3c.2 adopts direct bundle reads and bundle/config writes. Catch SelectionError
+for missing/inaccessible/malformed direct files (replacing the old FileNotFoundError/
+OSError mix); invalid saved DAGs retain InvalidRequestError. Retain exact path,
+safe diagnostic and native cause. Append/metadata mutations validate the original
+record and never treat broken evidence as an empty bundle. RecordWriteError keeps
+publication/durability/secondary cleanup plus bundle/job or configuration identity
+and calling context.source. A local publication failure is not scheduler rejection;
+inspect the exact destination before retrying an append. Config/filter/initialize/
+schedule/submit use shared text/exit 1 and debug; schedule retains --autoslurm-debug.
+ACP preserves shared write diagnostics. Receipt/cache/script and broad observation/
+post-dispatch policy remain separate slices. Do not operate through private files
+or metadata helpers; retain the supported receipt/inspection workflow.
 
 ## Adapt scientific software
 

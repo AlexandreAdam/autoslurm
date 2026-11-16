@@ -1,5 +1,12 @@
 ## CLI Reference for Agents
 
+Bundle/config record failures in config/configuration, filter, initialize, schedule
+and submit use shared diagnostics with exact path and known write effects (stderr,
+exit 1). --debug retains original causes; schedule uses --autoslurm-debug to keep
+application --debug forwarding. Unknown publication is not a failed submission;
+inspect the named record before repeating an append. ACP also preserves shared
+write diagnostics. Broader receipt/cache/script and observation policies are staged.
+
 Snapshot/filter selection failures in filter/submit/status/inspect/logs use shared
 diagnostics: stderr and exit 1, `--debug` for original causes; existing `--json`
 status/inspect/logs modes return the shared error envelope. Parser usage remains

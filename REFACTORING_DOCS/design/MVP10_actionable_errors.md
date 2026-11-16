@@ -22,7 +22,9 @@ MVP10.3c is split before implementation into shared JSON publication (c.1),
 bundle/config boundaries (c.2) and receipt/cache/script persistence (c.3).
 **MVP10.3c.1 is implemented locally:** the shared JSON writer reports explicit
 publication/durability effects and retains primary/secondary cleanup evidence.
-Current coverage is 260 routes/135 owners/18 broad catches: two earlier masking
+**MVP10.3c.2 is implemented locally:** direct bundle reads and bundle/config
+mutation diagnostics, with related CLI/debug/ACP presentation in 0.2.0.dev2.
+Current coverage is 262 routes/136 owners/18 broad catches: two earlier masking
 handlers were removed and two resource/evidence safeguards added and reviewed.
 Other service adoption remains pending.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
@@ -348,6 +350,37 @@ domain context and presentation, c.3 receipt/cache/script persistence. Existing
 SubmissionError.receipt/update evidence remain authoritative; no scheduler effects,
 universal CLI/ACP parity or direct-loader migration is claimed here.
 
+### MVP10.3c.2 implemented bundle/config boundaries
+
+Direct loading, append and compatibility metadata updates reuse the existing
+snapshot reader's regular-file/nonblocking/UTF-8 policy. SelectionError now
+replaces direct-load FileNotFoundError/OSError, with missing/inaccessible/invalid
+codes, exact path, native cause and safe parse locations. Saved DAG errors retain
+InvalidRequestError and job/field/path; no broad bug-to-corruption conversion.
+After a failed open, a replacement or dangling link is unavailable, not absence.
+Canonical name/path guards reject separators/controls before storage access.
+
+Append/metadata read and validate originals before mutation; malformed records
+never become an empty starting point. Metadata validates its input/result, missing
+jobs use SelectionError instead of KeyError, and known scheduler IDs cannot be
+replaced/cleared. These are explicit dev boundaries; no historical rewrite or
+receipt-format migration. Shared bundle publication enriches RecordWriteError
+with bundle/path/source and job only when known; scheduled suffixes retain their
+effective identity, while multi-job serialization does not guess a failed job.
+Config publication adds resource/source without constructing a ConfigurationError
+whose config_write=not_started would contradict observed publication. Cause,
+publication/durability and secondary cleanup remain untouched. New snapshot parent
+creation belongs to the writer rather than an earlier all-storage setup.
+
+Config/configuration/filter/initialize/schedule/submit expected failures render
+once with the shared text/exit1/debug adapter. Schedule retains --autoslurm-debug
+and application --debug forwarding; initialize has one parser/help owner. Submit
+passes adopted errors to its outer handler instead of legacy string flattening.
+ACP includes shared write diagnostics while preserving existing result/receipt
+policies. Preview/submit attach known machine identity to direct-read failures.
+Broader receipt/cache/script persistence stays c.3; external/process, post-dispatch
+orchestration and universal observation/CLI/ACP policies remain later tasks.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -473,7 +506,7 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.3b.2 complete | Snapshot/filter selection and per-entry broken/unavailable evidence |
 | MVP10.3b.3 complete | Pure paths/render diagnostics, validated producing context and render-before-open script creation |
 | MVP10.3c.1 complete | Shared JSON writer diagnostics with publication/durability facts and secondary cleanup |
-| MVP10.3c.2 | Bundle/config read/write boundaries and CLI presentation |
+| MVP10.3c.2 complete | Bundle/config read/write boundaries and CLI presentation |
 | MVP10.3c.3 | Receipt/cache/script persistence and retained evidence |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
@@ -666,3 +699,21 @@ Human/agent docs and installation register updated. No actual cluster command,
 dependency installation, daily config/state, external client, saved-format or
 rollback change. c.2 bundle/config boundaries are next; c.3 receipt/cache/script
 persistence and external/submission/observation/CLI/ACP adoption remain open.
+
+2026-11-16, MVP10.3c.2: implemented shared direct bundle reads and guarded
+append/metadata mutations, retained scheduler IDs and original malformed bytes,
+domain-enriched bundle/config publication facts, and adopted CLI/debug/ACP
+presentation. Missing/inaccessible/invalid direct reads have an explicit
+SelectionError dev boundary; invalid graphs retain InvalidRequestError. Existing
+writer causes, publication/durability and secondary cleanup remain intact.
+53 new record cases; 1115 full offline tests passed in 9.76 s, 43 expected
+collision warnings; `.development/test-runs/bundle-record-diagnostics.xml`.
+Clean-source no-Git/no-runtime-import metadata, wheel/sdist-to-wheel and installed
+API/retained-record/config/console/debug/ACP/guidance smoke passed for 0.2.0.dev2.
+Wheel SHA256 `65b66f9712aad3812582fc18c0b3bd3d4841943bbc8f2e0c459f5b24af9a2f18`;
+sdist SHA256 `c30784dc58b277d945e2be84bbdb38d77f1d742c77a4c101fbdf47c392a35615`;
+rebuilt wheel matches. AST register: 262 routes/136 owners/18 broad catches.
+Human/agent docs and installation register updated. No actual cluster command,
+base/test dependency installation, daily config/state, external client, saved
+format/history or rollback change. c.3 receipt/cache/script persistence is next;
+readiness/stale-venv and broader orchestration/observation/CLI/ACP remain open.

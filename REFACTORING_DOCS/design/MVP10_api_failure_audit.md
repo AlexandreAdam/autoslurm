@@ -391,3 +391,35 @@ record capability versions are independent. tests/unit/test_version.py covers
 single-source static configuration/changelog, canonical version, effect-free
 version output and forwarding; artifact smoke verifies installed parity/guidance.
 Current error adoption still resumes at MVP10.3c.2, without a PyPI release.
+
+## MVP10.3c.2 adoption amendment (2026-11-16)
+
+Base `91136fe`; 262 routes/136 owners/18 broad catches remain registered. Direct
+bundle reads, append and compatibility metadata updates reuse the existing
+snapshot reader and graph validation. Missing/unreadable/malformed direct files
+now raise SelectionError rather than raw FileNotFoundError/OSError; invalid saved
+graphs retain InvalidRequestError. Failed opens recheck absence so raced-in
+replacements and dangling links cannot trigger empty-record fallback. Bundle
+names/path selectors reject unsafe separators/controls before storage access.
+
+Shared bundle publication retains RecordWriteError, native causes, secondary
+cleanup and actual publication/durability facts, adding known bundle/job/source
+identity. Config publication adds configuration identity without claiming a
+write never started. Metadata mutations validate before publication and refuse
+replacement/clearing of known scheduler IDs. Malformed originals survive intact;
+post-publication failures retain the complete new record and its known IDs.
+These explicit development exception boundaries do not rewrite saved formats.
+
+Config/configuration, filter, initialize, schedule and submit render adopted
+failures once through the shared text/debug adapter; ACP retains writer
+diagnostics. Preview/submit attach machine context to direct-read failures.
+Unexpected bugs still propagate. Receipt/cache/script persistence remains c.3;
+external readiness, orchestration and universal observation/CLI/ACP adoption
+remain open.
+
+53 new cases in `tests/integration/test_bundle_record_diagnostics.py` cover direct
+read parity, races/special files, retained records/IDs, phase-aware publication,
+safe selectors, metadata guards, CLI aliases/debug and ACP. Full offline suite:
+1115 passed, 43 expected collision warnings. Clean-source no-Git metadata,
+wheel/sdist-to-wheel and temporary installed API/CLI/ACP/guidance checks passed
+for 0.2.0.dev2. The route/owner/catch register checker passes unchanged counts.

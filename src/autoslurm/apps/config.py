@@ -6,7 +6,7 @@ import sys
 from typing import Dict, Optional
 
 from ..config import activation_command_from_config, load_config, save_config, is_remote_machine, normalize_machine_profile, set_machine_settings, _read_config, _load_config_with_path
-from ..errors import ConfigurationError, configuration_failure
+from ..errors import ConfigurationError, configuration_failure, RecordWriteError
 from .error_output import exit_with_error
 from ..transport import ssh_command, remote_storage_root_from_config
 from ..storage import config_file_path
@@ -423,5 +423,5 @@ def main(argv: list[str] | None = None):
     selected_args = list(sys.argv[1:] if argv is None else argv)
     try:
         return _main(selected_args)
-    except ConfigurationError as error:
+    except (ConfigurationError, RecordWriteError) as error:
         exit_with_error(error, debug="--debug" in selected_args)

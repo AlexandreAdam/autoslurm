@@ -13,6 +13,30 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3c.2 (2026-11-16): running checkpoint 0.2.0.dev2; direct bundle reads and
+bundle/config writes adopt shared diagnostics without reinstalling base commands.
+Existing installed editable metadata remains 0.1.0 until an explicit reinstall;
+fresh artifacts have matching 0.2.0.dev2 metadata/runtime/console identity.
+1115 full offline tests passed in 9.76 s (43 expected collision warnings);
+`.development/test-runs/bundle-record-diagnostics.xml`, with 53 new record cases.
+No-Git/no-runtime-import metadata, wheel and sdist-to-wheel builds passed. Temporary
+sdist-built installation verifies typed reads, retained append bytes/IDs, config
+publication facts, actual console versions, CLI aliases/debug, ACP and installed
+agent guidance. Artifacts:
+
+- `.development/artifacts/bundle-record-diagnostics/autoslurm-0.2.0.dev2-py3-none-any.whl`:
+  SHA256 `65b66f9712aad3812582fc18c0b3bd3d4841943bbc8f2e0c459f5b24af9a2f18`.
+- `.development/artifacts/bundle-record-diagnostics/autoslurm-0.2.0.dev2.tar.gz`:
+  SHA256 `c30784dc58b277d945e2be84bbdb38d77f1d742c77a4c101fbdf47c392a35615`.
+- `.development/artifacts/bundle-record-diagnostics/from-sdist/autoslurm-0.2.0.dev2-py3-none-any.whl`:
+  SHA256 `65b66f9712aad3812582fc18c0b3bd3d4841943bbc8f2e0c459f5b24af9a2f18`.
+
+Annotated v0.2.0.dev2 identifies the tested development checkpoint. No base/test
+dependency installation, daily config/state, cluster command, external-client edit,
+record schema/history rewrite, PyPI publication or rollback-source change. Existing
+user documents/software_preparations are excluded. c.3 receipt/cache/script is next;
+external readiness and broader submission/observation/CLI/ACP adoption stay open.
+
 VERSION.1 (2026-11-16): running package checkpoint is 0.2.0.dev1, replacing the
 ambiguous 0.1.0 source label. Main base `asl --version` reports 0.2.0.dev1 through
 the existing editable checkout. Last installed distribution metadata still says
