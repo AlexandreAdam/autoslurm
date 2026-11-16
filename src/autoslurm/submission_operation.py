@@ -18,6 +18,8 @@ from .save_load_jobs import save_bundle
 from .bundle_selection import SNAPSHOT_KIND_KEY
 from .file_transfer import transfer_slurms_to_remote
 from .storage import storage_root
+from .record_files import atomic_text
+from .errors import RecordWriteError, DiagnosticError
 from .submission import (
     SubmissionError, SUBMISSION_METADATA_KEY, SUBMISSION_PROTOCOL,
     write_receipt, project_receipt, mark_unobserved,
@@ -92,7 +94,15 @@ def stage_submission_scripts(operation, bundle):
     """Write exactly the text checked during preparation, before dispatch."""
     for job in bundle.jobs:
         path = operation.local_script_directory / operation.script_names[job.name]
-        path.write_text(job.script)
+        try:
+            atomic_text(path, job.script)
+        except RecordWriteError as error:
+            error.diagnostic = error.diagnostic.with_context(
+                resource="slurm_script", source="stage_submission_scripts", job=job.name,
+                bundle=operation.receipt["bundle"], bundle_path=operation.receipt["bundle_path"],
+                receipt_path=operation.receipt["receipt_path"], submission_id=operation.receipt["submission_id"],
+                machine=operation.receipt["machine"])
+            raise
 
 
 def dispatch_submission(operation, bundle, context):
@@ -160,9 +170,12 @@ def execute_prepared_bundle(name: str, planned_path: Path, bundle: PreparedBundl
             persist_submission_evidence(operation)
         except (Exception, KeyboardInterrupt) as storage_error:
             operation.receipt["tracking_error"] = str(storage_error)
+            if isinstance(storage_error, DiagnosticError) and storage_error.diagnostic is not None:
+                operation.receipt["tracking_diagnostic"] = storage_error.diagnostic.to_dict()
         receipt = operation.receipt
         raise SubmissionError(
             f"Submission {receipt['state']}; receipt {receipt['receipt_path']}: {error}", receipt,
+            diagnostic=error.diagnostic if isinstance(error, DiagnosticError) else None,
         ) from error
     try:
         persist_submission_evidence(operation)
@@ -171,5 +184,6 @@ def execute_prepared_bundle(name: str, planned_path: Path, bundle: PreparedBundl
         raise SubmissionError(
             f"Submission evidence could not be mirrored; receipt {operation.receipt['receipt_path']}: {error}",
             operation.receipt,
+            diagnostic=error.diagnostic if isinstance(error, DiagnosticError) else None,
         ) from error
     return operation.receipt

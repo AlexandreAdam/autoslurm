@@ -24,8 +24,11 @@ bundle/config boundaries (c.2) and receipt/cache/script persistence (c.3).
 publication/durability effects and retains primary/secondary cleanup evidence.
 **MVP10.3c.2 is implemented locally:** direct bundle reads and bundle/config
 mutation diagnostics, with related CLI/debug/ACP presentation in 0.2.0.dev2.
-Current coverage is 262 routes/136 owners/18 broad catches: two earlier masking
-handlers were removed and two resource/evidence safeguards added and reviewed.
+**MVP10.3c.3 is implemented locally:** receipt/cache records and atomic script
+publication in 0.2.0.dev3, retaining accepted IDs and useful live evidence.
+MVP10.3 is complete. Current coverage is 262 routes/136 owners/20 broad catches:
+two earlier masking handlers were removed, shared writer safeguards retained,
+and two reader resource/evidence safeguards added and reviewed.
 Other service adoption remains pending.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
 paths (b) and publication (c); b was then split into authoring (b.1), snapshot
@@ -381,6 +384,41 @@ policies. Preview/submit attach known machine identity to direct-read failures.
 Broader receipt/cache/script persistence stays c.3; external/process, post-dispatch
 orchestration and universal observation/CLI/ACP policies remain later tasks.
 
+### MVP10.3c.3 implemented receipt/cache/script boundaries
+
+The existing regular-file snapshot reader/metadata policy now has one I/O owner
+in record_files, shared by bundles, receipts and caches. Pure read diagnostics
+are constructed in errors.py; low-level operation is record_read. Selector and
+saved-DAG boundaries stay selection/InvalidRequestError. UTF-8/JSON errors report
+location rather than data; special files are rejected before and after nonblocking
+open. Failed reads recheck absence. Explicit descriptor/stream cleanup retains
+primary native causes plus secondary close evidence; two BaseException guards
+protect resources/evidence only, never classify bugs/interruptions as corruption.
+
+Local receipt loading validates fields consumed by list/refresh/presentation and
+uses SelectionError for missing/inaccessible/invalid records, replacing raw file/
+JSON/protocol errors at this dev boundary. Listing an absent directory is empty;
+denial or a broken receipt fails explicitly. Receipt/projection writes enrich
+RecordWriteError with exact receipt/submission/bundle/machine context, preserving
+actual publication/durability. Projection identity/ID conflicts preserve bytes.
+Existing SubmissionError wrappers propagate adopted local persistence diagnostics
+alongside authoritative receipts. Secondary tracking failures can add
+tracking_diagnostic; no scheduler-effect inference or retry policy changes.
+
+JSON/text publication share the existing atomic writer implementation. Generated
+and staged scripts now retain old bytes before publication or complete new text
+after observed publication, with job and known receipt context. Legacy direct
+script storage setup remains; rendering still finishes before storage effects.
+Multi-script staging is not a transaction and dispatch stops after staging fails.
+
+Cache reads/writes return safe diagnostic in existing per-item errors; genuine
+absence remains quiet and invalid structure is explicit. Live status, known IDs
+and fetched log text survive cache failure. Receipt overlays retain diagnostic
+without dropping snapshot IDs. asl submission adds text/JSON/debug handling;
+failed refresh JSON retains receipt fields plus adopted diagnostic, as does ACP's
+result receipt. Broader process/readiness, orchestration/interruption and
+observation policies remain MVP10.4/10.5/10.6; universal CLI/ACP adoption is 10.8.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -507,7 +545,7 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.3b.3 complete | Pure paths/render diagnostics, validated producing context and render-before-open script creation |
 | MVP10.3c.1 complete | Shared JSON writer diagnostics with publication/durability facts and secondary cleanup |
 | MVP10.3c.2 complete | Bundle/config read/write boundaries and CLI presentation |
-| MVP10.3c.3 | Receipt/cache/script persistence and retained evidence |
+| MVP10.3c.3 complete | Receipt/cache/script persistence and retained evidence |
 | MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
 | MVP10.6 | Status/inspection/log/cache adoption with explicit observation quality and partial data |
@@ -717,3 +755,23 @@ Human/agent docs and installation register updated. No actual cluster command,
 base/test dependency installation, daily config/state, external client, saved
 format/history or rollback change. c.3 receipt/cache/script persistence is next;
 readiness/stale-venv and broader orchestration/observation/CLI/ACP remain open.
+
+2026-11-16, MVP10.3c.3: completed local receipt/cache/script persistence with
+shared regular-file JSON/metadata reads, protected read-close causes, receipt/
+projection identity, retained accepted IDs and nonfatal cache diagnostics. Scripts
+reuse the existing atomic writer; existing SubmissionError/CLI/ACP boundaries
+retain adopted diagnostics and receipt payloads. No scheduler/retry policy change.
+58 new cases plus updated extracted-adapter fault injection; 1173 full offline
+tests passed in 11.04 s, 45 expected collision warnings;
+`.development/test-runs/evidence-record-diagnostics.xml`. Clean-source no-Git/
+no-runtime-import metadata, offline wheel/sdist-to-wheel and installed version/
+receipt/cache/script/retained-ID/CLI/debug/ACP/guidance smoke passed for 0.2.0.dev3.
+Wheel SHA256 `cef382adbdec68dbb8239cce9ff67ac17c87664b0d9f630d20a6bdaac734239d`;
+sdist SHA256 `df7d507023cc7bd68706d972cb66fd48f5faf1c23e7629ea4b508c121f9e8d2d`;
+rebuilt wheel SHA256 `6f209ee61761fa7198132bea22de2761f7cd176712181263006b61e6812959d2`.
+Direct/rebuilt wheel member names/contents match. AST register: 262 routes/136
+owners/20 broad catches, including two reviewed reader resource/evidence guards.
+Human/agent guidance and installation register updated. No actual cluster command,
+base/test dependency installation, daily config/state, external client, saved
+format/history or rollback edit. MVP10.3 complete; MVP10.4 readiness/transport/
+software is next, broader orchestration/observation/CLI/ACP policies remain open.

@@ -9,6 +9,31 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev3 — 2026-11-16
+
+- Receipt reads use SelectionError for missing, inaccessible or invalid local
+  evidence, replacing raw file/JSON/protocol exceptions at this development
+  boundary. Receipt listing reports a broken record or denied directory instead
+  of silently omitting it. Empty/missing receipt directories still yield no items.
+- Bundles, receipts and caches share regular-file UTF-8 JSON reading, including
+  nonblocking special-file checks, absence rechecks and primary/secondary close
+  evidence. Low-level read diagnostics use operation `record_read`; selector and
+  saved-graph validation retain their existing families. No history is rewritten.
+- Receipt/projection writes identify their submission and preserve known IDs and
+  actual publication/durability facts. Existing SubmissionError wrappers and ACP
+  retain adopted diagnostics alongside authoritative receipts; submission policy,
+  retries and scheduler acceptance semantics are unchanged.
+- Generated and staged Slurm scripts use the same atomic publication owner as
+  JSON records. A failed write retains old bytes or a complete published script;
+  scripts carry job/receipt context where known. RecordWriteError also covers
+  text publication and encoding, with original causes retained.
+- Cache read/write diagnostics are returned in existing per-item errors without
+  erasing live scheduler observations or fetched log text. A genuine cache miss
+  remains quiet. Invalid structure is distinct from inaccessible evidence.
+- `asl submission` renders adopted local errors in text/JSON, supports `--debug`,
+  and preserves receipt/ID fields when refresh fails. Broader process, submission
+  orchestration and observation policies remain later MVP10 work.
+
 ## 0.2.0.dev2 — 2026-11-16
 
 - Bundle loads, append reads and metadata updates reuse discovery's regular-file

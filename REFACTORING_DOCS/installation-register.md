@@ -13,6 +13,33 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.3c.3 (2026-11-16): running checkpoint 0.2.0.dev3; receipt/cache/script
+persistence adopts shared diagnostics and atomic script publication. Main base
+commands follow this source without reinstalling; installed editable metadata
+remains 0.1.0. 1173 full offline tests passed in 11.04 s, 45 expected collision
+warnings; `.development/test-runs/evidence-record-diagnostics.xml`. 58 new cases
+cover retained IDs/live evidence, before/after publication, read races/close,
+cache faults, projection identity and Python/CLI/JSON/debug/ACP. No-Git/no-runtime-
+import metadata and offline wheel/sdist-to-wheel builds passed. Disposable
+sdist-built installation verifies matching version/console metadata, retained
+receipt IDs, publication effects, cache/live scheduler evidence, script bytes,
+CLI/debug/ACP and installed guidance. Artifacts:
+
+- `.development/artifacts/evidence-record-diagnostics/autoslurm-0.2.0.dev3-py3-none-any.whl`:
+  SHA256 `cef382adbdec68dbb8239cce9ff67ac17c87664b0d9f630d20a6bdaac734239d`.
+- `.development/artifacts/evidence-record-diagnostics/autoslurm-0.2.0.dev3.tar.gz`:
+  SHA256 `df7d507023cc7bd68706d972cb66fd48f5faf1c23e7629ea4b508c121f9e8d2d`.
+- `.development/artifacts/evidence-record-diagnostics/from-sdist/autoslurm-0.2.0.dev3-py3-none-any.whl`:
+  SHA256 `6f209ee61761fa7198132bea22de2761f7cd176712181263006b61e6812959d2`.
+
+Direct/rebuilt wheels have identical member names and contents; archive hashes
+are recorded separately. Annotated v0.2.0.dev3 marks the tested checkpoint. No
+base/test dependency installation, daily state/config, actual cluster command,
+external client, record schema/history or pinned rollback change. User documents
+and software_preparations excluded. MVP10.3 complete; transport/readiness/software
+adoption including stale-venv diagnosis is MVP10.4 next. Broader submission/
+observation policy remains 10.5/10.6; no PyPI publication or deployment.
+
 MVP10.3c.2 (2026-11-16): running checkpoint 0.2.0.dev2; direct bundle reads and
 bundle/config writes adopt shared diagnostics without reinstalling base commands.
 Existing installed editable metadata remains 0.1.0 until an explicit reinstall;

@@ -2,10 +2,10 @@
 
 import copy
 import hashlib
-import json
 from pathlib import Path
 
-from .record_files import atomic_json
+from .record_files import atomic_json, read_json, _read_error, _write_error
+from .errors import SelectionError, RecordWriteError
 
 
 def _errors_valid(errors):
@@ -20,7 +20,7 @@ def _observation_valid(view):
         return False
     if not all(isinstance(view[key], str) for key in ("state", "bundle_path", "saved_at")) or not _errors_valid(view["errors"]):
         return False
-    if view["freshness"] not in {"fresh", "partial", "failed", "stale", "never"} or not isinstance(view["submissions"], list) or not isinstance(view["jobs"], list):
+    if not isinstance(view["freshness"], str) or view["freshness"] not in {"fresh", "partial", "failed", "stale", "never"} or not isinstance(view["submissions"], list) or not isinstance(view["jobs"], list):
         return False
     if view["observed_at"] is not None and not isinstance(view["observed_at"], str):
         return False
@@ -74,14 +74,18 @@ class InspectionCache:
 
     def _read(self, path, validator):
         try:
-            value = json.loads(path.read_text())
+            value = read_json(path, context={"resource": "inspection_cache"})
             if not validator(value):
-                raise ValueError("Invalid cached evidence structure.")
+                raise _read_error(path, code="record_invalid", stage="validate_cache",
+                    context={"resource": "inspection_cache"}, summary="Invalid cached evidence structure.")
             return value, None
-        except FileNotFoundError:
-            return None, None
-        except (OSError, ValueError, TypeError) as error:
-            return None, {"source": "cache", "message": str(error), "path": str(path)}
+        except SelectionError as error:
+            if error.diagnostic.code == "resource_missing":
+                return None, None
+            return None, self._error_entry(path, error)
+
+    def _error_entry(self, path, error):
+        return {"source": "cache", "message": str(error), "path": str(path), "diagnostic": error.diagnostic.to_dict()}
 
     def load_observation(self, run):
         if run.fingerprint is None:
@@ -92,7 +96,10 @@ class InspectionCache:
         if view.get("definition_sha256") != run.fingerprint:
             return None, None
         if view["bundle_path"] != str(run.path):
-            return None, {"source": "cache", "message": "Cached run identity disagrees with its selected path."}
+            path = self.observation_path(run.path)
+            return None, self._error_entry(path, _read_error(path, code="record_invalid", stage="validate_cache",
+                context={"resource": "inspection_cache", "bundle_path": str(run.path)},
+                summary="Cached run identity disagrees with its selected path."))
         expected = {(job["name"], str(job["id"]) if job.get("id") is not None else None) for job in run.jobs}
         actual = {(job["name"], job["id"]) for job in view["jobs"]}
         if expected != actual:
@@ -107,20 +114,29 @@ class InspectionCache:
         core = copy.deepcopy(view)
         core["logs"] = []
         core.pop("scripts", None)
-        return self._write(self.observation_path(view["bundle_path"]), core)
+        return self._write(self.observation_path(view["bundle_path"]), core, bundle_path=view["bundle_path"])
 
     def load_excerpt(self, machine_key, path):
         entry, error = self._read(self.excerpt_path(machine_key, path), _excerpt_valid)
         if entry is not None and entry["path"] != path:
-            return None, {"source": "cache", "message": "Cached log path disagrees with the requested path.", "path": path}
+            selected = self.excerpt_path(machine_key, path)
+            return None, self._error_entry(selected, _read_error(selected, code="record_invalid", stage="validate_cache",
+                context={"resource": "inspection_cache", "logical_path": path},
+                summary="Cached log path disagrees with the requested path."))
         return entry, error
 
     def save_excerpt(self, machine_key, path, entry):
         return self._write(self.excerpt_path(machine_key, path), entry)
 
-    def _write(self, path, value):
+    def _write(self, path, value, *, bundle_path=None):
         try:
             atomic_json(path, value)
             return None
         except OSError as error:
-            return {"source": "cache", "message": str(error), "path": str(path)}
+            if not isinstance(error, RecordWriteError):
+                native = error
+                error = _write_error(native, path, "cache_write",
+                    {"record_publication": "unknown", "record_durability": "unknown"})
+                error.__cause__ = native
+            error.diagnostic = error.diagnostic.with_context(resource="inspection_cache", bundle_path=bundle_path)
+            return self._error_entry(path, error)

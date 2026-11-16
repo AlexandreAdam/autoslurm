@@ -254,6 +254,6 @@ def test_unexpected_reader_bug_is_not_misreported_as_corrupt_data(tmp_path, monk
     path = tmp_path / 'bundle.json'
     path.write_text('{}')
     def fail(*args, **kwargs): raise bug
-    monkeypatch.setattr(bundle_selection.json, 'load', fail)
+    monkeypatch.setattr(record_files.json, 'load', fail)
     with pytest.raises(type(bug)) as stopped: load_bundle_from_path(path)
     assert stopped.value is bug

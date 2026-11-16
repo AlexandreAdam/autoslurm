@@ -219,7 +219,7 @@ class ConfigurationError(DiagnosticError, ValueError):
 
 
 class SelectionError(DiagnosticError, ValueError):
-    """Known selector/discovery failure; unavailable is distinct from absent.
+    """Known selection/record-read failure; unavailable is distinct from absent.
 
     Missing selections use this same family rather than FileNotFoundError.
     Native filesystem causes remain chained; codes distinguish failure kinds.
@@ -227,7 +227,7 @@ class SelectionError(DiagnosticError, ValueError):
 
 
 class RecordWriteError(DiagnosticError, OSError):
-    """Expected JSON publication failure with explicit filesystem effect facts.
+    """Expected JSON/text publication failure with filesystem effect facts.
 
     OSError compatibility lets existing evidence-preserving callers retain their
     policy. Serialization failures also use this family at this dev boundary;
@@ -248,14 +248,23 @@ def record_write_failure(*, stage, path, effects, cause, problem="storage"):
     if problem not in {"storage", "serialization", "collision"}:
         raise ValueError("Unknown record publication problem.")
     summary = {
-        "storage": f"Local JSON record publication failed during {stage}.",
-        "serialization": "Record data cannot be serialized as JSON.",
+        "storage": f"Local record publication failed during {stage}.",
+        "serialization": "Record data cannot be encoded for publication.",
         "collision": "Exclusive record publication found an existing destination.",
     }[problem]
     return Diagnostic("invalid_argument" if problem == "serialization" else "storage_failed",
         "record_publication", stage, context={"path": path, "field": "record_data"} if problem == "serialization" else {"path": path},
         effects=effects, cause=cause, summary=summary,
         next_action="Inspect the exact destination and publication/durability facts before repeating any write; retain existing records and original evidence.")
+
+
+def _record_read_failure(*, path, code, stage, context=None, cause=None, summary=None):
+    """Pure local-read facts; absence never implies a scheduler outcome."""
+    if code not in {"invalid_argument", "resource_missing", "resource_inaccessible", "record_invalid"}:
+        raise ValueError("Unknown record read failure.")
+    return Diagnostic(code, "record_read", stage, context={"path": path, **(context or {})},
+        cause=cause, summary=summary,
+        next_action="Inspect the exact record path and retain its original contents; unavailable evidence is unknown, not permission to repeat a submission.")
 
 
 def selection_failure(*, stage, problem="invalid", summary=None, context=None, cause=None):

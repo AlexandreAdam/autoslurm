@@ -290,6 +290,14 @@
     "autoslurm.log_files._query_remote_tails": [
       "Exception"
     ],
+    "autoslurm.record_files._atomic_record": [
+      "BaseException",
+      "BaseException"
+    ],
+    "autoslurm.record_files.read_json": [
+      "BaseException",
+      "BaseException"
+    ],
     "autoslurm.run_slurm.ssh_submission_session": [
       "Exception"
     ],
@@ -304,10 +312,6 @@
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)"
-    ],
-    "autoslurm.record_files.atomic_json": [
-      "BaseException",
-      "BaseException"
     ]
   },
   "contracts": {
@@ -395,7 +399,7 @@
       "adoption": "dependency_graph validates container/job/dependency shapes and names, then rejects cycles with a chained CycleError and shared diagnosis. Parent-to-children result unchanged. Lower-level bulk_submit callback/ID mapping and post-dispatch evidence remain MVP10.5."
     },
     "persistence": {
-      "implementation_task": "MVP10.3c.1/2 implemented; MVP10.3c.3 receipt/cache/script persistence pending",
+      "implementation_task": "MVP10.3c.1/2/3 implemented; broader orchestration/observation remain 10.5/10.6",
       "failures": "Missing/unreadable/corrupt bundle, invalid names/shapes/graph, JSON serialization, collision and publication failures.",
       "translation_owner": "save_load_jobs and record_files, not blanket CLI catches.",
       "desired_diagnostic": "Exact bundle path/field and publication phase; serialization and permissions distinct; note any existing published snapshot.",
@@ -406,9 +410,10 @@
         "tests/integration/test_selection_diagnostics.py",
         "tests/integration/test_preparation_diagnostics.py",
         "tests/integration/test_record_publication_diagnostics.py",
-        "tests/integration/test_bundle_record_diagnostics.py"
+        "tests/integration/test_bundle_record_diagnostics.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
-      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c. MVP10.3c split before implementation: c.1 shared writer implemented with RecordWriteError/effect-aware cleanup; c.2 domain reads/enrichment/CLI and c.3 receipt/cache/script persistence remain open. MVP10.3c.2 adopts direct bundle reads with shared snapshot SelectionError policy, append/metadata validation before mutation, bundle/config publication identity and related text/debug/ACP routes. Missing metadata job replaces KeyError; malformed saved DAG retains InvalidRequestError. Existing scheduler IDs cannot be cleared/replaced by metadata. New snapshot directory creation stays inside shared writer, preserving phase facts."
+      "adoption": "Partial: authoring input guards adopted in b.1; name selection now raises SelectionError and internal snapshot/append creation falls back only after resource_missing. Direct loader JSON/I/O/publication and phase effects remain MVP10.3c. MVP10.3b.3 renders direct scripts before opening/truncating destinations; publication failures/atomic replacement still 3c. MVP10.3c split before implementation: c.1 shared writer implemented with RecordWriteError/effect-aware cleanup; c.2 domain reads/enrichment/CLI and c.3 receipt/cache/script persistence remain open. MVP10.3c.2 adopts direct bundle reads with shared snapshot SelectionError policy, append/metadata validation before mutation, bundle/config publication identity and related text/debug/ACP routes. Missing metadata job replaces KeyError; malformed saved DAG retains InvalidRequestError. Existing scheduler IDs cannot be cleared/replaced by metadata. New snapshot directory creation stays inside shared writer, preserving phase facts. MVP10.3c.3 completes local receipt/cache and script persistence: shared regular-file JSON reader with primary/secondary close evidence; exact receipt validation/list failures; submission-aware receipt/projection writes; nonfatal structured cache errors; scripts use the same atomic owner as JSON. Existing IDs/live observations/log text survive. Low-level read operation is record_read; selector/graph boundaries unchanged."
     },
     "selection": {
       "implementation_task": "MVP10.3b.2",
@@ -421,9 +426,10 @@
         "tests/unit/test_filter_clean_cli.py",
         "tests/integration/test_persistence_boundaries.py",
         "tests/integration/test_selection_diagnostics.py",
-        "tests/integration/test_bundle_record_diagnostics.py"
+        "tests/integration/test_bundle_record_diagnostics.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
-      "adoption": "Known selection/discovery failures use SelectionError with selection operation and invalid_argument/resource_missing/resource_inaccessible/record_invalid codes. A missing selection replaces FileNotFoundError explicitly at this dev boundary. Per-entry state/plain diagnostic preserves healthy neighbours; unknown jobs/counts are None, not empty/zero. File/nearest selection remains payload-free. Bad filter config never defaults silently. No source fallback, implicit directory creation, deletion, scheduler query or retry. MVP10.3c.2: direct bundle loads, append/metadata reuse the regular UTF-8 reader; failed reads with a raced-in replacement remain inaccessible. Required bundle names reject separators/controls and invalid explicit paths fail before file access."
+      "adoption": "Known selection/discovery failures use SelectionError with selection operation and invalid_argument/resource_missing/resource_inaccessible/record_invalid codes. A missing selection replaces FileNotFoundError explicitly at this dev boundary. Per-entry state/plain diagnostic preserves healthy neighbours; unknown jobs/counts are None, not empty/zero. File/nearest selection remains payload-free. Bad filter config never defaults silently. No source fallback, implicit directory creation, deletion, scheduler query or retry. MVP10.3c.2: direct bundle loads, append/metadata reuse the regular UTF-8 reader; failed reads with a raced-in replacement remain inaccessible. Required bundle names reject separators/controls and invalid explicit paths fail before file access. MVP10.3c.3 extracts existing regular-file JSON/metadata access into record_files for bundle/receipt/cache reuse, with operation record_read and protected read-close evidence; selector validation remains selection."
     },
     "paths": {
       "implementation_task": "MVP10.3b.3 (pure resolution/producing context); MVP10.4 (discovery/readiness); MVP10.6 (observations)",
@@ -488,9 +494,10 @@
       "regression_evidence": [
         "tests/integration/test_submission_safety.py",
         "tests/integration/test_submission_boundaries.py",
-        "tests/integration/test_persistence_boundaries.py"
+        "tests/integration/test_persistence_boundaries.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.3c.3: local load/list failures use SelectionError with exact path/known identity and native cause; malformed contract replaces raw ValueError at local read boundary. Receipt/projection writes enrich RecordWriteError; local projection conflicts preserve bytes. Adopted diagnoses survive existing SubmissionError wrappers, CLI text/JSON/debug and ACP result receipts. Broader remote refresh/identity/protocol/interruption/orchestration remains 10.4/10.5."
     },
     "inspection": {
       "implementation_task": "MVP10.6",
@@ -502,9 +509,10 @@
         "tests/unit/test_log_retrieval.py",
         "tests/unit/test_inspection_state.py",
         "tests/integration/test_inspection_boundaries.py",
-        "tests/integration/test_shared_inspection.py"
+        "tests/integration/test_shared_inspection.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.3c.3: cache JSON reads share regular-file/UTF-8 reader and explicit schema guards; missing cache quiet, malformed/inaccessible adds diagnostic. Cache writes retain publication facts without dropping live scheduler/log evidence. Failed receipt overlay retains diagnostic and existing snapshot IDs. Other observation/query/log policy remains MVP10.6."
     },
     "software_intent": {
       "implementation_task": "MVP10.3b.1",
@@ -612,7 +620,8 @@
         "tests/unit/test_cli_help_on_empty_args.py",
         "tests/unit/test_logs_cli.py",
         "tests/unit/test_status_cli.py",
-        "tests/integration/test_selection_diagnostics.py"
+        "tests/integration/test_selection_diagnostics.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
       "adoption": "Partial through b.2: selection/configuration errors at filter/submit/status/inspect/logs roots/aliases/standalone use the shared adapter and --debug; existing status/inspect/logs JSON modes use its envelope. Parser usage stays exit2. Other observation, presentation and post-dispatch policies remain MVP10.8/later domain slices."
     },
@@ -625,7 +634,8 @@
       "regression_evidence": [
         "tests/unit/test_acp.py",
         "tests/integration/test_shared_inspection.py",
-        "tests/integration/test_selection_diagnostics.py"
+        "tests/integration/test_selection_diagnostics.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
       "adoption": "Partial b.2: expected SelectionError/ConfigurationError envelopes include shared diagnostic; list_experiments/list_runs retain per-entry state/diagnostic. SubmissionError receipt retention unchanged; other broad ACP handling and request validation remain MVP10.8."
     },
@@ -640,12 +650,13 @@
         "tests/unit/test_error_output.py",
         "tests/integration/test_configuration_diagnostics.py",
         "tests/integration/test_authoring_diagnostics.py",
-        "tests/integration/test_selection_diagnostics.py"
+        "tests/integration/test_selection_diagnostics.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
       "adoption": "MVP10.2 foundation; MVP10.3a ConfigurationError/configuration_failure; MVP10.3b.1 InvalidRequestError and optional explicit cause/effects on invalid_argument. Identity enrichment compares against the same bounded/redacted representation. Other domains and universal CLI/ACP parity remain pending. MVP10.3b.2 adds SelectionError/selection_failure using existing catalogue codes and no inferred effects."
     },
     "record_publication": {
-      "implementation_task": "MVP10.3c.1 (shared writer); MVP10.3c.2/3 (domain adapters)",
+      "implementation_task": "MVP10.3c.1/2/3 implemented (shared writer and domain adapters)",
       "failures": "Serialization, directory/temp creation, flush/close, publication syscall, directory durability and cleanup failures, including an initiating interrupt/bug.",
       "translation_owner": "record_files.atomic_json owns filesystem phase/effects; errors owns RecordWriteError/RecordCollisionError/record_write_failure. Callers retain domain evidence.",
       "desired_diagnostic": "Exact destination/stage, native safe kind/errno, publication not_started/unknown/succeeded separate from durability, bounded secondary cleanup facts.",
@@ -653,9 +664,10 @@
       "regression_evidence": [
         "tests/integration/test_record_publication_diagnostics.py",
         "tests/integration/test_persistence_boundaries.py",
-        "tests/integration/test_bundle_record_diagnostics.py"
+        "tests/integration/test_bundle_record_diagnostics.py",
+        "tests/integration/test_evidence_record_diagnostics.py"
       ],
-      "adoption": "MVP10.3c.1 implemented: typed OSError-compatible writer failures; serialization replaces raw TypeError/ValueError explicitly. Exclusive collisions remain FileExistsError-compatible; only clean collisions may select another snapshot timestamp. Native bugs/interrupts propagate; cleanup evidence cannot erase primary or original cause. Domain reads/enrichment/CLI and receipt/cache/script policies remain c.2/c.3/10.5/10.6. MVP10.3c.2 enriches bundle/config writes without retyping or resetting publication/durability/cleanup facts; CLI config/filter/schedule/initialize/submit and ACP retain adopted diagnoses. Receipt/cache/script domain integration remains c.3."
+      "adoption": "MVP10.3c.1 implemented: typed OSError-compatible writer failures; serialization replaces raw TypeError/ValueError explicitly. Exclusive collisions remain FileExistsError-compatible; only clean collisions may select another snapshot timestamp. Native bugs/interrupts propagate; cleanup evidence cannot erase primary or original cause. Domain reads/enrichment/CLI and receipt/cache/script policies remain c.2/c.3/10.5/10.6. MVP10.3c.2 enriches bundle/config writes without retyping or resetting publication/durability/cleanup facts; CLI config/filter/schedule/initialize/submit and ACP retain adopted diagnoses. Receipt/cache/script domain integration remains c.3. MVP10.3c.3 reuses one _atomic_record implementation for JSON/text; text stage write_text, same publication/durability/secondary cleanup facts. Receipt/projection/script/cache adapters enrich without changing effects. Adopted diagnostics survive existing SubmissionError wrappers alongside receipts; orchestration policy remains 10.5."
     },
     "package_version": {
       "implementation_task": "VERSION.1",
@@ -680,7 +692,7 @@
     "autoslurm.acp.execute_acp": {
       "contract": "acp",
       "inputs": "Request mapping with action and action-specific fields.",
-      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending). MVP10.3c.2 retains expected shared RecordWriteError diagnostic in error envelopes; generic bug/authoring and receipt policies remain staged.",
+      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending). MVP10.3c.2 retains expected shared RecordWriteError diagnostic in error envelopes; generic bug/authoring and receipt policies remain staged. MVP10.3c.3 adds adopted SubmissionError diagnostic alongside result receipt; load/list receipt SelectionError envelopes retain exact identity.",
       "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
     },
     "autoslurm.acp.list_bundles": {
@@ -776,7 +788,7 @@
     "autoslurm.apps.submission.main": {
       "contract": "receipt",
       "inputs": "Exact receipt or list filter; optional --refresh/--json.",
-      "current": "Only SubmissionError caught, receipt printed then exit1; missing/corrupt read/list can traceback; parser misuse exit2.",
+      "current": "Direct receipt/list failures use shared stderr/exit1 or JSON envelope and --debug. Failed refresh keeps receipt/ID JSON fields plus additive adopted diagnostic, text retains known IDs. Legacy failures retain old payload policy; usage exit2.",
       "effects": "List/read local; refresh remote read plus local projection/receipt writes."
     },
     "autoslurm.apps.submit.main": {
@@ -1088,19 +1100,19 @@
     "autoslurm.inspection.inspect_bundle": {
       "contract": "inspection",
       "inputs": "Exactly one bundle path or receipt path; refresh/artifact/job/task/bound options.",
-      "current": "Shared view; selector/bounds errors raise; broken run and failed queries return per-item evidence; receipt-load errors can raise.",
+      "current": "Shared view; selector/bounds errors raise; broken run and failed queries return per-item evidence; receipt-load errors can raise. MVP10.3c.3 retains structured receipt/cache errors without dropping snapshot IDs/live status/logs; broader observation semantics unchanged.",
       "effects": "Refresh may query scheduler/logs and write caches; cached mode no source log/scheduler queries."
     },
     "autoslurm.inspection.inspect_bundles": {
       "contract": "inspection",
       "inputs": "Exact path sequence, refresh/artifact selectors and bounds.",
-      "current": "Views list retaining broken/partial/fresh/stale/error evidence; invalid global request can raise.",
+      "current": "Views list retaining broken/partial/fresh/stale/error evidence; invalid global request can raise. MVP10.3c.3 retains structured receipt/cache errors without dropping snapshot IDs/live status/logs; broader observation semantics unchanged.",
       "effects": "Batched per producing-machine scheduler observation; bounded artifacts; per-view cache writes on refresh."
     },
     "autoslurm.inspection.inspect_logs": {
       "contract": "inspection",
       "inputs": "Exact bundle or receipt and bounded job/task/stream selectors.",
-      "current": "Same inspection view with logs; validation raises, log failures normally retained entries.",
+      "current": "Same inspection view with logs; validation raises, log failures normally retained entries. MVP10.3c.3 retains structured receipt/cache errors without dropping snapshot IDs/live status/logs; broader observation semantics unchanged.",
       "effects": "Only execution logs, no scientific-result copy; fresh reads cache excerpts."
     },
     "autoslurm.inspection.list_runs": {
@@ -1136,7 +1148,7 @@
     "autoslurm.job_to_slurm.create_slurm_script": {
       "contract": "persistence",
       "inputs": "Job, date, machine profile and optional resolved context.",
-      "current": "Saved filename; known structure/path/export/directive/render guards use InvalidRequestError. Renders in memory before destination open, preserving existing/absent script on render validation failure. No new syntax-check call in this legacy API; raw file/publication failures remain 3c.",
+      "current": "Render in memory before storage, preserve existing storage setup, publish complete UTF-8 script through shared atomic writer. RecordWriteError retains exact script/job/source and actual publication/durability/cleanup facts. No shell-check behavior added.",
       "effects": "Optional root discovery and pure rendering before local file creation/truncation. Successful render then directory/file write; atomic publication and file-error effects remain 3c."
     },
     "autoslurm.remote_fs.path_exists": {
@@ -1310,19 +1322,19 @@
     "autoslurm.submission.list_submissions": {
       "contract": "receipt",
       "inputs": "Optional bundle filter.",
-      "current": "Sorted receipts; one malformed/unreadable receipt aborts whole listing; updated_at shape errors can KeyError.",
+      "current": "Valid receipts newest first; absent directory yields []; denied directory/broken receipt raises SelectionError instead of omission/incomplete list. Directory enumeration explicit; exact paths retained.",
       "effects": "Local reads only; filter occurs after loading records."
     },
     "autoslurm.submission.load_submission": {
       "contract": "receipt",
       "inputs": "Exact local receipt path.",
-      "current": "Validated receipt dict; raw OSError/JSONDecodeError/ValueError.",
+      "current": "Validated exact local receipt or SelectionError for invalid selector/missing/inaccessible/invalid UTF-8/JSON/receipt contract. Safe native cause/exact receipt path and known identity retained; no commands/writes. Low-level operation record_read.",
       "effects": "Reads only."
     },
     "autoslurm.submission.refresh_submission": {
       "contract": "receipt",
       "inputs": "Exact local receipt path.",
-      "current": "Refreshed receipt; initial load raw failures; later failures SubmissionError with observation_error and optional tracking_error.",
+      "current": "Existing remote/local refresh policy retained. Adopted local read/projection/write diagnostic survives SubmissionError.receipt; secondary tracking_diagnostic additive. Remote launch/protocol/interruption policy remains 10.4/10.5.",
       "effects": "No scheduler dispatch; remote receipt read then local receipt/projection writes; failed local write may follow good remote observation."
     },
     "autoslurm.sync.sync_machine": {
@@ -1466,7 +1478,7 @@
     "autoslurm.errors.RecordWriteError": {
       "contract": "record_publication",
       "inputs": "Diagnostic or message with diagnostic; raised by known shared publication guards.",
-      "current": "DiagnosticError/RuntimeError/OSError-compatible expected failure; serialization also uses this family, retaining original exception in __cause__.",
+      "current": "DiagnosticError/RuntimeError/OSError-compatible expected failure; serialization also uses this family, retaining original exception in __cause__. MVP10.3c.3 also covers UTF-8 text/script publication, with the same phase facts.",
       "effects": "Exception data only; caller supplies exact publication/durability facts. No I/O, retry, rollback or domain outcome inference."
     },
     "autoslurm.errors.RecordCollisionError": {
@@ -1527,9 +1539,13 @@
       "RETAIN secondary persistence catch including KeyboardInterrupt: keep primary error plus tracking_error; never retry dispatch. MVP10.5.",
       "RETAIN post-dispatch publication catch including KeyboardInterrupt: successful/partial scheduler evidence survives projection failure. MVP10.5."
     ],
-    "autoslurm.record_files.atomic_json": [
+    "autoslurm.record_files._atomic_record": [
       "RETAIN resource/evidence protection only: store initiating exception while cleanup runs, then re-raise the same native interrupt/programming bug. Known serialization/OSError failures are translated at narrower guards; no broad classification.",
       "RETAIN cleanup protection including interruption/bugs: finish remaining cleanup, retain secondary native failures/diagnostics beside primary, or re-raise original cleanup-only unexpected exception. Never overwrite primary cause or blindly replay publication."
+    ],
+    "autoslurm.record_files.read_json": [
+      "RETAIN read resource/evidence protection only: remember initiating error and re-raise unchanged while finally closes descriptor/stream. Narrow filesystem/JSON/Unicode catches own classification; unexpected bugs/interrupts are not corruption.",
+      "RETAIN close safeguard: if read/parse failed, retain secondary native/diagnostic close evidence without masking primary; after successful read propagate close-only failure. No record deletion, fallback or retry."
     ]
   },
   "route_notes": {
@@ -1553,7 +1569,7 @@
     },
     "acp:inspect_submission": {
       "inputs": "required receipt_path, refresh default false",
-      "current": "success/result receipt, SubmissionError error/message/result receipt, other load errors message only",
+      "current": "success/result receipt; adopted local load errors include diagnostic; SubmissionError includes result receipt plus diagnostic when adopted, preserving known IDs. Legacy refresh failures may lack diagnostic.",
       "effects": "Local read; refresh may read remote receipt and write local receipt/projection, never submits",
       "contract": "receipt"
     },
@@ -1571,7 +1587,7 @@
     },
     "acp:list_submissions": {
       "inputs": "optional bundle",
-      "current": "success/result receipt list; a malformed unrelated receipt can produce error/message",
+      "current": "success/result receipt list; missing directory -> []; unreadable directory or malformed receipt -> shared diagnostic error envelope, no silent omission.",
       "effects": "Local reads only",
       "contract": "receipt"
     },
@@ -1668,6 +1684,12 @@
       "date": "2026-11-16",
       "base_revision": "91136fe",
       "note": "Shared direct bundle reads and append/metadata validation, bundle/config write identity, known-ID guard and related CLI/debug/ACP presentation. Version 0.2.0.dev2. Explicit direct-read exception boundary, no new routes/codes/record formats/catches; saved DAG InvalidRequestError retained. c.3 receipt/cache/script and external/submission/observation adoption remain open."
+    },
+    {
+      "task": "MVP10.3c.3",
+      "date": "2026-11-16",
+      "base_revision": "64288dc",
+      "note": "Complete local persistence adoption in 0.2.0.dev3: receipt/cache reads/writes, shared atomic script publication, retained accepted IDs/live evidence and related CLI/ACP. 262 routes/136 owners/20 broad catches; two writer safeguards moved to _atomic_record and two reader resource/evidence safeguards reviewed. No new public routes/codes/schemas or retry policy. MVP10.3 complete; external readiness is next."
     }
   ]
 }

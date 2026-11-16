@@ -8,6 +8,7 @@ MVP10.3b.2 adds snapshot/filter selection and per-entry discovery diagnostics.
 MVP10.3b.3 adds pure path/render preparation and saved producing-context validation.
 MVP10.3c.1 adds phase-aware shared JSON publication diagnostics.
 MVP10.3c.2 adopts direct bundle reads and bundle/config mutation boundaries.
+MVP10.3c.3 adopts receipt/cache persistence and atomic script publication.
 The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
 better messages from those services based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
@@ -231,8 +232,8 @@ Unexpected programming exceptions propagate. Pure validation leaves effects empt
 
 Direct create_slurm_script renders completely before opening its destination;
 render validation cannot truncate a previous script or leave a new partial file.
-It does not add shell-syntax checking to that legacy direct API. Publication I/O/
-atomic replacement remains MVP10.3c. Preview/submit still validate generated shell
+It does not add shell-syntax checking to that legacy direct API. MVP10.3c.3 adds
+atomic publication and write diagnostics. Preview/submit still validate generated shell
 syntax through their shared existing pipeline before staging/dispatch. Their
 external root discovery/readiness checks are not migrated by this slice.
 
@@ -287,9 +288,9 @@ and retain the existing evidence. No rollback, implicit deletion or write retry.
 Bundle/config/receipt/cache writers using the shared atomic primitive inherit this
 failure family. It describes one local record only, never submission acceptance,
 dependency state or an atomic transaction across files. Existing cache OSError
-handling remains nonfatal, with richer returned diagnostics still pending c.3.
+handling remains nonfatal, with structured returned diagnostics adopted in c.3.
 Domain enrichment/direct bundle reads and config/schedule CLI presentation are
-adopted in c.2; receipt/cache/script persistence remains c.3. SubmissionError.receipt and
+adopted in c.2; c.3 adds receipt/cache/script persistence. SubmissionError.receipt and
 SoftwareUpdateError.evidence stay authoritative; their higher-level adapters are
 not replaced by catching only RecordWriteError. Do not call private record_files
 helpers from scientific clients. Use supported save/config/submission operations.
@@ -336,8 +337,61 @@ would falsely imply config_write=not_started after successful publication.
 Preview/submit add the selected machine to direct-read diagnostics when known.
 Read diagnostics have no inferred side-effect claims. Keep exact retained records,
 receipts and scheduler IDs; inspect a possibly published append before repeating it.
-Receipt/cache/script persistence remains c.3; external readiness, post-dispatch
-orchestration and universal observation/CLI/ACP policy remain their later tasks.
+External readiness, broader post-dispatch orchestration and universal
+observation/CLI/ACP policy remain their later tasks.
+
+## Receipt/cache/script records in MVP10.3c.3
+
+Use supported load_submission/list_submissions/refresh_submission and inspection
+services. Do not call private record_files or cache helpers in scientific clients.
+Exact receipt reads now raise SelectionError instead of raw file/JSON/protocol
+errors: resource_missing after observed absence, resource_inaccessible for denied,
+dangling or special-file paths, record_invalid for malformed UTF-8/JSON/receipt
+structure. Invalid receipt selectors are invalid_argument. Exact receipt_path and
+known submission_id/bundle/machine survive in context. Native causes remain chained;
+JSON detail contains parse location, never the record contents. Low-level bundle,
+receipt and cache reading shares operation record_read, including close_record
+for close failures; earlier selector validation remains operation selection.
+Shared regular-file checks and nonblocking open prevent blocking on a FIFO.
+Read races recheck absence; close failures cannot mask a primary parse/read error.
+
+Missing receipt directories list as []; denied directories or broken receipts
+raise a precise error rather than silently returning a partial list. These local
+reads do not create storage or launch commands. In normal run inspection a broken
+receipt instead adds a per-item error with diagnostic, retaining snapshot IDs.
+Neither absence nor a failed read proves scheduler rejection or permits resubmission.
+
+Receipt and tracking projection writes retain RecordWriteError with resource
+submission_receipt/tracking_snapshot, receipt_path, submission_id and known bundle/
+machine identity. A tracking identity/ID conflict preserves the original bytes.
+Existing SubmissionError wrappers propagate an adopted persistence diagnostic
+alongside .receipt, without changing accepted IDs, uncertainty or dispatch policy.
+Secondary tracking write evidence can add tracking_diagnostic beside tracking_error.
+The receipt stays authoritative: even record_publication=not_started only describes
+that local write, and can occur after Slurm already accepted a job. Keep .receipt
+and .diagnostic together; never reduce this case to a request safe to retry.
+
+asl submission PATH supports --debug, text stderr/exit1 and a --json diagnostic
+envelope for adopted direct-read errors. Failed refresh JSON preserves receipt
+fields/IDs and adds diagnostic when available. ACP includes diagnostic plus result
+receipt for these failures. External refresh/transport error classification remains
+MVP10.4/10.5; a legacy error may still have no diagnostic.
+
+Inspection cache errors retain source/message/path and add plain diagnostic.
+A genuine missing cache remains quiet; malformed/inaccessible evidence is reported.
+Write errors keep live scheduler states, known IDs and fetched log text, with the
+existing partial freshness. This includes publication=unknown and failures after
+successful publication. Cache errors do not authorize source-log rereads during
+refresh=False, repair, deletion or job submission. Broader observation semantics
+remain MVP10.6.
+
+Direct create_slurm_script and submission staging use the existing atomic writer
+for UTF-8 text. Stage write_text replaces serialize for the text step; all other
+publication/durability/cleanup facts match JSON. RecordWriteError context includes
+resource=slurm_script, job and known submission identity. Before publication the
+old destination survives; after observed publication the complete new script
+survives. Rendering still precedes storage access. A staged set is not a transaction:
+earlier complete scripts can exist if a later write fails, and dispatch stops.
 
 ## At a client boundary
 

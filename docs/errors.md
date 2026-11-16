@@ -48,8 +48,8 @@ historical software-intent metadata and bundle input/preparation guards. It reta
 ValueError compatibility, replacing old TypeError/KeyError authoring guards and
 CycleError for invalid DAGs at this dev boundary. Missing/blank/nonstring commands
 fail before new save/schedule publication. No saved format or history is rewritten.
-Receipt/cache/script publication, process and universal CLI/ACP adoption remain separate
-tasks. `asl schedule` renders adopted errors to stderr
+Process and universal CLI/ACP adoption remain separate tasks.
+`asl schedule` renders adopted errors to stderr
 and exits 1; add `--autoslurm-debug` for original exceptions. Ordinary application
 `--debug` still forwards. Unknown code bugs propagate.
 
@@ -84,8 +84,8 @@ submission share these checks; `asl submit --debug` preserves preparation errors
 Shell syntax rejection reports the affected job and line when available, without
 copying application or environment literals from Bash's output. Failed or killed
 syntax-check processes remain process errors. Direct script creation renders in
-memory before opening the output, so render failures preserve an existing script;
-file publication failures and atomic writes remain separate work. Saved execution
+memory before publication, so render failures preserve an existing script.
+Script publication now shares the atomic record writer described below. Saved execution
 lookup reports missing evidence versus malformed roots/transport through
 `SelectionError`, retaining the exact file/job and historical producing roots.
 It never substitutes today's profile. Pure validation makes no blanket claim about
@@ -105,7 +105,7 @@ original cause. **Development API boundary:** unsupported or circular JSON data
 also uses this family, replacing raw TypeError/ValueError from serialization.
 The diagnostic names the exact destination and failed stage without copying
 record contents. Bundle/config/receipt/cache writers inherit this shared boundary;
-their richer domain context and CLI presentation are still being adopted.
+their adopted domain context is described below; broader CLI policies remain staged.
 
 Two effect fields explain a failed write. `record_publication=not_started` means
 publication to the destination was not attempted; parent directories or temporary
@@ -121,7 +121,7 @@ A failure after publication leaves the record in place. Inspect that exact file
 before repeating a save or append. Only a clean exclusive-name collision allows
 snapshot creation to choose another timestamp; uncertain publication or failed
 cleanup stops the operation. No record is rolled back or automatically removed.
-Receipt/cache reads and broader receipt/cache/script policies remain later slices.
+JSON and script publication share this same owner and these same effect fields.
 
 Bundle/config record boundaries now adopt these diagnostics too. Direct bundle
 loading uses discovery's regular-file UTF-8 JSON reader: `SelectionError` codes
@@ -141,10 +141,46 @@ Bundle names are file names, without path separators or control characters.
 Config (including `configuration`), filter, initialize, schedule and submit render
 adopted record errors once to stderr and exit 1. Use `--debug` for original causes;
 schedule uses `--autoslurm-debug`, preserving the application's `--debug` option.
-ACP includes shared write diagnostics in its error envelope. Receipt/cache/script
-persistence and universal command/ACP error policies remain later work; retain
+ACP includes shared write diagnostics in its error envelope. Universal
+command/ACP error policies remain later work; retain
 authoritative receipts and accepted IDs rather than inferring scheduler outcomes
 from a local file error.
+
+Receipt reads now use `SelectionError` too: `resource_missing` for observed
+absence, `resource_inaccessible` for denied/special/dangling paths, and
+`record_invalid` for JSON, encoding or receipt-contract failures. This replaces
+raw file/JSON/protocol exceptions at this development boundary. The diagnostic
+retains the exact `receipt_path`, known submission identity and original cause.
+Bundle, receipt and cache file reads share operation `record_read`; selector
+validation remains `selection`. A missing receipt directory lists no items;
+an unreadable directory or broken receipt fails explicitly, without silently
+returning an incomplete list. Reading/listing creates no directories or jobs.
+
+Receipt and tracking-snapshot writes add `submission_id`, `receipt_path`, bundle
+and machine identity where known. A projection identity/ID conflict leaves the
+tracking file intact. `SubmissionError.receipt` still owns accepted IDs and
+uncertainty; adopted local persistence errors also survive in `.diagnostic`.
+A secondary tracking write failure can add `tracking_diagnostic` beside its
+existing `tracking_error`. These facts never imply scheduler rejection or permit
+an automatic retry. Broader orchestration/interruption adoption remains MVP10.5.
+
+`asl submission PATH` shows adopted read errors on stderr and exits 1; `--json`
+returns a diagnostic envelope and `--debug` preserves the native cause. A failed
+refresh retains the existing receipt/ID fields, with additive `diagnostic` when
+available. ACP follows the same diagnostic-plus-receipt rule for these failures.
+
+Cache errors retain their existing `source`, `message`, `path` fields and add
+`diagnostic`. Missing caches remain quiet; inaccessible or malformed evidence is
+reported. A cache write failure keeps live job states, IDs, task observations and
+fetched log text, with partial freshness as before. A failed receipt overlay is
+per-item evidence and does not discard IDs already in the selected snapshot.
+Broader scheduler/log observation policy remains MVP10.6.
+
+Direct and staged scripts are published atomically after rendering. Failures
+before replacement retain old bytes; failures after observed replacement retain
+the complete new script. `RecordWriteError` identifies `slurm_script`, job and
+submission context where known. Multi-script staging is not a transaction: earlier
+complete scripts may exist when a later write fails, and dispatch does not start.
 
 Agent developers should read the [packaged diagnostic recipe](../src/autoslurm/agent_resources/15_diagnostics.md)
 for supported fields, bounds, classification and integration examples. The

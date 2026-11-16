@@ -111,12 +111,9 @@ def test_record_or_staging_failure_carries_evidence_without_dispatch(failure, lo
             raise OSError("receipt disk full")
         monkeypatch.setattr(submission_operation, "write_receipt", storage_failure)
     else:
-        real_write = Path.write_text
-        def script_failure(path, *args, **kwargs):
-            if path.parent == slurm_dir():
-                raise OSError("script disk full")
-            return real_write(path, *args, **kwargs)
-        monkeypatch.setattr(Path, "write_text", script_failure)
+        def script_failure(*args, **kwargs):
+            raise OSError("script disk full")
+        monkeypatch.setattr(submission_operation, "atomic_text", script_failure)
     with pytest.raises(SubmissionError) as error:
         submit_jobs("study", bundle_path=selected)
     receipt = error.value.receipt

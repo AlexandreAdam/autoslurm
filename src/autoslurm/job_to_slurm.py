@@ -5,11 +5,12 @@ from io import TextIOWrapper, StringIO
 from datetime import datetime
 from .utils import name_slurm_script
 from .storage import ensure_storage_dirs, slurm_dir
+from .record_files import atomic_text, _write_error
 from .config import activation_command_from_config
 from .transport import remote_storage_root_from_config
 from .execution import resolve_execution_context
 from .argument_compilation import compile_script_arguments, render_script_arguments
-from .errors import InvalidRequestError, DiagnosticCause
+from .errors import InvalidRequestError, DiagnosticCause, RecordWriteError
 
 
 __all__ = ["create_slurm_script"]
@@ -36,12 +37,21 @@ def create_slurm_script(job: dict, date: datetime, machine_config: dict, *, cont
     """Creates a SLURM script and saves it locally"""
     output = StringIO()
     write_slurm_content(output, job, machine_config, context=context)
-    ensure_storage_dirs()
     path = slurm_dir()
     slurm_name = name_slurm_script(job, date)
     file_path = path / slurm_name
-    with open(file_path, "w") as f:
-        f.write(output.getvalue())
+    try:
+        ensure_storage_dirs()
+    except OSError as native:
+        error = _write_error(native, file_path, "prepare_directory",
+            {"record_publication": "not_started", "record_durability": "not_started"})
+        error.diagnostic = error.diagnostic.with_context(job=job["name"], resource="slurm_script", source="create_slurm_script")
+        raise error from native
+    try:
+        atomic_text(file_path, output.getvalue())
+    except RecordWriteError as error:
+        error.diagnostic = error.diagnostic.with_context(job=job["name"], resource="slurm_script", source="create_slurm_script")
+        raise
     print(f"Saved SLURM script {slurm_name} locally")
     return slurm_name
 

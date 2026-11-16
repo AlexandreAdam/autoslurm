@@ -5,7 +5,8 @@ and submit use shared diagnostics with exact path and known write effects (stder
 exit 1). --debug retains original causes; schedule uses --autoslurm-debug to keep
 application --debug forwarding. Unknown publication is not a failed submission;
 inspect the named record before repeating an append. ACP also preserves shared
-write diagnostics. Broader receipt/cache/script and observation policies are staged.
+write diagnostics. Receipt/cache/script persistence is adopted; broader
+observation and command policies are staged.
 
 Snapshot/filter selection failures in filter/submit/status/inspect/logs use shared
 diagnostics: stderr and exit 1, `--debug` for original causes; existing `--json`
@@ -19,8 +20,8 @@ Installed `15_diagnostics` describes limits.
 `asl schedule` uses shared diagnostics for adopted authoring failures (stderr,
 exit 1). `--autoslurm-debug` preserves original errors; application `--debug`
 retains its forwarding behavior. Help discovery remains heuristic; prefer trusted
-typed contracts for client integration. Publication and process
-diagnostics are separate adoption tasks; this is not universal CLI/ACP parity.
+typed contracts for client integration. Process diagnostics remain a separate
+adoption task; this is not universal CLI/ACP parity.
 
 - `asl software status --machine NAME`: read Git project status under the configured
   software_root; `--project` is relative to that root. Add `--local-project PATH`
@@ -49,6 +50,9 @@ diagnostics are separate adoption tasks; this is not universal CLI/ACP parity.
   never contact the cluster. `--script --cached` reads saved scripts locally.
 - `asl submission PATH --refresh --json`: fetch execution-side submission
   evidence separately; never resubmits. Without refresh reads the local receipt.
+  Local read/contract failures use SelectionError diagnostics (text stderr/exit 1,
+  JSON envelope on stdout); `--debug` preserves original causes. Refresh failures
+  retain receipt/ID fields and add an adopted diagnostic when available.
 
 Name/date/index/latest are convenience selectors; retain exact paths in handoffs.
 `--date` is nearest-date selection. Inspect freshness/errors before using state.

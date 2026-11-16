@@ -11,6 +11,7 @@ from typing import Callable, Optional
 from .bulk_submit import SubmissionRequest, submit_dag_by_levels
 from .submission import SubmissionError, validate_receipt, write_receipt
 from .run_slurm import get_job_id_from_sbatch_output
+from .errors import DiagnosticError
 
 __all__ = [
     "BulkSubmitPayload",
@@ -127,7 +128,8 @@ def submit_payload(
                 write_receipt(receipt_path, receipt)
             except (Exception, KeyboardInterrupt) as exc:
                 receipt.update(state="uncertain", error=f"Submission receipt storage failed: {exc}", execution_finished=False)
-                raise SubmissionError(receipt["error"], receipt) from exc
+                raise SubmissionError(receipt["error"], receipt,
+                    diagnostic=exc.diagnostic if isinstance(exc, DiagnosticError) else None) from exc
 
     def submit_level(requests: list[SubmissionRequest]) -> dict[str, str]:
         ids = {}
@@ -163,7 +165,8 @@ def submit_payload(
                     persist()  # Never call another job if receipt storage fails.
                 except Exception as exc:
                     receipt.update(state="uncertain", error=f"Accepted ID could not be persisted: {exc}", execution_finished=False)
-                    raise SubmissionError(receipt["error"], receipt) from exc
+                    raise SubmissionError(receipt["error"], receipt,
+                        diagnostic=exc.diagnostic if isinstance(exc, DiagnosticError) else None) from exc
             ids[request.job_name] = job_id
         return ids
 

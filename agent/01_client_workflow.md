@@ -49,16 +49,16 @@ Invalid configuration stops preview/submission before commands; it never selects
 another profile or repairs an environment. The config CLI renders these failures
 once and supports `--debug`. Existing corrupt/unreadable files are preserved.
 Read failures/missing activation no longer use OSError/AttributeError; validation
-remains ValueError-compatible. Receipt/cache/script I/O and other services are not yet
-fully adopted; see the packaged diagnostic recipe.
+remains ValueError-compatible. Other services are still adopting diagnostics;
+see the packaged diagnostic recipe for current coverage.
 
 MVP10.3b.1 adds public `InvalidRequestError` for typed authoring, literal arguments,
 graphs, software-intent metadata and bundle input/preparation guards. Inspect its
 diagnostic field/option/job/stage and correct the definition before saving or
 submitting. Preserve explicit saved settings; a missing setting is not permission
 to insert a new default. It is ValueError/DiagnosticError compatible; old
-TypeError/KeyError authoring guards and cycle errors now use this class. Read/
-receipt/cache/script publication and transport adoption remain pending. Snapshot selection and path/
+TypeError/KeyError authoring guards and cycle errors now use this class. Transport
+adoption remains pending. Snapshot selection and path/
 render preparation now adopt the shared diagnostic contract as described below.
 
 MVP10.3b.3 extends InvalidRequestError to pure path/render preparation. Inspect
@@ -71,8 +71,8 @@ re-raises adopted preparation failures. Saved execution lookup uses SelectionErr
 for missing evidence (resource_missing) or malformed roots/transport (record_invalid),
 preserving historical producing roots without current-profile discovery. Preserve
 the original file. No inferred effects, automatic repair or resubmission follows.
-Readiness/existence/process diagnostics remain MVP10.4; receipt/cache/script
-persistence remains MVP10.3c.3.
+Readiness/existence/process diagnostics remain MVP10.4; local persistence is
+adopted through MVP10.3c.3.
 
 MVP10.3c.1 adds shared JSON publication diagnostics. Catch public RecordWriteError
 (DiagnosticError and OSError), retain its `.diagnostic` and original `__cause__`,
@@ -82,8 +82,8 @@ record_publication distinguishes not_started/unknown/succeeded; record_durabilit
 is separate. Cleanup failures retain the primary and known publication effects.
 These facts cover one local record, not scheduler acceptance or a multi-file
 transaction. Bundle/config domain context/presentation and direct reads are adopted
-in MVP10.3c.2; receipt/cache/script integration is c.3. Keep existing receipt/update
-handling until those owners adopt the richer contract. See installed 15_diagnostics.
+in MVP10.3c.2; c.3 adds receipt/cache/script integration. Retain the existing
+receipt/update payloads alongside diagnostics. See installed 15_diagnostics.
 
 MVP10.3c.2 adopts direct bundle reads and bundle/config writes. Catch SelectionError
 for missing/inaccessible/malformed direct files (replacing the old FileNotFoundError/
@@ -94,9 +94,18 @@ publication/durability/secondary cleanup plus bundle/job or configuration identi
 and calling context.source. A local publication failure is not scheduler rejection;
 inspect the exact destination before retrying an append. Config/filter/initialize/
 schedule/submit use shared text/exit 1 and debug; schedule retains --autoslurm-debug.
-ACP preserves shared write diagnostics. Receipt/cache/script and broad observation/
-post-dispatch policy remain separate slices. Do not operate through private files
+ACP preserves shared write diagnostics. Broad observation and post-dispatch
+policy remain separate slices. Do not operate through private files
 or metadata helpers; retain the supported receipt/inspection workflow.
+
+MVP10.3c.3 adopts local receipt/cache I/O and atomic script publication. Low-level
+bundle/receipt/cache reads share operation record_read, while selector validation
+retains selection. Receipt reads raise SelectionError with exact receipt identity;
+cache/per-item receipt errors carry diagnostic without erasing known IDs or live
+status/logs. SubmissionError retains its receipt and any adopted persistence
+diagnostic. Scripts use the shared atomic writer: old bytes survive before
+publication and complete new text survives after observed publication. Multi-file
+staging is not a transaction, and no file error authorizes resubmission.
 
 ## Adapt scientific software
 
@@ -453,6 +462,14 @@ IDs into the original tracking snapshot. Profile edits do not redirect it.
 Remote refresh may contact the cluster; it never submits, cancels, adopts or
 retries work. A missing or unfinished execution receipt remains unknown. A
 refresh error preserves known IDs and carries `observation_error` evidence.
+MVP10.3c.3 uses SelectionError for missing/inaccessible/malformed local receipts,
+with exact receipt_path and original cause, replacing raw file/JSON/protocol
+errors. An absent receipt directory lists no items; an unreadable directory or
+broken receipt raises explicitly. SubmissionError keeps the authoritative receipt
+and any adopted local persistence diagnostic; preserve both. A failed local write
+does not prove Slurm rejected a job. Tracking failures may add tracking_diagnostic.
+`asl submission` supports --debug, stderr/exit1 and --json diagnostics; failed
+refresh JSON keeps receipt/ID fields with additive diagnostic where available.
 
 ```sh
 asl submission --bundle STUDY
@@ -518,7 +535,10 @@ Observation caches contain scheduler/receipt evidence; log/script errors belong
 to the particular artifact request and do not contaminate later status-only
 reads. Invalid caches are reported as unavailable evidence. A cache-write error
 keeps current scheduler observations and fetched log text available, with explicit
-cache errors and partial freshness. Cached log excerpts retain their task identity
+cache errors and partial freshness. Adopted cache/receipt errors include a plain
+diagnostic with exact local path, cause and actual publication facts. A genuine
+cache miss stays quiet; failed evidence does not become an empty successful read.
+Cached log excerpts retain their task identity
 and cannot be relabelled for another job sharing an output path.
 
 Missing declared array tasks remain `UNKNOWN`; parent state never fabricates

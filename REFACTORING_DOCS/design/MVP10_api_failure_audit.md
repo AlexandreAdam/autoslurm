@@ -423,3 +423,43 @@ safe selectors, metadata guards, CLI aliases/debug and ACP. Full offline suite:
 1115 passed, 43 expected collision warnings. Clean-source no-Git metadata,
 wheel/sdist-to-wheel and temporary installed API/CLI/ACP/guidance checks passed
 for 0.2.0.dev2. The route/owner/catch register checker passes unchanged counts.
+
+## MVP10.3c.3 adoption amendment (2026-11-16)
+
+Base `64288dc`; 262 routes/136 owners remain registered. Broad catches now total
+20: the two shared writer safeguards moved from atomic_json to _atomic_record,
+and two read/close safeguards were added and individually reviewed. These broad
+guards retain native bugs/interrupts and resource cleanup, without generic error
+classification. Shared errors.py remains the pure diagnostic constructor owner.
+
+Receipt/cache reads reuse extracted regular-file UTF-8 JSON/metadata I/O;
+low-level operation record_read replaces the old snapshot-specific I/O stage.
+Selectors and saved graph errors retain existing contracts. Local receipt
+validation/list failures use SelectionError with exact path/known identity,
+replacing raw file/JSON/protocol exceptions. Denied directories and broken
+receipts cannot silently produce an incomplete list. Missing directories remain
+empty, and reads do not create storage or launch commands.
+
+Receipt/projection writes retain actual publication/durability/secondary cleanup
+facts and accepted IDs, with submission context. Tracking identity/ID conflicts
+leave original bytes intact. Existing SubmissionError wrappers and ACP retain
+adopted local diagnostics with authoritative receipt payloads; secondary tracking
+evidence is additive. No new scheduler/retry/interruption policy is claimed.
+
+JSON and scripts share the same atomic publication implementation. Direct and
+staged scripts preserve old or completely published text, with job/submission
+context; dispatch does not follow staging failure. Cache faults add diagnostic
+to existing per-item error fields without erasing live status/log text. Missing
+caches stay quiet. Receipt overlay errors retain existing snapshot IDs.
+asl submission text/JSON/debug exposes adopted local persistence failures and
+keeps receipt/ID fields on failed refresh. Generic observation/CLI/ACP migration
+remains staged.
+
+58 new cases in tests/integration/test_evidence_record_diagnostics.py cover
+read/parse/contract/special-file/race/close faults, retained IDs, projection guards,
+cache/live evidence, before/after publication and public CLI/ACP boundaries.
+Existing fault injection now targets the extracted reader and atomic script
+adapter. Full offline suite: 1173 passed, 45 expected collision warnings. Clean-
+source no-Git metadata, wheel/sdist-to-wheel and installed receipt/cache/script/
+CLI/debug/ACP/guidance checks passed for 0.2.0.dev3. MVP10.3 is complete; external
+transport/readiness/software adoption remains MVP10.4 next.

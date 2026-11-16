@@ -134,7 +134,10 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
     except (SelectionError, ConfigurationError, RecordWriteError) as error:
         return {'status': 'error', 'message': str(error), 'diagnostic': error.diagnostic.to_dict()}
     except SubmissionError as exc:
-        return {"status": "error", "message": str(exc), "result": exc.receipt}
+        result = {"status": "error", "message": str(exc), "result": exc.receipt}
+        if exc.diagnostic is not None:
+            result["diagnostic"] = exc.diagnostic.to_dict()
+        return result
     except Exception as exc:  # pragma: no cover - bubble up errors
         return {"status": "error", "message": str(exc)}
 

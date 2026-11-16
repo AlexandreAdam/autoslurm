@@ -12,6 +12,7 @@ from .save_load_jobs import load_bundle_from_path
 from .scheduler import query_scheduler
 from .submission import load_submission, SUBMISSION_METADATA_KEY
 from .config import load_config
+from .errors import DiagnosticError
 
 
 @dataclass
@@ -49,7 +50,10 @@ def _load_selected(path):
                 job[SUBMISSION_METADATA_KEY] = {**job[SUBMISSION_METADATA_KEY], **outcome}
             receipts.append({"submission_id": receipt["submission_id"], "state": receipt["state"], "receipt_path": reference})
         except (OSError, ValueError, KeyError) as exc:
-            errors.append({"source": "receipt", "message": str(exc), "path": reference})
+            entry = {"source": "receipt", "message": str(exc), "path": reference}
+            if isinstance(exc, DiagnosticError) and exc.diagnostic is not None:
+                entry["diagnostic"] = exc.diagnostic.to_dict()
+            errors.append(entry)
     return jobs, date, receipts, errors
 
 

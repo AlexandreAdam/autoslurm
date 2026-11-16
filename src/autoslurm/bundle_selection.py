@@ -3,16 +3,15 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-import json
 import os
 import re
-import stat
 
 from .config import load_config, save_config, _bundle_filter_mode
 from .definitions import DATE_FORMAT
 from .errors import ConfigurationError, InvalidRequestError, SelectionError, DiagnosticCause, selection_failure
 from .job_dependency import dependency_graph
 from .storage import config_file_path, jobs_dir
+from .record_files import read_json, _record_metadata
 
 SNAPSHOT_KIND_KEY = "_autoslurm_snapshot_kind"
 __all__ = ['get_bundle_filter_mode', 'set_bundle_filter_mode', 'bundle_snapshot_state', 'all_bundle_snapshots', 'list_saved_bundles', 'latest_bundle_summaries', 'bundle_snapshots', 'stale_bundle_snapshots', 'inactive_bundle_snapshots', 'nearest_bundle_filename', 'select_bundle_snapshot']
@@ -87,26 +86,7 @@ def _selection_error(*, field, stage='select_snapshot', problem='invalid', summa
 
 
 def _file_metadata(path):
-    try:
-        metadata = path.stat()
-    except FileNotFoundError as error:
-        # A dangling link is unavailable, rather than an absent record.
-        try:
-            path.lstat()
-        except FileNotFoundError:
-            problem = 'missing'
-        except OSError as metadata_error:
-            raise _selection_error(field='bundle_path', problem='unreadable', path=path,
-                                   cause=metadata_error) from metadata_error
-        else:
-            problem = 'unreadable'
-        raise _selection_error(field='bundle_path', problem=problem, path=path, cause=error) from error
-    except OSError as error:
-        raise _selection_error(field='bundle_path', problem='unreadable', path=path, cause=error) from error
-    if not stat.S_ISREG(metadata.st_mode):
-        raise _selection_error(field='bundle_path', problem='unreadable', path=path,
-                               summary='The selected snapshot is not a regular file.')
-    return metadata
+    return _record_metadata(path, {"bundle_path": str(path), "field": "bundle_path"})
 
 
 def _snapshot_files():
@@ -133,30 +113,7 @@ def _snapshot_files():
 
 def _read_snapshot(path):
     """Read regular UTF-8 JSON only; never wait on a FIFO changed during lookup."""
-    _file_metadata(path)
-    try:
-        descriptor = os.open(path, os.O_RDONLY | getattr(os, 'O_NONBLOCK', 0))
-        with os.fdopen(descriptor, 'r', encoding='utf-8') as stream:
-            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
-                raise _selection_error(field='bundle_path', stage='read_snapshot', problem='unreadable', path=path,
-                                       summary='The selected snapshot is not a regular file.')
-            payload = json.load(stream)
-    except FileNotFoundError as error:
-        # A raced-in dangling link or replacement is unavailable, not absent.
-        try:
-            _file_metadata(path)
-        except SelectionError as observed:
-            problem = 'missing' if observed.diagnostic.code == 'resource_missing' else 'unreadable'
-        else:
-            problem = 'unreadable'
-        raise _selection_error(field='bundle_path', stage='read_snapshot', problem=problem, path=path, cause=error) from error
-    except OSError as error:
-        raise _selection_error(field='bundle_path', stage='read_snapshot', problem='unreadable', path=path, cause=error) from error
-    except (json.JSONDecodeError, UnicodeError) as error:
-        detail = (f'Invalid JSON at line {error.lineno}, column {error.colno}.'
-                  if isinstance(error, json.JSONDecodeError) else 'Saved bundles must contain UTF-8 JSON text.')
-        raise _selection_error(field='bundle_path', stage='read_snapshot', problem='corrupt', path=path,
-                               cause=error, detail=detail) from error
+    payload = read_json(path, context={"bundle_path": str(path), "field": "bundle_path"})
     if not isinstance(payload, dict):
         raise _selection_error(field='bundle_path', stage='validate_snapshot', problem='corrupt', path=path,
                                summary='A saved bundle must contain a dictionary of jobs.')
