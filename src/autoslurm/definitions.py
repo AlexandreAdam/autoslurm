@@ -13,5 +13,6 @@ MACHINE_KEYS = [
     "storage_root",
     "venv_path",
     "env_command",
+    "module_init",
     "slurm_account",
 ]

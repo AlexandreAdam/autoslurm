@@ -37,6 +37,14 @@ stale-venv regression. 66 new cases and a real temporary Git/stdin worker
 regression pass; broader SSH/helper/transfer/status work remains b–d. Plain
 standard-library probe facts are normalized by the host error module; remote
 AutoSlurm installation is still unnecessary for the software-update operation.
+**FIX.ENVIRONMENT.1 is implemented locally** in 0.2.0.dev5 as an authorized
+focused fix before 10.4b: optional module_init, explicit file-only config detection
+with shared diagnostics and ordered job initialization/setup/activation guards.
+49 new cases, 1288 offline tests and installed artifact checks pass. See the
+[module initialization design](FIX_ENVIRONMENT_1_module_initialization.md).
+This does not close 10.4b or change helper launch policy, activation preflight or
+receipt discovery. Runtime Bash failure wording and config detection diagnostic
+construction live in errors.py; generation and discovery have separate owners.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
 paths (b) and publication (c); b was then split into authoring (b.1), snapshot
 selection (b.2) and pure path/render preparation (b.3) before its implementation.

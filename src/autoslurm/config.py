@@ -4,7 +4,6 @@ from typing import Optional
 from argparse import Namespace
 import os
 import json
-import shlex
 import re
 from pathlib import Path
 from collections.abc import Mapping
@@ -14,6 +13,7 @@ from .definitions import MACHINE_KEYS
 from .storage import config_file_path, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .machine_paths import absolute_machine_path
 from .errors import ConfigurationError, DiagnosticCause, configuration_failure, RecordWriteError
+from .environment_setup import activation_steps
 
 __all__ = ["load_config", "save_config", "machine_config", "activation_command_from_config"]
 
@@ -35,10 +35,19 @@ def _configuration_error(message=None, *, field=None, machine=None, path=None,
 
 
 def _validate_activation_settings(profile, *, machine=None, path=None):
-    for field in ("venv_path", "env_command"):
+    for field in ("venv_path", "env_command", "module_init"):
         if profile.get(field) is not None and not isinstance(profile[field], str):
             raise _configuration_error(f"{field} must be a string or unset.",
                                        field=field, machine=machine, path=path)
+    initializer = profile.get("module_init")
+    if initializer:
+        try:
+            absolute_machine_path(initializer, "module_init")
+            if any(ord(char) < 32 or ord(char) == 127 for char in initializer):
+                raise ValueError("module_init must not contain control characters.")
+        except ValueError as error:
+            raise _configuration_error(str(error), field="module_init", machine=machine, path=path,
+                                       cause=error) from error
 
 
 def validate_ssh_alias(alias, *, machine=None, path=None):
@@ -63,6 +72,8 @@ def normalize_machine_profile(profile, *, machine=None, path=None):
                                    field="machines", machine=machine, path=path)
     profile = dict(profile)
     _validate_activation_settings(profile, machine=machine, path=path)
+    if not profile.get("module_init"):
+        profile.pop("module_init", None)
     account = profile.get("slurm_account")
     if account is None or (isinstance(account, str) and not account.strip()):
         profile.pop("slurm_account", None)
@@ -107,15 +118,15 @@ def is_remote_machine(config):
 
 def activation_command_from_config(machine_config: dict) -> str:
     """Return environment activation command from structured machine config."""
+    return " && ".join(command for _, command in _activation_steps_from_config(machine_config))
+
+
+def _activation_steps_from_config(machine_config):
+    """One validation boundary for composed probes and guarded job setup."""
     if not isinstance(machine_config, Mapping):
         raise _configuration_error("Machine profile must be a dictionary.", field="machines")
     _validate_activation_settings(machine_config)
-    env_command = machine_config.get("env_command", "")
-    commands = [env_command.strip()] if isinstance(env_command, str) and env_command.strip() else []
-    venv_path = machine_config.get("venv_path")
-    if isinstance(venv_path, str) and venv_path.strip():
-        commands.append(f"source {shlex.quote(venv_path)}/bin/activate")
-    return " && ".join(commands)
+    return activation_steps(machine_config)
 
 
 def _bundle_filter_mode(value, *, path=None):
@@ -266,18 +277,24 @@ def _load_config_with_path():
 
 
 def set_machine_settings(machine=None, *, software_root=None, results_root=None, ssh_alias=None,
-                         slurm_account=None, clear_slurm_account=False):
+                         slurm_account=None, clear_slurm_account=False,
+                         module_init=None, clear_module_init=False):
     """Save profile settings without connecting; None keeps the existing account."""
     if machine is not None and not isinstance(machine, str):
         raise _configuration_error("Selected machine must be a name string.", field="machine", stage="select_profile")
     if clear_slurm_account and slurm_account is not None:
         raise _configuration_error("Set or clear slurm_account, not both.", field="slurm_account",
                                    machine=machine, stage="validate_settings")
-    settings = {key: value for key, value in (("software_root", software_root), ("results_root", results_root), ("ssh_alias", ssh_alias), ("slurm_account", slurm_account)) if value is not None}
+    if clear_module_init and module_init is not None:
+        raise _configuration_error("Set or clear module_init, not both.", field="module_init",
+                                   machine=machine, stage="validate_settings")
+    settings = {key: value for key, value in (("software_root", software_root), ("results_root", results_root), ("ssh_alias", ssh_alias), ("slurm_account", slurm_account), ("module_init", module_init)) if value is not None}
     if clear_slurm_account:
         settings["slurm_account"] = None
+    if clear_module_init:
+        settings["module_init"] = None
     if not settings:
-        raise _configuration_error("Provide software_root, results_root, ssh_alias or an account update.",
+        raise _configuration_error("Provide software_root, results_root, ssh_alias, module_init or an account update.",
                                    field="settings", machine=machine, stage="validate_settings")
     raw, path = _read_config()
     config = _normalize_config(raw, profile_overrides=settings, machine=machine, path=path)
@@ -321,7 +338,8 @@ def machine_config(
         if final_overrides:
             error.diagnostic = error.diagnostic.with_context(source="profile_overrides")
         raise
-    if not activation_command_from_config(machine_config_):
+    if not any(isinstance(machine_config_.get(key), str) and machine_config_[key].strip()
+               for key in ("venv_path", "env_command")):
         raise _configuration_error(
             "Either 'venv_path' or legacy 'env_command' must be provided. "
             "Rerun with --venv_path option or rerun asl config.", field="venv_path", machine=machine_name,

@@ -340,6 +340,26 @@ def configuration_failure(*, stage, problem="invalid", summary=None, context=Non
                       summary=wording if summary is None else summary, next_action=action)
 
 
+def _module_detection_failure(problem, context, cause):
+    codes = {"missing": "resource_missing", "transport": "transport_failed",
+             "timeout": "command_timeout", "unavailable": "command_unavailable",
+             "response": "protocol_invalid"}
+    summary = ("No readable module initializer was found among the known site paths."
+               if problem == "missing" else "Module initializer detection could not finish; configuration was not changed.")
+    return Diagnostic(codes[problem], "configure_environment", "detect_module_init",
+        context=context, cause=cause, summary=summary,
+        effects={"config_write": "not_started"},
+        next_action="Use asl config --machine NAME --module-init /absolute/site/init.sh for a site-specific path; verify access if detection failed. Detection never sources files or runs env_command.")
+
+
+def _environment_setup_failure_message(field):
+    """Wording embedded in generated Bash; no runtime Python dependency in jobs."""
+    messages = {"module_init": "module initialization failed (module_init)",
+                "env_command": "environment activation failed during setup (env_command)",
+                "venv_path": "environment activation failed (venv_path)"}
+    return f"AutoSlurm {messages[field]}; application not started."
+
+
 class InvalidRequestError(DiagnosticError, ValueError):
     """Known authoring validation failure; original causes remain chained.
 

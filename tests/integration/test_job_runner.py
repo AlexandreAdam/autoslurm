@@ -55,16 +55,20 @@ def test_integration_schedule_jobs(
     for file in files_created:
         with open(file, "r") as f:
             script_content = f.readlines()
+        assert any('application not started' in line for line in script_content)
+        script_content = [line for line in script_content if not line.startswith('if [ "$?" -ne 0 ]')]
         job_name = os.path.split(file)[-1].split("_")[-2].split(".")[0]
         expected_content_lines = expected_bundle_content[job_name]
         expected_content_lines = [line for line in expected_content_lines if not line.startswith("#SBATCH --dependency")]
+        if mock_machine_config.get("venv_path"):
+            expected_content_lines = [expanded for line in expected_content_lines
+                for expanded in ([mock_machine_config["env_command"] + "\n", line] if line.startswith("source ") else [line])]
+        assert len(script_content) == len(expected_content_lines)
         for i, (line, expected_line) in enumerate(
             zip(script_content, expected_content_lines)
         ):
             if mock_machine_config is mock_machine_config_local:
                 expected_line = expected_line.replace("/path/to/remote/out/", str(storage_env / "out") + "/")
-            elif expected_line.startswith("source ") and mock_machine_config.get("venv_path"):
-                expected_line = mock_machine_config["env_command"] + " && " + expected_line
             assert (
                 line == expected_line
             ), f"Mismatch for job {job_name} script at line {i}"

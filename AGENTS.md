@@ -107,6 +107,13 @@ operate from the workstation; compute nodes use already-prepared environments.
   checkout. Do not restore the superseded source/release preparation engine.
 - With both profile settings present, env_command runs before activation of
   venv_path. Use it for module loads; updates still use venv_path/bin/python.
+- Module-based profiles can set module_init to a trusted absolute initialization
+  file. Explicit `asl config --machine NAME --detect-module-init` checks common
+  readable files without sourcing them or running env_command; --module-init and
+  --clear-module-init edit locally. New jobs initialize only when module is
+  missing, then run setup and activate, stopping on failed steps. Client bundles
+  need no site bootstrap. Detection is not compute readiness; no activation
+  preflight, global login-profile sourcing or runtime path guessing is added.
 - No package installation, checkout changes, or Git/network preparation inside
   compute jobs. Automatic deployment is outside the initial refactor.
 - Client application paths use the shared `results_root` base for inputs, cwd

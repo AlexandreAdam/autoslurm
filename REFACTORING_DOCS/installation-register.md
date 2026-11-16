@@ -13,6 +13,34 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FIX.ENVIRONMENT.1 (2026-11-16): running checkpoint 0.2.0.dev5. Main daily
+commands import the moving dev source; installed editable metadata stays 0.1.0
+without reinstall. Optional module_init records a trusted site initializer;
+explicit config detection checks files only, never sources candidates or runs
+setup. New jobs initialize module if missing, run env_command and activate the
+venv with shared generation and per-step stop guards, including unrooted jobs.
+49 new cases; 1288 full offline tests passed in 10.75 s, 46 expected collision
+warnings; `.development/test-runs/module-initialization.xml`. AST coverage remains
+262 routes/136 owners/20 broad catches. No-Git/no-runtime-import metadata,
+wheel/sdist-to-wheel and disposable installed version/clean-shell/failure/
+preview-dispatch/mock-detection/config-preservation/packaged-agent17 smoke pass:
+
+- `.development/artifacts/module-initialization/autoslurm-0.2.0.dev5-py3-none-any.whl`:
+  SHA256 `54f682e8c04022d102955ef37cd879661f35aea4a4aec2d7e622236348de3065`.
+- `.development/artifacts/module-initialization/autoslurm-0.2.0.dev5.tar.gz`:
+  SHA256 `510b449c187c3c1b66910e0db7ce4b8bd14f23786b165250058c8a813e507ab4`.
+- `.development/artifacts/module-initialization/from-sdist/autoslurm-0.2.0.dev5-py3-none-any.whl`:
+  SHA256 `54f682e8c04022d102955ef37cd879661f35aea4a4aec2d7e622236348de3065`.
+
+Direct and rebuilt wheels match exactly. Annotated v0.2.0.dev5 identifies the
+checkpoint. No actual cluster contact/discovery, daily profile/state edit,
+base/test dependency installation, external client, saved history/schema or
+pinned rollback change. User documents/reports and software_preparations excluded.
+An operator must explicitly configure the machine before the new bootstrap is
+used. Candidate readability is not compute-node readiness. No login-profile
+sourcing, activation preflight, remote helper launch-policy change or PyPI
+publication. MVP10.4b remains next; receipt discovery is a separate task.
+
 MVP10.4a (2026-11-16): running checkpoint 0.2.0.dev4; software-update diagnostics
 identify stale venv Python before pull/install and retain separate update effects.
 Base commands follow this source; installed editable metadata remains 0.1.0

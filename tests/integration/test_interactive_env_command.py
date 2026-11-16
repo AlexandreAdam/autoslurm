@@ -68,7 +68,12 @@ def test_interactive_setup_edit_is_saved_validated_and_used_in_job(monkeypatch, 
     context = resolve_execution_context("remote", selected, root_resolver=lambda *args: "/state")
     output = StringIO()
     write_slurm_content(output, {"name": "fit", "script": "science-fit", "slurm": {}}, selected, context=context)
-    assert prefix + "\n" in output.getvalue()
+    content = output.getvalue()
+    activation = "source '/env with spaces'/bin/activate"
+    assert activation + "\n" in content
+    if expected:
+        assert expected + "\n" in content
+        assert content.index(expected) < content.index(activation)
     assert len(commands) == 3  # Rendering reuses context and does not validate/connect again.
 
 

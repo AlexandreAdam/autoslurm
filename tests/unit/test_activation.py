@@ -23,7 +23,7 @@ def test_activation_preserves_single_setting_and_composes_both(profile, expected
 
 def test_config_editor_preserves_existing_module_setup(monkeypatch):
     from autoslurm.apps.config import _prompt_machine_details
-    answers = iter(['', '', '', 'n', '', ''])
+    answers = iter(['', '', '', '', 'n', '', ''])
     monkeypatch.setattr('builtins.input', lambda prompt: next(answers))
     profile = _prompt_machine_details({'venv_path': '/env', 'env_command': 'module load jax/0.11.0'})
     assert profile == {'venv_path': '/env', 'env_command': 'module load jax/0.11.0'}
@@ -43,7 +43,7 @@ def test_rendered_job_runs_setup_before_activation_and_stops_on_failure(tmp_path
     output = StringIO()
     write_slurm_content(output, job, profile)
     script = output.getvalue()
-    assert f'{setup} && source {shlex.quote(str(environment))}/bin/activate' in script
+    assert script.index(setup) < script.index(f'source {shlex.quote(str(environment))}/bin/activate')
     result = subprocess.run(['bash', '-c', script], capture_output=True, text=True)
     if setup_succeeds:
         assert result.returncode == 0 and result.stdout.strip() == 'yes'

@@ -13,7 +13,8 @@ This file is the source of truth for active scope, task order and progress.
   foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
   and MVP10.3c.1–3 local record/script persistence diagnostics complete;
   MVP10.4a software-update diagnostics complete
-  locally. MVP9 complete locally; MVP7.2f editable-update amendment
+  locally. FIX.ENVIRONMENT.1 machine module initialization complete locally.
+  MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
   FIX.DEPENDENCY.1 defaults dependent jobs to kill-on-invalid-dep=yes.
@@ -24,20 +25,19 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1239 passed, 44 expected
+  rollback source remains unchanged. Full offline suite: 1288 passed, 46 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.4a adopts software-update diagnostics in
-  0.2.0.dev4. Stale venv failures name the attempted Python and venv_path
-  correction before any pull/install. Native local causes and validated standalone
-  remote facts retain exact checks, separate pull/install effects, partial changes
-  and lost-response uncertainty. Update CLI text/JSON/debug uses the shared
-  diagnostic while retaining evidence. Profile selection, remote dispatch,
-  validation and presentation have focused owners; no update-policy change.
-  Git-free wheel/sdist-to-wheel and installed identity/behavior checks pass.
-  Last installed editable metadata remains 0.1.0 until explicit reinstall.
-  1239 full offline tests pass. Coverage: 262 routes/136 owners/20 broad catches.
-  No PyPI publication, base reinstall or daily profile,
-  environment, cluster, persisted-format or rollback change.
+- **Latest completed task:** FIX.ENVIRONMENT.1 adds optional machine module_init
+  and explicit config detection/set/clear/editor/summary controls in 0.2.0.dev5.
+  Jobs initialize module only when missing, run env_command then activate venv_path,
+  with shared generation and per-step failure guards even without a cwd. Detection
+  only checks readable site files and preserves config on failure. 49 new cases;
+  1288 offline tests pass. No-Git metadata, wheel/sdist rebuild and installed
+  identity/setup/failure/mock-submit/config/guidance smoke pass. Source follows
+  dev5; last installed editable metadata remains 0.1.0 without reinstall. No actual
+  cluster contact, daily profile/state change, activation preflight, base reinstall,
+  saved-history rewrite or pinned rollback edit. Audit: 262 routes/136 owners/20
+  broad catches. Receipt discovery and helper launch policy remain separate.
 - **Next task:** MVP10.4b SSH/session/helper readiness, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
@@ -711,6 +711,13 @@ is in the design; every callable/action and its outcome contract must be reviewe
     - [x] **MVP10.3c.3 Receipt/cache/script persistence.** Adopt local receipt/cache
       reads/writes and script publication, retaining accepted IDs and useful live
       evidence. Submission orchestration and observation policy remain 10.5/10.6.
+- [x] **FIX.ENVIRONMENT.1 Machine-owned module initialization.** Add optional
+  module_init path, explicit read-only config detection and set/clear controls;
+  initialize only when module is unavailable, then run env_command and activate
+  venv_path. Share setup generation and fail before application execution with
+  stage-specific messages, including unrooted jobs. Verify configuration, local
+  and mocked remote rendering/submission, failure cases and installed artifacts.
+  Receipt discovery and executing activation during submission remain separate.
 - [ ] **MVP10.4 Transport, readiness and software.** Classify process launch,
   SSH/session/helper/protocol/transfer and environment/Git/pip failures at adapters
   with operation context. Reproduce the stale-venv case with its attempted Python
@@ -1026,6 +1033,8 @@ or migration decision has already been accepted.
 | 2026-11-16 | MVP10.3c.2 Bundle/config record boundaries | Shared direct snapshot reads replace raw missing/unreadable/malformed exceptions with SelectionError; invalid graphs retain InvalidRequestError. Append/metadata validate originals, preserve malformed bytes and refuse replacing/clearing known scheduler IDs. Shared bundle/config writes retain native causes, publication/durability/cleanup facts and known domain identity; no guessed multi-job blame. Safe bundle/path guards precede storage access. Config/alias/filter/initialize/schedule/submit CLI text/debug and ACP expose adopted failures once; preview/submit retain machine identity. 53 new cases; 1115 full offline tests passed in 9.76 s (43 expected collision warnings), `.development/test-runs/bundle-record-diagnostics.xml`. Clean-source no-Git metadata, wheel/sdist-to-wheel and temporary installed API/retained-record/CLI/debug/ACP/guidance checks passed for 0.2.0.dev2. Wheel SHA256 `65b66f9712aad3812582fc18c0b3bd3d4841943bbc8f2e0c459f5b24af9a2f18`; sdist hashes in installation register. AST register 262 routes/136 owners/18 broad catches. Main base CLI follows source; installed editable metadata remains 0.1.0 without reinstall. No cluster, base/test dependency install, daily state/config, external client, format/history or rollback edit; user documents/evidence excluded. Annotated v0.2.0.dev2 marks tested development checkpoint; no PyPI publication. Parent 3c stays open; c.3 receipt/cache/script is next. Task commit: `git log --grep '^MVP10.3c.2:'`; push dev and checkpoint tag. |
 | 2026-11-16 | MVP10.3c.3 Receipt/cache/script persistence | Extracted one regular-file UTF-8 JSON/metadata reader for bundles/receipts/cache, with absence rechecks and primary/secondary close protection. Local receipt read/list/contract failures use SelectionError with exact identity; missing directories stay empty, broken/denied records fail explicitly. Receipt/projection writes retain accepted IDs and true publication/durability/cleanup facts. Scripts and JSON share one atomic writer, preserving old or complete new bytes; staging failure prevents dispatch. Nonfatal cache and per-item receipt errors retain diagnostics alongside live status/logs and known snapshot IDs. Existing SubmissionError wrappers, submission CLI text/JSON/debug and ACP keep adopted diagnoses with receipts; no retry/scheduler policy change. 58 new cases plus adapted extraction fault injection; 1173 full offline tests passed in 11.04 s (45 expected collision warnings), `.development/test-runs/evidence-record-diagnostics.xml`. Clean-source no-Git metadata, wheel/sdist-to-wheel and installed version/receipt/cache/script/retained-ID/CLI/debug/ACP/guidance checks passed for 0.2.0.dev3. Wheel SHA256 `cef382adbdec68dbb8239cce9ff67ac17c87664b0d9f630d20a6bdaac734239d`; separate sdist/rebuilt-wheel hashes recorded in installation register; wheel member contents match. AST register 262 routes/136 owners/20 broad catches, including two reviewed reader resource/evidence guards. No cluster, base/test dependency install, daily state/config, external client, record schema/history or rollback edit; user documents/evidence excluded. Annotated v0.2.0.dev3 identifies checkpoint; installed editable metadata remains 0.1.0 without reinstall. MVP10.3 complete; MVP10.4 transport/readiness/software next. Task commit: `git log --grep '^MVP10.3c.3:'`; push dev and checkpoint tag. |
 | 2026-11-16 | MVP10.4a Software-update diagnostics | Split 10.4 before implementation. Stale venv names attempted Python/venv_path/correction and confirms no pull/install. Native local causes and validated stdlib remote facts share errors.py normalization. Separate target selection/remote dispatch/protocol/enrichment owners retain actual check, observed commits, partial install and unknown responses; arbitrary Git failures do not fabricate checkout conditions. Generic communication errors remain unknown, no retry or host/Python fallback. SoftwareUpdateError retains evidence plus diagnostic; update CLI uses stderr/exit1, JSON evidence with diagnostic and --debug. Known request guards typed, unexpected local bugs visible. 66 new cases plus actual temporary Git/stdin missing-environment regression; 1239 full offline tests passed in 10.89 s (44 expected collision warnings), `.development/test-runs/software-update-diagnostics.xml`. No-Git metadata, wheel/sdist-to-wheel and installed version/stale-venv/local-cause/remote-facts/partial-effects/CLI/debug/guidance checks passed for 0.2.0.dev4. Wheel SHA256 `07f87ba4d8afb4c2f625f4fb8dd8a526a1420fd867a124ca8a8584eaf1a27eaf`; archive/rebuilt-wheel hashes in installation register; member contents match. AST register 262 routes/136 owners/20 broad catches. Existing single checkout, editable --no-deps install and dependency ownership unchanged. No cluster, base/test dependency install, daily config/state, external client, saved-format/history or rollback edit; user documents/reports/evidence excluded. Source follows dev4, installed metadata remains 0.1.0 without reinstall. Annotated v0.2.0.dev4 checkpoint; no PyPI publication. b SSH/helper readiness is next; c/d and parent10.4 stay open. Task commit: `git log --grep '^MVP10.4a:'`; push dev and checkpoint tag. |
+
+| 2026-11-16 | FIX.ENVIRONMENT.1 Machine module initialization | Added optional module_init, explicit read-only detect/set/clear/editor/action7/summary controls, shared ordered initialization/setup/activation and unconditional job failure guards. Existing module skips initializer; plain venv profiles require none. Failed detection preserves config and emits shared missing/SSH/launch/timeout/protocol diagnostics; no arbitrary setup execution. 49 new cases; 1288 full offline tests passed in 10.75 s, 46 expected collision warnings, `.development/test-runs/module-initialization.xml`. Git-free metadata, direct wheel/sdist-to-wheel and disposable installed identity/clean-shell/failure/preview-dispatch/mock-detection/preservation/agent17 smoke passed for 0.2.0.dev5. Wheel SHA256 `54f682e8c04022d102955ef37cd879661f35aea4a4aec2d7e622236348de3065`; archive hash in installation register; rebuilt wheel matches exactly. AST register 262 routes/136 owners/20 broad catches. No live cluster, daily config/state, base/test dependency install, external client, history/receipt/schema or rollback edits. User documents/reports/software_preparations preserved. No activation preflight or remote helper launch-policy change; MVP10.4b next, receipt discovery separate. Task commit: `git log --grep '^FIX.ENVIRONMENT.1:'`; push dev and annotated v0.2.0.dev5 checkpoint tag. |
 
 ## How we work
 

@@ -6,7 +6,8 @@ from datetime import datetime
 from .utils import name_slurm_script
 from .storage import ensure_storage_dirs, slurm_dir
 from .record_files import atomic_text, _write_error
-from .config import activation_command_from_config
+from .config import _activation_steps_from_config
+from .environment_setup import render_environment_setup
 from .transport import remote_storage_root_from_config
 from .execution import resolve_execution_context
 from .argument_compilation import compile_script_arguments, render_script_arguments
@@ -106,7 +107,7 @@ def _write_slurm_content(file, job, context, resolved):
     machine_config = context.config
     resolved = context.resolve_job(job) if resolved is None else resolved
     arguments = compile_script_arguments(resolved["script_args"])
-    env_command = activation_command_from_config(machine_config)
+    setup_steps = _activation_steps_from_config(machine_config)
     slurm_account = machine_config.get("slurm_account", "")
     exports = []
     literal = job.get("environment") or {}
@@ -144,10 +145,9 @@ def _write_slurm_content(file, job, context, resolved):
     # Environment activation command
     if resolved["working_directory"]:
         file.write(f"cd -- {shlex.quote(resolved['working_directory'])} || exit 1\n")
-    if env_command:
-        file.write(f"{env_command}\n")
+    if setup_steps:
+        file.write(render_environment_setup(setup_steps))
         if resolved["working_directory"]:
-            file.write('if [ "$?" -ne 0 ]; then echo "AutoSlurm environment activation failed" >&2; exit 1; fi\n')
             file.write(f"cd -- {shlex.quote(resolved['working_directory'])} || exit 1\n")
 
     # Main command and arguments

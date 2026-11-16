@@ -10,6 +10,7 @@ from ..errors import ConfigurationError, configuration_failure, RecordWriteError
 from .error_output import exit_with_error
 from ..transport import ssh_command, remote_storage_root_from_config
 from ..storage import config_file_path
+from ..module_initialization import detect_module_initializer
 
 
 def _refresh_config_aliases(config: Dict[str, Dict]):
@@ -152,6 +153,10 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
         "Environment setup command (runs before venv activation; e.g. module load jax/0.11.0)",
         existing.get("env_command"),
     )
+    module_init = _prompt_text(
+        "Module initialization file (absolute path; optional, or use action 7 to detect)",
+        existing.get("module_init"),
+    )
     slurm_account = _prompt_text(
         "SLURM account (omit #SBATCH --account when unset)",
         existing.get("slurm_account"),
@@ -161,6 +166,8 @@ def _prompt_machine_details(existing: Optional[Dict] = None) -> Dict:
     machine = {"venv_path": venv_path, "slurm_account": slurm_account}
     if env_command:
         machine["env_command"] = env_command
+    if module_init:
+        machine["module_init"] = module_init
     software_root = _prompt_text(
         "Software root (optional absolute directory for repositories and prepared environments)",
         existing.get("software_root"),
@@ -299,6 +306,7 @@ def _menu_loop(config: Dict):
         print("  4) Set default machine")
         print("  5) Validate machine (SSH + Python env)")
         print("  6) Exit")
+        print("  7) Detect module initialization file (contacts the selected machine)")
         choice = input("Choice: ").strip()
         if choice == "1":
             _update_machine(config)
@@ -313,8 +321,25 @@ def _menu_loop(config: Dict):
         elif choice == "6":
             print("Configuration saved.")
             break
+        elif choice == "7":
+            name = _select_machine(config, "Choose a machine for module initialization detection:")
+            if name:
+                _detect_and_save_module_init(config, name)
         else:
-            print("Please choose a valid option (1-6).")
+            print("Please choose a valid option (1-7).")
+
+
+def _detect_and_save_module_init(config, name):
+    if name not in config["machines"]:
+        raise ConfigurationError(configuration_failure(stage="select_profile",
+            summary="Selected machine was not found in configuration.",
+            context={"machine": name, "field": "module_init"}, effects={"config_write": "not_started"}))
+    path = detect_module_initializer(config["machines"][name], name)
+    set_machine_settings(name, module_init=path)
+    config["machines"][name]["module_init"] = path
+    _refresh_config_aliases(config)
+    print(f"[{name}] Saved module_init: {path}")
+    print("Detected a readable site file without executing it. Jobs verify module initialization at runtime; compute-node readiness is not established.")
 
 
 def display_config():
@@ -324,7 +349,7 @@ def display_config():
 
 def display_config_summary():
     config = load_config()
-    print("machine type default ssh_alias slurm_account venv_path software_root results_root")
+    print("machine type default ssh_alias slurm_account venv_path software_root results_root module_init")
     for name, machine in config["machines"].items():
         machine_type = "remote" if is_remote_machine(machine) else "local"
         slurm_account = machine.get("slurm_account", "-")
@@ -333,7 +358,7 @@ def display_config_summary():
         alias = machine.get("ssh_alias", "-")
         results_root = machine.get("results_root") or "<storage_root>/results"
         software_root = machine.get("software_root") or "<storage_root>/software"
-        print(f"{name} {machine_type} {default_marker} {alias} {slurm_account} {venv_path} {software_root} {results_root}")
+        print(f"{name} {machine_type} {default_marker} {alias} {slurm_account} {venv_path} {software_root} {results_root} {machine.get('module_init') or '-'}")
 
 
 def _main(argv: list[str] | None = None):
@@ -371,6 +396,10 @@ def _main(argv: list[str] | None = None):
     account = parser.add_mutually_exclusive_group()
     account.add_argument("--slurm-account", help="Set the optional #SBATCH --account value without connecting to the machine.")
     account.add_argument("--clear-slurm-account", action="store_true", help="Remove the configured account; omit its #SBATCH --account directive.")
+    modules = parser.add_mutually_exclusive_group()
+    modules.add_argument("--module-init", help="Set an absolute site module initialization file without connecting.")
+    modules.add_argument("--clear-module-init", action="store_true", help="Remove automatic module initialization for this profile.")
+    modules.add_argument("--detect-module-init", action="store_true", help="Explicitly check common readable site files on the selected machine and save the first match; does not execute setup.")
     if argv is None:
         argv = sys.argv[1:]
     if not argv or argv == ["--debug"]:
@@ -378,15 +407,23 @@ def _main(argv: list[str] | None = None):
         return
     args = parser.parse_args(argv)
 
-    if any(value is not None for value in (args.software_root, args.results_root, args.ssh_alias, args.slurm_account)) or args.clear_slurm_account:
+    edits = any(value is not None for value in (args.software_root, args.results_root, args.ssh_alias, args.slurm_account, args.module_init)) or args.clear_slurm_account or args.clear_module_init
+    if args.detect_module_init:
+        if edits or args.view or args.summary or args.interactive or args.set_default is not None:
+            parser.error("Module detection must be used alone with an optional --machine and --debug.")
+        config = load_config()
+        _detect_and_save_module_init(config, args.machine if args.machine is not None else config["default_machine"])
+        return
+    if edits:
         if args.view or args.summary or args.interactive or args.set_default is not None:
             parser.error("Profile updates cannot be combined with view, summary, interactive or set-default.")
         selected = set_machine_settings(args.machine, software_root=args.software_root, results_root=args.results_root, ssh_alias=args.ssh_alias,
-                                        slurm_account=args.slurm_account, clear_slurm_account=args.clear_slurm_account)
+                                        slurm_account=args.slurm_account, clear_slurm_account=args.clear_slurm_account,
+                                        module_init=args.module_init, clear_module_init=args.clear_module_init)
         print(f"Saved settings for machine '{selected}'.")
         return
     if args.machine is not None:
-        parser.error("--machine requires --ssh-alias, --software-root, --results-root, --slurm-account or --clear-slurm-account.")
+        parser.error("--machine requires a profile update or --detect-module-init.")
 
     if args.view:
         display_config()

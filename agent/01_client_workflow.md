@@ -263,6 +263,21 @@ settings (replace them with its real isolated locations):
 }
 ```
 
+For module-based clusters, the operator can run
+`asl config --machine cluster --detect-module-init` once to record the first
+readable known site initializer, or set `--module-init /absolute/site/init.sh`.
+Detection explicitly contacts the selected machine, only checks files and never
+executes env_command. Ordinary config reads/set/clear flags do not discover hosts.
+New jobs initialize module only when unavailable, then run env_command and
+activate venv_path. Setup failures stop before the application, including unrooted
+jobs; inspect bounded Slurm logs for the named stage/field. Keep module selection
+in machine env_command, not application code or per-job commands. Do not source
+login profiles globally or put submit/update commands in environment setup.
+Neither detection nor shell-syntax preview establishes compute-node readiness;
+submission has no activation preflight. Use `--clear-module-init` to remove the
+setting. Existing attempts/scripts are not rewritten. Installed agents can read
+`asl agent --sections 17_environment_setup` for the complete recipe.
+
 `slurm_account` is optional infrastructure configuration. Missing/null/blank
 means no profile `#SBATCH --account` directive. Use
 `asl config --machine cluster --clear-slurm-account` to remove it locally without

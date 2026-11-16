@@ -9,6 +9,21 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev5 — 2026-11-16
+
+- Optional machine module_init records an absolute trusted module initialization
+  file. New jobs source it only when module is missing, verify module availability,
+  run env_command and activate venv_path, with shared setup generation.
+- Config adds --module-init, --clear-module-init, explicit --detect-module-init,
+  an interactive field/detection action and a summary column. Detection checks
+  common readable site files without executing setup and preserves configuration
+  on failure, with shared diagnostics. It does not establish compute readiness.
+- Job setup/activation failures stop before the application with the failed field,
+  including legacy profiles without a working directory. Profiles without a module
+  initializer need no module system. Existing scripts/receipts remain unchanged.
+- No global login-profile sourcing, activation preflight, helper launch-policy
+  change, runtime file guessing, package installation or submission retry.
+
 ## 0.2.0.dev4 — 2026-11-16
 
 - Software-update errors identify the exact failing check, selected machine,

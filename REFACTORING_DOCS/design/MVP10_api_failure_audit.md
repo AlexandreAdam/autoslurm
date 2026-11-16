@@ -496,3 +496,17 @@ cover pre/during/post-operation faults and retained effects. Full offline suite:
 and installed version/stale-venv/native-cause/remote-facts/partial-install/CLI/debug/
 guidance checks passed for 0.2.0.dev4. b SSH/helper readiness is next; parent
 MVP10.4 stays open, as do broader submission/observation/CLI/ACP policies.
+
+## FIX.ENVIRONMENT.1 amendment (2026-11-16)
+
+Module-init configuration validation and explicit detection adopt ConfigurationError
+and shared diagnostics for missing readable candidates, SSH255, launch, timeout
+and unexpected responses. Detection never executes setup and saves only on a
+valid selected candidate. Shared runtime Bash error wording names module_init,
+env_command or venv_path; job guards stop before the application even without a
+cwd. Pure setup generation lives in environment_setup.py, explicit file discovery
+in module_initialization.py, and config persistence remains in config.py. No new
+public routes or broad catches: 262 routes, 136 owners, 20 reviewed catches.
+49 new regressions and 1288 full offline tests pass; installed section17 documents
+the recipe/limits. General helper/SSH readiness remains MVP10.4b; this is not an
+activation preflight, compute-readiness guarantee or receipt discovery change.

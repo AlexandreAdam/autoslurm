@@ -200,6 +200,9 @@ def mock_load_config(monkeypatch, tmp_path):
 @pytest.fixture
 def slurm_emulator(monkeypatch):
     """Emulate SLURM job submission by running the generated script locally."""
+    # These tests exercise application execution, so use a successful fake setup.
+    # A nonexistent activation path must now stop a generated job.
+    monkeypatch.setitem(mock_machine_config_local, "env_command", "true")
     real_run = subprocess.run
     recorded = []
     counter = {"value": 0}

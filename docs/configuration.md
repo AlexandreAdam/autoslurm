@@ -22,12 +22,79 @@ select the machine. The **Environment setup command** prompt follows the venv
 path: type the command to add/replace it, press Enter to keep it, or enter `-`
 to remove it. The same prompt appears when creating a profile. Clearing it
 removes `env_command` from the saved profile and keeps `venv_path` unchanged.
-When both are present, jobs and config validation run the setup followed by
-`source <venv_path>/bin/activate`, joined by `&&`; either setting alone keeps
-its existing behavior. Software updates use the venv's Python directly.
+Jobs and config validation run setup before `source <venv_path>/bin/activate`.
+Jobs check each step and stop before the application if it fails, even without
+a working directory. Software updates use the venv's Python directly.
 In text prompts, Enter keeps the current value and `-` clears an optional field
 (environment setup command, account or either root). Required fields such as the environment and SSH alias
 cannot be cleared. Clearing a root restores its default location for future runs.
+
+## Module initialization for cluster jobs
+
+Some clusters define `module` only in initialized shells. A job submitted from a
+laptop can otherwise fail with `module: command not found`, even though the same
+job works when submitted from a cluster terminal. Configure initialization once
+per machine; bundles and scientific applications need no special handling.
+
+```sh
+asl config --machine rusty --detect-module-init
+```
+
+This explicit action contacts the selected machine through its SSH alias (or
+checks locally for a local profile). It saves the first readable regular file
+among `/etc/profile.d/z00_lmod.sh`, `/etc/profile.d/lmod.sh`,
+`/etc/profile.d/modules.sh`, `/usr/share/lmod/lmod/init/bash` and
+`/usr/share/Modules/init/bash`, in that order. It never sources candidates or
+executes `env_command`. A failed detection preserves configuration and reports
+the failure; it never falls back to another machine. A detected readable file
+is a candidate, not proof that modules or CUDA work on compute nodes.
+
+For another site layout, set the trusted machine-owned initialization file:
+
+```sh
+asl config --machine rusty --module-init /site/modules/init/bash
+asl config --machine rusty --clear-module-init
+```
+
+Setting/clearing is local configuration editing without SSH or file checks.
+`--summary` includes `module_init`. In the interactive editor, the optional
+**Module initialization file** prompt follows `env_command`; Enter keeps it and
+`-` clears it. Menu action **7) Detect module initialization file** performs the
+same explicit detection as the flag. Ordinary edits do not automatically detect.
+
+With `module_init` configured, every newly generated job:
+
+1. Checks whether `module` is already available; otherwise sources that exact
+   file and checks that `module` became available.
+2. Runs `env_command` to load your chosen modules and set variables.
+3. Activates `venv_path`, then runs the application.
+
+For example, the profile can contain:
+
+```json
+{
+  "module_init": "/site/modules/init/bash",
+  "env_command": "module load python/3.13 cuda/13 && export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME",
+  "venv_path": "/home/user/envs/science"
+}
+```
+
+Replace these example paths/module versions with your site's values. Paths are
+literal absolute machine paths, including spaces; no `~` or variable expansion.
+Only configure trusted initialization scripts. `env_command` remains trusted
+shell code: use `&&` between operations whose failures must stop setup. The
+generator checks its resulting exit status; it cannot infer failures hidden by
+later successful shell commands. Never put a submit/update command there.
+
+The same ordered setup underlies config validation and helper-root discovery.
+Preview checks shell syntax without executing setup; submission does not run an
+activation preflight. Remote submission-helper launch policy is unchanged.
+No global `/etc/profile` sourcing or login-shell switch is introduced. Jobs
+without `module_init` require no module system. Existing saved scripts and
+receipts are unchanged; no packages, modules or environments are installed.
+
+## Other machine settings
+
 To update the roots or alias of an existing profile without remote commands:
 
 ```sh

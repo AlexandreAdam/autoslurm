@@ -354,7 +354,8 @@
         "tests/integration/test_configuration_diagnostics.py",
         "tests/integration/test_selection_diagnostics.py",
         "tests/integration/test_bundle_record_diagnostics.py",
-        "tests/integration/test_software_update_diagnostics.py"
+        "tests/integration/test_software_update_diagnostics.py",
+        "tests/integration/test_module_initialization.py"
       ],
       "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema. MVP10.3b.2 validates bundle_filter_mode through one config owner; absence alone defaults reads to active, while invalid/unreadable/corrupt configuration is visible. MVP10.3c.2: config writes retain RecordWriteError (resource=configuration/source=save_config), never falsely reset to config_write=not_started. Config/filter CLI handles expected write failures and native debug."
     },
@@ -731,9 +732,9 @@
     },
     "autoslurm.apps.config.main": {
       "contract": "config",
-      "inputs": "view/summary; settings update; set-default; interactive editor. Interactive env_command prompt supports add/replace/keep/clear.",
-      "current": "Shared stderr/exit1/debug for ConfigurationError and RecordWriteError on root/alias/standalone. Existing corrupt files never reset; write failure never triggers later validation or a no-write claim. External post-save readiness remains 10.4.",
-      "effects": "View/read local-only; true missing config may enter first-use editor. Unreadable/corrupt/invalid/dangling or concurrently present entries stop without reset/write. Valid saves still use atomic publication, and optional existing validation may SSH (mocked in task tests). Publication diagnostics pending."
+      "inputs": "view/summary; settings update; set-default; interactive editor. Interactive env_command prompt supports add/replace/keep/clear. FIX.ENVIRONMENT.1 adds module_init set/clear/detect, editor prompt/action7 and summary column.",
+      "current": "Shared stderr/exit1/debug for ConfigurationError and RecordWriteError on root/alias/standalone. Existing corrupt files never reset; write failure never triggers later validation or a no-write claim. External post-save readiness remains 10.4. Explicit detection uses typed missing/transport/timeout/launch/protocol diagnostics and never sources candidates or executes setup; failed detection preserves config.",
+      "effects": "View/read local-only; true missing config may enter first-use editor. Unreadable/corrupt/invalid/dangling or concurrently present entries stop without reset/write. Valid saves still use atomic publication, and optional existing validation may SSH (mocked in task tests). Publication diagnostics pending. Only explicit module detection contacts the selected host for file checks; set/clear remains local-only. First readable candidate is saved through the existing atomic writer."
     },
     "autoslurm.apps.filter.main": {
       "contract": "selection",
@@ -965,8 +966,8 @@
     },
     "autoslurm.config.activation_command_from_config": {
       "contract": "config",
-      "inputs": "Profile with optional env_command/venv_path.",
-      "current": "String with setup before activation; known malformed profile or nonstring env_command/venv_path raises ConfigurationError. Empty/unset activation still returns empty string; machine_config requires activation.",
+      "inputs": "Profile with optional module_init, env_command and venv_path.",
+      "current": "Ordered module initialization/setup/activation command from the shared generator. Configured initializer is sourced only when module is unavailable; invalid absolute path/type raises ConfigurationError. Unset settings return empty string; module_init alone is not a Python environment. No file or process checks.",
       "effects": "Pure formatting, does not activate or verify environment."
     },
     "autoslurm.config.load_config": {
@@ -1152,7 +1153,7 @@
     "autoslurm.job_to_slurm.create_slurm_script": {
       "contract": "persistence",
       "inputs": "Job, date, machine profile and optional resolved context.",
-      "current": "Render in memory before storage, preserve existing storage setup, publish complete UTF-8 script through shared atomic writer. RecordWriteError retains exact script/job/source and actual publication/durability/cleanup facts. No shell-check behavior added.",
+      "current": "Render in memory before storage, preserve existing storage setup, publish complete UTF-8 script through shared atomic writer. RecordWriteError retains exact script/job/source and actual publication/durability/cleanup facts. No shell-check behavior added. FIX.ENVIRONMENT.1 shares ordered setup with config/root probes and adds per-step job failure guards even without working_directory; prior scripts are untouched.",
       "effects": "Optional root discovery and pure rendering before local file creation/truncation. Successful render then directory/file write; atomic publication and file-error effects remain 3c."
     },
     "autoslurm.remote_fs.path_exists": {
@@ -1624,6 +1625,10 @@
       "current": "Successful evidence or SoftwareUpdateError evidence+diagnostic. Adopted text stderr/exit1, JSON retains evidence with additive diagnostic, --debug native cause. Expected request/profile errors use shared envelope; programming bugs propagate. Missing project help0, parser misuse exit2. No status/other-command migration claimed.",
       "effects": "Preflight then ff-only pull and editable --no-deps reinstall; no dependency repair.",
       "contract": "software_update"
+    },
+    "cli:config": {
+      "contract": "config",
+      "note": "FIX.ENVIRONMENT.1: --module-init/--clear-module-init edit locally, --detect-module-init explicitly checks known readable site files on the selected machine without executing activation. Failures preserve configuration and shared diagnostics; installed section17 documents the contract. General readiness migration remains MVP10.4b."
     }
   },
   "amendments": [
