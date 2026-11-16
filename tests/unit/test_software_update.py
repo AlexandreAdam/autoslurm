@@ -123,7 +123,7 @@ def test_dirty_checkout_is_preserved_without_pull(checkout, monkeypatch, dirty):
     assert git.head == FIRST
 
 
-@pytest.mark.parametrize('field,match', [('branch', 'detached'), ('upstream', 'no configured upstream')])
+@pytest.mark.parametrize('field,match', [('branch', 'detached'), ('upstream', 'no readable configured upstream')])
 def test_branch_setup_is_not_changed_implicitly(checkout, monkeypatch, field, match):
     root, path = checkout
     git = Git(path)
@@ -360,7 +360,8 @@ def test_cli_exposes_pip_build_failure_tail(checkout, monkeypatch, capsys, as_js
     monkeypatch.setattr('subprocess.run', git)
     with pytest.raises(SystemExit) as caught:
         software.main(['update', '--project', 'science'] + (['--json'] if as_json else []))
-    output = capsys.readouterr().out
+    captured = capsys.readouterr()
+    output = captured.out if as_json else captured.err
     assert caught.value.code == 1 and 'BackendUnavailable' in output
     if as_json:
         assert json.loads(output)['installation']['output_tail'] == git.install_stderr
@@ -431,6 +432,6 @@ def test_remote_install_failure_keeps_commit_and_prints_failed_stage(checkout, m
     monkeypatch.setattr('subprocess.run', lambda cmd, **kw: calls.append(cmd) or CompletedProcess(cmd, 0, json.dumps(result), ''))
     with pytest.raises(SystemExit) as caught:
         software.main(['update', '--project', 'science'])
-    text = capsys.readouterr().out
+    text = capsys.readouterr().err
     assert caught.value.code == 1 and SECOND in text and 'Editable install: failed' in text
     assert len(calls) == 1

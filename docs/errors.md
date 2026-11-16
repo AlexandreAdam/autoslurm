@@ -7,8 +7,8 @@ can report a scientifically failed job.
 
 MVP10.2 supplies the shared diagnostic foundation. MVP10.3a adopts it for local
 configuration reads, profile/setting validation, selection and the config CLI.
-Other commands and services are adopting it in later slices; this release does
-**not** fix the stale-venv message or change all CLI errors. SubmissionError still carries its receipt and
+MVP10.4a now adopts software updates, including stale venv paths. Other commands
+and services are adopting it in later slices. SubmissionError still carries its receipt and
 SoftwareUpdateError its update evidence. Keep those objects, particularly accepted
 job IDs and unknown outcomes, even when displaying an error.
 
@@ -90,7 +90,8 @@ lookup reports missing evidence versus malformed roots/transport through
 `SelectionError`, retaining the exact file/job and historical producing roots.
 It never substitutes today's profile. Pure validation makes no blanket claim about
 submission effects. External readiness/SSH/existence errors retain their existing
-behavior until MVP10.4; this slice does not fix the stale-venv message.
+behavior until their MVP10.4b–d slices. Software-update preflight now has its own
+adopted boundary described below.
 
 The opt-in `autoslurm.apps.error_output` adapter renders these same facts as text
 or JSON. It exits 1 for a diagnosed operation failure, writes text to stderr or
@@ -181,6 +182,18 @@ before replacement retain old bytes; failures after observed replacement retain
 the complete new script. `RecordWriteError` identifies `slurm_script`, job and
 submission context where known. Multi-script staging is not a transaction: earlier
 complete scripts may exist when a later write fails, and dispatch does not start.
+
+Software updates now raise `SoftwareUpdateError` with both `.evidence` and
+`.diagnostic`; JSON evidence includes the same diagnostic. A missing venv names
+the attempted Python executable and the `venv_path` correction in `asl config`.
+Its preflight effects confirm pull/install were not started. Other failures
+retain their actual check, native local cause or validated remote facts, and
+separate Git/install effects. A failed install can follow a successful pull;
+lost responses remain unknown and are never retried automatically.
+`asl software update --debug` preserves original causes; ordinary text uses
+stderr/exit 1, and `--json` keeps evidence with an additive diagnostic. Unexpected
+update bugs propagate. See [software updates](software.md) for interpretation.
+This does not claim general SSH/helper/transfer/software-status adoption.
 
 Agent developers should read the [packaged diagnostic recipe](../src/autoslurm/agent_resources/15_diagnostics.md)
 for supported fields, bounds, classification and integration examples. The

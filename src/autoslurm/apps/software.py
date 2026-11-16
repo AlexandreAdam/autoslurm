@@ -7,6 +7,8 @@ import sys
 from ..software_status import inspect_software
 from ..software_requirements import software_expectations
 from ..software_update import update_software, SoftwareUpdateError
+from ..errors import ConfigurationError, InvalidRequestError
+from .error_output import render_diagnostic, exit_with_error
 
 
 def main(argv=None):
@@ -16,6 +18,7 @@ def main(argv=None):
     update.add_argument("--machine", help="Configured machine; defaults to the selected machine.")
     update.add_argument("--project", help="Existing checkout relative to software_root (required for updates).")
     update.add_argument("--json", action="store_true", help="Print structured before/after commit evidence.")
+    update.add_argument("--debug", action="store_true", help="Show original software-update errors and causes.")
     status = actions.add_parser("status", help="Read project branches, commits and working-tree changes.")
     status.add_argument("--machine", help="Configured machine; defaults to the selected machine.")
     status.add_argument("--project", help="Project path relative to the machine's software_root; omit to list projects.")
@@ -95,20 +98,22 @@ def _update(args):
     try:
         result = update_software(machine=args.machine, project=args.project)
     except SoftwareUpdateError as error:
+        if args.debug:
+            raise
         if args.json:
             print(json.dumps(error.evidence, indent=2))
         else:
-            print(str(error))
+            output = sys.stderr if error.diagnostic is not None else sys.stdout
+            print(render_diagnostic(error.diagnostic) if error.diagnostic is not None else str(error), file=output)
             if error.evidence.get('after_commit'):
-                print('Current commit: ' + error.evidence['after_commit'])
+                print('Last observed commit: ' + error.evidence['after_commit'], file=output)
             installation = error.evidence.get('installation')
             if isinstance(installation, dict):
-                print(f'Editable install: {installation["state"]} ({installation["python"]})')
-            print(f'Inspect: asl software status --machine {args.machine or error.evidence["machine"]} --project {args.project}')
+                print(f'Editable install: {installation["state"]} ({installation["python"]})', file=output)
+            print(f'Inspect: asl software status --machine {args.machine or error.evidence["machine"]} --project {args.project}', file=output)
         raise SystemExit(1) from None
-    except (ValueError, RuntimeError, OSError) as error:
-        print(json.dumps({'state': 'failed', 'error': str(error)}) if args.json else str(error))
-        raise SystemExit(1) from None
+    except (ConfigurationError, InvalidRequestError) as error:
+        exit_with_error(error, json_output=args.json, debug=args.debug)
     if args.json:
         print(json.dumps(result, indent=2))
     else:

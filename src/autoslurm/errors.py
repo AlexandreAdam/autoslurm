@@ -258,6 +258,38 @@ def record_write_failure(*, stage, path, effects, cause, problem="storage"):
         next_action="Inspect the exact destination and publication/durability facts before repeating any write; retain existing records and original evidence.")
 
 
+def _software_update_failure(*, problem, check, context, effects, cause=None, summary=None):
+    """Describe validated update facts; never infer effects from an error code."""
+    if problem not in {"invalid_argument", "resource_missing", "resource_inaccessible",
+            "command_unavailable", "command_failed", "command_timeout", "operation_interrupted",
+            "protocol_invalid", "compatibility_mismatch", "transport_failed", "outcome_unknown"}:
+        raise ValueError("Unknown software update failure.")
+    action = "Inspect the existing checkout and before/after commit evidence before repeating an update; do not reset or merge automatically."
+    if check == "environment_python":
+        executable = context.get("executable", "the configured environment Python")
+        if problem == "command_unavailable":
+            summary = f"Cannot start the configured environment Python at {executable}; correct venv_path in asl config. Pull and installation were not started."
+        elif problem == "compatibility_mismatch":
+            summary = f"Python at {executable} does not identify the configured virtual environment; pull and installation were not started."
+        elif summary is None:
+            summary = f"Could not verify the configured environment Python at {executable}; pull and installation were not started."
+        action = "Correct venv_path for the selected machine with asl config --interactive; verify that environment's bin/python before updating again."
+    elif check == "editable_install":
+        if problem == "command_unavailable":
+            summary = f"Cannot start editable installation with {context.get('executable')}; Git pull completed but installation did not start."
+        action = "Inspect the retained pulled commit, selected environment and pip output tail; installation may be partial. Do not submit jobs until the environment is verified."
+    elif check.startswith("git_") and problem == "command_unavailable":
+        summary = "Git could not be started for the selected checkout."
+        if all(value == "not_started" for value in effects.values()):
+            summary += " Pull and installation were not started."
+    elif check.startswith("ssh_update"):
+        action = "Check access using the operator-owned SSH alias, then inspect the checkout and selected environment; a lost response may follow a completed update, so do not retry blindly."
+    elif check == "probe_source":
+        action = "Verify the identified installed AutoSlurm helper source file; no update was dispatched."
+    return Diagnostic(problem, "software_update", check, context=context, effects=effects,
+                      cause=cause, summary=summary, next_action=action)
+
+
 def _record_read_failure(*, path, code, stage, context=None, cause=None, summary=None):
     """Pure local-read facts; absence never implies a scheduler outcome."""
     if code not in {"invalid_argument", "resource_missing", "resource_inaccessible", "record_invalid"}:

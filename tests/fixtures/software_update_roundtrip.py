@@ -154,6 +154,27 @@ assert installed_names() == original_distributions | {'autoslurm-update-fixture'
 assert list(software_root.iterdir()) == [checkout]
 assert sum(command[0] == 'ssh' for command in commands) == 1
 
+# Missing remote Python returns plain failure facts through the same stdin
+# payload, with no installed remote AutoSlurm and no update/installation retry.
+missing_environment = root / 'missing environment'
+save_config({'default_machine': 'remote', 'machines': {'remote': {
+    'software_root': str(software_root), 'ssh_alias': 'offline-alias', 'venv_path': str(missing_environment)}}})
+try:
+    update_software(project='science')
+except SoftwareUpdateError as error:
+    assert error.diagnostic.code == 'command_unavailable'
+    assert error.diagnostic.stage == 'environment_python'
+    assert error.diagnostic.context['executable'] == str(missing_environment / 'bin/python')
+    assert error.diagnostic.cause.kind == 'FileNotFoundError'
+    assert error.diagnostic.effects == {'git_pull': 'not_started', 'editable_install': 'not_started'}
+    assert error.evidence['installation']['python'] == str(missing_environment / 'bin/python')
+else:
+    raise AssertionError('Missing remote environment must stop before updating.')
+assert not missing_environment.exists()
+assert sum(command[0] == 'ssh' for command in commands) == 2
+save_config({'default_machine': 'remote', 'machines': {'remote': {
+    'software_root': str(software_root), 'ssh_alias': 'offline-alias', 'venv_path': str(environment)}}})
+
 # A local commit and an upstream commit diverge: a pull must not merge/reset.
 subprocess.run = real_run
 (checkout / 'local.txt').write_text('KEEP LOCAL COMMIT')

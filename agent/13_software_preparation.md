@@ -126,6 +126,41 @@ no remote AutoSlurm upgrade or copied worker files are needed. The existing
 configured environment needs pip; build backends are obtained in pip's
 temporary build environment, with index/network access on the login host.
 
+## Update diagnostics and client handling
+
+MVP10.4a keeps SoftwareUpdateError.evidence and adds its shared .diagnostic, also
+serialized as evidence.diagnostic. Retain both. Operation is software_update;
+diagnostic.stage is the failed check (environment_python, git_status, git_pull,
+git_commit_after, editable_install or ssh_update_response, for example).
+The evidence's existing stage remains preflight/pull/install/transport. Context
+identifies machine/project, SSH alias where applicable, selected path/executable,
+and venv_path for environment failures. Original local exceptions remain chained;
+remote probes return validated kind/errno/returncode facts through stdin, using
+only the standard library. Do not import private probes in scientific clients.
+
+A missing or inaccessible configured Python is command_unavailable and names the
+attempted venv_path/bin/python before launch. Correct that machine's venv_path
+with asl config --interactive; no environment is created or repaired. Prefix
+mismatch is compatibility_mismatch; malformed probe output is protocol_invalid.
+Preflight failures have git_pull=not_started and editable_install=not_started.
+Unknown explicit machine values are rejected, without choosing a default host.
+Invalid request/profile guards use existing InvalidRequestError/ConfigurationError.
+
+effects.git_pull and effects.editable_install are separate. A completed pull
+followed by failed pip installation retains commits and editable_install=partial; pip may
+already have changed the environment. Launch failures can show not_started;
+timeouts/interruption during mutation and generic lost communication stay unknown.
+Failed post-pull commit inspection retains the observed pull result but has no
+fabricated current commit. Raw Git/SSH output is omitted; pip's useful tail is
+bounded/redacted. Native debug causes are not JSON payloads.
+
+asl software update uses stderr/exit1 for adopted errors, --json for the existing
+evidence plus diagnostic, and --debug to re-raise original errors. Unexpected
+programming bugs propagate through this update path. Legacy failure responses
+without detailed facts have unknown effect diagnostics rather than invented
+proof of no work. This does not change status or other command error contracts;
+SSH/helper/transfer/status adoption continues in MVP10.4b–d.
+
 ## Job and installation boundary
 
 Updating is an explicit operator action before submission, never part of

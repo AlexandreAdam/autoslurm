@@ -30,6 +30,13 @@ MVP10.3 is complete. Current coverage is 262 routes/136 owners/20 broad catches:
 two earlier masking handlers were removed, shared writer safeguards retained,
 and two reader resource/evidence safeguards added and reviewed.
 Other service adoption remains pending.
+MVP10.4 is split before implementation into software updates (a), SSH/helper
+readiness (b), transfers/filesystem probes (c) and software-status observations
+(d). **MVP10.4a is implemented locally** in 0.2.0.dev4, including the reported
+stale-venv regression. 66 new cases and a real temporary Git/stdin worker
+regression pass; broader SSH/helper/transfer/status work remains b–d. Plain
+standard-library probe facts are normalized by the host error module; remote
+AutoSlurm installation is still unnecessary for the software-update operation.
 MVP10.3 was split before implementation into configuration (a), authoring/selection/
 paths (b) and publication (c); b was then split into authoring (b.1), snapshot
 selection (b.2) and pure path/render preparation (b.3) before its implementation.
@@ -419,6 +426,37 @@ failed refresh JSON retains receipt fields plus adopted diagnostic, as does ACP'
 result receipt. Broader process/readiness, orchestration/interruption and
 observation policies remain MVP10.4/10.5/10.6; universal CLI/ACP adoption is 10.8.
 
+### MVP10.4a implemented software-update boundary
+
+The standalone worker records installation.python before checking the interpreter
+and adds check/failure/effects facts to its version-1 evidence. It uses only stdlib;
+local execution separately retains the original exception, while SSH transports
+plain facts. Known guards are narrow probe failures, not a blanket ValueError
+catch over programming bugs. Root/profile selection, one remote dispatch, strict
+response validation and shared diagnostic enrichment have separate owners.
+errors.py owns the pure software-update wording/correction constructor. The
+reported stale venv now names its attempted executable, venv_path and correction,
+with pull/install not_started; no environment is repaired or replaced.
+
+Separate git_pull/editable_install effects preserve completed pulls, nonzero pip's
+partial installation and uncertainty after timeout/interruption/lost response.
+Post-pull commit-read failure retains the observed pull effect and no fabricated
+after_commit. Failed observations do not guess detached HEAD or missing upstream
+from arbitrary Git failures. Generic communication OSError remains unknown;
+observed launch failures retain no-start facts. Remote response validation checks
+identity, bounded cause/process facts and phase/effect consistency; legacy failure
+responses get unknown effects instead of invented guarantees. Git/SSH output is
+omitted; bounded pip tails are redacted, including signalled installs' useful text.
+
+SoftwareUpdateError keeps evidence/native local causes and adds diagnostic, also
+in JSON evidence. Update CLI text uses stderr/exit1, JSON keeps evidence with
+diagnostic, --debug re-raises; unexpected local bugs remain visible. Invalid
+project/profile requests use existing InvalidRequestError/ConfigurationError;
+invalid explicit machine values cannot choose the default. Single-checkout,
+editable --no-deps installs, branch policy, operator-owned dependencies, no replay
+and no compute-job installation remain unchanged. b–d and broader CLI/ACP work
+stay open; this is not universal transport/readiness adoption.
+
 ## Diagnostic contract and failure families
 
 The proposed diagnostic separates these facts:
@@ -546,7 +584,10 @@ The user's expanded scope supersedes the old three-task updater-first sequence:
 | MVP10.3c.1 complete | Shared JSON writer diagnostics with publication/durability facts and secondary cleanup |
 | MVP10.3c.2 complete | Bundle/config read/write boundaries and CLI presentation |
 | MVP10.3c.3 complete | Receipt/cache/script persistence and retained evidence |
-| MVP10.4 | External transport/readiness/software adoption, including the stale-venv regression |
+| MVP10.4a complete | Software-update diagnostics, native local/validated remote facts, phase effects and stale-venv correction |
+| MVP10.4b | SSH/session/helper readiness |
+| MVP10.4c | Transfers and filesystem probes |
+| MVP10.4d | Read-only software-status observations |
 | MVP10.5 | Submission/receipt/interruption/secondary-failure adoption with retained acceptance evidence |
 | MVP10.6 | Status/inspection/log/cache adoption with explicit observation quality and partial data |
 | MVP10.7 | Cancel/clean/sync and discovery/context adoption with per-target/per-file effects |
@@ -775,3 +816,24 @@ Human/agent guidance and installation register updated. No actual cluster comman
 base/test dependency installation, daily config/state, external client, saved
 format/history or rollback edit. MVP10.3 complete; MVP10.4 readiness/transport/
 software is next, broader orchestration/observation/CLI/ACP policies remain open.
+
+2026-11-16, MVP10.4a: split 10.4, then implemented software-update diagnostics,
+including attempted stale-venv Python/correction and no-start effects. Plain stdlib
+worker facts/native local causes normalize through errors.py; focused target/
+transport/validation/enrichment owners retain partial/unknown effects and useful
+redacted pip tails. CLI stderr/JSON/debug and typed request guards adopted; no
+retry, repair, extra code/environment copy or dependency-policy change. 66 new
+cases plus actual temporary Git/stdin missing-venv regression; 1239 full offline
+tests passed in 10.89 s, 44 expected collision warnings;
+`.development/test-runs/software-update-diagnostics.xml`. Clean-source no-Git/
+no-runtime-import metadata, wheel/sdist-to-wheel and installed version/stale-venv/
+native-cause/remote-facts/partial-effects/CLI/debug/guidance smoke passed for
+0.2.0.dev4. Wheel SHA256
+`07f87ba4d8afb4c2f625f4fb8dd8a526a1420fd867a124ca8a8584eaf1a27eaf`;
+sdist SHA256 `36c7c376f1d773b4f179f267a919fedd7f37e386d56896f444e060e97cd8cbb8`;
+rebuilt wheel SHA256 `106a29cc77027dd044ab3e089088b02639cfc1c50e2d94390434e223fb73b367`.
+Member names/contents match. AST register 262 routes/136 owners/20 broad catches.
+No actual cluster, base/test dependency installation, daily config/state, external
+client, saved-format/history or pinned rollback change. User documents/reports/
+evidence excluded. MVP10.4a complete; b SSH/helper readiness next, c/d and parent
+10.4 stay open. No PyPI publication or deployment.

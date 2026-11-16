@@ -9,6 +9,27 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev4 — 2026-11-16
+
+- Software-update errors identify the exact failing check, selected machine,
+  project and executable. A stale venv reports its attempted `bin/python`, points
+  to `venv_path` in `asl config`, and confirms pull/install did not start.
+- SoftwareUpdateError retains its evidence and native local cause, and now
+  supplies a shared diagnostic also present in its JSON evidence. Standalone SSH
+  probes return validated plain failure facts; no remote AutoSlurm is required.
+- Separate Git-pull and editable-install effects distinguish not started,
+  completed, partial and unknown work. Failed installs keep observed commits and
+  a bounded, redacted pip tail. Lost/invalid SSH responses remain unknown without
+  retry; generic communication errors do not imply that nothing ran.
+- Invalid update requests use existing InvalidRequestError/ConfigurationError
+  families, retaining ValueError compatibility. Invalid explicit machine values
+  no longer silently choose the default. Unexpected updater bugs propagate.
+- `asl software update` renders adopted errors once to stderr/exit 1; `--json`
+  preserves evidence with additive diagnostic and `--debug` re-raises original
+  errors. Broader SSH/helper/transfer/status adoption remains MVP10.4b–d.
+- In-place pull, default editable install, operator-owned dependencies and
+  single-checkout policy are unchanged. No saved schema/history migration.
+
 ## 0.2.0.dev3 — 2026-11-16
 
 - Receipt reads use SelectionError for missing, inaccessible or invalid local

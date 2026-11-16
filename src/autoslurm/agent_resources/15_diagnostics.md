@@ -9,8 +9,9 @@ MVP10.3b.3 adds pure path/render preparation and saved producing-context validat
 MVP10.3c.1 adds phase-aware shared JSON publication diagnostics.
 MVP10.3c.2 adopts direct bundle reads and bundle/config mutation boundaries.
 MVP10.3c.3 adopts receipt/cache persistence and atomic script publication.
-The stale-venv/software preflight correction is still MVP10.4 work. Do not promise
-better messages from those services based only on the existence of this module.
+MVP10.4a adds software-update diagnostics, including stale-venv preflight failures.
+General SSH/helper/transfer/read-only software-status adoption remains MVP10.4b–d.
+Do not promise universal diagnostics based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
 
 ## Public contract
@@ -106,8 +107,9 @@ selector, only a missing primary file permits the old src/config.json lookup.
 No automatic profile/environment switch or submission retry is added.
 
 Bundle authoring/selection/path and bundle/config record diagnostics are adopted
-in the sections below. Configuration validation's external commands, stale-venv
-probing and universal CLI/ACP parity remain later work. Invalid storage selectors can still fail during eager package
+in the sections below. Configuration validation's external commands and universal
+CLI/ACP parity remain later work; software-update preflight is adopted in 10.4a.
+Invalid storage selectors can still fail during eager package
 import before this interface is available. Do not hide those limitations.
 
 ## Authoring adoption in MVP10.3b.1
@@ -392,6 +394,65 @@ resource=slurm_script, job and known submission identity. Before publication the
 old destination survives; after observed publication the complete new script
 survives. Rendering still precedes storage access. A staged set is not a transaction:
 earlier complete scripts can exist if a later write fails, and dispatch stops.
+
+## Software updates in MVP10.4a
+
+Use update_software(project=relative_project, machine=selected_machine). Keep
+SoftwareUpdateError.evidence and .diagnostic together; evidence.diagnostic is the
+same plain JSON diagnostic. Invalid project/profile selectors use existing
+InvalidRequestError/ConfigurationError instead of raw validation errors, retaining
+ValueError compatibility. Invalid explicit machines never select a default.
+
+Operation is software_update and diagnostic.stage names the failed check:
+checkout_root, git_checkout, git_commit_before, git_branch, git_upstream,
+git_status, environment_python, git_pull, git_commit_after or editable_install.
+Host-side failures use probe_source, ssh_update_launch or ssh_update_response.
+Evidence.stage retains its existing preflight/pull/install/transport phase.
+Context includes machine/project, operator-owned ssh_alias where known, selected
+path/executable, resource and source. Environment failures also name field=venv_path.
+Original local causes remain in __cause__; remote native objects are not available,
+so validated cause kind/errno/returncode survive as facts. Do not call private
+update probes or manually interpret their raw output in scientific clients.
+
+A missing or unlaunchable venv_path/bin/python is command_unavailable, with the
+attempted executable recorded before launch. The message explains how to correct
+venv_path through asl config and confirms that pull/install did not start.
+Interpreter prefix mismatch is compatibility_mismatch; nonzero/timeout/invalid
+identity responses retain their separate command_failed/command_timeout/
+protocol_invalid facts. No environment, alternative interpreter or host is chosen.
+
+effects.git_pull and effects.editable_install describe separate steps. Preflight
+failures retain both not_started. A completed Git pull is succeeded even if later
+installation fails. Nonzero pip can leave editable_install=partial; installation
+state remains failed and observed commits remain available. A negative process
+status or timeout during mutation leaves its effect unknown. Post-pull commit
+inspection failure retains the observed pull effect, with after_commit=None.
+A failed Git command is not proof of rollback. No code copy, reset, stash, merge,
+dependency installation or automatic retry is added by this diagnostic layer.
+
+Missing/unlaunchable local SSH can establish no dispatch. Generic communication
+errors, nonzero SSH, timeout/interruption or malformed/mismatched/oversized
+responses leave update/install unknown, without guessing authentication causes.
+Standalone probes still require only the standard library on the login host.
+They send plain failure/effect facts, validated and normalized through the same
+host error module as local updates. Legacy failure responses without those facts
+retain their evidence with unknown effects; no false proof of no work is invented.
+The helper evidence version remains 1 with additive fields, not a persisted-format
+migration. Record/protocol versions remain independent of package versions.
+
+Raw Git/SSH output is omitted from diagnostics/evidence errors. Pip's last bounded
+output lines remain useful and known credential patterns are redacted before
+bounding. Native exceptions and their command/output objects belong only to the
+debug chain, not serialized diagnostic payloads. Unexpected probe/programming
+errors propagate through the local update path rather than becoming preflight
+failures or empty success. Remote invalid output is unknown, not safe to replay.
+
+asl software update prints adopted failures once on stderr/exit1. --json retains
+existing evidence plus diagnostic; --debug re-raises the original SoftwareUpdateError
+with its native cause where available. Request/profile failures use the shared
+diagnostic envelope. Parser usage stays exit2; success output is unchanged.
+Read-only software status, general SSH/session/helper/transfer readiness and other
+CLI/ACP policies remain their separately planned slices.
 
 ## At a client boundary
 

@@ -11,7 +11,8 @@ This file is the source of truth for active scope, task order and progress.
 
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
   foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
-  and MVP10.3c.1–3 local record/script persistence diagnostics complete
+  and MVP10.3c.1–3 local record/script persistence diagnostics complete;
+  MVP10.4a software-update diagnostics complete
   locally. MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
@@ -23,24 +24,26 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1173 passed, 45 expected
+  rollback source remains unchanged. Full offline suite: 1239 passed, 44 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.3c.3 completes local receipt/cache/script
-  persistence in 0.2.0.dev3. Bundles/receipts/cache reuse one regular-file JSON
-  reader; scripts/JSON reuse one atomic writer. Receipt/projection failures retain
-  exact identity, accepted IDs and real publication/durability facts. Nonfatal
-  cache errors keep live status/logs; adopted diagnostics survive existing
-  SubmissionError/CLI/ACP boundaries. Read-close safeguards retain primary causes.
+- **Latest completed task:** MVP10.4a adopts software-update diagnostics in
+  0.2.0.dev4. Stale venv failures name the attempted Python and venv_path
+  correction before any pull/install. Native local causes and validated standalone
+  remote facts retain exact checks, separate pull/install effects, partial changes
+  and lost-response uncertainty. Update CLI text/JSON/debug uses the shared
+  diagnostic while retaining evidence. Profile selection, remote dispatch,
+  validation and presentation have focused owners; no update-policy change.
   Git-free wheel/sdist-to-wheel and installed identity/behavior checks pass.
   Last installed editable metadata remains 0.1.0 until explicit reinstall.
-  1173 full offline tests pass. Coverage: 262 routes/136 owners/20 broad catches.
+  1239 full offline tests pass. Coverage: 262 routes/136 owners/20 broad catches.
   No PyPI publication, base reinstall or daily profile,
   environment, cluster, persisted-format or rollback change.
-- **Next task:** MVP10.4 transport, readiness and software, using the
+- **Next task:** MVP10.4b SSH/session/helper readiness, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
-  service errors still have no diagnostic. MVP10.3 is complete; stale-venv
-  correction and safe process/transport evidence are MVP10.4.
+  service errors still have no diagnostic. MVP10.3 and MVP10.4a are complete;
+  broader SSH/helper, transfer/filesystem and software-status adoption remain
+  MVP10.4b–d. MVP10.4 stays open.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
@@ -713,6 +716,22 @@ is in the design; every callable/action and its outcome contract must be reviewe
   with operation context. Reproduce the stale-venv case with its attempted Python
   path and correction. Preserve probe/status unknowns and partial pull/install
   effects; do not infer auth causes without evidence or fall back to another host.
+  Split before implementation into independently verified boundaries:
+  - [x] **MVP10.4a Software-update diagnostics.** Record the attempted executable
+    before environment checks, preserve native local causes and validated remote
+    failure facts, and normalize through errors.py. Diagnose checkout/Git/pip,
+    preflight versus partial pull/install and unknown remote responses; expose
+    evidence/diagnostic through Python and software-update CLI text/JSON/debug.
+    No retries, repair or change to single-checkout/editable-install policy.
+  - [ ] **MVP10.4b SSH and helper readiness.** Adopt connection/session ownership,
+    helper capabilities and root discovery diagnostics, preserving cleanup and
+    uncertainty without interpreting authentication or managing credentials.
+  - [ ] **MVP10.4c Transfers and filesystem probes.** Adopt process/transfer and
+    existence/readiness boundaries without equating failed transport with absence
+    or repeating partially completed transfers automatically.
+  - [ ] **MVP10.4d Software-status observations.** Adopt read-only Git/environment
+    probe facts, per-project/major-dependency unknowns and corresponding CLI
+    presentation, preserving useful partial observations.
 - [ ] **MVP10.5 Submission and recovery evidence.** Apply the module through
   preparation/staging/session/dispatch/scheduler-response/receipt-persistence
   failures and interruption. Preserve accepted IDs, partial results, original
@@ -1006,6 +1025,7 @@ or migration decision has already been accepted.
 | 2026-11-16 | VERSION.1 Package versioning foundation | User priority before MVP10.3c.2. Current source checkpoint 0.2.0.dev1 has one literal in version.py, shared by setuptools dynamic metadata, Python root/leaf __version__ and root --version. Removed unused setuptools-scm build dependency; Git/branch/MVP tags are not runtime version sources. Changelog, pre-1.0 bump rules, immutable v-prefixed checkpoint tags, independent helper/record versions and explicit PyPI gates documented in human/installed agent guidance and working rules. Four new identity/forwarding/effect checks; 1062 full offline tests passed in 10.23 s (43 expected collision warnings), `.development/test-runs/versioning.xml`; final focused 10 checks passed after changelog guard. Clean-source metadata extraction with no Git/executables and an unimportable package initializer passed; wheel and source archive build, sdist-to-wheel rebuild and installed metadata/Python/actual asl+autoslurm version/ACP recipe parity passed outside the repo without state/commands. Wheel SHA256 `93d0f1b26977fc870f2244af5e9fe97dbc7d8d49afdf5d90bb4e67db62319354`; sdist SHA256 `7673ec978964a042833d45ffe44e1cf63b3df38c10e370c62c3e3ed1868bfd37`; rebuilt wheel matches direct wheel. AST register 262 routes/136 owners/18 broad catches. Base CLI follows new source version; existing installed metadata remains 0.1.0 until explicit reinstall. No base/test dependency installation, cluster, daily config/state, schema/history, external client or rollback edit; user documents/evidence excluded. Annotated v0.2.0.dev1 marks tested development checkpoint; historical mvp tags unchanged. No PyPI upload or GitHub Actions; publication/Python support/license/name ownership remain separate gates. Next implementation MVP10.3c.2. Task commit: `git log --grep '^VERSION.1:'`; push dev and the checkpoint tag. |
 | 2026-11-16 | MVP10.3c.2 Bundle/config record boundaries | Shared direct snapshot reads replace raw missing/unreadable/malformed exceptions with SelectionError; invalid graphs retain InvalidRequestError. Append/metadata validate originals, preserve malformed bytes and refuse replacing/clearing known scheduler IDs. Shared bundle/config writes retain native causes, publication/durability/cleanup facts and known domain identity; no guessed multi-job blame. Safe bundle/path guards precede storage access. Config/alias/filter/initialize/schedule/submit CLI text/debug and ACP expose adopted failures once; preview/submit retain machine identity. 53 new cases; 1115 full offline tests passed in 9.76 s (43 expected collision warnings), `.development/test-runs/bundle-record-diagnostics.xml`. Clean-source no-Git metadata, wheel/sdist-to-wheel and temporary installed API/retained-record/CLI/debug/ACP/guidance checks passed for 0.2.0.dev2. Wheel SHA256 `65b66f9712aad3812582fc18c0b3bd3d4841943bbc8f2e0c459f5b24af9a2f18`; sdist hashes in installation register. AST register 262 routes/136 owners/18 broad catches. Main base CLI follows source; installed editable metadata remains 0.1.0 without reinstall. No cluster, base/test dependency install, daily state/config, external client, format/history or rollback edit; user documents/evidence excluded. Annotated v0.2.0.dev2 marks tested development checkpoint; no PyPI publication. Parent 3c stays open; c.3 receipt/cache/script is next. Task commit: `git log --grep '^MVP10.3c.2:'`; push dev and checkpoint tag. |
 | 2026-11-16 | MVP10.3c.3 Receipt/cache/script persistence | Extracted one regular-file UTF-8 JSON/metadata reader for bundles/receipts/cache, with absence rechecks and primary/secondary close protection. Local receipt read/list/contract failures use SelectionError with exact identity; missing directories stay empty, broken/denied records fail explicitly. Receipt/projection writes retain accepted IDs and true publication/durability/cleanup facts. Scripts and JSON share one atomic writer, preserving old or complete new bytes; staging failure prevents dispatch. Nonfatal cache and per-item receipt errors retain diagnostics alongside live status/logs and known snapshot IDs. Existing SubmissionError wrappers, submission CLI text/JSON/debug and ACP keep adopted diagnoses with receipts; no retry/scheduler policy change. 58 new cases plus adapted extraction fault injection; 1173 full offline tests passed in 11.04 s (45 expected collision warnings), `.development/test-runs/evidence-record-diagnostics.xml`. Clean-source no-Git metadata, wheel/sdist-to-wheel and installed version/receipt/cache/script/retained-ID/CLI/debug/ACP/guidance checks passed for 0.2.0.dev3. Wheel SHA256 `cef382adbdec68dbb8239cce9ff67ac17c87664b0d9f630d20a6bdaac734239d`; separate sdist/rebuilt-wheel hashes recorded in installation register; wheel member contents match. AST register 262 routes/136 owners/20 broad catches, including two reviewed reader resource/evidence guards. No cluster, base/test dependency install, daily state/config, external client, record schema/history or rollback edit; user documents/evidence excluded. Annotated v0.2.0.dev3 identifies checkpoint; installed editable metadata remains 0.1.0 without reinstall. MVP10.3 complete; MVP10.4 transport/readiness/software next. Task commit: `git log --grep '^MVP10.3c.3:'`; push dev and checkpoint tag. |
+| 2026-11-16 | MVP10.4a Software-update diagnostics | Split 10.4 before implementation. Stale venv names attempted Python/venv_path/correction and confirms no pull/install. Native local causes and validated stdlib remote facts share errors.py normalization. Separate target selection/remote dispatch/protocol/enrichment owners retain actual check, observed commits, partial install and unknown responses; arbitrary Git failures do not fabricate checkout conditions. Generic communication errors remain unknown, no retry or host/Python fallback. SoftwareUpdateError retains evidence plus diagnostic; update CLI uses stderr/exit1, JSON evidence with diagnostic and --debug. Known request guards typed, unexpected local bugs visible. 66 new cases plus actual temporary Git/stdin missing-environment regression; 1239 full offline tests passed in 10.89 s (44 expected collision warnings), `.development/test-runs/software-update-diagnostics.xml`. No-Git metadata, wheel/sdist-to-wheel and installed version/stale-venv/local-cause/remote-facts/partial-effects/CLI/debug/guidance checks passed for 0.2.0.dev4. Wheel SHA256 `07f87ba4d8afb4c2f625f4fb8dd8a526a1420fd867a124ca8a8584eaf1a27eaf`; archive/rebuilt-wheel hashes in installation register; member contents match. AST register 262 routes/136 owners/20 broad catches. Existing single checkout, editable --no-deps install and dependency ownership unchanged. No cluster, base/test dependency install, daily config/state, external client, saved-format/history or rollback edit; user documents/reports/evidence excluded. Source follows dev4, installed metadata remains 0.1.0 without reinstall. Annotated v0.2.0.dev4 checkpoint; no PyPI publication. b SSH/helper readiness is next; c/d and parent10.4 stay open. Task commit: `git log --grep '^MVP10.4a:'`; push dev and checkpoint tag. |
 
 ## How we work
 

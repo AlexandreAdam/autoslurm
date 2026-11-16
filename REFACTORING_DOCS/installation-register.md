@@ -13,6 +13,33 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.4a (2026-11-16): running checkpoint 0.2.0.dev4; software-update diagnostics
+identify stale venv Python before pull/install and retain separate update effects.
+Base commands follow this source; installed editable metadata remains 0.1.0
+without reinstall. 1239 full offline tests passed in 10.89 s, 44 expected collision
+warnings; `.development/test-runs/software-update-diagnostics.xml`. 66 new cases
+cover native/remote preflight, process/phase failures, protocol contradictions,
+retained commits/partial installs, CLI JSON/debug and visible bugs. Existing actual
+temporary Git/pip fixture now also exercises missing remote venv through the
+standalone stdin worker and mocked SSH, with no remote AutoSlurm dependency.
+No-Git/no-runtime-import metadata, wheel/sdist-to-wheel and disposable installed
+version/stale-venv/local-cause/remote-facts/partial-install/CLI/guidance checks pass:
+
+- `.development/artifacts/software-update-diagnostics/autoslurm-0.2.0.dev4-py3-none-any.whl`:
+  SHA256 `07f87ba4d8afb4c2f625f4fb8dd8a526a1420fd867a124ca8a8584eaf1a27eaf`.
+- `.development/artifacts/software-update-diagnostics/autoslurm-0.2.0.dev4.tar.gz`:
+  SHA256 `36c7c376f1d773b4f179f267a919fedd7f37e386d56896f444e060e97cd8cbb8`.
+- `.development/artifacts/software-update-diagnostics/from-sdist/autoslurm-0.2.0.dev4-py3-none-any.whl`:
+  SHA256 `106a29cc77027dd044ab3e089088b02639cfc1c50e2d94390434e223fb73b367`.
+
+Direct/rebuilt wheel member names and contents match; archive hashes remain
+separate. Annotated v0.2.0.dev4 marks the tested checkpoint. No base/test dependency
+installation, daily config/state, actual cluster access, external client edit,
+saved-format/history or pinned rollback change. User documents/reports and
+software_preparations excluded. MVP10.4 was split before implementation; a is
+complete and b SSH/helper readiness is next. Broader transfer/status/orchestration
+policies remain open. No PyPI publication, deployment or actual software update.
+
 MVP10.3c.3 (2026-11-16): running checkpoint 0.2.0.dev3; receipt/cache/script
 persistence adopts shared diagnostics and atomic script publication. Main base
 commands follow this source without reinstalling; installed editable metadata

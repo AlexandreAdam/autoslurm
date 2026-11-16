@@ -40,7 +40,7 @@ MVP10.2 adds the opt-in [diagnostic foundation](../src/autoslurm/agent_resources
 Use explicit diagnostic facts at client boundaries and retain original receipts/
 update evidence before presentation. Existing services are adopting diagnostics
 in later slices; an error's optional `.diagnostic` can still be None. No universal
-CLI/ACP behavior change or stale-venv fix is claimed yet.
+CLI/ACP behavior change is claimed; software-update adoption is described below.
 
 MVP10.3a adopts that contract for configuration reads, profile/setting validation
 and machine selection. Catch `from autoslurm import ConfigurationError`, retain
@@ -106,6 +106,16 @@ status/logs. SubmissionError retains its receipt and any adopted persistence
 diagnostic. Scripts use the shared atomic writer: old bytes survive before
 publication and complete new text survives after observed publication. Multi-file
 staging is not a transaction, and no file error authorizes resubmission.
+
+MVP10.4a adds software-update diagnostics, including stale venv paths. Catch
+SoftwareUpdateError and retain both .evidence and .diagnostic. A missing Python
+names the attempted venv_path/bin/python and correction through asl config, with
+pull/install not_started. Separate git_pull/editable_install effects retain
+completed pulls, partial installs and unknown outcomes; do not retry a lost
+response blindly. The update CLI supports --json evidence/diagnostic and --debug.
+Invalid update requests use InvalidRequestError/ConfigurationError; unexpected
+bugs propagate. General SSH/helper/transfer/software-status adoption remains
+MVP10.4b–d. See the [software recipe](13_software_preparation.md).
 
 ## Adapt scientific software
 

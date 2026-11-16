@@ -17,6 +17,13 @@ to date, refreshing metadata and command-line entry points. The existing selecte
 environment must be configured and its interpreter verified before pulling.
 Use `--json` for commit and installation evidence. Empty commands show help.
 
+If a configured venv has moved, the error identifies the attempted `bin/python`
+and the `venv_path` setting to correct with `asl config --interactive`. This
+preflight failure stops before pull or installation. Permission, timeout and
+interpreter-identity failures are distinguished rather than reported as a failed
+pull. `--debug` shows original errors and causes; ordinary errors go to stderr
+with exit 1. Software-status diagnostics are being improved separately.
+
 The checkout must already exist and be clean. Local changes, untracked files,
 a detached HEAD, an absent upstream or diverged history produce a clear error.
 AutoSlurm does not stash changes, reset branches, merge history or clone a
@@ -53,6 +60,7 @@ try:
     result = update_software(machine="cluster", project="gaia-asteroseismology")
 except SoftwareUpdateError as error:
     result = error.evidence
+    diagnostic = error.diagnostic  # Retain both; the result may include changes.
 ```
 
 Success states are `updated` and `up_to_date`; both require
@@ -65,6 +73,18 @@ checkout and configured environment before deciding what to do. No automatic
 retry or Git rollback is performed, and a failed install never reports success.
 Failed installs include pip's last 20 output lines (at most about 4 KiB) in the
 message and `installation.output_tail`, omitting lines with URL credentials.
+Known credential patterns are redacted before bounding diagnostic text.
+
+Failed-update JSON keeps the existing evidence and adds `diagnostic`.
+`check` identifies the failed check, while `stage` remains preflight/pull/install
+or transport. `effects.git_pull` and `effects.editable_install` describe separate
+steps: not_started, succeeded, failed, partial or unknown. A nonzero pip exit can
+leave a partial installation after a successful pull. A failed Git command is not
+a promise of filesystem rollback; retain before/after commits too. Lost or
+invalid SSH responses leave both effects unknown, even if the update completed.
+Only observed launch failures establish that a command did not start; there is
+no retry, alternate machine or system-Python fallback. Native local causes remain
+in `__cause__`; remote causes are safe structured facts rather than native objects.
 
 Submission continues to use your configured environment. Updating code is an
 explicit action, separate from job submission; coordinate its timing for jobs

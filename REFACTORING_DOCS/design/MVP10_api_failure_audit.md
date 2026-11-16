@@ -463,3 +463,36 @@ adapter. Full offline suite: 1173 passed, 45 expected collision warnings. Clean-
 source no-Git metadata, wheel/sdist-to-wheel and installed receipt/cache/script/
 CLI/debug/ACP/guidance checks passed for 0.2.0.dev3. MVP10.3 is complete; external
 transport/readiness/software adoption remains MVP10.4 next.
+
+## MVP10.4a adoption amendment (2026-11-16)
+
+Base `cb8ce56`; 262 routes/136 owners/20 broad catches unchanged. MVP10.4 was
+split before implementation into software updates (a), SSH/helper readiness (b),
+transfers/filesystem (c) and software-status observations (d). a resolves the
+reported stale-venv case: installation.python is recorded before launch, failure
+names executable/venv_path/correction, and effects confirm no pull/install.
+Native local causes and validated standalone remote facts share the pure host
+errors.py constructor; no remote package dependency or copied worker is added.
+
+Update target selection, one remote dispatch, protocol validation and diagnostic
+enrichment have focused owners. Separate pull/install effects retain completed
+pulls, partial pip changes, post-pull unreadable commits and unknown responses.
+Generic OSError during possible communication stays unknown; launch failures are
+distinct. Arbitrary Git query failures do not imply detached/no-upstream state.
+Remote identity/process/check/effect contradictions are protocol_invalid with
+unknown effects, without fallback/retry. Legacy failure facts remain unknown.
+Raw Git/SSH output is excluded; useful bounded pip tails are retained/redacted.
+SoftwareUpdateError carries evidence+diagnostic and native local cause; update
+CLI uses stderr/exit1, JSON evidence plus diagnostic and --debug. Expected request
+guards use existing families, invalid explicit machines cannot default, and
+unexpected local probe/update bugs propagate. Status and general adapters remain
+their later tasks. No update/install/dependency policy, saved schema or history
+rewrite is introduced.
+
+66 new cases in tests/integration/test_software_update_diagnostics.py plus the
+actual temporary Git/editable-install fixture's mocked-SSH missing-venv case
+cover pre/during/post-operation faults and retained effects. Full offline suite:
+1239 passed, 44 expected collision warnings. No-Git metadata, wheel/sdist-to-wheel
+and installed version/stale-venv/native-cause/remote-facts/partial-install/CLI/debug/
+guidance checks passed for 0.2.0.dev4. b SSH/helper readiness is next; parent
+MVP10.4 stays open, as do broader submission/observation/CLI/ACP policies.

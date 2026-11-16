@@ -353,7 +353,8 @@
         "tests/integration/test_interactive_env_command.py",
         "tests/integration/test_configuration_diagnostics.py",
         "tests/integration/test_selection_diagnostics.py",
-        "tests/integration/test_bundle_record_diagnostics.py"
+        "tests/integration/test_bundle_record_diagnostics.py",
+        "tests/integration/test_software_update_diagnostics.py"
       ],
       "adoption": "MVP10.3a: ConfigurationError carries configuration_invalid/resource_missing/resource_inaccessible/record_invalid, actual source path, machine/field/cause and config_write=not_started for known read/validation failures. CLI root/alias/standalone renders shared text/exit/debug; unreadable/corrupt existing entries never trigger first-use setup. Atomic publication/storage-root selection and post-save external validation diagnostics remain pending; no new record schema. MVP10.3b.2 validates bundle_filter_mode through one config owner; absence alone defaults reads to active, while invalid/unreadable/corrupt configuration is visible. MVP10.3c.2: config writes retain RecordWriteError (resource=configuration/source=save_config), never falsely reset to config_write=not_started. Config/filter CLI handles expected write failures and native debug."
     },
@@ -540,7 +541,7 @@
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
     },
     "software_update": {
-      "implementation_task": "MVP10.4",
+      "implementation_task": "MVP10.4a implemented; general SSH/helper/transfer/status adoption remains MVP10.4b\u2013d",
       "failures": "Missing/nonexecutable/wrong-prefix venv Python, missing/dirty checkout/upstream/Git, preflight timeout; pull/install failure/interruption/lost response.",
       "translation_owner": "software_update_probe returns stdlib facts; software_update translates and retains SoftwareUpdateError.evidence and chained cause.",
       "desired_diagnostic": "Attempted configured Python/setting/alias, stage, errno/returncode and safe bounded detail; before/after commit and installation state; unknown only after possible action.",
@@ -548,9 +549,10 @@
       "regression_evidence": [
         "tests/unit/test_software_update.py",
         "tests/integration/test_software_update.py",
-        "tests/unit/test_activation.py"
+        "tests/unit/test_activation.py",
+        "tests/integration/test_software_update_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.4a: native local causes and validated standalone remote failure/effect facts normalize through errors.py. Attempted Python recorded before preflight; stale venv names executable/field/correction and no-start effects. Separate Git pull/install effects retain before/after commits, partial pip changes and lost-response uncertainty. Unknown explicit machine never defaults. Known request failures use existing InvalidRequestError/ConfigurationError; unexpected local bugs propagate. Update CLI stderr/exit1, evidence-plus-diagnostic JSON and --debug. Legacy failure facts stay unknown; no retry, repair, clone/reset, extra environment or dependency-policy change."
     },
     "context": {
       "implementation_task": "MVP10.7",
@@ -621,7 +623,8 @@
         "tests/unit/test_logs_cli.py",
         "tests/unit/test_status_cli.py",
         "tests/integration/test_selection_diagnostics.py",
-        "tests/integration/test_evidence_record_diagnostics.py"
+        "tests/integration/test_evidence_record_diagnostics.py",
+        "tests/integration/test_software_update_diagnostics.py"
       ],
       "adoption": "Partial through b.2: selection/configuration errors at filter/submit/status/inspect/logs roots/aliases/standalone use the shared adapter and --debug; existing status/inspect/logs JSON modes use its envelope. Parser usage stays exit2. Other observation, presentation and post-dispatch policies remain MVP10.8/later domain slices."
     },
@@ -651,7 +654,8 @@
         "tests/integration/test_configuration_diagnostics.py",
         "tests/integration/test_authoring_diagnostics.py",
         "tests/integration/test_selection_diagnostics.py",
-        "tests/integration/test_evidence_record_diagnostics.py"
+        "tests/integration/test_evidence_record_diagnostics.py",
+        "tests/integration/test_software_update_diagnostics.py"
       ],
       "adoption": "MVP10.2 foundation; MVP10.3a ConfigurationError/configuration_failure; MVP10.3b.1 InvalidRequestError and optional explicit cause/effects on invalid_argument. Identity enrichment compares against the same bounded/redacted representation. Other domains and universal CLI/ACP parity remain pending. MVP10.3b.2 adds SelectionError/selection_failure using existing catalogue codes and no inferred effects."
     },
@@ -775,8 +779,8 @@
     },
     "autoslurm.apps.software.main": {
       "contract": "software_update",
-      "inputs": "status or update subaction; machine/project/expectations/JSON.",
-      "current": "Status errors -> unavailable JSON/text exit1; compatibility concern also exit1. Update SoftwareUpdateError evidence retained exit1; generic errors use different failed envelope. Empty/incomplete command help exit0.",
+      "inputs": "status or update subaction; machine/project/expectations/JSON. Update --debug preserves original errors.",
+      "current": "Update errors retain evidence with shared diagnostic: stderr/exit1, --json evidence plus diagnostic, --debug re-raise. Expected request/profile guards use shared envelope, unexpected update bugs propagate. Status read-only errors/compatibility policy unchanged until MVP10.4d. Empty/incomplete commands help0.",
       "effects": "status read-only probes; update pull+editable install. Neither changes machine scientific dependencies."
     },
     "autoslurm.apps.status.main": {
@@ -1256,13 +1260,13 @@
     "autoslurm.software_update.SoftwareUpdateError": {
       "contract": "software_update",
       "inputs": "Message and plain update evidence. Optional diagnostic= keyword is additive in MVP10.2.",
-      "current": "RuntimeError subclass with .evidence. Now inherits DiagnosticError (still RuntimeError); .diagnostic defaults None and original payload identity/message/cause remain.",
+      "current": "RuntimeError subclass with .evidence. Now inherits DiagnosticError (still RuntimeError); .diagnostic defaults None and original payload identity/message/cause remain. MVP10.4a populates diagnostic and additive evidence.diagnostic for known update failures; original local cause chained, native remote objects unavailable and represented by safe facts. Evidence remains authoritative for observed commits/installation.",
       "effects": "No I/O; property retained."
     },
     "autoslurm.software_update.update_software": {
       "contract": "software_update",
       "inputs": "Machine and relative project selecting existing checkout/environment.",
-      "current": "Successful evidence dict or SoftwareUpdateError.evidence; profile/path errors can be plain ValueError/OSError. Remote launch/timeout/JSON/interrupt collapse to unknown with lost cause.",
+      "current": "Successful evidence or SoftwareUpdateError with evidence+diagnostic, native local cause/validated remote cause facts. Pure profile/path selection, one remote dispatch, response validation and diagnostic enrichment have focused owners. Actual checks/executable/errno/returncode and separate pull/install effects retained; invalid requests typed, bugs visible. Lost/invalid remote result unknown with no fallback/retry; no raw Git/SSH output in exported errors.",
       "effects": "Preflight then ff-only pull then default --no-deps editable install; no checkout/env copies. Before/after/installation evidence retained when observed."
     },
     "autoslurm.storage.STORAGE_ROOT_ENVIRONMENT_VARIABLE": {
@@ -1616,8 +1620,8 @@
       "contract": "software_status"
     },
     "cli-subaction:software update": {
-      "inputs": "machine, required relative project, JSON",
-      "current": "Update evidence or SoftwareUpdateError.evidence; incomplete invocation help0.",
+      "inputs": "machine, required relative project, JSON, --debug",
+      "current": "Successful evidence or SoftwareUpdateError evidence+diagnostic. Adopted text stderr/exit1, JSON retains evidence with additive diagnostic, --debug native cause. Expected request/profile errors use shared envelope; programming bugs propagate. Missing project help0, parser misuse exit2. No status/other-command migration claimed.",
       "effects": "Preflight then ff-only pull and editable --no-deps reinstall; no dependency repair.",
       "contract": "software_update"
     }
@@ -1690,6 +1694,12 @@
       "date": "2026-11-16",
       "base_revision": "64288dc",
       "note": "Complete local persistence adoption in 0.2.0.dev3: receipt/cache reads/writes, shared atomic script publication, retained accepted IDs/live evidence and related CLI/ACP. 262 routes/136 owners/20 broad catches; two writer safeguards moved to _atomic_record and two reader resource/evidence safeguards reviewed. No new public routes/codes/schemas or retry policy. MVP10.3 complete; external readiness is next."
+    },
+    {
+      "task": "MVP10.4a",
+      "date": "2026-11-16",
+      "base_revision": "cb8ce56",
+      "note": "Split MVP10.4 into software updates (a), SSH/helper readiness (b), transfer/filesystem (c), status observations (d). a implemented in 0.2.0.dev4 with exact stale-venv diagnostics, stdlib probe facts/native causes, phase-specific effects, safe output, strict response validation and CLI/debug. 262 routes/136 owners/20 broad catches unchanged. 66 new cases plus actual temporary Git/stdin missing-environment regression. No cluster, retry, dependency or format migration."
     }
   ]
 }
