@@ -117,6 +117,20 @@ Invalid update requests use InvalidRequestError/ConfigurationError; unexpected
 bugs propagate. General SSH/helper/transfer/software-status adoption remains
 MVP10.4b–d. See the [software recipe](13_software_preparation.md).
 
+MVP10.4b.1 adopts remote root discovery and helper capability checks. Catch
+autoslurm.errors.DiagnosticError for expected process/protocol/compatibility
+failures; invalid explicit root/venv settings use ConfigurationError. Retain the
+diagnostic's machine/ssh_alias/storage_root and attempted executable/path. A
+local SSH launch failure, timeout, SSH255, remote nonzero, invalid response and
+old helper are distinct. Availability remains unverified on a failed probe;
+do not infer a missing path, rejected job or particular authentication problem.
+Checks run once, with a 30-second timeout and 64-KiB accepted response bound.
+Root/capability parsing is strict; no fallback, install or retry is introduced.
+The submit CLI renders the diagnosis and next action once; --debug retains the
+original cause. Session cleanup, transfers, software-status and general CLI/ACP
+adoption remain later tasks. See installed 15_diagnostics and
+[the human failure guide](../docs/errors.md#remote-readiness-before-submission).
+
 ## Adapt scientific software
 
 Record `autoslurm.__version__` (or `asl --version`) alongside the client's exact

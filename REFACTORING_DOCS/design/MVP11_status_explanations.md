@@ -8,6 +8,49 @@ categories and dependency job names. Contracts and module names below are
 proposed. [PLAN.md](../../PLAN.md#mvp11-readable-dependency-aware-status) owns
 delivery order and task completion.
 
+Alexandre expanded the scope on 2026-11-16: refactor the status workflow and
+implementation substantially, beyond adding a reason column. MVP11.0 first maps
+the interface and responsibility boundaries; MVP11.1–3 deliver interpretation and
+layout, then MVP11.4 consolidates adoption and verifies performance/consistency.
+This is a planning amendment; MVP10 diagnostic implementation continues first.
+
+## Broader refactor direction
+
+The current inspection layer already separates collection, pure state projection,
+caches and artifacts. Reuse it. Remaining status paths mix concerns: status_views
+contains convenience functions that load bundles or obtain observations, the CLI
+reloads definitions after inspection to build rows, and status.py combines public
+convenience/compatibility queries with ANSI formatting and state display. Map
+actual callers before extracting or retiring any path. Keep mechanical extractions
+separate from new semantics; avoid a parallel read model or scheduler engine.
+
+Proposed everyday interaction:
+
+- Overview: runs needing attention and active work, machine, job/task progress,
+  last observation and whether it is stale/unavailable; define filters and default
+  history scope explicitly rather than silently scanning every artifact.
+- Run detail: stable job indices/names, scheduler state, clear array counts,
+  dependency waits, relevant resource/time fields and significant failure evidence.
+- Task detail: original array index/ID, full reason/exit/source/freshness and a
+  direct supported transition to the same task in logs/fetch.
+
+Submission acceptance, observed scheduler state and application/scientific success
+are separate concepts. Unknown observations cannot become finished/failed jobs.
+Mixed arrays must expose counts rather than hide pending or failed tasks behind
+one aggregate label. Structured output and human output use the same observations.
+Plain text/non-TTY output must be useful; compact/wide tables should have explicit
+column priorities, without relying on a full-screen terminal to prevent wrapping.
+
+MVP11.0 will settle examples and the supported filters before implementation.
+Track exact file/query costs and reuse batched machine observations. Cached status
+must not discover hosts, read source logs or contact Slurm. One failing machine or
+record must preserve the rest of the view, with usable evidence and visible errors.
+Preserve status/log/fetch index semantics and exact receipt/attempt identity on
+both workstation and cluster. Assess existing cache compatibility before adding
+stored explanation fields. MVP10.6 owns diagnostic translation for observations;
+MVP11 consumes that contract. A watch service, queue ETA, automatic retry and
+scientific-result validation remain outside this refactor.
+
 ## Problems and evidence
 
 `status_views.bundle_jobs_context_from_rows` currently appends a separate
@@ -127,3 +170,6 @@ cluster calls; full offline regressions when shared inspection projection change
 
 - 2026-11-13, PLAN.3: recorded the user's status example and proposed shared
   explanation/presentation boundaries. No runtime or saved-record changes.
+- 2026-11-16: user requested a larger status refactor. Added interface/responsibility
+  mapping and consolidated workflow/performance gates around existing reason
+  tasks. All remain planned; runtime implementation continues with MVP10.4b.1.

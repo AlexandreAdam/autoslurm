@@ -13,6 +13,35 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.4b.1 (2026-11-16): running checkpoint 0.2.0.dev8. Main/base import is
+`/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; installed editable
+metadata remains 0.1.0 without reinstall. Remote root/helper checks use shared
+readiness process/response observations and pure errors.py diagnostics. Selected
+root/alias/attempted Python, native causes and pre-submission effects are retained;
+no fallback/retry/authentication or environment repair is introduced. Existing
+root/helper launch commands and trusted setup policy remain unchanged.
+70 new regressions; 1431 full offline tests passed in 11.30 s, 67 expected
+collision warnings; `.development/test-runs/readiness-diagnostics.xml`. Coverage:
+266 routes/138 owners/21 reviewed broad catches unchanged. No-Git/no-runtime-import
+metadata, wheel/sdist-to-wheel and disposable installed version/root/helper/
+native-cause/effects/submit/debug/redaction/no-dispatch/packaged-guidance checks pass:
+
+- `.development/artifacts/readiness-diagnostics/autoslurm-0.2.0.dev8-py3-none-any.whl`:
+  SHA256 `a1826ac7ebf67cc73b24760683e5a46d37b97ec2b29910ee6508dfe1754e31d5`.
+- `.development/artifacts/readiness-diagnostics/autoslurm-0.2.0.dev8.tar.gz`:
+  SHA256 `08fe60cb414135122c3892561265548b1413d04f8641074544ae7df9191d8810`.
+- `.development/artifacts/readiness-diagnostics/from-sdist/autoslurm-0.2.0.dev8-py3-none-any.whl`:
+  SHA256 `a1826ac7ebf67cc73b24760683e5a46d37b97ec2b29910ee6508dfe1754e31d5`.
+
+Direct and rebuilt wheels match. Annotated v0.2.0.dev8 identifies the checkpoint.
+Clean pinned rollback HEAD remains 33bcbd3. No actual cluster contact/install,
+daily config/state, base/test dependency install, external client, historical
+records or rollback changes. User documents/reports and software_preparations
+remain excluded. Additive diagnostic storage_root context does not change saved
+bundle/receipt/cache or helper protocols. MVP11's broader status refactor is
+planned only. Next: b.2 session ownership/cleanup; parent b/10.4 remain open.
+No PyPI publication, promotion or deployment occurred.
+
 FIX.TRACKING.1 (2026-11-16): running checkpoint 0.2.0.dev7. Main/base imports
 this checkout; installed editable metadata remains 0.1.0 without reinstall.
 New remote submissions create exact cluster-local tracking views, linked by

@@ -6,7 +6,7 @@ from ..bundle_selection import bundle_snapshot_state, select_bundle_snapshot
 from ..execution import resolve_execution_context
 from ..job_runner import submit_jobs
 from ..submission import SubmissionError
-from ..errors import ConfigurationError, InvalidRequestError, SelectionError, RecordWriteError
+from ..errors import DiagnosticError
 from .error_output import exit_with_error
 
 
@@ -100,9 +100,11 @@ def _main(argv=None):
             bundle_path=args.bundle_file,
             context=resolve_execution_context(machine_name, config),
         )
-    except (InvalidRequestError, SelectionError, ConfigurationError, RecordWriteError):
+    except SubmissionError as exc:
+        raise SystemExit(str(exc)) from exc  # Receipt-aware adoption remains MVP10.5.
+    except DiagnosticError:
         raise  # The outer boundary renders once and honors --debug.
-    except (SubmissionError, ValueError, RuntimeError, OSError) as exc:
+    except (ValueError, RuntimeError, OSError) as exc:
         raise SystemExit(str(exc)) from exc
 
 
@@ -110,5 +112,5 @@ def main(argv=None):
     selected = list(sys.argv[1:] if argv is None else argv)
     try:
         return _main(selected)
-    except (InvalidRequestError, SelectionError, ConfigurationError, RecordWriteError) as error:
+    except DiagnosticError as error:
         exit_with_error(error, debug='--debug' in selected)

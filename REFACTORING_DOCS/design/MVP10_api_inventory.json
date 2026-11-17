@@ -464,9 +464,10 @@
         "tests/unit/test_ssh_submission_session.py",
         "tests/integration/test_ssh_alias.py",
         "tests/integration/test_submission_boundaries.py",
-        "tests/integration/test_preparation_diagnostics.py"
+        "tests/integration/test_preparation_diagnostics.py",
+        "tests/integration/test_readiness_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.4b.1: root discovery and helper capability checks adopt shared remote_readiness process/response facts and errors.py wording; typed configuration/process/protocol/compatibility failures retain alias, selected root, attempted Python, native causes and pre-submission effects. 30-second timeout and 64-KiB accepted text bound; no arbitrary SSH/startup output, retry or fallback. Session ownership/cleanup stays b.2; transfer/existence/status/dispatch remain separate."
     },
     "transfer": {
       "implementation_task": "MVP10.4",
@@ -1197,7 +1198,7 @@
     "autoslurm.run_slurm.probe_submission_helper": {
       "contract": "transport",
       "inputs": "Resolved context with venv_path and selected storage.",
-      "current": "None or generic helper RuntimeError, config ValueError/OSError; bad JSON collapses capability failure.",
+      "current": "None on compatible integer capabilities; ConfigurationError for invalid venv, DiagnosticError for expected local launch/timeout/signal/SSH/remote exit/response/capability faults. Native causes chained; unexpected bugs propagate. Submit CLI renders these diagnostics once/debug rethrows.",
       "effects": "Read-only helper --capabilities; no dispatch or install."
     },
     "autoslurm.run_slurm.run_bulk_submit_driver_remotely": {
@@ -1371,7 +1372,7 @@
     "autoslurm.transport.remote_storage_root_from_config": {
       "contract": "transport",
       "inputs": "Selected profile/alias, optional explicit storage root or legacy checkout.",
-      "current": "Absolute remote root; ValueError invalid root, RuntimeError nonzero/malformed/mismatched probe, OSError launch.",
+      "current": "Root selection keeps legacy path no-contact; explicit root validated locally with ConfigurationError. Probed root uses shared DiagnosticError process/protocol/mismatch facts, selected alias/root and original causes; no implicit alternate root.",
       "effects": "Remote read/probe when no configured root; no install or silent fallback."
     },
     "autoslurm.typer_adapter.from_typer": {

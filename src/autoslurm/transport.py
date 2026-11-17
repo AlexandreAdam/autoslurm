@@ -1,12 +1,11 @@
 """Shared SSH addressing and explicit remote helper-root discovery."""
 
 from typing import Optional
-from pathlib import PurePosixPath
 import shlex
-import subprocess
 
 from .config import activation_command_from_config, validate_ssh_alias
 from .storage import STORAGE_ROOT_ENVIRONMENT_VARIABLE
+from .remote_readiness import readiness_context, configured_root, run_readiness_probe, parse_storage_root
 
 
 def scp_host_and_keypath_from_config(machine_config: dict,
@@ -58,11 +57,11 @@ def remote_storage_root_from_config(
     Legacy `path` remains supported only when no explicit selector is present.
     """
     explicit = "storage_root" in machine_config
+    facts = readiness_context(machine_config, machine_name, field='storage_root', executable='python')
     if explicit:
-        requested = machine_config["storage_root"]
-        if not isinstance(requested, str) or not requested.strip() or not PurePosixPath(requested).is_absolute():
-            raise ValueError("Machine storage_root must be a nonempty absolute POSIX path.")
-        requested = str(PurePosixPath(requested))
+        requested = configured_root(machine_config['storage_root'], context=facts)
+        facts['path'] = requested
+        facts['storage_root'] = requested
     elif machine_config.get("path"):
         return str(machine_config["path"])
     env_command = activation_command_from_config(machine_config)
@@ -80,23 +79,7 @@ def remote_storage_root_from_config(
         command_parts.append(env_command)
     command_parts.append(python_command)
     remote_command = " && ".join(command_parts)
-    result = subprocess.run(
+    output = run_readiness_probe(
         ssh_command(machine_config, machine_name, f"bash -lc {shlex.quote(remote_command)}"),
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        message = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(
-            f"Unable to determine remote storage root for machine '{machine_name or ''}': {message}"
-        )
-    remote_root = result.stdout.strip()
-    if not remote_root or not PurePosixPath(remote_root).is_absolute():
-        raise RuntimeError(
-            f"Unable to determine remote storage root for machine '{machine_name or ''}': expected an absolute path"
-        )
-    if explicit and remote_root != requested:
-        raise RuntimeError(
-            f"Remote storage root mismatch: requested {requested!r}, helper reported {remote_root!r}."
-        )
-    return remote_root
+        stage='probe_storage_root', context=facts)
+    return parse_storage_root(output, requested=requested if explicit else None, context=facts)

@@ -357,7 +357,9 @@ def test_old_helper_cannot_silently_drop_execution_tracking(installations, monke
             return subprocess.CompletedProcess(command, 0, json.dumps(capabilities), '')
         return original_run(command, **kwargs)
     monkeypatch.setattr(subprocess, 'run', old_helper)
-    with pytest.raises(RuntimeError, match='update AutoSlurm'):
+    with pytest.raises(RuntimeError) as stopped:
         submit_jobs('study', bundle_path=planned)
+    assert stopped.value.diagnostic.code == ('compatibility_mismatch' if isinstance(capabilities, dict) else 'protocol_invalid')
+    assert 'update AutoSlurm' in stopped.value.diagnostic.next_action
     assert not any(command[0] in {'sbatch', 'scp'} for command in calls)
     assert not list(cluster.rglob('*.json'))

@@ -12,7 +12,7 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
   foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
   and MVP10.3c.1–3 local record/script persistence diagnostics complete;
-  MVP10.4a software-update diagnostics complete
+  MVP10.4a software-update and MVP10.4b.1 root/helper diagnostics complete
   locally. FIX.ENVIRONMENT.1 machine module initialization complete locally;
   FETCH.1 selected-run evidence fetching and FIX.TRACKING.1 execution-side
   tracking complete locally.
@@ -27,25 +27,25 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1361 passed, 67 expected
+  rollback source remains unchanged. Full offline suite: 1431 passed, 67 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.TRACKING.1 adds exact execution-side tracking
-  for new remote submissions in 0.2.0.dev7. The helper publishes a cluster-local
-  snapshot before sbatch, then mirrors each durable receipt through the existing
-  projection owner. Cluster status/log/inspect/fetch use local Slurm and producing
-  paths without laptop files/profiles; original receipt identity is retained.
-  Distinct execution receipts and exact backlinks prevent path/attempt confusion.
-  Older helpers stop before staging; both installations need an operator update.
-  24 new regressions; 1361 full offline tests pass. No-Git metadata, wheel/sdist
-  rebuild and installed helper/API/CLI/ACP/cached/guidance checks pass. Audit:
-  266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily config/
-  state, base install, historical migration, scientific data or rollback change.
-  Legacy sync and historical discovery remain separate. Editable metadata is 0.1.0.
-- **Next task:** MVP10.4b SSH/session/helper readiness, using the
+- **Latest completed task:** MVP10.4b.1 root discovery/helper diagnostics in
+  0.2.0.dev8. Shared readiness process/response parsing and pure errors.py wording
+  distinguish launch, timeout, signal, SSH/remote exit, protocol and compatibility
+  failures, with selected root/alias/attempted Python and original causes. Probes
+  run once with a 30-second timeout and 64-KiB accepted text bound. Submit CLI
+  renders once/debug retains the cause; no script transfer or scheduler effects.
+  70 new regressions; 1431 full offline tests pass. No-Git metadata, wheel/sdist
+  rebuild and installed API/CLI/debug/causes/effects/guidance checks pass. Audit:
+  266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily state/
+  config, base/dependency install, historical migration or rollback change.
+  Status refactor scope expanded in MVP11; all its implementation remains planned.
+  Editable installed metadata is still 0.1.0 without reinstall.
+- **Next task:** MVP10.4b.2 SSH/session ownership and cleanup, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
-  service errors still have no diagnostic. MVP10.3 and MVP10.4a are complete;
-  broader SSH/helper, transfer/filesystem and software-status adoption remain
+  service errors still have no diagnostic. MVP10.3, MVP10.4a and MVP10.4b.1 are
+  complete; SSH sessions, transfer/filesystem and software-status adoption remain
   MVP10.4b–d. MVP10.4 stays open.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
@@ -751,6 +751,16 @@ is in the design; every callable/action and its outcome contract must be reviewe
   - [ ] **MVP10.4b SSH and helper readiness.** Adopt connection/session ownership,
     helper capabilities and root discovery diagnostics, preserving cleanup and
     uncertainty without interpreting authentication or managing credentials.
+    - [x] **MVP10.4b.1 Root and helper checks.** Diagnose selected-root validation,
+      launch/timeout/SSH/command/protocol/capability failures before dispatch.
+      Preserve attempted Python/root/alias and native causes; bound observations,
+      omit arbitrary startup output and report no submission effects. Update
+      submit CLI/debug and existing discovery clients. No helper launch-policy,
+      environment-preflight, authentication or deployment change.
+    - [ ] **MVP10.4b.2 Session ownership and cleanup.** Adopt owned-session open/
+      temp/socket failures and cleanup diagnostics while retaining configured
+      sharing, optional ssh -G fallback, accepted IDs and primary failures.
+      Settle successful-body cleanup reporting without silently losing evidence.
   - [ ] **MVP10.4c Transfers and filesystem probes.** Adopt process/transfer and
     existence/readiness boundaries without equating failed transport with absence
     or repeating partially completed transfers automatically.
@@ -794,6 +804,21 @@ tracking database, automatic recovery or resubmission is included.
 Design: [status explanations](REFACTORING_DOCS/design/MVP11_status_explanations.md).
 Requested after MVP9.1; this section plans behavior, not an implemented command.
 
+Expanded by Alexandre on 2026-11-16 into a broader status refactor. Provide a
+clear run overview, job details and array/task drill-down with consistent
+selection, observation freshness, failure interpretation and bounded layout.
+Reuse the current inspection/scheduler/cache owners and remove remaining hidden
+loading/querying from presentation paths in small extractions. MVP10.6 owns
+observation diagnostics; MVP11 owns the interface and interpretation. Keep
+refactoring steps separate from behavior changes.
+
+- [ ] **MVP11.0 Status interaction and responsibility map.** Trace CLI/Python/ACP/
+  context/status/log callers, request/response shapes, current file/query costs and
+  duplicate/private compatibility routes. Define one run/job/task view and compact
+  summary/detail examples; choose supported filters and full-detail access. Split
+  necessary extractions from semantic changes, preserving established selectors
+  and caches instead of creating another status engine.
+
 - [ ] **MVP11.1 Reason contract and classification.** Define normalized waiting
   categories beside unchanged scheduler state/raw reason; distinguish dependency,
   priority, resources, array limits, holds, policy limits and unknowns. Settle
@@ -807,6 +832,14 @@ Requested after MVP9.1; this section plans behavior, not an implemented command.
   retain full raw/exit evidence through supported details/JSON. Verify narrow/wide
   ANSI-safe output, no ordinary second-line clutter, and correct walltime labels.
   Align Python/CLI/ACP views and human/agent examples; run offline regressions.
+- [ ] **MVP11.4 Consolidated status workflow and closure.** Route summary/detail/
+  array/context views through the shared observation and presentation contracts;
+  remove replaced active paths. Verify clear submission/scheduler/observation
+  distinctions, failed/unknown/stale and mixed-array progress, deterministic
+  filtering/indices and unchanged log/fetch navigation. Gate query batching,
+  cached no-contact behavior, partial failures, narrow/non-TTY layouts and public
+  Python/CLI/ACP/packaged-guidance parity. No watch service or scientific-success
+  inference; settle record/cache compatibility before persistent field changes.
 
 Completion includes the reported graph: merge waits for shards; summary waits
 for merge when set has freshly completed. Priority/resources are distinct reasons,
@@ -1057,6 +1090,8 @@ or migration decision has already been accepted.
 | 2026-11-16 | FETCH.1 Selected-run execution evidence | Added asl fetch/public fetch_run/ACP fetch_run with existing status/log selection and presentation. Exact validated links refresh before observation; shared receipt overlay retains known/recovered IDs even when publication/projection fails, while good logs and other runs survive collection errors. Cached mode has no remote/source reads or writes. Remote receipts use the existing regular-file worker capped at 1 MiB/30 s and errors.py facts instead of unbounded cat; requires python3, no remote AutoSlurm. 49 new cases; 1337 full offline tests passed in 10.37 s, 47 expected collision warnings, `.development/test-runs/fetch-evidence.xml`. No-Git metadata, wheel/sdist rebuild and installed version/recovery/worker/partial/cached/CLI/ACP/guidance checks pass for 0.2.0.dev6. Wheel SHA256 `761ec926c2339a67ab30b9773f396f69454aa54b7b6f31de0020715695fa5f36`; archive/rebuilt-wheel hashes in installation register, member contents match. Reviewed additions: two Python exports, one CLI and one ACP route; AST 266 routes/138 owners/20 broad catches. No real cluster, scientific data/full-log fetch, daily config/state, base/test dependency install, external-client/history/schema/rollback edit. No job mutation/retry or receipt guessing. Legacy sync remains separate. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev6 checkpoint; task commit: `git log --grep '^FETCH.1:'`; push dev and version tag. |
 
 | 2026-11-16 | FIX.TRACKING.1 Execution-side tracking | New remote submissions transmit exact prepared tracking definitions; helper validates identity/graph/context, creates a non-overwriting cluster snapshot before sbatch and projects durable incremental receipts through the shared owner. Cluster-local status/log/inspect/fetch/ACP use local Slurm/producing paths without laptop files/profiles. Origin evidence stays intact; execution_bundle_path and distinct execution receipt names disambiguate paths/attempts. Exact backlinks and pinned paths prevent cross-attempt attachment; older helpers stop before staging. 24 new regressions; 1361 full offline tests passed in 12.21 s, 67 expected collision warnings, `.development/test-runs/execution-tracking.xml`. No-Git metadata, wheel/sdist rebuild and disposable installed helper/version/status/log/fetch/inspect/ACP/cached/provenance/guidance checks pass for 0.2.0.dev7; direct/rebuilt wheels match, SHA256 `7741283913b238edbaf1e94d6f4c0b4a5cf457b50be4b96804cc3b3dbf51bb9c`, archive hash in installation register. AST: 266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily config/state, base/test dependency install, scientific data, external client, historical migration or pinned rollback edit. User documents/reports/software_preparations excluded. Requires operator update of both installations; no old-draft adoption or auto-install/retry. Annotated v0.2.0.dev7 checkpoint; task commit: `git log --grep '^FIX.TRACKING.1:'`; push dev and version tag. MVP10.4b resumes next. |
+
+| 2026-11-16 | MVP10.4b.1 Root/helper diagnostics and status scope | Split SSH readiness into b.1 probes and b.2 session lifecycle before implementation. Added shared remote_readiness adapter and pure errors.py diagnostic construction for explicit root/venv guards, local SSH launch/timeout/signal, SSH255/remote exits, bounded UTF-8/root/unique-key JSON responses and exact integer capabilities. Native causes, selected alias/root/attempted Python retained; arbitrary SSH/startup output omitted. Submit CLI renders once with --debug; no retries, fallback, auth handling, install or launch/setup-policy change. 70 new regressions; 1431 full offline tests passed in 11.30 s, 67 expected collision warnings, `.development/test-runs/readiness-diagnostics.xml`. No-Git/no-runtime-import metadata, wheel/sdist rebuild and installed version/API/CLI/debug/native-cause/no-dispatch/guidance checks pass for 0.2.0.dev8. Direct/rebuilt wheels match; SHA256 `a1826ac7ebf67cc73b24760683e5a46d37b97ec2b29910ee6508dfe1754e31d5`, archive hash in installation register. Inventory remains 266 routes/138 owners/21 reviewed broad catches. Expanded planned MVP11 with run/job/task interaction mapping, responsibility extractions and consolidated progress/freshness/layout/query-cost adoption; no status runtime change. No actual cluster, daily config/state, base/test dependency install, external client, historical records or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev8 checkpoint; task commit: `git log --grep '^MVP10.4b.1:'`; push dev and version tag. b.2 session ownership/cleanup is next; b and parent 10.4 remain open. |
 
 ## How we work
 

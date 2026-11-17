@@ -9,6 +9,22 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev8 — 2026-11-16
+
+- Remote root discovery and submission-helper readiness now raise shared
+  diagnostics for local SSH launch, timeout, interruption, SSH/remote command,
+  invalid response and incompatible root/capability failures. Selected alias,
+  root and attempted helper Python remain visible; native causes are chained.
+- Checks have a 30-second timeout and accept at most 64 KiB of response text.
+  Root responses reject traversal/control characters; capabilities require
+  unique JSON keys and exact integer protocols. Arbitrary SSH/startup output
+  is omitted. No retry, fallback, authentication handling or installation.
+- `asl submit` renders readiness diagnostics once with corrective action and
+  supports `--debug`. Optional diagnostic context now includes storage_root.
+  Launch commands, trusted setup and legacy no-contact path selection stay as
+  before. Session cleanup, transfers and broader API/CLI adoption remain later
+  slices; existing submission receipts and tracking formats are unchanged.
+
 ## 0.2.0.dev7 — 2026-11-16
 
 - New remote submissions create an exact cluster-side tracking snapshot before

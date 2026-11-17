@@ -5,9 +5,47 @@ what may already have happened, and the next safe action. A failed connection
 does not prove a file is missing or a job was rejected. A successful inspection
 can report a scientifically failed job.
 
+## Remote readiness before submission
+
+When a root-discovery or helper-capability check fails, AutoSlurm now identifies
+the selected SSH alias, storage root and attempted environment Python where
+known. `asl submit` prints the diagnostic and a corrective action once, exits 1,
+and stops before script transfer or scheduler submission. `--debug` retains the
+original exception chain. Embedding applications can catch
+`autoslurm.errors.DiagnosticError` and inspect `error.diagnostic.to_dict()`.
+
+The codes distinguish `command_unavailable` (local SSH could not start),
+`command_timeout`, `operation_interrupted`, `transport_failed`, `command_failed`,
+`protocol_invalid` and `compatibility_mismatch`. A remote command failure does
+not prove that the venv, helper or path is missing. A generic SSH failure does
+not establish a password, gateway or 2FA problem. Normal output omits arbitrary
+SSH/startup text; native local causes remain available in debug mode.
+
+Each check runs once with a 30-second timeout and accepts at most 64 KiB of
+response text. Roots must be one absolute path without traversal/control
+characters, matching explicit storage_root selection. Capability JSON must have
+unique keys and exact integer protocols, including execution_tracking; booleans
+are incompatible. Older helpers require an explicit operator update.
+
+No fallback, credential handling, package installation or environment repair is
+performed. Existing launch commands and trusted env_command setup remain as
+configured; arbitrary setup effects are not rolled back or declared read-only.
+The diagnostic's not_started effects concern script transfer, submission dispatch
+and scheduler submission by this check, not unrelated jobs or prior operations.
+Existing configured legacy path selection still needs no discovery. Optional
+diagnostic context now includes storage_root, separate from executable/path.
+
+This adopts root/helper checks and the submit terminal boundary. SSH session
+ownership/cleanup, filesystem existence, transfers and general CLI/ACP parity
+remain separately planned work. SubmissionError still owns its receipt; its
+acceptance/uncertainty must never be discarded into a generic readiness error.
+
+## Shared diagnostic contract
+
 MVP10.2 supplies the shared diagnostic foundation. MVP10.3a adopts it for local
 configuration reads, profile/setting validation, selection and the config CLI.
-MVP10.4a now adopts software updates, including stale venv paths. Other commands
+MVP10.4a adopts software updates, including stale venv paths. MVP10.4b.1 adopts
+remote storage-root discovery and submission-helper capability checks. Other commands
 and services are adopting it in later slices. SubmissionError still carries its receipt and
 SoftwareUpdateError its update evidence. Keep those objects, particularly accepted
 job IDs and unknown outcomes, even when displaying an error.

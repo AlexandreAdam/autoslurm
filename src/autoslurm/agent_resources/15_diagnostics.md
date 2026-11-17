@@ -42,7 +42,7 @@ explicit catalogue codes; no generic exception-to-outcome classifier exists.
 `context` contains only these selected scalar facts: machine, ssh_alias, project,
 bundle, bundle_path, receipt_path, submission_id, job, job_id, task, field, option,
 logical_path, resolved_path, path, executable, resource, command, source,
-freshness, observed_at and observation_state. Values are str/int/bool/None;
+freshness, observed_at, observation_state and storage_root. Values are str/int/bool/None;
 integers are signed 64-bit. `with_context(**facts)` returns a copy and refuses
 conflicting identity. Never pass an entire config, environment, argv or domain
 record. Observation fields retain supplied evidence, not a new state projection.
@@ -485,3 +485,43 @@ The error core is stdlib-only and performs no I/O or recovery. Package-root impo
 still eagerly loads older services; this module does not claim to fix that
 separate boundary. Follow existing exact receipt, producing-machine and bounded
 log recipes. Client science functions do not need AutoSlurm imports.
+
+## Remote root/helper readiness (MVP10.4b.1)
+
+Public remote_storage_root_from_config and probe_submission_helper now raise
+autoslurm.errors.DiagnosticError for expected process/response/capability
+failures; invalid explicit root/venv settings use ConfigurationError. These
+retain RuntimeError/ValueError compatibility respectively. Catch the expected
+family at a client boundary and retain diagnostic.to_dict(), including machine,
+ssh_alias, storage_root, field and attempted executable/path where known.
+
+operation is remote_readiness; stages are select_storage_root, select_helper,
+probe_storage_root, probe_helper, read_storage_root, read_capabilities and
+check_capabilities. Codes distinguish command_unavailable (local SSH launch),
+command_timeout, operation_interrupted (signalled command), transport_failed
+(SSH255 or incomplete local communication), command_failed (other remote exit),
+protocol_invalid and compatibility_mismatch. Do not turn any of these into an
+absent path/environment or a rejected job. Native local causes are chained;
+unexpected adapter bugs and KeyboardInterrupt propagate unchanged.
+
+Checks run once, with a 30-second timeout and accepted text capped at 64 KiB.
+Root output must be one absolute path without traversal/control characters and
+match explicit storage_root selection. Capabilities require a unique-key JSON
+object with exact integer submission_protocol/execution_tracking values;
+booleans are incompatible. Unknown extra fields remain allowed. Empty/invalid
+responses differ from an old helper. Normal diagnostics omit arbitrary SSH,
+startup and command output. Keep debug causes instead of leaking raw output.
+
+Effects script_transfer/submission_dispatch/scheduler_submission are not_started
+for the check. They do not describe unrelated jobs or arbitrary operator-provided
+env_command effects during existing root discovery. No setup/launch policy,
+authentication handling, fallback, retry, dependency installation or repair is
+introduced. Configured legacy path selection remains no-contact. Verify the
+selected alias/environment/helper explicitly and update the helper if needed.
+
+asl submit uses the shared stderr/exit1 renderer; --debug rethrows diagnosed
+failures with the native cause. SubmissionError still carries its authoritative
+receipt; general post-dispatch and CLI/ACP error adoption remain separate tasks.
+SSH session/temp/socket/cleanup adoption is MVP10.4b.2, transfers/filesystem
+probes 10.4c, software status 10.4d and observation failures 10.6. Do not advertise
+this slice as universal transport handling or remote environment readiness.

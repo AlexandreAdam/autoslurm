@@ -38,7 +38,7 @@ _CATALOG = {
 _CONTEXT_KEYS = frozenset({"machine", "ssh_alias", "project", "bundle", "bundle_path",
     "receipt_path", "submission_id", "job", "job_id", "task", "field", "option",
     "logical_path", "resolved_path", "path", "executable", "resource", "command",
-    "source", "freshness", "observed_at", "observation_state"})
+    "source", "freshness", "observed_at", "observation_state", "storage_root"})
 _EFFECT_STATES = frozenset({"not_started", "succeeded", "failed", "partial", "unknown"})
 _URL_USERINFO = re.compile(r"(?i)\b([a-z][a-z0-9+.-]*://)[^\s/]*@")
 _CREDENTIAL = re.compile(
@@ -378,6 +378,39 @@ def _receipt_fetch_failure(problem, context, cause=None):
     return Diagnostic(code, 'fetch_evidence', 'read_execution_receipt', context=context,
         cause=cause, summary=summary, effects={'remote_mutation': 'not_started', 'receipt_refresh': 'failed'},
         next_action='Retain known scheduler IDs and inspect their status/logs. Verify the recorded receipt path, SSH alias and python3; explicitly refresh again when available. Do not resubmit because fetching failed.')
+
+
+def _readiness_failure(problem, stage, context, cause=None):
+    """Describe pre-submission probe facts without guessing SSH/authentication causes."""
+    summaries = {
+        'configuration_invalid': 'Remote readiness configuration is invalid.',
+        'command_unavailable': 'The local SSH executable could not be started for the readiness check.',
+        'command_timeout': 'The remote readiness check timed out.',
+        'operation_interrupted': 'The remote readiness command was interrupted.',
+        'transport_failed': 'SSH could not complete the remote readiness check.',
+        'command_failed': 'The remote readiness command failed; helper availability is unverified.',
+        'protocol_invalid': 'The remote readiness response is invalid or exceeds its supported size.',
+        'compatibility_mismatch': 'The remote helper does not match the selected readiness contract.',
+    }
+    summary = summaries[problem]
+    action = 'Verify access through the operator-owned SSH alias and check the selected environment/helper; no credential handling, alternate host or automatic retry is attempted.'
+    if context.get('field') == 'storage_root':
+        if problem == 'configuration_invalid':
+            summary = 'Machine storage_root must be a nonempty absolute POSIX path without traversal or control characters.'
+        elif problem == 'compatibility_mismatch':
+            summary = 'Remote storage root mismatch: the helper reported a different storage root than requested.'
+        action = 'Check storage_root, env_command and venv_path in the selected asl config profile; verify that environment imports the matching AutoSlurm helper. Do not switch to another storage root implicitly.'
+    elif context.get('field') == 'venv_path':
+        if problem == 'configuration_invalid':
+            summary = 'Remote submission requires a prepared venv_path with an absolute path to its environment.'
+        elif problem == 'compatibility_mismatch':
+            summary = 'Remote helper capabilities are incompatible; update AutoSlurm in the configured venv_path before submitting.'
+        action = 'Verify the identified venv_path/bin/python and update AutoSlurm there explicitly if its helper is outdated; verify SSH access through the configured alias. No environment is installed or repaired automatically.'
+    if problem == 'command_unavailable':
+        action = 'Verify the local ssh executable and its permissions first; the remote helper and environment have not been verified. Then check the selected SSH alias/profile explicitly.'
+    return Diagnostic(problem, 'remote_readiness', stage, context=context, cause=cause,
+        summary=summary, next_action=action,
+        effects={'script_transfer': 'not_started', 'submission_dispatch': 'not_started', 'scheduler_submission': 'not_started'})
 
 
 class InvalidRequestError(DiagnosticError, ValueError):

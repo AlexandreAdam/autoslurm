@@ -539,3 +539,18 @@ Cluster receipt selectors verify exact backlinks; workstation paths/transport
 remain original evidence. status/log/fetch/inspect/ACP reuse their existing
 owners. 24 new tests cover cross-installation behavior and failure cases.
 General helper/readiness/submission diagnostic adoption remains MVP10.4b/10.5.
+
+## MVP10.4b.1 adoption amendment (2026-11-16)
+
+266 routes/138 owners/21 reviewed broad catches unchanged. transport root and
+run_slurm helper checks delegate process/UTF-8 bounds and strict response parsing
+to remote_readiness; errors.py owns codes/wording/actions. ConfigurationError
+guards invalid explicit roots/venvs locally. DiagnosticError carries expected
+launch/timeout/signal/SSH/remote-exit/protocol/mismatch facts, native causes and
+no-submission effects. Optional diagnostic context adds storage_root without a
+record/protocol rewrite. Arbitrary SSH/startup output is omitted, not parsed into
+authentication claims. Existing commands/setup/legacy path selection are retained.
+Submit CLI renders once and honors --debug. The broad submission/receipt policy
+is not changed. 70 new cases, 1431 offline tests and installed checks pass.
+b.2 session lifecycle and c/d transfer/software status remain open; universal
+CLI/ACP and observation diagnostic parity remain staged.

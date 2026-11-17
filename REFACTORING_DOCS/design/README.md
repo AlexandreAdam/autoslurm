@@ -17,10 +17,11 @@ validation approach.
 | MVP8 Execution logs | [MVP8_execution_logs.md](MVP8_execution_logs.md) | Bounded stdout/stderr and shared failure evidence |
 | MVP9 Readable command arguments | [job_command_pattern.md](job_command_pattern.md#mvp93-implemented-public-authoring-and-adoption) | Complete locally; public contracts/optional adapter, literal compiler, explicit saved-job validation and installed authoring recipe |
 | MVP10 API-wide error handling | [MVP10_actionable_errors.md](MVP10_actionable_errors.md) | Expanded by PLAN.2: full API failure audit, isolated error module and staged boundary adoption |
+| MVP10.4b Remote readiness | [MVP10_4b_readiness.md](MVP10_4b_readiness.md) | Root/helper diagnostics first; session ownership/cleanup separately scoped |
 | FIX.ENVIRONMENT.1 Module initialization | [FIX_ENVIRONMENT_1_module_initialization.md](FIX_ENVIRONMENT_1_module_initialization.md) | Explicit machine initializer, shared ordered setup and job failure guards |
 | FETCH.1 Selected-run evidence | [FETCH_1_execution_evidence.md](FETCH_1_execution_evidence.md) | Receipt refresh, status and bounded logs through one public workflow |
 | FIX.TRACKING.1 Execution-side tracking | [FIX_TRACKING_1_execution_tracking.md](FIX_TRACKING_1_execution_tracking.md) | New remote submissions publish exact cluster-local tracking views |
-| MVP11 Readable status reasons | [MVP11_status_explanations.md](MVP11_status_explanations.md) | Planned by PLAN.3; same-row waiting explanations, named dependencies and raw evidence |
+| MVP11 Status refactor | [MVP11_status_explanations.md](MVP11_status_explanations.md) | Planned; run/job/task workflow, clear reasons/progress/freshness, thin presentation and shared observations |
 | MVP12 Reusable scientific workflows | [MVP12_reusable_workflows.md](MVP12_reusable_workflows.md) | Planned from the Gaia proposal; layered public services, per-slice API/docs adoption and optional task runtime |
 | Command/job pattern investigation (DOCS.3) | [job_command_pattern.md](job_command_pattern.md) | Concrete walkthrough and local experiment; proposals for review, no runtime changes |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |

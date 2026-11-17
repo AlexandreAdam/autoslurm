@@ -11,6 +11,7 @@ from .config import load_config, is_remote_machine
 from .transport import ssh_command, remote_storage_root_from_config
 from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .submission import SubmissionError, SUBMISSION_PROTOCOL, validate_receipt
+from .remote_readiness import readiness_context, configured_python, run_readiness_probe, check_helper_capabilities
 
 __all__ = [
     "get_job_id_from_sbatch_output",
@@ -229,18 +230,12 @@ def run_bulk_submit_driver_remotely(
 def probe_submission_helper(context):
     """Fail before dispatch if the prepared helper cannot persist receipts."""
     config = context.config
-    venv = config.get("venv_path")
-    if not isinstance(venv, str) or not venv.strip():
-        raise RuntimeError("Receipt-capable remote submission requires a prepared venv_path.")
-    command = shlex.join(["env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={context.storage_root}", venv.rstrip("/") + "/bin/python", "-m", "autoslurm.apps.bulk_submit_driver", "--capabilities"])
-    result = subprocess.run(ssh_command(config, context.machine_name, command), capture_output=True, text=True)
-    try:
-        from .execution_tracking import EXECUTION_TRACKING_PROTOCOL
-        capabilities = json.loads(result.stdout)
-        capable = (result.returncode == 0 and capabilities.get("submission_protocol") == SUBMISSION_PROTOCOL
-                   and type(capabilities.get('execution_tracking')) is int
-                   and capabilities['execution_tracking'] == EXECUTION_TRACKING_PROTOCOL)
-    except (ValueError, AttributeError):
-        capable = False
-    if not capable:
-        raise RuntimeError("Remote helper does not support submission receipts and execution-side tracking; update AutoSlurm in the configured venv_path before submitting.")
+    python = configured_python(config, context.machine_name)
+    facts = readiness_context(config, context.machine_name, field='venv_path', executable=python, path=python)
+    facts['storage_root'] = context.storage_root
+    command = shlex.join(["env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={context.storage_root}", python, "-m", "autoslurm.apps.bulk_submit_driver", "--capabilities"])
+    output = run_readiness_probe(ssh_command(config, context.machine_name, command),
+                                 stage='probe_helper', context=facts)
+    from .execution_tracking import EXECUTION_TRACKING_PROTOCOL
+    check_helper_capabilities(output, {'submission_protocol': SUBMISSION_PROTOCOL,
+                                      'execution_tracking': EXECUTION_TRACKING_PROTOCOL}, context=facts)
