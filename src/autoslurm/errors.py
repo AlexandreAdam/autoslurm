@@ -413,6 +413,25 @@ def _readiness_failure(problem, stage, context, cause=None):
         effects={'script_transfer': 'not_started', 'submission_dispatch': 'not_started', 'scheduler_submission': 'not_started'})
 
 
+def _ssh_session_failure(problem, stage, context, effects, cause=None):
+    """Owned local session facts only; never infer scheduler effects or auth causes."""
+    summaries = {
+        'create_session_directory': 'AutoSlurm could not create its local SSH control-socket directory.',
+        'validate_control_path': 'AutoSlurm\'s SSH control-socket path is too long for a safe Unix socket.',
+        'open_session': 'AutoSlurm could not confirm opening its owned SSH session; submission was not dispatched through this session.',
+        'close_session': 'AutoSlurm could not confirm SSH session cleanup; retain the submission receipt and do not resubmit because of this cleanup failure.',
+        'remove_session_directory': 'AutoSlurm could not remove its local SSH socket directory; retain the submission receipt and inspect local cleanup.',
+    }
+    return Diagnostic(problem, 'ssh_session', stage, context=context, effects=effects, cause=cause,
+        summary=summaries[stage],
+        next_action=('Use a short writable local temporary directory (normally /tmp); verify its permissions and available space. No submission was dispatched through this session.'
+                     if stage in {'create_session_directory', 'validate_control_path'} else
+                     'Check the operator-owned SSH alias and retained session effects. Cleanup does not change scheduler acceptance; preserve known IDs and inspect the exact receipt/status before any new submission. An unconfirmed owned master may persist until ControlPersist expires.'))
+
+
+_SSH_SESSION_CLEANUP_NOTICE = 'SSH session cleanup issues are retained in session_cleanup_diagnostics; preserve the receipt and do not resubmit because cleanup failed.'
+
+
 class InvalidRequestError(DiagnosticError, ValueError):
     """Known authoring validation failure; original causes remain chained.
 

@@ -3,15 +3,25 @@
 import json
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
 
 from autoslurm import run_slurm
+from autoslurm import ssh_session_resources as resources
 from autoslurm.execution import ExecutionContext
 
 
 PROFILE = {"ssh_alias": "research-gpu", "venv_path": "/env"}
+
+
+@pytest.fixture
+def short_session_directory():
+    with tempfile.TemporaryDirectory(prefix='asl-test-', dir='/tmp') as directory:
+        path = Path(directory) / 'session'
+        path.mkdir()
+        yield path
 
 
 @pytest.mark.parametrize("sharing", [
@@ -37,7 +47,7 @@ def test_configured_connection_used_by_both_submit_callers(monkeypatch, sharing)
         return subprocess.CompletedProcess(command, 0, output, "")
 
     monkeypatch.setattr(run_slurm.subprocess, "run", run)
-    monkeypatch.setattr(run_slurm.tempfile, "mkdtemp", lambda **kw: pytest.fail("User owns socket"))
+    monkeypatch.setattr(resources.tempfile, "mkdtemp", lambda **kw: pytest.fail("User owns socket"))
     context = ExecutionContext("cluster", PROFILE, "/state", "/results", "/results", True)
     with run_slurm.ssh_submission_session(PROFILE, "cluster") as options:
         assert options == []
@@ -89,12 +99,11 @@ def test_owned_session_short_even_with_long_tmpdir(monkeypatch, tmp_path, probe)
     assert calls[-1][-3:] == ["-O", "exit", "research-gpu"]
 
 
-def test_missing_tmp_uses_default_directory_and_cleanup_preserves_body_error(monkeypatch, tmp_path):
+def test_missing_tmp_uses_default_directory_and_cleanup_preserves_body_error(monkeypatch, short_session_directory):
     calls = []
     real_isdir = os.path.isdir
     monkeypatch.setattr(run_slurm.os.path, "isdir", lambda path: False if path == "/tmp" else real_isdir(path))
-    folder = tmp_path / "session"
-    folder.mkdir()
+    folder = short_session_directory
 
     def make_directory(**kwargs):
         assert kwargs == {"prefix": "asl-ssh-", "dir": None}
@@ -106,7 +115,7 @@ def test_missing_tmp_uses_default_directory_and_cleanup_preserves_body_error(mon
             raise OSError("cleanup failed")
         return subprocess.CompletedProcess(command, 0, "", "")
 
-    monkeypatch.setattr(run_slurm.tempfile, "mkdtemp", make_directory)
+    monkeypatch.setattr(resources.tempfile, "mkdtemp", make_directory)
     monkeypatch.setattr(run_slurm.subprocess, "run", run)
     with pytest.raises(RuntimeError, match="body failure"):
         with run_slurm.ssh_submission_session(PROFILE):
@@ -118,6 +127,6 @@ def test_missing_tmp_uses_default_directory_and_cleanup_preserves_body_error(mon
 @pytest.mark.parametrize("profile", [None, {}, {"results_root": "/results"}])
 def test_local_session_has_no_ssh_or_temporary_directory(monkeypatch, profile):
     monkeypatch.setattr(run_slurm.subprocess, "run", lambda *a, **kw: pytest.fail("Local SSH"))
-    monkeypatch.setattr(run_slurm.tempfile, "mkdtemp", lambda **kw: pytest.fail("Local socket"))
+    monkeypatch.setattr(resources.tempfile, "mkdtemp", lambda **kw: pytest.fail("Local socket"))
     with run_slurm.ssh_submission_session(profile) as options:
         assert options is None

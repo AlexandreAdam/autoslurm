@@ -43,6 +43,28 @@ session directory is removed. Failed or unreadable `ssh -G` output falls back to
 this owned session once, without retrying the configuration check. This adds no
 profile settings and does not change SSH configuration or authentication.
 
+Owned-session failures now identify the alias, failed stage and local socket
+path, with safe native error facts. The expanded POSIX socket path is checked
+before opening; opening and closing have 30/10-second timeouts. Addressing is
+validated before allocating a directory, and the destination/socket options are
+kept fixed during the operation. Arbitrary SSH output is omitted from normal
+diagnostics; this does not diagnose a particular password, gateway or 2FA issue.
+
+Cleanup failures are reported, including a failed close command or directory
+removal. **Jobs can already be accepted when cleanup fails.** In Python, retain
+`SubmissionError.receipt` and check its state and IDs: a submitted receipt stays
+submitted. The receipt's `session_cleanup_diagnostics` records local cleanup
+issues, and a later receipt refresh preserves them. A removed socket directory
+does not prove that the owned master closed; it may persist until ControlPersist
+expires. Do not submit the same work again merely because cleanup failed.
+
+If opening/submission already failed, that original failure stays primary;
+cleanup details are secondary evidence. Direct session calls preserve original
+bugs/interrupts, while tracked submission preserves them as the exception cause
+alongside its receipt. AutoSlurm still attempts local directory cleanup after a
+failed close, without closing another connection or retrying submission. See
+[failure interpretation](errors.md#ssh-session-resources-and-cleanup).
+
 Alias/root edits only save local configuration. The interactive config validation
 checks SSH connectivity and environment activation/import. Complete path/access
 checks are not yet implemented in config; see [config](configuration.md).

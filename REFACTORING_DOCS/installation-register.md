@@ -13,6 +13,37 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.4b.2 (2026-11-16): running checkpoint 0.2.0.dev9. Verified base import:
+`/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; runtime 0.2.0.dev9,
+editable distribution metadata still 0.1.0 without reinstall. Dedicated owned SSH
+resources pin addressing/options and diagnose allocation/socket/open/close/remove
+with independent effects, bounded commands and native causes. Cleanup-only failure
+now raises; accepted IDs/state survive, original body/open errors stay primary and
+workstation-owned cleanup diagnostics survive refresh. Borrowed sharing is untouched.
+53 new cases; 1484 full offline tests passed in 12.12 s, 70 expected collision
+warnings, `.development/test-runs/ssh-session-diagnostics.xml`. Inventory matches
+266 routes/138 owners/23 reviewed broad catches. No-Git/no-runtime-import metadata,
+direct wheel/sdist-to-wheel rebuild and disposable installed version/CLI identity/
+session ownership/native causes/cleanup/accepted receipt/refresh/no-retry/agent
+recipe checks pass:
+
+- `.development/artifacts/ssh-session-diagnostics/autoslurm-0.2.0.dev9-py3-none-any.whl`:
+  SHA256 `dc6b065746d3683f02c938028bfaca1988b31b3443c2d636bebd6309275f3996`.
+- `.development/artifacts/ssh-session-diagnostics/autoslurm-0.2.0.dev9.tar.gz`:
+  SHA256 `3916b00d96c2988c4d325c7bbc9114bd2f908ed81af9730d376d6ad271402988`.
+- `.development/artifacts/ssh-session-diagnostics/from-sdist/autoslurm-0.2.0.dev9-py3-none-any.whl`:
+  SHA256 `ed9bdf343be6704ebbd5439ff06f182c26eadcda6277d39dbbf11f4ed97789f9`.
+
+Direct/rebuilt wheel member contents match; ZIP archive hashes may differ.
+Annotated v0.2.0.dev9 identifies this checkpoint. Pinned rollback HEAD remains
+clean at 33bcbd34fb167fca67aa64739a013073c64167b1. No actual SSH/cluster, daily
+config/state, base/test dependency install, external client, historical migration
+or rollback edits. Unrelated user documents/reports/software_preparations excluded.
+Receipt protocol1 adds an optional session_cleanup_diagnostics field without a
+history rewrite; helpers cannot invent workstation cleanup observations. b is
+complete; 10.4c transfer/filesystem diagnostics are next and 10.4 remains open.
+No PyPI publication or remote deployment occurred.
+
 MVP10.4b.1 (2026-11-16): running checkpoint 0.2.0.dev8. Main/base import is
 `/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; installed editable
 metadata remains 0.1.0 without reinstall. Remote root/helper checks use shared

@@ -264,14 +264,14 @@ def test_sync_copy_failure_stops_without_success_or_retry(monkeypatch, capsys):
     assert "Synced" not in capsys.readouterr().out
 
 
-def test_invalid_ssh_profile_still_cleans_session_directory(monkeypatch, tmp_path):
+def test_invalid_ssh_profile_stops_before_session_allocation(monkeypatch, tmp_path):
     from autoslurm.run_slurm import ssh_submission_session
 
     session = tmp_path / "session"
     session.mkdir()
-    monkeypatch.setattr("autoslurm.run_slurm.tempfile.mkdtemp", lambda **kw: str(session))
+    monkeypatch.setattr("autoslurm.ssh_session_resources.tempfile.mkdtemp", lambda **kw: pytest.fail('Invalid profile allocated a session'))
     monkeypatch.setattr("subprocess.run", lambda *a, **k: pytest.fail("Invalid profile must fail before a process"))
     with pytest.raises(AttributeError, match="username"):
         with ssh_submission_session({"hosturl": "cluster"}, "invalid"):
             pytest.fail("Invalid profile must not start a session")
-    assert not session.exists()
+    assert session.exists()  # Existing caller-owned files were never touched.

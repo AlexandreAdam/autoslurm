@@ -554,3 +554,23 @@ Submit CLI renders once and honors --debug. The broad submission/receipt policy
 is not changed. 70 new cases, 1431 offline tests and installed checks pass.
 b.2 session lifecycle and c/d transfer/software status remain open; universal
 CLI/ACP and observation diagnostic parity remain staged.
+
+## MVP10.4b.2 adoption amendment (2026-11-16)
+
+266 routes/138 owners/23 reviewed broad catches. Public session still yields
+None/local, []/borrowed or options/owned; a focused ssh_session_resources owner
+pins destination/options and observes directory/open/close/remove independently.
+errors.py owns diagnostic codes/wording/actions. Expected filesystem/process
+failures retain safe errno/exit facts and native causes; open/close timeouts are
+30/10 seconds. Optional ssh -G is bounded and falls back on expected failures,
+while invalid profiles/bugs propagate. Borrowed sharing is never explicitly closed.
+
+Cleanup-only failure now raises. Existing body/open primary errors or interrupts
+stay original, with bounded secondary diagnostics and native cleanup errors.
+Three resource/evidence broad guards are reviewed, including the changed public
+guard; they preserve bugs rather than relabel them. Tracked receipts preserve
+known IDs/state and workstation-owned session_cleanup_diagnostics across refresh;
+remote execution evidence cannot invent/replace local cleanup facts. No retries,
+authentication handling, scheduler inference or historical migration. 53 new cases,
+1484 offline tests and installed artifact checks pass. b is complete; 10.4c/d
+transfer/filesystem/software status and 10.5/10.8 receipt/route parity remain open.

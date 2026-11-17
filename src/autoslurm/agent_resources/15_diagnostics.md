@@ -522,6 +522,44 @@ selected alias/environment/helper explicitly and update the helper if needed.
 asl submit uses the shared stderr/exit1 renderer; --debug rethrows diagnosed
 failures with the native cause. SubmissionError still carries its authoritative
 receipt; general post-dispatch and CLI/ACP error adoption remain separate tasks.
-SSH session/temp/socket/cleanup adoption is MVP10.4b.2, transfers/filesystem
-probes 10.4c, software status 10.4d and observation failures 10.6. Do not advertise
+SSH session/temp/socket/cleanup is adopted in MVP10.4b.2 below; transfers/filesystem
+probes remain 10.4c, software status 10.4d and observation failures 10.6. Do not advertise
 this slice as universal transport handling or remote environment readiness.
+
+## Owned SSH sessions (MVP10.4b.2)
+
+ssh_submission_session retains its list interface: None for local, [] for
+configured sharing, Control options for an owned master. It validates addressing
+before allocation and pins the destination/options. User-owned masters are never
+explicitly opened/closed. Optional ssh -G observation is 10 seconds and 64-KiB
+accepted UTF-8 text; expected command/read/invalid-output failures fall back once,
+while invalid configuration, programming bugs and interrupts propagate.
+
+Owned POSIX sockets use /tmp where available and must be under 100 expanded bytes;
+open/close commands use 30/10-second timeouts. A resource owner tracks directory,
+open, close and directory-cleanup effects separately. errors.py owns diagnostics:
+operation ssh_session, stages create_session_directory, validate_control_path,
+open_session, close_session and remove_session_directory. Expect storage_failed,
+configuration_invalid, command_unavailable, command_timeout, protocol_invalid,
+transport_failed, command_failed or operation_interrupted. A failed close leaves
+closure unconfirmed even when its local directory was removed. No scheduler
+effects or authentication cause are inferred. Normal diagnostics omit raw output.
+
+Cleanup-only failures are now raised, instead of silently ignored. For tracked
+submission, catch SubmissionError before a generic DiagnosticError and retain
+its receipt. Known acceptance stays submitted with IDs/execution_finished;
+partial/uncertain submission stays distinct. Never retry because cleanup failed.
+The optional session_cleanup_diagnostics receipt field is up to four bounded
+plain diagnostic objects; the workstation owns it and refresh preserves it when
+recovering execution receipts. No historical records are migrated or new helper
+protocol required. Inspect it through load_submission/inspect_submission.
+
+If another error/interrupt already exists, that same exception stays primary.
+Secondary diagnostics are bounded by the existing four-leaf limit; direct errors
+also retain session_cleanup_diagnostics and native session_cleanup_errors for
+debugging. Unexpected cleanup bugs remain original errors, reported as internal
+cleanup observations rather than reclassified I/O failures. Tracked submission
+still wraps/retains original causes under its existing receipt boundary; general
+CLI/ACP diagnostic adoption remains 10.5/10.8. Directory cleanup is attempted even
+after close failure. No credential/key/config change, automatic install, retry,
+alternate connection or scheduler-state mutation is introduced.

@@ -35,10 +35,42 @@ and scheduler submission by this check, not unrelated jobs or prior operations.
 Existing configured legacy path selection still needs no discovery. Optional
 diagnostic context now includes storage_root, separate from executable/path.
 
-This adopts root/helper checks and the submit terminal boundary. SSH session
-ownership/cleanup, filesystem existence, transfers and general CLI/ACP parity
+This adopts root/helper checks and the submit terminal boundary. Filesystem
+existence, transfers and general CLI/ACP parity
 remain separately planned work. SubmissionError still owns its receipt; its
 acceptance/uncertainty must never be discarded into a generic readiness error.
+
+## SSH session resources and cleanup
+
+SSH sessions now use the shared diagnostic model for allocation, socket length,
+opening, closing and directory removal. `operation=ssh_session` identifies this
+boundary; the stage names the failed step. Effects describe `session_directory`,
+`ssh_master_open`, `ssh_master_close` and `session_directory_cleanup` independently.
+An unknown open/close stays unknown even after successful directory removal.
+These resource facts do not infer scheduler acceptance or earlier transfers.
+
+For direct session calls, expected failures raise DiagnosticError (invalid
+socket length uses ConfigurationError). The native local cause remains chained;
+raw SSH output is omitted. A cleanup-only failure is raised after the body. When
+the body already failed, its same exception stays primary with bounded secondary
+diagnostics/native cleanup evidence. Unexpected bugs and interrupts are preserved.
+
+For tracked submission, `SubmissionError.receipt` is authoritative. Successful
+acceptance retains `state=submitted`, `execution_finished=true` and all IDs even
+if closing SSH fails. A partial or uncertain outcome keeps that classification.
+Optional `session_cleanup_diagnostics` records up to four cleanup observations
+without native exception objects; refresh retains this workstation-owned evidence.
+Cleanup notices in the error message point to it. Keep this receipt and inspect
+status/logs before deciding on another submission; cleanup is never a reason to
+retry automatically. General receipt-aware CLI/ACP presentation remains staged.
+
+Configured shared connections are never explicitly opened/closed. The optional
+ssh -G check is bounded to 10 seconds/64-KiB accepted UTF-8 output, falls back
+once on expected read/command failures and rejects ambiguous control settings.
+Invalid profiles and programming bugs propagate before allocation. Owned open/
+close have 30/10-second timeouts and retain their original destination/options.
+Only the owned local directory is removed; failure remains explicit. This adds
+no password/key/2FA handling, automatic repair or scheduler retry.
 
 ## Shared diagnostic contract
 

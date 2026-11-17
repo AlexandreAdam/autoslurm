@@ -303,7 +303,7 @@
       "BaseException"
     ],
     "autoslurm.run_slurm.ssh_submission_session": [
-      "Exception"
+      "BaseException"
     ],
     "autoslurm.scheduler.query_scheduler": [
       "Exception"
@@ -319,6 +319,10 @@
     ],
     "autoslurm.bulk_submit_driver.submit_payload": [
       "(Exception, KeyboardInterrupt)"
+    ],
+    "autoslurm.ssh_session_resources.OwnedSSHSession.cleanup": [
+      "BaseException",
+      "BaseException"
     ]
   },
   "contracts": {
@@ -465,9 +469,10 @@
         "tests/integration/test_ssh_alias.py",
         "tests/integration/test_submission_boundaries.py",
         "tests/integration/test_preparation_diagnostics.py",
-        "tests/integration/test_readiness_diagnostics.py"
+        "tests/integration/test_readiness_diagnostics.py",
+        "tests/integration/test_ssh_session_diagnostics.py"
       ],
-      "adoption": "MVP10.4b.1: root discovery and helper capability checks adopt shared remote_readiness process/response facts and errors.py wording; typed configuration/process/protocol/compatibility failures retain alias, selected root, attempted Python, native causes and pre-submission effects. 30-second timeout and 64-KiB accepted text bound; no arbitrary SSH/startup output, retry or fallback. Session ownership/cleanup stays b.2; transfer/existence/status/dispatch remain separate."
+      "adoption": "MVP10.4b.1: root discovery and helper capability checks adopt shared remote_readiness process/response facts and errors.py wording; typed configuration/process/protocol/compatibility failures retain alias, selected root, attempted Python, native causes and pre-submission effects. 30-second timeout and 64-KiB accepted text bound; no arbitrary SSH/startup output, retry or fallback. MVP10.4b.2 adds owned resource diagnostics and pinned cleanup, 30/10-second open/close bounds, optional probe bounds and primary/secondary failure preservation. Tracked receipts keep accepted IDs/state and workstation-owned session_cleanup_diagnostics across refresh; helpers cannot invent or replace these facts. Transfer/existence/status and general dispatch/recovery adoption remain separate."
     },
     "transfer": {
       "implementation_task": "MVP10.4",
@@ -1221,9 +1226,9 @@
     },
     "autoslurm.run_slurm.ssh_submission_session": {
       "contract": "transport",
-      "inputs": "Profile, machine, enabled flag.",
-      "current": "Context manager yields None/local or []/borrowed or owned SSH options; setup RuntimeError/OSError.",
-      "effects": "ssh -G advisory fallback; borrowed master untouched; owned /tmp master opened/closed; cleanup exceptions and nonzero close suppressed."
+      "inputs": "Profile and optional machine name.",
+      "current": "Context manager yields None/local, []/borrowed or owned SSH option list. Expected allocation/socket/open/close/remove failures use shared diagnostics and native causes. Original body/open bugs and interrupts stay primary with bounded secondary cleanup evidence; cleanup-only failures propagate.",
+      "effects": "Validate destination before allocation; optional bounded ssh -G failure falls back once. Borrowed sharing untouched. Owned /tmp resource pins destination/options, bounds open/close to 30/10 seconds and records independent known/unknown effects. Directory removal does not prove master closure; no scheduler inference or retry."
     },
     "autoslurm.save_load_jobs.load_bundle": {
       "contract": "persistence",
@@ -1360,7 +1365,7 @@
     "autoslurm.submission.refresh_submission": {
       "contract": "receipt",
       "inputs": "Exact local receipt path.",
-      "current": "Existing remote/local refresh policy retained. Adopted local read/projection/write diagnostic survives SubmissionError.receipt; secondary tracking_diagnostic additive. Remote launch/protocol/interruption policy remains 10.4/10.5. FETCH.1 remote reads use shared regular-file worker capped at 1 MiB/30 seconds, requiring python3; typed missing/access/change/protocol/SSH/launch/timeout errors preserve known receipt facts. Successful refresh clears old observation_error.",
+      "current": "Existing remote/local refresh policy retained. Adopted local read/projection/write diagnostic survives SubmissionError.receipt; secondary tracking_diagnostic additive. Remote launch/protocol/interruption policy remains 10.4/10.5. FETCH.1 remote reads use shared regular-file worker capped at 1 MiB/30 seconds, requiring python3; typed missing/access/change/protocol/SSH/launch/timeout errors preserve known receipt facts. Successful refresh clears old observation_error. MVP10.4b.2: preserve workstation-owned session_cleanup_diagnostics while recovering remote IDs; never adopt helper-invented cleanup facts.",
       "effects": "No scheduler dispatch; remote receipt read then local receipt/projection writes; failed local write may follow good remote observation."
     },
     "autoslurm.sync.sync_machine": {
@@ -1563,7 +1568,7 @@
       "Keep per-reference failed observations on transport/protocol problems, narrow expected catches and retain bounded safe stderr/returncode; unexpected bugs need debug visibility. MVP10.6."
     ],
     "autoslurm.run_slurm.ssh_submission_session": [
-      "RETAIN cleanup protection for owned session; do not exit borrowed connections. Cleanup failures/nonzero close become secondary diagnostics, never overwrite receipt/dispatch error. MVP10.4/5."
+      "MVP10.4b.2: RETAIN resource/evidence protection including interrupts. Remember the initiating open/body exception and re-raise it unchanged after cleanup; narrow expected process/storage guards own classification. Borrowed sharing is never closed. Cleanup-only errors propagate; accepted IDs/receipt state are preserved by the existing observed-dispatch phase."
     ],
     "autoslurm.scheduler.query_scheduler": [
       "Keep batched remote-query failure as unavailable observation, not failed science/missing job; narrow expected parse/transport catches, preserve command/returncode and debug unexpected bugs. MVP10.6."
@@ -1587,6 +1592,10 @@
     ],
     "autoslurm.bulk_submit_driver.submit_payload": [
       "FIX.TRACKING.1: after an exclusive claim and before any sbatch, execution-view publication failures retain a rejected receipt with no IDs; no continuation or replay. Native diagnostics/causes remain available. Incremental receipt/projection failures continue through the existing persist guard, retaining accepted IDs and stopping further scheduling."
+    ],
+    "autoslurm.ssh_session_resources.OwnedSSHSession.cleanup": [
+      "MVP10.4b.2: RETAIN close safeguard including native bugs/interrupts so directory removal still runs. Collect the same exception for finalization; typed expected failures come from narrow command guards. Do not infer master closure or scheduler acceptance from directory cleanup.",
+      "MVP10.4b.2: RETAIN unexpected directory-cleanup safeguard including interrupts. Keep the original cleanup error as primary after success, or secondary native evidence after another failure; do not replace it with a generic domain error. No ignored cleanup exceptions or retries."
     ]
   },
   "route_notes": {

@@ -184,6 +184,11 @@ def refresh_submission(receipt_path):
         # Retain workstation identity/paths even if a helper receives stale data.
         for key in ("bundle", "bundle_path", "planned_path", "receipt_path", "execution_receipt_path", "machine", "execution"):
             observed[key] = current[key]
+        observed.pop('session_cleanup_diagnostics', None)
+        if current.get('session_cleanup_diagnostics'):
+            # These are workstation-owned observations, absent from the remote
+            # execution receipt. Recovering IDs must not erase them.
+            observed['session_cleanup_diagnostics'] = current['session_cleanup_diagnostics']
         if not observed["execution_finished"]:
             mark_unobserved(observed, "Helper has not recorded a final submission outcome.")
         current = observed

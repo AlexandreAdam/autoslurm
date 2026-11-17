@@ -9,6 +9,23 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev9 — 2026-11-16
+
+- Owned SSH sessions now diagnose temporary-directory/socket, command-open,
+  close and directory-removal failures with selected alias, native causes and
+  explicit resource effects. Open/close commands have 30/10-second timeouts;
+  POSIX sockets are checked below 100 expanded bytes before opening.
+- **Cleanup failures are now reported instead of silently ignored.** After
+  accepted submission, SubmissionError.receipt retains submitted state and IDs.
+  During another failure, the original exception stays primary and cleanup is
+  secondary. Additive session_cleanup_diagnostics remains in the workstation
+  receipt through refresh; no automatic retry or job-state change follows it.
+- Configured shared connections remain operator-owned and untouched. Optional
+  ssh -G inspection falls back once on expected failures/invalid observations;
+  invalid addressing and programming bugs propagate before allocation. The owned
+  destination and cleanup options stay pinned despite client-side mutations.
+  No authentication, SSH-config, environment-install or helper-protocol change.
+
 ## 0.2.0.dev8 — 2026-11-16
 
 - Remote root discovery and submission-helper readiness now raise shared

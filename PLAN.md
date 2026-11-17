@@ -12,7 +12,7 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
   foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
   and MVP10.3c.1–3 local record/script persistence diagnostics complete;
-  MVP10.4a software-update and MVP10.4b.1 root/helper diagnostics complete
+  MVP10.4a software-update and MVP10.4b root/helper/session diagnostics complete
   locally. FIX.ENVIRONMENT.1 machine module initialization complete locally;
   FETCH.1 selected-run evidence fetching and FIX.TRACKING.1 execution-side
   tracking complete locally.
@@ -27,26 +27,28 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1431 passed, 67 expected
+  rollback source remains unchanged. Full offline suite: 1484 passed, 70 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.4b.1 root discovery/helper diagnostics in
-  0.2.0.dev8. Shared readiness process/response parsing and pure errors.py wording
-  distinguish launch, timeout, signal, SSH/remote exit, protocol and compatibility
-  failures, with selected root/alias/attempted Python and original causes. Probes
-  run once with a 30-second timeout and 64-KiB accepted text bound. Submit CLI
-  renders once/debug retains the cause; no script transfer or scheduler effects.
-  70 new regressions; 1431 full offline tests pass. No-Git metadata, wheel/sdist
-  rebuild and installed API/CLI/debug/causes/effects/guidance checks pass. Audit:
-  266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily state/
-  config, base/dependency install, historical migration or rollback change.
-  Status refactor scope expanded in MVP11; all its implementation remains planned.
-  Editable installed metadata is still 0.1.0 without reinstall.
-- **Next task:** MVP10.4b.2 SSH/session ownership and cleanup, using the
+- **Latest completed task:** MVP10.4b.2 SSH session ownership/cleanup in
+  0.2.0.dev9. One resource owner pins the destination/options, diagnoses owned
+  allocation/socket/open/close/remove failures, and bounds open/close to 30/10 s.
+  Cleanup-only failures now raise; tracked receipts retain submitted/partial/
+  uncertain state and known IDs. An existing primary error/interrupt stays primary
+  with bounded secondary cleanup evidence. Workstation-owned cleanup diagnostics
+  survive refresh; execution helpers cannot invent or replace them. Borrowed
+  sharing stays untouched; optional nonconnecting inspection retains fallback.
+  53 new cases; 1484 offline tests pass in 12.12 s with 70 expected warnings.
+  No-Git metadata, wheel/sdist rebuild and installed API/CLI-version/native-cause/
+  resource/receipt/refresh/no-retry/guidance checks pass. Inventory: 266 routes/
+  138 owners/23 reviewed broad catches. Main/base imports dev9; editable metadata
+  stays 0.1.0 without reinstall. No actual cluster, daily state/config, dependency
+  install, historical migration or rollback change. MVP11 status work stays planned.
+- **Next task:** MVP10.4c transfers and filesystem probes, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
-  service errors still have no diagnostic. MVP10.3, MVP10.4a and MVP10.4b.1 are
-  complete; SSH sessions, transfer/filesystem and software-status adoption remain
-  MVP10.4b–d. MVP10.4 stays open.
+  service errors still have no diagnostic. MVP10.3, MVP10.4a and MVP10.4b are
+  complete; transfer/filesystem and software-status adoption remain MVP10.4c–d.
+  MVP10.4 stays open.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
@@ -748,7 +750,7 @@ is in the design; every callable/action and its outcome contract must be reviewe
     preflight versus partial pull/install and unknown remote responses; expose
     evidence/diagnostic through Python and software-update CLI text/JSON/debug.
     No retries, repair or change to single-checkout/editable-install policy.
-  - [ ] **MVP10.4b SSH and helper readiness.** Adopt connection/session ownership,
+  - [x] **MVP10.4b SSH and helper readiness.** Adopt connection/session ownership,
     helper capabilities and root discovery diagnostics, preserving cleanup and
     uncertainty without interpreting authentication or managing credentials.
     - [x] **MVP10.4b.1 Root and helper checks.** Diagnose selected-root validation,
@@ -757,10 +759,11 @@ is in the design; every callable/action and its outcome contract must be reviewe
       omit arbitrary startup output and report no submission effects. Update
       submit CLI/debug and existing discovery clients. No helper launch-policy,
       environment-preflight, authentication or deployment change.
-    - [ ] **MVP10.4b.2 Session ownership and cleanup.** Adopt owned-session open/
+    - [x] **MVP10.4b.2 Session ownership and cleanup.** Adopt owned-session open/
       temp/socket failures and cleanup diagnostics while retaining configured
       sharing, optional ssh -G fallback, accepted IDs and primary failures.
-      Settle successful-body cleanup reporting without silently losing evidence.
+      Successful-body cleanup failures raise with receipt state/IDs retained;
+      existing primary failures retain bounded secondary diagnostics.
   - [ ] **MVP10.4c Transfers and filesystem probes.** Adopt process/transfer and
     existence/readiness boundaries without equating failed transport with absence
     or repeating partially completed transfers automatically.
@@ -1092,6 +1095,8 @@ or migration decision has already been accepted.
 | 2026-11-16 | FIX.TRACKING.1 Execution-side tracking | New remote submissions transmit exact prepared tracking definitions; helper validates identity/graph/context, creates a non-overwriting cluster snapshot before sbatch and projects durable incremental receipts through the shared owner. Cluster-local status/log/inspect/fetch/ACP use local Slurm/producing paths without laptop files/profiles. Origin evidence stays intact; execution_bundle_path and distinct execution receipt names disambiguate paths/attempts. Exact backlinks and pinned paths prevent cross-attempt attachment; older helpers stop before staging. 24 new regressions; 1361 full offline tests passed in 12.21 s, 67 expected collision warnings, `.development/test-runs/execution-tracking.xml`. No-Git metadata, wheel/sdist rebuild and disposable installed helper/version/status/log/fetch/inspect/ACP/cached/provenance/guidance checks pass for 0.2.0.dev7; direct/rebuilt wheels match, SHA256 `7741283913b238edbaf1e94d6f4c0b4a5cf457b50be4b96804cc3b3dbf51bb9c`, archive hash in installation register. AST: 266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily config/state, base/test dependency install, scientific data, external client, historical migration or pinned rollback edit. User documents/reports/software_preparations excluded. Requires operator update of both installations; no old-draft adoption or auto-install/retry. Annotated v0.2.0.dev7 checkpoint; task commit: `git log --grep '^FIX.TRACKING.1:'`; push dev and version tag. MVP10.4b resumes next. |
 
 | 2026-11-16 | MVP10.4b.1 Root/helper diagnostics and status scope | Split SSH readiness into b.1 probes and b.2 session lifecycle before implementation. Added shared remote_readiness adapter and pure errors.py diagnostic construction for explicit root/venv guards, local SSH launch/timeout/signal, SSH255/remote exits, bounded UTF-8/root/unique-key JSON responses and exact integer capabilities. Native causes, selected alias/root/attempted Python retained; arbitrary SSH/startup output omitted. Submit CLI renders once with --debug; no retries, fallback, auth handling, install or launch/setup-policy change. 70 new regressions; 1431 full offline tests passed in 11.30 s, 67 expected collision warnings, `.development/test-runs/readiness-diagnostics.xml`. No-Git/no-runtime-import metadata, wheel/sdist rebuild and installed version/API/CLI/debug/native-cause/no-dispatch/guidance checks pass for 0.2.0.dev8. Direct/rebuilt wheels match; SHA256 `a1826ac7ebf67cc73b24760683e5a46d37b97ec2b29910ee6508dfe1754e31d5`, archive hash in installation register. Inventory remains 266 routes/138 owners/21 reviewed broad catches. Expanded planned MVP11 with run/job/task interaction mapping, responsibility extractions and consolidated progress/freshness/layout/query-cost adoption; no status runtime change. No actual cluster, daily config/state, base/test dependency install, external client, historical records or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev8 checkpoint; task commit: `git log --grep '^MVP10.4b.1:'`; push dev and version tag. b.2 session ownership/cleanup is next; b and parent 10.4 remain open. |
+
+| 2026-11-16 | MVP10.4b.2 SSH session resource diagnostics | Extracted owned directory/master lifecycle into ssh_session_resources; errors.py owns pure wording/actions. Validate before allocation, pin addressing/options, enforce short POSIX sockets and 30/10-second open/close bounds. Optional bounded ssh -G falls back once on expected failure; borrowed connections untouched. Cleanup-only failure now raises; body/open failure stays primary with bounded secondary/native cleanup facts. Tracked receipts retain submitted/partial/uncertain state and IDs plus workstation-owned session_cleanup_diagnostics through refresh; helpers cannot inject these facts. 53 new cases; 1484 full offline tests passed in 12.12 s, 70 expected collision warnings, `.development/test-runs/ssh-session-diagnostics.xml`. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/CLI/session/native-cause/cleanup/accepted-receipt/refresh/no-retry/guidance checks pass for 0.2.0.dev9. Direct/rebuilt wheel member contents match; direct wheel SHA256 `dc6b065746d3683f02c938028bfaca1988b31b3443c2d636bebd6309275f3996`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 reviewed broad catches; new guards preserve original bugs/interrupts and finish resource cleanup. No actual cluster, daily config/state, base/test dependency install, external client, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev9 checkpoint; task commit: `git log --grep '^MVP10.4b.2:'`; push dev and version tag. Parent b complete; 10.4c transfer/filesystem is next, 10.4 remains open. |
 
 ## How we work
 

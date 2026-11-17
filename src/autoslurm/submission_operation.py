@@ -19,7 +19,7 @@ from .bundle_selection import SNAPSHOT_KIND_KEY
 from .file_transfer import transfer_slurms_to_remote
 from .storage import storage_root
 from .record_files import atomic_text
-from .errors import RecordWriteError, DiagnosticError
+from .errors import RecordWriteError, DiagnosticError, _SSH_SESSION_CLEANUP_NOTICE
 from .submission import (
     SubmissionError, SUBMISSION_METADATA_KEY, SUBMISSION_PROTOCOL,
     write_receipt, project_receipt, mark_unobserved,
@@ -152,6 +152,8 @@ def record_submission_failure(operation, error, *, remote):
         receipt["error"] = message
         if operation.phase is not DispatchPhase.OBSERVED:
             receipt.update(state="rejected", execution_finished=True)
+    if getattr(error, 'session_cleanup_diagnostics', None):
+        receipt['session_cleanup_diagnostics'] = list(error.session_cleanup_diagnostics)
 
 
 def persist_submission_evidence(operation):
@@ -177,8 +179,9 @@ def execute_prepared_bundle(name: str, planned_path: Path, bundle: PreparedBundl
             if isinstance(storage_error, DiagnosticError) and storage_error.diagnostic is not None:
                 operation.receipt["tracking_diagnostic"] = storage_error.diagnostic.to_dict()
         receipt = operation.receipt
+        cleanup_notice = (' ' + _SSH_SESSION_CLEANUP_NOTICE) if receipt.get('session_cleanup_diagnostics') else ''
         raise SubmissionError(
-            f"Submission {receipt['state']}; receipt {receipt['receipt_path']}: {error}", receipt,
+            f"Submission {receipt['state']}; receipt {receipt['receipt_path']}: {error}{cleanup_notice}", receipt,
             diagnostic=error.diagnostic if isinstance(error, DiagnosticError) else None,
         ) from error
     try:

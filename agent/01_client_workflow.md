@@ -325,6 +325,17 @@ or explicit open/close commands. Otherwise AutoSlurm owns a temporary master
 under `/tmp/asl-ssh-*/cm-%C` on POSIX (default temp directory if `/tmp` is absent).
 Failed/unreadable settings fall back once to that owned session. Never edit SSH
 config or handle keys/passphrases to work around submission in a client agent.
+MVP10.4b.2 diagnoses owned socket allocation/length/open/close/removal, using
+operation ssh_session and independent resource effects; open/close timeouts are
+30/10 seconds. The optional ssh -G check stays 10 seconds and accepts at most
+64 KiB; invalid profiles and programming bugs propagate instead of falling back.
+Cleanup now reports failure instead of silently ignoring it. Retain
+SubmissionError.receipt: state/IDs remain submitted after known acceptance,
+partial and uncertain outcomes stay distinct. session_cleanup_diagnostics is an
+optional bounded receipt field for workstation cleanup evidence; refresh keeps
+it. An existing body error stays primary with secondary cleanup facts and native
+causes available for debugging. A removed directory does not establish master
+closure. Never retry jobs because cleanup failed. See installed 15_diagnostics.
 Local profiles omit SSH identity and use the process's selected storage root;
 legacy local `path` does not override that selection. Set profile roots through
 `asl config --interactive` or the public configuration API. For an existing profile:

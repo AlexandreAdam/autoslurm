@@ -3,8 +3,6 @@ import re
 import shlex
 import subprocess
 import json
-import tempfile
-import shutil
 from contextlib import contextmanager
 from typing import Optional
 from .config import load_config, is_remote_machine
@@ -12,6 +10,7 @@ from .transport import ssh_command, remote_storage_root_from_config
 from .storage import ensure_storage_dirs, slurm_dir, storage_root, STORAGE_ROOT_ENVIRONMENT_VARIABLE
 from .submission import SubmissionError, SUBMISSION_PROTOCOL, validate_receipt
 from .remote_readiness import readiness_context, configured_python, run_readiness_probe, check_helper_capabilities
+from .ssh_session_resources import OwnedSSHSession
 
 __all__ = [
     "get_job_id_from_sbatch_output",
@@ -82,13 +81,17 @@ def _configured_shared_connection(machine_config, machine_name):
             ssh_command(machine_config, machine_name, options=["-G"]),
             capture_output=True, text=True, timeout=10,
         )
-        if result.returncode or not isinstance(result.stdout, str):
+        if (type(result.returncode) is not int or result.returncode or not isinstance(result.stdout, str)
+                or len(result.stdout.encode('utf-8')) > 65536):
             return False
         settings = {}
         for line in result.stdout.splitlines():
             fields = line.split(None, 1)
             if len(fields) == 2:
-                settings[fields[0].lower()] = fields[1].strip().lower()
+                key = fields[0].lower()
+                if key in settings and key in {'controlpath', 'controlpersist', 'controlmaster'}:
+                    return False  # Ambiguous output is not proof of user ownership.
+                settings[key] = fields[1].strip().lower()
         path = settings.get("controlpath", "none")
         persist = settings.get("controlpersist", "no")
         # ssh -G normalizes a duration to seconds; arbitrary text is not proof
@@ -98,7 +101,7 @@ def _configured_shared_connection(machine_config, machine_name):
             settings.get("controlmaster") in {"auto", "autoask"}
             or persistent
         )
-    except (OSError, subprocess.SubprocessError, ValueError, TypeError, AttributeError, UnicodeError):
+    except (OSError, subprocess.SubprocessError, UnicodeError):
         return False  # Configuration inspection failure is not a submit failure.
 
 
@@ -114,45 +117,37 @@ def ssh_submission_session(
     if machine_config is None:
         yield None
         return
+    machine_config = dict(machine_config)
     if not is_remote_machine(machine_config):
         yield None
         return
 
+    destination = ssh_command(machine_config, machine_name)  # Validate before allocating resources.
     if _configured_shared_connection(machine_config, machine_name):
         yield []
         return
 
-    # macOS TMPDIR is often too long for Unix-domain sockets after OpenSSH's
-    # %C hash and creation suffix. Keep our owned socket's literal path short.
-    temporary_base = "/tmp" if os.name == "posix" and os.path.isdir("/tmp") else None
-    tmpdir = tempfile.mkdtemp(prefix="asl-ssh-", dir=temporary_base)
-    control_path = os.path.join(tmpdir, "cm-%C")
-    ssh_options = [
-        "-o",
-        "ControlMaster=auto",
-        "-o",
-        f"ControlPath={control_path}",
-        "-o",
-        "ControlPersist=600",
-    ]
-
+    facts = {'command': 'ssh', 'resource': 'owned_ssh_session'}
+    if machine_name is not None:
+        facts['machine'] = machine_name
+    if 'ssh_alias' in machine_config:
+        facts['ssh_alias'] = machine_config['ssh_alias']
+    session = OwnedSSHSession.create(destination, facts)
+    primary = None
     try:
-        open_command = ssh_command(machine_config, machine_name, options=[*ssh_options, "-MNf"])
-        result = subprocess.run(open_command, capture_output=True, text=True)
-        if result.returncode != 0:
-            message = result.stderr.strip() or result.stdout.strip()
-            raise RuntimeError(
-                f"Unable to open SSH multiplexed session for '{machine_name or machine_config.get('ssh_alias', machine_config.get('hostname', machine_config.get('hosturl', '')))}': {message}"
-            )
-        yield ssh_options
+        session.open()
+        yield list(session.options)
+    except BaseException as error:
+        primary = error  # Evidence/resource protection; bugs and interrupts stay original.
+        raise
     finally:
-        try:
-            close_command = ssh_command(machine_config, machine_name, options=[*ssh_options, "-O", "exit"])
-            subprocess.run(close_command, capture_output=True, text=True)
-        except Exception:
-            pass  # Connection cleanup must not erase an already observed receipt.
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
+        issues = session.cleanup()
+        cleanup_primary = primary
+        if cleanup_primary is None and issues:
+            cleanup_primary = issues[0].error
+        session.finish(cleanup_primary, issues)
+        if primary is None and issues:
+            raise issues[0].error
 
 
 def run_slurm_locally(slurm_name):
@@ -213,6 +208,9 @@ def run_bulk_submit_driver_remotely(
         ) from exc
     if payload.get("receipt") is not None:
         receipt = validate_receipt(response.get("receipt"), payload["receipt"])
+        # Session cleanup is observed by this workstation after helper dispatch,
+        # never owned by the execution-side submission response.
+        receipt.pop('session_cleanup_diagnostics', None)
         if result.returncode != 0 or not response.get("ok"):
             raise SubmissionError(response.get("error") or "Remote submission stopped.", receipt)
         if payload.get('tracking_bundle') is not None and receipt.get('execution_bundle_path') is None:
