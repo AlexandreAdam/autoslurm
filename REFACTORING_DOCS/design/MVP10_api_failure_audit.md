@@ -603,3 +603,26 @@ missing required paths instead of FileNotFoundError. Local native causes and
 known logical/resolved paths/labels survive. Preview/submit enrich those diagnostics
 with bundle identity and stop before staging/receipt/helper dispatch. This closes
 the remaining false-missing preflight path, without extra remote queries.
+
+## MVP10.4d adoption amendment (2026-11-17)
+
+266 routes/138 owners/23 broad catches unchanged. software_expectations validates
+requests and local declarations with typed errors/exact paths/native causes.
+inspect_software owns one selected profile/SSH request and whole process/response
+failure translation; software_status_evidence owns pure item validation/plain
+diagnostic projection. Standalone Git/environment workers emit safe stage/errno/
+exit facts, retain healthy neighbours and known commit/version across later failed
+checks, and do not catch arbitrary TypeError/AttributeError bugs. Missing metadata
+is distinct from denied/unavailable. Interpreter identity is verified on its own
+machine, supporting symlinked venvs without workstation resolution. No setup,
+scientific imports, code fetch/pull, dependency install, fallback or retry.
+
+Compatibility mismatch/unknown remain findings with per-check diagnostics and
+existing major-dependency/target-marker scope. Missing undeclared metadata targets
+do not mandate installation. Whole operation CLI errors use shared stderr/exit1,
+JSON error envelope and --debug; partial observation JSON/useful evidence/nonzero
+remain. Invalid whole identity fails; malformed items become unavailable beside
+good data. 86 new cases, 1669 offline tests and installed artifact checks pass.
+No saved format/helper capability/history migration. Parent 10.4 is complete;
+10.5–8 submission/inspection/destructive operations and universal route parity
+remain open, as does planned MVP11 job-status work.

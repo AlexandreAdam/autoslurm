@@ -11,7 +11,7 @@ MVP10.3c.2 adopts direct bundle reads and bundle/config mutation boundaries.
 MVP10.3c.3 adopts receipt/cache persistence and atomic script publication.
 MVP10.4a adds software-update diagnostics, including stale-venv preflight failures.
 MVP10.4b adopts root/helper/session diagnostics; MVP10.4c adopts paths/transfers.
-Read-only software-status adoption remains MVP10.4d.
+MVP10.4d adopts read-only software/project/environment observations below.
 Do not promise universal diagnostics based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
 
@@ -628,3 +628,68 @@ known logical/resolved paths and labels are retained; public preview/submit add
 the exact bundle reference. Batch length/order/path identity are validated within
 the same 64-KiB response bound. Failed preflight stops before staging, receipt
 creation, helper dispatch or sbatch; no blind retry or missing-input inference.
+
+## Read-only software diagnostics (MVP10.4d)
+
+Use software_expectations(local_project=..., requirements=..., package=...,
+expected_version=..., expected_commit=..., dependencies=...) to read declared
+important dependencies, then inspect_software(machine=..., project=...,
+expectations=...) to inspect one selected machine. Caller-supplied expectation
+mappings are validated too, before remote commands. Invalid inputs use
+InvalidRequestError; invalid selected profiles use ConfigurationError. Declaration
+read/UTF-8/TOML failures use DiagnosticError with the exact file and native cause.
+Unsupported pip options, includes/cycles and source URLs remain conservative
+warning/unknown checks; directives are never executed and source URLs are not
+copied into findings. Existing include limits remain; custom dependency names and
+expectation lists are bounded and must use the supported dictionary fields.
+
+Catch DiagnosticError for a failed whole operation and retain .diagnostic and
+__cause__. A lost SSH response, local executable failure, timeout, signal, nonzero,
+invalid encoding, duplicate JSON keys, oversized response or wrong root is not an
+empty or clean software directory. operation=software_status identifies these
+errors, with machine/project/path/alias and attempted Python where relevant.
+Unexpected bugs/native interrupts propagate. Normal diagnostics omit arbitrary
+SSH/Git/interpreter output; --debug is for raised original chains.
+
+A successful API call can return partial or incompatible evidence. Inspect the
+root, each projects item, environment and environment.packages[name], not merely
+whether the call returned. Their optional diagnostic is a plain version1 object,
+not an exception. Safe causes include stage, errno and return code; returned
+partial results do not contain native exception objects. errors.py owns wording;
+standalone workers emit facts, validated/normalized by the host. Malformed items
+become unavailable with protocol_invalid beside healthy neighbours; invalid whole
+identity raises. Known commit/version survives a later failed status/source check.
+Unknown dirty/source identity cannot become clean or compatible. No record/helper
+version or historical migration is introduced by these additive diagnostics.
+
+The selected environment is probed with venv_path/bin/python and its prefix is
+verified on that machine, so symlinked environments do not rely on workstation
+path resolution. Missing, wrong or unavailable interpreters leave environment
+unknown while useful Git evidence survives. There is no system-Python fallback
+for environment metadata. Remote discovery still uses one system-python3 payload
+without importing/installing AutoSlurm. It activates no modules/setup commands and
+imports no scientific packages. Git is read-only with optional locks/prompts off.
+Bounds remain: 1..100 projects, 5-second Git queries, 25-second environment query,
+35-second soft scan budget including environment time, 60-second outer SSH and
+1-MiB accepted status response. Git stdout acceptance is 64 KiB; capture is not a
+streaming memory limit. Truncated discovery is not proof about omitted projects.
+
+compatibility.state remains compatible, potential_problem or unknown. Per-check
+diagnostics explain mismatch/unknown findings without raising or discarding other
+checks. Comparison uses declared constraints and target-machine markers, never
+the laptop's installed freeze or platform. Missing/malformed marker facts stay
+unknown. Default important metadata targets are numpy/jax/jaxlib/torch/scipy;
+--dependency opts in others. A missing distribution becomes a mismatch only when
+an applicable requirement or application expectation needs it; do not install all
+metadata targets merely because they were queried. A compatibility result is not
+proof of upstream/latest code, scientific runtime/GPU support or transitive health.
+
+asl software status --machine NAME --project PATH reports useful evidence and
+inline diagnostics. --json preserves the observation with nested diagnostics;
+partial/unavailable/unknown/incompatible findings still exit1. Whole-operation
+errors now use stderr/exit1 or the shared --json envelope
+{status: error, message, diagnostic}; this replaces the old generic unavailable
+error envelope. --debug rethrows operation errors with native chains; it does not
+turn returned partial observations into exceptions. Empty status still prints help
+without contact. Updates remain separate: no pull/install, new checkout/env,
+source reset, dependency repair, scheduler action, credential handling or retry.

@@ -159,7 +159,8 @@ evidence plus diagnostic, and --debug to re-raise original errors. Unexpected
 programming bugs propagate through this update path. Legacy failure responses
 without detailed facts have unknown effect diagnostics rather than invented
 proof of no work. This does not change status or other command error contracts;
-SSH/helper/transfer/status adoption continues in MVP10.4b–d.
+MVP10.4b–d now adopt SSH/helper/transfer/status diagnostics; broader public route
+parity and submission/recovery adoption remain later MVP10 tasks.
 
 ## Job and installation boundary
 
@@ -192,3 +193,23 @@ installation directories are deleted or migrated automatically.
 
 Empty `software`, `software update` and `software status` commands show help
 without contacting a machine. Scientific output validation remains client-owned.
+
+## Read-only inspection failures
+
+inspect_software returns partial Git/environment/package evidence with optional
+plain diagnostic objects. Healthy neighbours and known commits/versions survive
+failed checks. Check states and compatibility.checks: mismatch is a finding;
+unknown is not compatible, and a failed Git query is not clean code. Empty/missing,
+inaccessible, malformed and truncated observations have different meanings.
+
+Whole-operation failures raise DiagnosticError with machine/project/path/alias
+and native causes when available. Local declaration errors name their exact file;
+invalid requests/profiles are typed before SSH. Returned partial results contain
+safe cause facts, not native exceptions. Use `asl software status ... --json` for
+the same evidence, `--debug` for raised original chains. Normal operation errors
+use stderr/exit1 and JSON the shared status:error diagnostic envelope. Partial
+results retain their observation JSON and nonzero exit. No retry, system runtime
+fallback, setup/module activation, scientific import or dependency install follows.
+The selected interpreter verifies its prefix on the selected machine, including
+symlinked venvs. See installed 15_diagnostics and
+[the human guide](../docs/errors.md#read-only-software-diagnostics-mvp104d).

@@ -7,6 +7,7 @@ from subprocess import CompletedProcess
 import pytest
 
 from autoslurm import save_config, inspect_software, software_expectations
+from autoslurm.errors import DiagnosticError
 from autoslurm.apps.software import main
 from autoslurm.software_probe import inspect_software_root
 from autoslurm.environment_probe import inspect_environment
@@ -58,15 +59,17 @@ def test_remote_inspection_is_one_alias_ssh_with_no_installation_or_activation(t
 def test_bad_remote_evidence_cannot_fall_back_to_local_status(tmp_path, monkeypatch, reply):
     profile(tmp_path, True)
     monkeypatch.setattr("subprocess.run", lambda command, **kw: CompletedProcess(command, 0, reply, ""))
-    with pytest.raises(RuntimeError, match="invalid evidence"):
+    with pytest.raises(DiagnosticError) as stopped:
         inspect_software()
+    assert stopped.value.diagnostic.code == 'protocol_invalid'
 
 
 def test_ssh_failure_is_an_error_and_not_an_empty_clean_directory(tmp_path, monkeypatch):
     profile(tmp_path, True)
     monkeypatch.setattr("subprocess.run", lambda command, **kw: CompletedProcess(command, 255, "", "failed"))
-    with pytest.raises(RuntimeError, match="SSH software inspection failed"):
+    with pytest.raises(DiagnosticError) as stopped:
         inspect_software()
+    assert stopped.value.diagnostic.code == 'transport_failed'
 
 
 def test_git_status_is_read_only_and_reports_dirty_checkout(tmp_path, monkeypatch):
@@ -131,7 +134,7 @@ def test_remote_environment_checks_use_profile_interpreter_and_report_mismatch(t
         assert "importlib.metadata" in options["input"]
         return CompletedProcess(command, 0, json.dumps({"version": 1, "software_root": config["software_root"],
             "state": "observed", "projects": [], "observed_at": "now", "truncated": False,
-            "environment": {"state": "observed", "markers": {"python_version": "3.11"},
+            "environment": {"state": "observed", "prefix": "/runtime", "selected_python": "/runtime/bin/python", "identity_verified": True, "markers": {"python_version": "3.11"},
                             "packages": {"numpy": {"state": "installed", "version": "2.0"}}}}), "")
     monkeypatch.setattr("subprocess.run", ssh)
     assert inspect_software(expectations=expected)["compatibility"]["state"] == "potential_problem"
@@ -158,8 +161,10 @@ def test_malformed_remote_rows_fail_without_claiming_a_clean_project(tmp_path, m
     response = {"version": 1, "software_root": config["software_root"], "state": "observed",
                 "observed_at": "now", "truncated": False, "projects": [{"state": "observed"}]}
     monkeypatch.setattr("subprocess.run", lambda command, **kw: CompletedProcess(command, 0, json.dumps(response), ""))
-    with pytest.raises(RuntimeError, match="invalid evidence"):
-        inspect_software()
+    result = inspect_software()
+    assert result['projects'][0]['state'] == 'unavailable'
+    assert result['projects'][0]['dirty'] is None
+    assert result['projects'][0]['diagnostic']['code'] == 'protocol_invalid'
 
 
 def test_cli_reports_potential_problem_and_returns_nonzero(tmp_path, monkeypatch, capsys):

@@ -131,6 +131,16 @@ original cause. Session cleanup and transfers are adopted below; software-status
 and general CLI/ACP adoption remain later tasks. See installed 15_diagnostics and
 [the human failure guide](../docs/errors.md#remote-readiness-before-submission).
 
+MVP10.4d adopts inspect_software/software_expectations and software status CLI.
+Whole-operation failures use DiagnosticError with native causes; malformed or
+unavailable project/environment/package observations stay beside healthy evidence
+with plain diagnostic objects. Retain known commits/versions and inspect all
+requested states. Compatibility mismatch/unknown remains a finding, not an
+exception. The CLI keeps nonzero on partial/unknown/mismatch; --json retains the
+observation, while operation errors use the shared status:error envelope. --debug
+rethrows raised causes. No dependency install, source update, scientific import,
+module activation or retry occurs. See [the software recipe](13_software_preparation.md).
+
 ## Adapt scientific software
 
 Record `autoslurm.__version__` (or `asl --version`) alongside the client's exact

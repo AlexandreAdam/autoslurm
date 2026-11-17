@@ -452,6 +452,29 @@ def _file_operation_failure(problem, operation, stage, context, effects, cause=N
         summary=summary, next_action=action)
 
 
+def _software_status_failure(problem, stage, context, cause=None, *, summary=None):
+    """Read-only software observations/findings; never imply runtime readiness."""
+    summaries = {
+        'invalid_argument': 'The software observation request is invalid.',
+        'configuration_invalid': 'The selected software profile needs correction.',
+        'resource_missing': 'The software resource was not found on the selected machine.',
+        'resource_inaccessible': 'Software metadata cannot be accessed; availability is unverified.',
+        'record_invalid': 'The local software declaration could not be parsed.',
+        'command_unavailable': 'The executable for software inspection could not be started.',
+        'command_timeout': 'Software inspection timed out; retained observations remain useful.',
+        'command_failed': 'A software inspection command failed.',
+        'transport_failed': 'SSH could not complete software inspection.',
+        'operation_interrupted': 'A software inspection command was interrupted.',
+        'protocol_invalid': 'Software inspection returned invalid evidence.',
+        'observation_unavailable': 'The requested software observation is unavailable.',
+        'compatibility_mismatch': 'Observed software does not satisfy the declared expectation.',
+    }
+    return Diagnostic(problem, 'software_status', stage, context=context, cause=cause,
+        summary=summary or summaries[problem],
+        next_action='Check the named declaration, project, selected SSH alias or venv_path/bin/python and retained evidence. Missing, inaccessible and unverified are different. Update software explicitly if needed; this inspection never pulls code, installs dependencies, activates modules or retries automatically.',
+        effects={'git_pull': 'not_started', 'editable_install': 'not_started'})
+
+
 class InvalidRequestError(DiagnosticError, ValueError):
     """Known authoring validation failure; original causes remain chained.
 

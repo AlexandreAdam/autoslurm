@@ -9,6 +9,27 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev11 — 2026-11-17
+
+- Software status now uses shared diagnostics for request/profile/declaration,
+  SSH/process/protocol, Git and environment metadata failures. Operation errors
+  chain native causes; returned partial observations carry safe plain cause facts.
+  Raw SSH/Git/interpreter output is omitted from normal diagnostics.
+- Healthy projects and installed versions survive failed neighbour/source checks.
+  Missing, inaccessible, malformed and unverified are distinct; unknown dirty or
+  source identity never becomes clean/compatible. Selected interpreter identity
+  is verified on its own machine, including symlinked environment paths.
+- Remote status still sends one standalone system-python3 payload and activates
+  no environment. Per-item schema validation retains useful neighbours; invalid
+  whole-response identity fails. Existing command/time/response bounds remain.
+- Version/dependency mismatches remain findings with diagnostic/check details.
+  Local expectations and declaration errors are validated before remote work;
+  target markers stay authoritative. Unsupported requirements remain unknown.
+- `asl software status --debug` rethrows operation errors; normal failures use
+  stderr/exit1, `--json` the shared diagnostic error envelope. Partial results
+  keep their normal evidence JSON and nonzero exit. No pulls, dependency installs,
+  scientific imports, retries, record migration or cluster deployment are added.
+
 ## 0.2.0.dev10 — 2026-11-17
 
 - `path_exists` returns False only for observed absence (ENOENT/ENOTDIR).

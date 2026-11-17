@@ -99,3 +99,23 @@ removed. Existing records/directories are retained without automatic cleanup;
 [agent recipe](../agent/13_software_preparation.md) records the interface boundary.
 Development validation uses temporary local repositories and mocked SSH/Slurm;
 no live cluster update was performed during this implementation.
+
+## Interpreting status failures and partial results
+
+`asl software status --machine cluster --project science --json` keeps healthy
+project/version facts alongside diagnostics for unavailable checks. A failed Git
+query does not mean clean code; a missing or wrong venv does not erase useful Git
+results. Version mismatches remain findings in compatibility.checks, rather than
+exceptions. The command exits 1 for unavailable/unknown/incompatible results.
+
+For whole-operation failures, normal text uses stderr and `--json` returns the
+shared `{status: error, message, diagnostic}` envelope. Add `--debug` to expose
+the original exception/cause. Returned partial results keep their normal evidence
+JSON and nested diagnostic objects. Invalid local requirements fail with exact
+file/field before contacting the selected machine. No command installs dependencies,
+activates modules or retries to make inspection pass. Missing undeclared major
+packages are metadata observations, not instructions to install them.
+
+The [software diagnostic recipe](errors.md#read-only-software-diagnostics-mvp104d)
+explains the bounds, target-marker policy, selected-interpreter identity and
+plain partial-result evidence contract.

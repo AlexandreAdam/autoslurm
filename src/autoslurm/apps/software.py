@@ -7,7 +7,7 @@ import sys
 from ..software_status import inspect_software
 from ..software_requirements import software_expectations
 from ..software_update import update_software, SoftwareUpdateError
-from ..errors import ConfigurationError, InvalidRequestError
+from ..errors import ConfigurationError, InvalidRequestError, DiagnosticError, Diagnostic, DiagnosticCause
 from .error_output import render_diagnostic, exit_with_error
 
 
@@ -24,6 +24,7 @@ def main(argv=None):
     status.add_argument("--project", help="Project path relative to the machine's software_root; omit to list projects.")
     status.add_argument("--limit", type=int, default=20, help="Maximum projects to inspect (1–100).")
     status.add_argument("--json", action="store_true", help="Print structured observation evidence.")
+    status.add_argument('--debug', action='store_true', help='Show original operation failures and native causes.')
     status.add_argument("--local-project", help="Local project directory: read pyproject/requirements and desired Git revision.")
     status.add_argument("--requirements", help="Local requirements/constraints file to compare against the target environment.")
     status.add_argument("--package", help="Application distribution name; inferred from --local-project when supplied.")
@@ -51,19 +52,17 @@ def main(argv=None):
                                                  package=args.package, expected_version=args.expected_version,
                                                  expected_commit=args.expected_commit, dependencies=args.dependency)
         result = inspect_software(machine=args.machine, project=args.project, limit=args.limit, expectations=expectations)
-    except (ValueError, RuntimeError, OSError) as error:
-        if args.json:
-            print(json.dumps({"state": "unavailable", "machine": args.machine, "error": str(error)}))
-        else:
-            print(str(error))
-        raise SystemExit(1) from error
+    except DiagnosticError as error:
+        exit_with_error(error, json_output=args.json, debug=args.debug)
     if args.json:
         print(json.dumps(result, indent=2))
     else:
         print(f"Software on {result['machine']}: {result['software_root']}")
         print(f"Observed: {result['observed_at']}")
         if result["state"] != "observed":
-            print(f"  {result['state']}: {result.get('error', 'Software directory does not exist.')}")
+            _show_diagnostic(result)
+            if not result.get('diagnostic'):
+                print(f"  {result['state']}: {result.get('error', 'Software directory does not exist.')}")
         elif not result["projects"]:
             print("  No Git projects found at this location.")
         for project in result["projects"]:
@@ -71,27 +70,48 @@ def main(argv=None):
             commit = (project.get("commit") or "unknown")[:12]
             branch = project.get("branch") or ("detached" if project.get("commit") else "unknown")
             print(f"  {project['name']}: {branch}  {commit}  {state}")
-            if project.get("error"):
+            _show_diagnostic(project, indent='    ')
+            if project.get('error') and not project.get('diagnostic'):
                 print(f"    {project['error']}")
         if result["truncated"]:
             print("  Additional projects were omitted; use --project or increase --limit.")
         if "compatibility" in result:
             print(f"Environment compatibility: {result['compatibility']['state']}")
             environment = result.get("environment", {})
+            _show_diagnostic(environment)
             if environment.get("python"):
                 print(f"  Python: {environment['python']}")
             for name, package in environment.get("packages", {}).items():
                 if package.get("state") == "installed":
                     print(f"  Installed {name}: {package['version']}")
+                if package.get('state') != 'missing':
+                    _show_diagnostic(package, indent='    ')
             for check in result["compatibility"]["checks"]:
                 details = f" ({check['requirement']}; installed {check.get('installed') or 'unknown'})" if check.get("requirement") else ""
+                if 'expected' in check:
+                    details = f" (expected {check['expected']}; installed {check.get('installed') or 'unknown'})"
+                elif 'expected_commit' in check:
+                    details = f" (expected {check['expected_commit']}; installed {check.get('installed_commit') or 'unknown'})"
                 print(f"  {check['state']}: {check['name']}: {check['message']}{details}")
+                _show_diagnostic(check, indent='    ')
             print("  Metadata comparison only; scientific imports, GPU support and minor/transitive dependencies are not checked.")
     if result["state"] != "observed" or any(project["state"] != "observed" for project in result["projects"]):
         raise SystemExit(1)
-    if result.get("compatibility", {}).get("state") in {"potential_problem", "unknown"}:
+    environment = result.get('environment', {})
+    if (result.get('compatibility', {}).get('state') in {'potential_problem', 'unknown'}
+            or environment.get('diagnostic') or any(package.get('state') == 'unavailable'
+                for package in environment.get('packages', {}).values())):
         raise SystemExit(1)
 
+
+
+def _show_diagnostic(item, *, indent='  '):
+    record = item.get('diagnostic')
+    if record is None:
+        return
+    fields = {key: record[key] for key in ('code', 'operation', 'stage', 'context', 'effects', 'summary', 'next_action')}
+    fields['cause'] = DiagnosticCause(**record['cause']) if record.get('cause') is not None else None
+    print('\n'.join(indent + line for line in render_diagnostic(Diagnostic(**fields)).splitlines()))
 
 
 def _update(args):

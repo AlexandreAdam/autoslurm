@@ -546,7 +546,7 @@
       "adoption": "Known pure historical-intent validation uses InvalidRequestError with field/project/job when known. Repository parser failures retain native cause and generic safe diagnostic detail, excluding raw rejected addresses. No deployment machinery or automatic runtime selection."
     },
     "software_status": {
-      "implementation_task": "MVP10.4",
+      "implementation_task": "MVP10.4d implemented",
       "failures": "Invalid project/root/requirements/limits, unreadable declarations, unavailable Git/interpreter, malformed/nonzero/timed-out probe, version or commit mismatch.",
       "translation_owner": "software_requirements local readers and software_status/environment probe adapters.",
       "desired_diagnostic": "Selected machine/project, expected and observed identity/dependency, warnings and unknown checks; mismatch is a result requiring attention, not necessarily a failed request.",
@@ -554,12 +554,13 @@
       "regression_evidence": [
         "tests/unit/test_software_status.py",
         "tests/unit/test_software_requirements.py",
-        "tests/integration/test_software_status.py"
+        "tests/integration/test_software_status.py",
+        "tests/integration/test_software_status_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.4d: software_expectations validates local declarations/caller mappings before dispatch; known request/profile/read/parse failures use shared diagnostics and native causes. Standalone Git/environment workers return safe facts; host software_status_evidence validates whole identity and isolates malformed/unavailable project/package rows beside healthy evidence. Known commits/versions survive later failures; interpreter identity verified on its machine, without local remote-path resolution. Shared errors.py wording; per-result/check diagnostics remain plain, mismatches findings rather than exceptions. Software status CLI stderr/JSON error envelope/debug and partial observation/nonzero behavior adopted. No scientific imports, activation, pull/install, retries or history migration."
     },
     "software_update": {
-      "implementation_task": "MVP10.4a implemented; general SSH/helper/transfer/status adoption remains MVP10.4b\u2013d",
+      "implementation_task": "MVP10.4a implemented; readiness/transfer/status adoption b\u2013d complete",
       "failures": "Missing/nonexecutable/wrong-prefix venv Python, missing/dirty checkout/upstream/Git, preflight timeout; pull/install failure/interruption/lost response.",
       "translation_owner": "software_update_probe returns stdlib facts; software_update translates and retains SoftwareUpdateError.evidence and chained cause.",
       "desired_diagnostic": "Attempted configured Python/setting/alias, stage, errno/returncode and safe bounded detail; before/after commit and installation state; unknown only after possible action.",
@@ -811,7 +812,7 @@
     "autoslurm.apps.software.main": {
       "contract": "software_update",
       "inputs": "status or update subaction; machine/project/expectations/JSON. Update --debug preserves original errors.",
-      "current": "Update errors retain evidence with shared diagnostic: stderr/exit1, --json evidence plus diagnostic, --debug re-raise. Expected request/profile guards use shared envelope, unexpected update bugs propagate. Status read-only errors/compatibility policy unchanged until MVP10.4d. Empty/incomplete commands help0.",
+      "current": "Update errors retain evidence/diagnostic. MVP10.4d status errors use shared stderr/exit1, --json diagnostic error envelope and --debug native chains; partial/incompatible/unknown observations retain useful evidence JSON and exit1. Inline diagnostics explain root/project/environment/package/check failures; unexpected bugs/interrupts propagate. Empty commands still help0.",
       "effects": "status read-only probes; update pull+editable install. Neither changes machine scientific dependencies."
     },
     "autoslurm.apps.status.main": {
@@ -1279,13 +1280,13 @@
     "autoslurm.software_requirements.software_expectations": {
       "contract": "software_status",
       "inputs": "Local pyproject/requirements paths, optional project path/commit and dependency allowlist.",
-      "current": "Expectation dict with warnings; read/parse/invalid version errors raise; unavailable local Git becomes warning.",
+      "current": "MVP10.4d: expectation mapping with conservative warnings; invalid argument/schema/version requests use InvalidRequestError, file/UTF-8/TOML errors DiagnosticError with exact path/native cause. Validate returned and caller-supplied expectation shapes. Target-marker and important-dependency scope retained; URLs omitted, unsupported directives never executed.",
       "effects": "Reads declarations and optional bounded local Git metadata, no remote or dependency installs."
     },
     "autoslurm.software_status.inspect_software": {
       "contract": "software_status",
       "inputs": "Machine/project selector, optional expectations and bound.",
-      "current": "Observation with project/environment/check states; input ValueError; generic chained RuntimeError for some transport/protocol errors, nonzero SSH RuntimeError.",
+      "current": "MVP10.4d: useful plain observation with nested diagnostics on root/projects/environment/packages/checks. Invalid requests/profiles typed before dispatch; whole SSH/process/UTF-8/size/JSON/identity failures raise DiagnosticError with native causes and safe facts. Bad individual rows become unavailable beside healthy neighbours, known commit/version retained across later failure. Exact selected interpreter identity is verified on its own machine. Mismatch/unknown are findings, no scientific readiness claim.",
       "effects": "Read-only metadata/Git probes on selected machine; no imports of science packages/pull/install."
     },
     "autoslurm.software_update.SoftwareUpdateError": {
@@ -1664,10 +1665,11 @@
       "current": "Internal protocol executable, not a scientific client command; keep helper capabilities/response schema separate from human presentation."
     },
     "cli-subaction:software status": {
-      "inputs": "machine, optional project/limit, local-project/requirements/package/version/commit/dependency expectations; JSON",
+      "inputs": "machine, optional project/limit, local-project/requirements/package/version/commit/dependency expectations; JSON, --debug",
       "current": "Observed/missing/unavailable/compatibility evidence. Concern and failed operation both currently exit1.",
       "effects": "Read-only Git/environment probes; no pull/install.",
-      "contract": "software_status"
+      "contract": "software_status",
+      "note": "MVP10.4d: same inspect_software/software_expectations boundary, with --debug for raised errors, shared --json operation-error envelope and normal partial evidence JSON/nonzero for findings. No activation, installs, source updates or retries."
     },
     "cli-subaction:software update": {
       "inputs": "machine, required relative project, JSON, --debug",

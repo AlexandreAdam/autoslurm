@@ -19,6 +19,7 @@ validation approach.
 | MVP10 API-wide error handling | [MVP10_actionable_errors.md](MVP10_actionable_errors.md) | Expanded by PLAN.2: full API failure audit, isolated error module and staged boundary adoption |
 | MVP10.4b Remote readiness | [MVP10_4b_readiness.md](MVP10_4b_readiness.md) | Root/helper and owned-session diagnostics complete locally; transfer/filesystem adoption follows |
 | MVP10.4c File operations | [MVP10_4c_file_operations.md](MVP10_4c_file_operations.md) | Metadata-only path observations and stage/effect-aware transfers complete locally |
+| MVP10.4d Software status | [MVP10_4d_software_status.md](MVP10_4d_software_status.md) | Declaration/process/partial Git/environment/package diagnostics complete locally; parent 10.4 closed |
 | FIX.ENVIRONMENT.1 Module initialization | [FIX_ENVIRONMENT_1_module_initialization.md](FIX_ENVIRONMENT_1_module_initialization.md) | Explicit machine initializer, shared ordered setup and job failure guards |
 | FETCH.1 Selected-run evidence | [FETCH_1_execution_evidence.md](FETCH_1_execution_evidence.md) | Receipt refresh, status and bounded logs through one public workflow |
 | FIX.TRACKING.1 Execution-side tracking | [FIX_TRACKING_1_execution_tracking.md](FIX_TRACKING_1_execution_tracking.md) | New remote submissions publish exact cluster-local tracking views |

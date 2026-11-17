@@ -13,6 +13,39 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.4d (2026-11-17): running checkpoint 0.2.0.dev11. Verified base import:
+`/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; runtime 0.2.0.dev11,
+editable distribution metadata still 0.1.0 without reinstall. Software status and
+local expectations use shared actionable diagnostics; standalone workers emit
+safe facts, host validation isolates partial project/environment/package failures.
+Known commits/versions and healthy neighbours survive. Selected interpreter prefix
+is verified on that machine, including symlinked venvs; no scientific imports,
+activation, code update, dependency install, fallback or retry. Mismatch remains
+a finding with target markers and declared important-dependency scope.
+86 new cases; 1669 offline tests passed in 13.41 s with 73 expected collision
+warnings, `.development/test-runs/software-status-diagnostics.xml`, including the
+temporary local Git/venv standalone/index-preservation test. Audit unchanged at
+266 routes/138 owners/23 broad catches. No-Git/no-runtime-import metadata, direct
+wheel/sdist rebuild and disposable installed version/API/CLI/JSON/debug/partial
+causes/interpreter identity/mismatch/no-write/no-fallback/guidance checks pass:
+
+- `.development/artifacts/software-status-diagnostics/autoslurm-0.2.0.dev11-py3-none-any.whl`:
+  SHA256 `58127115d0c453809c4f3b447f0863280a690b7aa92fc5e2fe0edfadd3214974`.
+- `.development/artifacts/software-status-diagnostics/autoslurm-0.2.0.dev11.tar.gz`:
+  SHA256 `41d7a916b0d8d0b08a5faace3dcbecec1c0e706b4daf9651a6da9d147b1ebc04`.
+- `.development/artifacts/software-status-diagnostics/from-sdist/autoslurm-0.2.0.dev11-py3-none-any.whl`:
+  SHA256 `58127115d0c453809c4f3b447f0863280a690b7aa92fc5e2fe0edfadd3214974`.
+
+Direct/rebuilt wheel member contents match; ZIP hashes may differ. Annotated
+v0.2.0.dev11 identifies the checkpoint. Pinned rollback remains clean at
+33bcbd34fb167fca67aa64739a013073c64167b1. No actual cluster, daily config/state,
+scientific/dependency install, external client, saved-record/history migration or
+rollback change. Unrelated user documents/reports/software_preparations excluded.
+Status CLI operation-error JSON adopts the shared diagnostic envelope at dev11;
+normal partial observations add diagnostics without a saved-format change.
+Parent 10.4 complete; review/split 10.5 submission/recovery next. No PyPI publication
+or remote deployment occurred.
+
 MVP10.4c (2026-11-17): running checkpoint 0.2.0.dev10. Verified base import is
 `/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; runtime 0.2.0.dev10,
 editable distribution metadata remains 0.1.0 without reinstall. Metadata-only

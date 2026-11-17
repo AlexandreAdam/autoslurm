@@ -2,17 +2,16 @@
 
 ## Status
 
-Latest amendment, 2026-11-17: **MVP10.4c is complete locally in 0.2.0.dev10**.
-Shared metadata-only stat observations replace false absence on failed path checks;
-remote checks require python3 without package import/install or fallback. One
-file-command adapter and errors.py wording adopt source/mkdir/SCP/rsync failures,
-native causes and independent effects. Partial copies stay unknown; sync retains
-completed subtree evidence and CLI/debug handling. 99 new cases; 1583 offline
-tests and installed artifact checks pass. Inventory remains 266 routes/138 owners/
-23 broad catches. [MVP10.4c](MVP10_4c_file_operations.md) records the contract.
-Next: 10.4d software-status observations; parent 10.4 remains open. Broader status
-refactoring stays planned in MVP11. Historical audit evidence below retains its
-original checkpoints.
+Latest amendment, 2026-11-17: **MVP10.4d and parent MVP10.4 are complete locally
+in 0.2.0.dev11**. Software status adopts typed request/declaration/transport/protocol
+failures and per-project/environment/package/check diagnostics. Healthy evidence
+and known commit/version survive later failures; verified interpreter identity is
+machine-local, and mismatch remains a finding. CLI text/JSON/debug and conservative
+unknown/partial behavior are adopted. 86 new cases; 1669 full offline tests and
+installed artifact checks pass. Inventory unchanged: 266 routes/138 owners/
+23 broad catches. [MVP10.4d](MVP10_4d_software_status.md) records the contract.
+Next: review/split 10.5 submission/recovery boundaries. Broader job-status work
+stays planned in MVP11. Historical audit evidence below retains its checkpoint.
 
 Scheduled after MVP9 by the user on 2026-11-13. **PLAN.2 expands PLAN.1's narrow
 scope:** review the entire public API and its possible failures, centralize error

@@ -12,8 +12,8 @@ This file is the source of truth for active scope, task order and progress.
 - **Current milestone:** MVP10 in progress; MVP10.1 audit, MVP10.2 diagnostic
   foundation, MVP10.3a configuration, MVP10.3b authoring/selection/path/render
   and MVP10.3c.1–3 local record/script persistence diagnostics complete;
-  MVP10.4a software-update, MVP10.4b root/helper/session and MVP10.4c
-  transfer/filesystem diagnostics complete
+  MVP10.4a–d software-update, root/helper/session, transfer/filesystem and
+  software-status diagnostics complete
   locally. FIX.ENVIRONMENT.1 machine module initialization complete locally;
   FETCH.1 selected-run evidence fetching and FIX.TRACKING.1 execution-side
   tracking complete locally.
@@ -28,30 +28,30 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1583 passed, 72 expected
+  rollback source remains unchanged. Full offline suite: 1669 passed, 73 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.4c transfer/filesystem diagnostics in
-  0.2.0.dev10. Local/remote metadata share one standalone stat worker; failed
-  permissions/I/O/SSH/protocol checks raise instead of pretending paths are missing.
-  Remote metadata requires python3, without package import/install or shell fallback.
-  Required-path preflight shares one batch and keeps missing inputs distinct from
-  failed SSH; preview/submit retain the bundle reference before any staging.
-  One file-command adapter diagnoses source/mkdir/SCP/rsync/native/timeout/exit/
-  response failures and preserves independent effects. Failed started copies stay
-  unknown; prior/partial files remain, without retry. Sync retains completed
-  subtree effects and renders adopted errors once or rethrows with --debug.
-  99 new cases; 1583 full offline tests pass in 13.92 s with 72 expected warnings.
-  No-Git metadata, wheel/sdist rebuild and installed session/receipt/path/absence/
-  copy-effects/partial-retention/sync-CLI/debug/guidance checks pass. Inventory:
-  266 routes/138 owners/23 broad catches unchanged. Main/base imports dev10;
-  editable metadata stays 0.1.0 without reinstall. No actual cluster, daily state/
-  config, dependency install, scientific data, history or rollback change.
-- **Next task:** MVP10.4d software-status observations, using the
+- **Latest completed task:** MVP10.4d software-status diagnostics in 0.2.0.dev11.
+  Typed declaration/request/profile and whole SSH/process/protocol failures retain
+  safe facts and native causes. Standalone workers emit stage/cause facts; host
+  validation/normalization preserves healthy project/package observations and
+  known commits/versions beside unavailable/malformed neighbours. Environment
+  identity is verified on its own machine, including symlinked paths; unverified
+  dirty/source metadata never becomes clean/compatible. Mismatch remains a finding
+  with diagnostic/check details. Status CLI supports shared JSON errors/stderr/
+  --debug and retains partial observation JSON/nonzero. 86 new cases; 1669 full
+  offline tests pass in 13.41 s with 73 expected warnings. No-Git metadata,
+  wheel/sdist rebuild and installed API/CLI/JSON/debug/partial-cause/identity/
+  mismatch/no-write/no-fallback/guidance checks pass. Inventory: 266 routes/
+  138 owners/23 broad catches unchanged. Main/base imports dev11; editable
+  metadata remains 0.1.0 without reinstall. No cluster, daily state/config,
+  scientific runtime/dependency install, history or rollback change.
+- **Next task:** MVP10.5 submission and recovery evidence, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
-  Integrate read-only Git/environment/dependency observations while preserving
-  partial useful evidence. MVP10.3 and MVP10.4a–c are complete; MVP10.4 stays open
-  until d. General submit/recovery, observation and CLI/ACP adoption remain later
-  MVP10 tasks; most legacy services still have no diagnostic.
+  Review and split its operation boundaries before implementation; preserve
+  accepted IDs, partial/uncertain outcomes and original/secondary causes. No blind
+  retry after possibly effective dispatch. MVP10.3 and MVP10.4 are complete;
+  remaining submission/observation/destructive-operation and CLI/ACP adoption
+  stay in MVP10.5–8. Broader job-status refactoring remains planned in MVP11.
   MVP11 and MVP12 are
   separately scoped, unimplemented milestones; their numbers do not require a
   single large combined release. Their API/record details remain proposals.
@@ -741,7 +741,7 @@ is in the design; every callable/action and its outcome contract must be reviewe
   stage-specific messages, including unrooted jobs. Verify configuration, local
   and mocked remote rendering/submission, failure cases and installed artifacts.
   Receipt discovery and executing activation during submission remain separate.
-- [ ] **MVP10.4 Transport, readiness and software.** Classify process launch,
+- [x] **MVP10.4 Transport, readiness and software.** Classify process launch,
   SSH/session/helper/protocol/transfer and environment/Git/pip failures at adapters
   with operation context. Reproduce the stale-venv case with its attempted Python
   path and correction. Preserve probe/status unknowns and partial pull/install
@@ -770,7 +770,7 @@ is in the design; every callable/action and its outcome contract must be reviewe
   - [x] **MVP10.4c Transfers and filesystem probes.** Adopt process/transfer and
     existence/readiness boundaries without equating failed transport with absence
     or repeating partially completed transfers automatically.
-  - [ ] **MVP10.4d Software-status observations.** Adopt read-only Git/environment
+  - [x] **MVP10.4d Software-status observations.** Adopt read-only Git/environment
     probe facts, per-project/major-dependency unknowns and corresponding CLI
     presentation, preserving useful partial observations.
 - [ ] **MVP10.5 Submission and recovery evidence.** Apply the module through
@@ -1102,6 +1102,8 @@ or migration decision has already been accepted.
 | 2026-11-16 | MVP10.4b.2 SSH session resource diagnostics | Extracted owned directory/master lifecycle into ssh_session_resources; errors.py owns pure wording/actions. Validate before allocation, pin addressing/options, enforce short POSIX sockets and 30/10-second open/close bounds. Optional bounded ssh -G falls back once on expected failure; borrowed connections untouched. Cleanup-only failure now raises; body/open failure stays primary with bounded secondary/native cleanup facts. Tracked receipts retain submitted/partial/uncertain state and IDs plus workstation-owned session_cleanup_diagnostics through refresh; helpers cannot inject these facts. 53 new cases; 1484 full offline tests passed in 12.12 s, 70 expected collision warnings, `.development/test-runs/ssh-session-diagnostics.xml`. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/CLI/session/native-cause/cleanup/accepted-receipt/refresh/no-retry/guidance checks pass for 0.2.0.dev9. Direct/rebuilt wheel member contents match; direct wheel SHA256 `dc6b065746d3683f02c938028bfaca1988b31b3443c2d636bebd6309275f3996`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 reviewed broad catches; new guards preserve original bugs/interrupts and finish resource cleanup. No actual cluster, daily config/state, base/test dependency install, external client, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev9 checkpoint; task commit: `git log --grep '^MVP10.4b.2:'`; push dev and version tag. Parent b complete; 10.4c transfer/filesystem is next, 10.4 remains open. |
 
 | 2026-11-17 | MVP10.4c Transfer/filesystem diagnostics | Added shared standalone metadata worker and host observation validation; local stat/remote python3 distinguish ENOENT/ENOTDIR from denied/I/O/failed SSH or invalid protocol. Saved producing contexts stay pinned; no content read or remote package import/install/fallback. Required-path preflight shares one batch, replacing generic FileNotFoundError with typed missing/unavailable/process diagnostics; preview/submit retain bundle identity before staging. One file_commands adapter and pure errors.py wording adopt source/mkdir/SCP/rsync failures, native causes and independent effects; managed filenames and regular sources validated before remote mutation. Failed started copies remain unknown, partial/prior files retained, no retry/rollback. Sync preserves completed subtree effects, skips only observed absence, creates targets after positive source observation and renders once/debug retains causes. 99 new cases; 1583 full offline tests passed in 13.92 s, 72 expected collision warnings, `.development/test-runs/file-operations.xml`. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/session/receipt/path/absence/SSH/copy-effects/partial-retention/sync-CLI/debug/guidance checks pass for 0.2.0.dev10. Wheel member contents match; direct wheel SHA256 `c0444060eaf4b17a87a0681d36499aa3c631d94d295b01d28e25856f060c048a`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 broad catches unchanged. Base imports dev10; editable metadata 0.1.0 without reinstall. No actual cluster, daily config/state, dependency install, external client, scientific data, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev10 checkpoint; task commit: `git log --grep '^MVP10.4c:'`; push dev/tag. Next 10.4d software-status observations; parent 10.4 stays open. |
+
+| 2026-11-17 | MVP10.4d Software-status diagnostics | Adopted request/profile/declaration and whole SSH/process/encoding/size/JSON/identity errors with safe shared diagnostics/native causes. Standalone Git/environment workers emit stage/errno/exit facts; host software_status_evidence validates identity and isolates malformed/unavailable projects/packages beside healthy observations. Known commits/versions survive later failures; selected interpreter verifies prefix remotely, including symlinked venvs. Mismatch/unknown remain findings with per-check diagnostics and target-marker/major-dependency scope. Status CLI adds --debug, shared JSON operation-error envelope/stderr and inline partial reasons; partial evidence JSON/nonzero retained. 86 new cases; 1669 full offline tests passed in 13.41 s, 73 expected collision warnings, `.development/test-runs/software-status-diagnostics.xml`, including the temporary local Git/venv standalone-payload/index-preservation regression. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/API/CLI/JSON/debug/partial causes/identity/mismatch/no-write/no-fallback/guidance checks pass for 0.2.0.dev11. Wheel member contents match; direct wheel SHA256 `58127115d0c453809c4f3b447f0863280a690b7aa92fc5e2fe0edfadd3214974`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 broad catches unchanged. Base imports dev11; editable metadata 0.1.0 without reinstall. No actual cluster, daily config/state, scientific imports/dependency install, external client, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev11 checkpoint; task commit: `git log --grep '^MVP10.4d:'`; push dev/tag. MVP10.4 complete; review/split 10.5 submission/recovery boundaries next. |
 
 ## How we work
 
