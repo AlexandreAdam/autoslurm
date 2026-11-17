@@ -9,6 +9,21 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev7 — 2026-11-16
+
+- New remote submissions create an exact cluster-side tracking snapshot before
+  the first scheduler call. Incremental accepted IDs are mirrored after durable
+  receipts; cluster-local status, logs, inspect and fetch use local Slurm and
+  producing paths without workstation files, profiles or SSH to themselves.
+- Origin receipt paths/transport stay intact. Additive execution_bundle_path
+  identifies the cluster view; new remote execution receipts use the distinct
+  `.execution.json` suffix, including when both machines have identical path
+  names. Independent attempts never replace existing drafts or tracking files.
+- New remote submissions require helper capability execution_tracking=1 as well
+  as submission_protocol=1. Update AutoSlurm at both ends before using this
+  behavior; no automatic helper install or historical draft/receipt migration.
+  Partial acceptance, lost-response recovery and replay protection are retained.
+
 ## 0.2.0.dev6 — 2026-11-16
 
 - `asl fetch`, public `fetch_run` and ACP `fetch_run` refresh exact linked receipts

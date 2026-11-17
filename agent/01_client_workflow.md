@@ -463,6 +463,24 @@ persisting an accepted ID preserves that ID and stops further submissions.
 This is incremental submission evidence, not an immutable scientific attempt
 store or a guarantee against every concurrent writer or scheduler crash.
 
+FIX.TRACKING.1: new remote submissions also create an exact tracking snapshot in
+the producing installation before sbatch, projecting incremental IDs only after
+the execution receipt is durable. On the cluster, normal status/log/fetch/inspect
+use local Slurm and recorded producing paths, with no workstation files/profile
+or SSH to itself. Use the producing storage root; row indices and snapshot dates
+can differ between machines. The submission_id remains the attempt identity.
+Receipts retain origin bundle_path/receipt_path/planned_path/execution; additive
+execution_bundle_path identifies the cluster view. New execution receipts use
+`.execution.json`, avoiding ambiguity with identical directory names at both
+ends. Select the actual execution_receipt_path when inspecting on the cluster;
+receipt selectors validate the exact backlink and resolve the local view.
+Cluster refresh never rewrites the helper-owned receipt. Workstation refresh
+still updates its original tracking snapshot through the recorded transport.
+Clients preserve returned references rather than constructing storage paths.
+Both installations must support execution_tracking=1 and submission_protocol=1;
+older helpers fail before staging/dispatch. No auto-install, historical draft
+adoption, name/latest receipt matching, sync requirement or submission retry.
+
 | Receipt state | Interpretation |
 |---|---|
 | `submitted` | Every job has a known accepted scheduler ID; computation may still fail |
@@ -482,7 +500,7 @@ listing, receipt inspection and context gathering; it has no submit action.
 
 An exception or absent ID does not prove rejection. Remote bulk-to-legacy
 fallback is removed in MVP2. The legacy graph driver is retired. A prepared
-remote `venv_path` with a receipt-capable matching helper is required; capability
+remote `venv_path` with a receipt/tracking-capable matching helper is required; capability
 failure stops before dispatch, without an automatic install or alternate submit.
 All generated scripts receive shell syntax checks before the first submission.
 

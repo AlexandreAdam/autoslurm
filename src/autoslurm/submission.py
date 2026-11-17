@@ -10,6 +10,7 @@ from .record_files import atomic_json, read_json, _read_error
 from .storage import storage_root
 from .errors import DiagnosticError, DiagnosticCause, SelectionError, RecordWriteError, _receipt_fetch_failure
 from .receipt_fetch import read_execution_receipt
+from .execution_tracking import validate_execution_bundle_path, is_execution_receipt
 
 __all__ = ["SubmissionError", "load_submission", "list_submissions", "refresh_submission"]
 SUBMISSION_METADATA_KEY = "_autoslurm_submission"
@@ -58,6 +59,7 @@ def validate_receipt(receipt, expected=None):
             raise ValueError("Accepted job has no valid scheduler ID.")
     if receipt.get("state") == "submitted" and (not receipt.get("execution_finished") or any(job["state"] != "accepted" for job in receipt["jobs"].values())):
         raise ValueError("Submitted receipt must contain final accepted IDs for every job.")
+    validate_execution_bundle_path(receipt)
     if expected:
         if receipt["submission_id"] != expected["submission_id"] or set(receipt["jobs"]) != set(expected["jobs"]):
             raise ValueError("Receipt does not match the selected submission.")
@@ -67,6 +69,8 @@ def validate_receipt(receipt, expected=None):
         for name, job in expected["jobs"].items():
             if job.get("id") and receipt["jobs"][name].get("id") != job["id"]:
                 raise ValueError("Receipt would discard or replace a known scheduler ID.")
+        if expected.get('execution_bundle_path') is not None and receipt.get('execution_bundle_path') != expected['execution_bundle_path']:
+            raise ValueError('Receipt changed the selected execution tracking path.')
     return receipt
 
 
@@ -162,6 +166,10 @@ def refresh_submission(receipt_path):
     current = load_submission(receipt_path)
     execution = current["execution"]
     try:
+        if is_execution_receipt(current, receipt_path):
+            # The helper owns this incremental receipt. Never rewrite it or SSH
+            # back to the cluster from an execution-side inspection.
+            return current
         if not execution["is_remote"]:
             project_receipt(current)
             return current

@@ -214,6 +214,8 @@ def run_bulk_submit_driver_remotely(
         receipt = validate_receipt(response.get("receipt"), payload["receipt"])
         if result.returncode != 0 or not response.get("ok"):
             raise SubmissionError(response.get("error") or "Remote submission stopped.", receipt)
+        if payload.get('tracking_bundle') is not None and receipt.get('execution_bundle_path') is None:
+            raise SubmissionError('Remote helper did not confirm execution-side tracking; retain this receipt and do not resubmit.', receipt)
         if receipt.get("state") != "submitted" or not receipt.get("execution_finished"):
             raise SubmissionError("Remote submission did not report a final acceptance outcome.", receipt)
         return receipt
@@ -233,8 +235,12 @@ def probe_submission_helper(context):
     command = shlex.join(["env", f"{STORAGE_ROOT_ENVIRONMENT_VARIABLE}={context.storage_root}", venv.rstrip("/") + "/bin/python", "-m", "autoslurm.apps.bulk_submit_driver", "--capabilities"])
     result = subprocess.run(ssh_command(config, context.machine_name, command), capture_output=True, text=True)
     try:
-        capable = result.returncode == 0 and json.loads(result.stdout).get("submission_protocol") == SUBMISSION_PROTOCOL
+        from .execution_tracking import EXECUTION_TRACKING_PROTOCOL
+        capabilities = json.loads(result.stdout)
+        capable = (result.returncode == 0 and capabilities.get("submission_protocol") == SUBMISSION_PROTOCOL
+                   and type(capabilities.get('execution_tracking')) is int
+                   and capabilities['execution_tracking'] == EXECUTION_TRACKING_PROTOCOL)
     except (ValueError, AttributeError):
         capable = False
     if not capable:
-        raise RuntimeError("Remote helper does not support submission receipts; prepare the matching helper before submitting.")
+        raise RuntimeError("Remote helper does not support submission receipts and execution-side tracking; update AutoSlurm in the configured venv_path before submitting.")

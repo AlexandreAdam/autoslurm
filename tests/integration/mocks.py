@@ -131,7 +131,7 @@ def setup_mock_subprocess_run() -> Callable:
                     cmd, 0, "controlmaster no\ncontrolpath none\ncontrolpersist no\n", ""
                 )
             if cmd[0] == "ssh" and "--capabilities" in cmd[-1]:
-                return subprocess.CompletedProcess(cmd, 0, '{"submission_protocol": 1}', "")
+                return subprocess.CompletedProcess(cmd, 0, '{"submission_protocol": 1, "execution_tracking": 1}', "")
             if cmd[0] == "scp":
                 mock_run_instance.return_value.stdout = ""
                 mock_run_instance.return_value.returncode = 0

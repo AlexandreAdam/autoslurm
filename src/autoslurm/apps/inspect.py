@@ -112,8 +112,8 @@ def _main(argv=None):
     reference = _build_reference_date(args.date, args.year, args.month, args.day, args.hour, args.minute, args.second)
     entries = sorted(bundle_snapshots(reference), key=lambda item: item["date"], reverse=True)
     if args.receipt:
-        from ..submission import load_submission
-        paths = [Path(load_submission(args.receipt)["bundle_path"])]
+        from ..execution_tracking import tracking_path_from_receipt
+        paths = [tracking_path_from_receipt(args.receipt)]
     elif args.bundle_file:
         paths = [args.bundle_file]
     elif args.latest:

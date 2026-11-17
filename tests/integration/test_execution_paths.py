@@ -133,7 +133,7 @@ def test_remote_operation_discovers_root_once_and_batches_input_validation(tmp_p
             return subprocess.CompletedProcess(command, 1, "", "Required input input_file is unavailable: /remote/project/data/measurements.json")
         if command[0] == "ssh" and "autoslurm.apps.bulk_submit_driver" in command[-1]:
             if "--capabilities" in command[-1]:
-                return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1}', "")
+                return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1, "execution_tracking": 1}', "")
             payload = json.loads(kwargs["input"])
             assert payload["slurm_dir"] == "/remote/development/slurm"
             return subprocess.CompletedProcess(command, 0, json.dumps({"ok": True, "receipt": accepted_receipt(payload, {"shards": "201", "reduce": "202"})}), "")

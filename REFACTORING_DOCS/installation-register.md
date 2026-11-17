@@ -13,6 +13,35 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FIX.TRACKING.1 (2026-11-16): running checkpoint 0.2.0.dev7. Main/base imports
+this checkout; installed editable metadata remains 0.1.0 without reinstall.
+New remote submissions create exact cluster-local tracking views, linked by
+submission ID and execution_bundle_path. Incremental execution receipts remain
+authoritative and preserve origin identity; derived views use local Slurm/log
+paths. Separate `.execution.json` receipt names disambiguate matching path names.
+Both ends require execution_tracking=1 plus submission_protocol=1. No helper
+update is performed automatically; historical drafts/receipts are not migrated.
+24 new regressions; 1361 full offline tests passed in 12.21 s, 67 expected
+collision warnings; `.development/test-runs/execution-tracking.xml`. AST audit:
+266 routes/138 owners/21 reviewed broad catches. No-Git/no-runtime-import metadata,
+wheel/sdist-to-wheel and disposable installed version/helper/local status/log/
+fetch/inspect/ACP/cached/provenance/packaged-guidance checks pass:
+
+- `.development/artifacts/execution-tracking/autoslurm-0.2.0.dev7-py3-none-any.whl`:
+  SHA256 `7741283913b238edbaf1e94d6f4c0b4a5cf457b50be4b96804cc3b3dbf51bb9c`.
+- `.development/artifacts/execution-tracking/autoslurm-0.2.0.dev7.tar.gz`:
+  SHA256 `dd962fdf61be247bd888a3ea2ae149bdc3d61c9a523a249f5b85c7fb151bd15a`.
+- `.development/artifacts/execution-tracking/from-sdist/autoslurm-0.2.0.dev7-py3-none-any.whl`:
+  SHA256 `7741283913b238edbaf1e94d6f4c0b4a5cf457b50be4b96804cc3b3dbf51bb9c`.
+
+Direct and rebuilt wheels match exactly. Annotated v0.2.0.dev7 identifies this
+checkpoint. Pinned rollback HEAD remains clean at 33bcbd3. No actual cluster
+contact/install, daily config/state, base/test dependency install, scientific
+result transfer, external client, history migration or rollback change. User
+documents/reports and software_preparations remain excluded. Both real
+installations must be updated before new remote submissions; actual cluster
+validation/deployment is operator-owned. MVP10.4b resumes next. No PyPI publication.
+
 FETCH.1 (2026-11-16): running checkpoint 0.2.0.dev6; daily commands follow dev
 in this checkout. Installed editable metadata remains 0.1.0 without reinstall.
 Selected-run fetch uses exact linked receipt refresh before status/bounded logs,

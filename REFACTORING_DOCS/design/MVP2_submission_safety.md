@@ -1,5 +1,11 @@
 # MVP2 Submission safety
 
+2026-11-16 amendment: [FIX.TRACKING.1](FIX_TRACKING_1_execution_tracking.md)
+adds exact execution-side tracking for new remote submissions. Origin receipt
+identity is preserved, the cluster gets a local view, and helper capability
+negotiation prevents older helpers silently dropping the tracking definition.
+Historical receipt paths and the original MVP2 evidence below remain unchanged.
+
 ## Status
 
 Complete locally, 2026-11-11; closure tag `mvp2`. Implements the authorized next

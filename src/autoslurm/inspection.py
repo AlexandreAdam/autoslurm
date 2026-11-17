@@ -8,9 +8,9 @@ from .inspection_collection import load_run, load_machine_profiles, collect_obse
 from .inspection_state import resolve_jobs, project_run
 from .bundle_selection import list_saved_bundles
 from .storage import storage_root
-from .submission import load_submission
 from .inspection_receipts import refresh_run_receipts
 from .errors import InvalidRequestError
+from .execution_tracking import tracking_path_from_receipt
 
 __all__ = ["inspect_bundle", "inspect_bundles", "inspect_logs", "fetch_run", "list_runs"]
 
@@ -91,7 +91,7 @@ def inspect_bundle(bundle_path=None, *, receipt_path=None, **kwargs):
     if (bundle_path is None) == (receipt_path is None):
         raise ValueError("Select one exact bundle_path or receipt_path.")
     if receipt_path is not None:
-        bundle_path = load_submission(receipt_path)["bundle_path"]
+        bundle_path = tracking_path_from_receipt(receipt_path)
     return inspect_bundles([bundle_path], **kwargs)[0]
 
 

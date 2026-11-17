@@ -54,10 +54,30 @@ FAILED state alone is not a failed fetch. ACP action fetch_run accepts the same
 Python selectors/options; inspect result.errors even when status is success.
 inspect_logs/asl logs retain their existing behavior without receipt refresh.
 
+New remote submissions also publish an exact cluster-local tracking snapshot
+before sbatch and project durable accepted IDs into it. With the producing
+storage root selected, asl status/logs/inspect/fetch work on the cluster using
+local Slurm/log paths, without workstation files/profile or SSH to themselves.
+Use submission_id to compare attempts: snapshot paths/dates and row indices can
+differ. Partial/lost submissions retain known IDs and never retry automatically.
+
+The receipt keeps origin bundle_path/receipt_path/planned_path/execution evidence;
+additive execution_bundle_path identifies the cluster view. Select the actual
+execution_receipt_path on the cluster for receipt-based inspection. Its distinct
+`.execution.json` suffix disambiguates even identical workstation/cluster storage
+paths. Receipt selectors validate the exact backlink; cluster refresh does not
+rewrite the helper-owned receipt. Workstation refresh retains its own paths and
+transport. Keep returned references, never reconstruct filenames.
+
+Both installations need execution_tracking=1 and submission_protocol=1 helper
+capabilities. An older helper stops before staging/dispatch with an instruction
+to update AutoSlurm in the configured venv_path. No automatic installation,
+adoption of old drafts, receipt guessing by name or synchronization is required.
+
 Scientific results/datasets remain application-owned. No recursive output scan,
 full-log download, job mutation, submission retry or environment setup runs.
 Legacy asl sync copies whole jobs/slurm/out directories, including full logs,
-and omits receipts; it is not bounded fetching. Mirror policy and cluster-only
+and omits receipts; it is not bounded fetching. Mirror policy and historical
 receipt discovery are separate work. Regressions use mocked SSH/Slurm and exact
 standalone workers against temporary records, covering recovery, partial
 failures, bounds/identity, sparse arrays and public/cached parity.

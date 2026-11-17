@@ -38,6 +38,7 @@ class SubmissionOperation:
     script_names: dict[str, str]
     local_script_directory: Path
     execution_script_directory: str
+    tracking_bundle: dict
     phase: DispatchPhase = DispatchPhase.NOT_STARTED
 
 
@@ -48,7 +49,8 @@ def create_submission_operation(name, planned_path, bundle, context):
         raise ValueError("Selected storage root changed after execution context resolution.")
     submission_id = uuid4().hex
     receipt_path = local_root / "submissions" / (submission_id + ".json")
-    execution_receipt_path = str(Path(context.storage_root) / "submissions" / (submission_id + ".json"))
+    execution_suffix = '.execution.json' if context.is_remote else '.json'
+    execution_receipt_path = str(Path(context.storage_root) / "submissions" / (submission_id + execution_suffix))
     snapshot = {}
     for prepared in bundle.jobs:
         definition = copy.deepcopy(prepared.definition)
@@ -87,6 +89,7 @@ def create_submission_operation(name, planned_path, bundle, context):
         script_names={job.name: f"{job.name}_{submission_id}.sh" for job in bundle.jobs},
         local_script_directory=local_root / "slurm",
         execution_script_directory=str(Path(context.storage_root) / "slurm"),
+        tracking_bundle=copy.deepcopy(snapshot),
     )
 
 
@@ -127,7 +130,8 @@ def dispatch_submission(operation, bundle, context):
             {"children_by_job": bundle.children_by_job,
              "slurm_names": operation.script_names,
              "slurm_dir": operation.execution_script_directory,
-             "receipt": operation.receipt},
+             "receipt": operation.receipt,
+             "tracking_bundle": operation.tracking_bundle},
             machine_config=context.config, ssh_options=ssh_options, context=context,
         )
         # Record this inside the session so cleanup errors cannot erase acceptance.

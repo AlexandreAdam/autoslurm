@@ -316,6 +316,9 @@
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)"
+    ],
+    "autoslurm.bulk_submit_driver.submit_payload": [
+      "(Exception, KeyboardInterrupt)"
     ]
   },
   "contracts": {
@@ -487,7 +490,8 @@
         "tests/integration/test_submission_safety.py",
         "tests/integration/test_submission_boundaries.py",
         "tests/unit/test_bulk_submit_driver.py",
-        "tests/unit/test_bulk_submit_driver_app.py"
+        "tests/unit/test_bulk_submit_driver_app.py",
+        "tests/integration/test_execution_tracking.py"
       ],
       "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
     },
@@ -868,9 +872,9 @@
     },
     "autoslurm.bulk_submit_driver.submit_payload": {
       "contract": "submission",
-      "inputs": "BulkSubmitPayload and optional run_command adapter.",
+      "inputs": "BulkSubmitPayload with optional exact tracking_bundle and run_command adapter.",
       "current": "BulkSubmitDriverResult; validations/raw pre-claim errors; SubmissionError with receipt after tracked dispatch, callback errors without receipt.",
-      "effects": "Claims once, incremental receipts and sbatch calls; later persistence failure retains accepted IDs in memory; no replay."
+      "effects": "Claims once, creates an exclusive execution snapshot for tracked remote payloads, then incremental receipts before derived projections and sbatch calls; persistence failure retains accepted IDs, no replay."
     },
     "autoslurm.bundle_selection.all_bundle_snapshots": {
       "contract": "selection",
@@ -1579,6 +1583,9 @@
     "autoslurm.record_files.read_json": [
       "RETAIN read resource/evidence protection only: remember initiating error and re-raise unchanged while finally closes descriptor/stream. Narrow filesystem/JSON/Unicode catches own classification; unexpected bugs/interrupts are not corruption.",
       "RETAIN close safeguard: if read/parse failed, retain secondary native/diagnostic close evidence without masking primary; after successful read propagate close-only failure. No record deletion, fallback or retry."
+    ],
+    "autoslurm.bulk_submit_driver.submit_payload": [
+      "FIX.TRACKING.1: after an exclusive claim and before any sbatch, execution-view publication failures retain a rejected receipt with no IDs; no continuation or replay. Native diagnostics/causes remain available. Incremental receipt/projection failures continue through the existing persist guard, retaining accepted IDs and stopping further scheduling."
     ]
   },
   "route_notes": {

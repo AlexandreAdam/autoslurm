@@ -13,6 +13,7 @@ from .scheduler import query_scheduler
 from .submission import load_submission, SUBMISSION_METADATA_KEY
 from .config import load_config
 from .errors import DiagnosticError
+from .execution_tracking import is_execution_receipt, receipt_view
 
 
 @dataclass
@@ -34,6 +35,8 @@ def _load_selected(path):
     for reference in receipt_refs:
         try:
             receipt = load_submission(reference)
+            if is_execution_receipt(receipt, reference) and Path(receipt_view(receipt, reference)['bundle_path']).resolve() != Path(path).resolve():
+                raise ValueError('Execution receipt belongs to a different tracking snapshot.')
             apply_receipt_to_jobs(jobs, receipt)
             receipts.append({"submission_id": receipt["submission_id"], "state": receipt["state"], "receipt_path": reference})
         except (OSError, ValueError, KeyError) as exc:

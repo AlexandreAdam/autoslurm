@@ -524,3 +524,18 @@ retain IDs after persistence failure. Cached fetch performs no source/remote
 reads or writes. 49 new cases, 1337 offline tests and installed API/CLI/ACP/worker/
 partial/cached/guidance checks pass. Wider transport/submission/observation and
 universal diagnostic route parity remain staged, not completed by this slice.
+
+## FIX.TRACKING.1 amendment (2026-11-16)
+
+266 routes/138 owners unchanged. BulkSubmitPayload adds optional tracking_bundle;
+the existing helper negotiates execution_tracking=1 separately from protocol1.
+One new reviewed catch retains a rejected pre-scheduler receipt when execution
+snapshot creation fails, without replay or scheduling; 21 broad catches total.
+The existing persist guard first writes the authoritative receipt, then uses the
+shared projection owner to update the derived cluster view. Failure stops further
+submission while retaining accepted IDs. The new execution_tracking module owns
+view localization/path validation, with no scheduler or transport engine.
+Cluster receipt selectors verify exact backlinks; workstation paths/transport
+remain original evidence. status/log/fetch/inspect/ACP reuse their existing
+owners. 24 new tests cover cross-installation behavior and failure cases.
+General helper/readiness/submission diagnostic adoption remains MVP10.4b/10.5.

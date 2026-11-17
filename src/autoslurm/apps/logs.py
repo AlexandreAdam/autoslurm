@@ -5,7 +5,6 @@ import json
 import sys
 
 from ..inspection import inspect_bundles
-from ..submission import load_submission
 from .inspection_selection import resolve_job_selection
 from .status import _build_reference_date, _selected_paths, _status_rows
 from ..errors import SelectionError, ConfigurationError
@@ -67,7 +66,8 @@ def _main(argv=None, *, fetch=False):
     try:
         reference = _build_reference_date(args.date, args.year, args.month, args.day, args.hour, args.minute, args.second)
         if args.receipt:
-            paths = [load_submission(args.receipt)['bundle_path']]
+            from ..execution_tracking import tracking_path_from_receipt
+            paths = [tracking_path_from_receipt(args.receipt)]
         elif args.bundle_file:
             paths = [args.bundle_file]
         else:

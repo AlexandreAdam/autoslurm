@@ -6,6 +6,7 @@ import copy
 from .errors import DiagnosticError
 from .inspection_collection import load_run, apply_receipt_to_jobs
 from .submission import load_submission, refresh_submission, SubmissionError
+from .execution_tracking import receipt_view
 
 
 def refresh_run_receipts(runs):
@@ -19,14 +20,15 @@ def refresh_run_receipts(runs):
             path = reference['receipt_path']
             try:
                 receipt = load_submission(path)
-                if (Path(receipt['bundle_path']).resolve() != run.path
-                        or Path(receipt['receipt_path']).resolve() != Path(path).resolve()
+                view = receipt_view(receipt, path)
+                if (Path(view['bundle_path']).resolve() != run.path
+                        or Path(view['receipt_path']).resolve() != Path(path).resolve()
                         or receipt['submission_id'] != reference['submission_id']
                         or set(receipt['jobs']) != {job['name'] for job in run.jobs}
                         or any(job.get('id') and str(job['id']) != receipt['jobs'][job['name']].get('id') for job in run.jobs)):
                     raise ValueError('Receipt identity does not match the exact selected tracking snapshot; refresh was not started.')
                 key = str(Path(path).resolve())
-                if receipt['execution']['is_remote'] and key not in refreshed:
+                if view['execution']['is_remote'] and key not in refreshed:
                     refreshed.add(key)
                     observed[key] = refresh_submission(path)
             except (SubmissionError, ValueError, OSError) as error:

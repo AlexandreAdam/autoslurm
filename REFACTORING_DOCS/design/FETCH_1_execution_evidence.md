@@ -1,5 +1,10 @@
 # FETCH.1 selected-run execution evidence
 
+2026-11-16 amendment: [FIX.TRACKING.1](FIX_TRACKING_1_execution_tracking.md)
+now publishes cluster-local tracking views for new remote submissions and shares
+exact receipt selectors with inspection/fetch. Historical receipt discovery and
+the legacy sync mirror remain separate; FETCH.1 evidence below is unchanged.
+
 ## Status and scope
 
 Complete locally in 0.2.0.dev6, 2026-11-16, after the user requested fetching. Existing explicit

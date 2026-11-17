@@ -12,6 +12,7 @@ from .bulk_submit import SubmissionRequest, submit_dag_by_levels
 from .submission import SubmissionError, validate_receipt, write_receipt
 from .run_slurm import get_job_id_from_sbatch_output
 from .errors import DiagnosticError
+from .execution_tracking import prepare_execution_tracking, create_execution_tracking, project_execution_tracking
 
 __all__ = [
     "BulkSubmitPayload",
@@ -30,6 +31,7 @@ class BulkSubmitPayload:
     slurm_dir: str
     receipt: dict | None = None
     parsable: bool = True
+    tracking_bundle: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -100,6 +102,13 @@ def submit_payload(
 
     receipt = copy.deepcopy(payload.receipt)
     receipt_path = None
+    tracking = None
+    if payload.tracking_bundle is not None:
+        if receipt is None:
+            raise ValueError('Execution tracking requires a submission receipt.')
+        validate_receipt(receipt)
+        tracking = prepare_execution_tracking(payload.tracking_bundle, receipt, payload.children_by_job,
+                                              Path(payload.slurm_dir).parent)
     if receipt is not None:
         validate_receipt(receipt)
         if receipt["execution_finished"] or receipt["state"] not in {"prepared", "submitting"} or any(job["state"] != "not_submitted" or job.get("id") for job in receipt["jobs"].values()):
@@ -112,7 +121,8 @@ def submit_payload(
             path = Path(payload.slurm_dir) / name
             if Path(name).name != name or not path.is_file() or not path.read_text().startswith("#!/bin/bash\n"):
                 raise ValueError(f"Invalid or unavailable submission script: {name}")
-        receipt_path = Path(payload.slurm_dir).parent / "submissions" / (receipt["submission_id"] + ".json")
+        suffix = '.execution.json' if tracking is not None else '.json'
+        receipt_path = Path(payload.slurm_dir).parent / "submissions" / (receipt["submission_id"] + suffix)
         if str(receipt_path) != receipt["execution_receipt_path"]:
             raise ValueError("Receipt path does not match execution storage.")
         receipt_path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,14 +130,24 @@ def submit_payload(
         with receipt_path.with_suffix(".claim").open("x") as claim:
             claim.write(receipt["submission_id"])
         receipt["state"] = "submitting"
+        if tracking is not None:
+            try:
+                create_execution_tracking(tracking, receipt, receipt_path.parent.parent)
+            except (Exception, KeyboardInterrupt) as exc:
+                receipt.update(state='rejected', execution_finished=True,
+                               error=f'Execution tracking could not be created; no jobs submitted: {exc}')
+                write_receipt(receipt_path, receipt)
+                raise SubmissionError(receipt['error'], receipt,
+                    diagnostic=exc.diagnostic if isinstance(exc, DiagnosticError) else None) from exc
         write_receipt(receipt_path, receipt)
 
     def persist():
         if receipt is not None:
             try:
                 write_receipt(receipt_path, receipt)
+                project_execution_tracking(receipt)
             except (Exception, KeyboardInterrupt) as exc:
-                receipt.update(state="uncertain", error=f"Submission receipt storage failed: {exc}", execution_finished=False)
+                receipt.update(state="uncertain", error=f"Submission evidence storage failed: {exc}", execution_finished=False)
                 raise SubmissionError(receipt["error"], receipt,
                     diagnostic=exc.diagnostic if isinstance(exc, DiagnosticError) else None) from exc
 

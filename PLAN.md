@@ -14,7 +14,8 @@ This file is the source of truth for active scope, task order and progress.
   and MVP10.3c.1–3 local record/script persistence diagnostics complete;
   MVP10.4a software-update diagnostics complete
   locally. FIX.ENVIRONMENT.1 machine module initialization complete locally;
-  FETCH.1 selected-run evidence fetching complete locally.
+  FETCH.1 selected-run evidence fetching and FIX.TRACKING.1 execution-side
+  tracking complete locally.
   MVP9 complete locally; MVP7.2f editable-update amendment
   and FIX.CONFIG.1 optional-account fix complete; FIX.LOGS.1 navigation complete.
   FIX.SOFTWARE.1 simplifies editable builds and composes setup/activation.
@@ -26,19 +27,20 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1337 passed, 47 expected
+  rollback source remains unchanged. Full offline suite: 1361 passed, 67 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FETCH.1 adds asl fetch, public fetch_run and ACP
-  fetch_run in 0.2.0.dev6. Exact linked receipts refresh before status/bounded logs;
-  shared selection/projection/cache owners retain partial evidence and recovered
-  IDs even if persistence fails. Cached mode performs no source/remote reads or
-  writes. Receipt reads use the existing regular-file worker, max 1 MiB/30 s,
-  with shared diagnostics and no blind job retry. 49 new cases; 1337 full offline
-  tests pass. Git-free metadata, wheel/sdist rebuild and installed API/CLI/ACP/
-  cached/partial/worker/guidance checks pass. Audit: 266 routes/138 owners/20 broad
-  catches. No actual cluster, scientific results, daily state/config, base install,
-  history/schema migration or rollback change. Legacy whole-directory sync and
-  cluster-only receipt discovery remain separate. Editable metadata stays 0.1.0.
+- **Latest completed task:** FIX.TRACKING.1 adds exact execution-side tracking
+  for new remote submissions in 0.2.0.dev7. The helper publishes a cluster-local
+  snapshot before sbatch, then mirrors each durable receipt through the existing
+  projection owner. Cluster status/log/inspect/fetch use local Slurm and producing
+  paths without laptop files/profiles; original receipt identity is retained.
+  Distinct execution receipts and exact backlinks prevent path/attempt confusion.
+  Older helpers stop before staging; both installations need an operator update.
+  24 new regressions; 1361 full offline tests pass. No-Git metadata, wheel/sdist
+  rebuild and installed helper/API/CLI/ACP/cached/guidance checks pass. Audit:
+  266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily config/
+  state, base install, historical migration, scientific data or rollback change.
+  Legacy sync and historical discovery remain separate. Editable metadata is 0.1.0.
 - **Next task:** MVP10.4b SSH/session/helper readiness, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Integrate the diagnostic model at meaningful operation boundaries; most current
@@ -505,6 +507,14 @@ The user explicitly narrowed retrieval to AutoSlurm execution evidence:
 stdout/stderr, Slurm `.out` files and scheduler status explaining job outcomes.
 Scientific datasets/results stay application-owned. No generic result downloader,
 file-type allowlist or recursive output-directory scan is included.
+
+- [x] **FIX.TRACKING.1 Execution-side tracking.** Publish an exact tracking
+  snapshot before remote sbatch and project incremental receipts into it. On the
+  cluster, status/log/fetch use local Slurm and producing paths without laptop
+  files/config. Preserve origin evidence, independent attempts and known IDs;
+  capability-check older helpers before effects. No historical name matching,
+  resubmission, cluster contact or migration. Design:
+  [execution-side tracking](REFACTORING_DOCS/design/FIX_TRACKING_1_execution_tracking.md).
 
 - [x] **FETCH.1 Selected-run execution evidence.** Reuse receipt refresh and
   inspection for `asl fetch` / fetch_run, with status-compatible job/task/run
@@ -1045,6 +1055,8 @@ or migration decision has already been accepted.
 | 2026-11-16 | FIX.ENVIRONMENT.1 Machine module initialization | Added optional module_init, explicit read-only detect/set/clear/editor/action7/summary controls, shared ordered initialization/setup/activation and unconditional job failure guards. Existing module skips initializer; plain venv profiles require none. Failed detection preserves config and emits shared missing/SSH/launch/timeout/protocol diagnostics; no arbitrary setup execution. 49 new cases; 1288 full offline tests passed in 10.75 s, 46 expected collision warnings, `.development/test-runs/module-initialization.xml`. Git-free metadata, direct wheel/sdist-to-wheel and disposable installed identity/clean-shell/failure/preview-dispatch/mock-detection/preservation/agent17 smoke passed for 0.2.0.dev5. Wheel SHA256 `54f682e8c04022d102955ef37cd879661f35aea4a4aec2d7e622236348de3065`; archive hash in installation register; rebuilt wheel matches exactly. AST register 262 routes/136 owners/20 broad catches. No live cluster, daily config/state, base/test dependency install, external client, history/receipt/schema or rollback edits. User documents/reports/software_preparations preserved. No activation preflight or remote helper launch-policy change; MVP10.4b next, receipt discovery separate. Task commit: `git log --grep '^FIX.ENVIRONMENT.1:'`; push dev and annotated v0.2.0.dev5 checkpoint tag. |
 
 | 2026-11-16 | FETCH.1 Selected-run execution evidence | Added asl fetch/public fetch_run/ACP fetch_run with existing status/log selection and presentation. Exact validated links refresh before observation; shared receipt overlay retains known/recovered IDs even when publication/projection fails, while good logs and other runs survive collection errors. Cached mode has no remote/source reads or writes. Remote receipts use the existing regular-file worker capped at 1 MiB/30 s and errors.py facts instead of unbounded cat; requires python3, no remote AutoSlurm. 49 new cases; 1337 full offline tests passed in 10.37 s, 47 expected collision warnings, `.development/test-runs/fetch-evidence.xml`. No-Git metadata, wheel/sdist rebuild and installed version/recovery/worker/partial/cached/CLI/ACP/guidance checks pass for 0.2.0.dev6. Wheel SHA256 `761ec926c2339a67ab30b9773f396f69454aa54b7b6f31de0020715695fa5f36`; archive/rebuilt-wheel hashes in installation register, member contents match. Reviewed additions: two Python exports, one CLI and one ACP route; AST 266 routes/138 owners/20 broad catches. No real cluster, scientific data/full-log fetch, daily config/state, base/test dependency install, external-client/history/schema/rollback edit. No job mutation/retry or receipt guessing. Legacy sync remains separate. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev6 checkpoint; task commit: `git log --grep '^FETCH.1:'`; push dev and version tag. |
+
+| 2026-11-16 | FIX.TRACKING.1 Execution-side tracking | New remote submissions transmit exact prepared tracking definitions; helper validates identity/graph/context, creates a non-overwriting cluster snapshot before sbatch and projects durable incremental receipts through the shared owner. Cluster-local status/log/inspect/fetch/ACP use local Slurm/producing paths without laptop files/profiles. Origin evidence stays intact; execution_bundle_path and distinct execution receipt names disambiguate paths/attempts. Exact backlinks and pinned paths prevent cross-attempt attachment; older helpers stop before staging. 24 new regressions; 1361 full offline tests passed in 12.21 s, 67 expected collision warnings, `.development/test-runs/execution-tracking.xml`. No-Git metadata, wheel/sdist rebuild and disposable installed helper/version/status/log/fetch/inspect/ACP/cached/provenance/guidance checks pass for 0.2.0.dev7; direct/rebuilt wheels match, SHA256 `7741283913b238edbaf1e94d6f4c0b4a5cf457b50be4b96804cc3b3dbf51bb9c`, archive hash in installation register. AST: 266 routes/138 owners/21 reviewed broad catches. No actual cluster, daily config/state, base/test dependency install, scientific data, external client, historical migration or pinned rollback edit. User documents/reports/software_preparations excluded. Requires operator update of both installations; no old-draft adoption or auto-install/retry. Annotated v0.2.0.dev7 checkpoint; task commit: `git log --grep '^FIX.TRACKING.1:'`; push dev and version tag. MVP10.4b resumes next. |
 
 ## How we work
 

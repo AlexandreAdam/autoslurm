@@ -43,6 +43,12 @@ list receipts or inspect an exact receipt, with explicit `--refresh` to retrieve
 remote execution evidence. Refresh never submits work again. Submission success
 means Slurm accepted the jobs; the application still validates scientific results.
 
+New remote submissions also save a tracking snapshot on the cluster. After both
+installations are updated, `asl status`, `asl logs` and `asl fetch` work there
+without the laptop's files or SSH configuration. Attempts share a submission ID;
+each machine keeps its own paths and display indices. See
+[cluster-side inspection](docs/logs.md#inspect-on-the-cluster).
+
 MVP3 adds `inspect_bundle` and `list_runs`, with ACP `inspect_run`/`list_runs`
 and exact terminal selectors. They share task identity, scheduler evidence and
 bounded logs, retain query errors and unknown tasks, and label cached evidence

@@ -8,6 +8,7 @@ from pathlib import Path
 from ..bulk_submit_driver import BulkSubmitPayload, submit_payload
 from ..storage import slurm_dir
 from ..submission import SUBMISSION_PROTOCOL, SubmissionError
+from ..execution_tracking import EXECUTION_TRACKING_PROTOCOL
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -35,7 +36,8 @@ def _read_payload_text(payload_file: Path | None) -> str:
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     if args.capabilities:
-        print(json.dumps({"submission_protocol": SUBMISSION_PROTOCOL}))
+        print(json.dumps({"submission_protocol": SUBMISSION_PROTOCOL,
+                          "execution_tracking": EXECUTION_TRACKING_PROTOCOL}))
         return
     try:
         payload_text = _read_payload_text(args.payload_file)
@@ -49,6 +51,7 @@ def main(argv: list[str] | None = None) -> None:
             slurm_names=payload_data["slurm_names"],
             slurm_dir=payload_data["slurm_dir"],
             receipt=payload_data.get("receipt"),
+            tracking_bundle=payload_data.get('tracking_bundle'),
         )
         result = submit_payload(payload)
         print(

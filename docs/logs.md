@@ -67,6 +67,43 @@ transfer full large logs and does not include submission receipts. Use `asl fetc
 for selected, bounded execution evidence; sync is not an equivalent bounded
 fetch. Changing that legacy mirror is separate work.
 
+## Inspect on the cluster
+
+New remote submissions publish a cluster-local tracking snapshot before the
+first `sbatch`, then mirror each durable acceptance into it. On the cluster,
+select the same AutoSlurm storage root that the workstation profile uses and run:
+
+```sh
+asl status
+asl status 1
+asl logs 1 --job 2
+asl fetch 1
+```
+
+Cluster inspection runs local Slurm queries and reads local producing log paths;
+it needs neither the laptop nor its machine profiles or SSH aliases. The shared
+submission ID identifies the same attempt on both machines, but timestamps,
+paths and display indices may differ. A partial submission or lost laptop
+connection retains accepted IDs; no job is automatically resubmitted.
+
+Update AutoSlurm in the workstation and the configured cluster `venv_path`
+before using this feature. A capability check rejects an older helper before
+staging/submitting work; AutoSlurm does not install it automatically. This
+applies to new submissions, without converting old cluster drafts into runs or
+guessing receipts by bundle name. Existing history is preserved.
+
+Receipts retain their originating workstation paths and transport as provenance.
+The additive `execution_bundle_path` identifies the cluster view. New remote
+execution receipts have a distinct `.execution.json` suffix, so identical
+directory names on different machines are unambiguous. Select that actual local
+execution receipt with `--receipt` on the cluster; inspect/fetch resolve its
+cluster view. Cluster receipt refresh reads the helper-owned local record
+without rewriting it or connecting back through the laptop's alias. Clients
+should retain returned references instead of reconstructing filenames.
+
+This is submission-time tracking, independent of the legacy `asl sync` mirror.
+It transfers execution definitions/evidence, without copying scientific results.
+
 ## Select a run and read
 
 Use the same indices as `asl status`; no paths are needed:

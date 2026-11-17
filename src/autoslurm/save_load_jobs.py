@@ -75,24 +75,25 @@ def _read_existing_bundle(path, *, name, source, job=None):
         raise
 
 
-def _new_snapshot(bundle, name, *, warn_on_collision=False, source="save_bundle", job=None):
+def _new_snapshot(bundle, name, *, warn_on_collision=False, source="save_bundle", job=None, directory=None):
     """Create a complete snapshot at a free timestamp without replacing evidence."""
     date = datetime.now()
-    try:
-        _, nearest_date = nearest_bundle_filename(name)
-        if date - nearest_date < timedelta(seconds=1):
-            if warn_on_collision:
-                warnings.warn(
-                    "Found a job saved at the same time. "
-                    "If you wanted the job to be appended to a bundle instead, "
-                    "use the flags --append and --bundle=name_of_bundle."
-                )
-            date += timedelta(seconds=1)
-    except SelectionError as error:
-        if error.diagnostic.code != 'resource_missing':
-            raise
+    if directory is None:
+        try:
+            _, nearest_date = nearest_bundle_filename(name)
+            if date - nearest_date < timedelta(seconds=1):
+                if warn_on_collision:
+                    warnings.warn(
+                        "Found a job saved at the same time. "
+                        "If you wanted the job to be appended to a bundle instead, "
+                        "use the flags --append and --bundle=name_of_bundle."
+                    )
+                date += timedelta(seconds=1)
+        except SelectionError as error:
+            if error.diagnostic.code != 'resource_missing':
+                raise
     while True:
-        path = jobs_dir() / f"{name}_{date.strftime(DATE_FORMAT)}.json"
+        path = (jobs_dir() if directory is None else Path(directory)) / f"{name}_{date.strftime(DATE_FORMAT)}.json"
         try:
             _publish_bundle(path, bundle, name=name, source=source, job=job, exclusive=True)
             return path

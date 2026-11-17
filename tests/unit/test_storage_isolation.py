@@ -44,7 +44,7 @@ def test_selected_root_agrees_across_submit_sync_and_results(monkeypatch, isolat
             return CompletedProcess(command, 0, cfg["storage_root"] + "\n", "")
         if command[0] == "ssh" and "autoslurm.apps.bulk_submit_driver" in command[-1]:
             if "--capabilities" in command[-1]:
-                return CompletedProcess(command, 0, '{"submission_protocol": 1}', "")
+                return CompletedProcess(command, 0, '{"submission_protocol": 1, "execution_tracking": 1}', "")
             helper = shlex.split(command[-1])
             assert helper[:3] == ["env", "AUTOSLURM_STORAGE_ROOT=" + cfg["storage_root"], cfg["venv_path"] + "/bin/python"]
             payload = json.loads(kwargs["input"])

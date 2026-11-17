@@ -104,7 +104,7 @@ def test_remote_receipts_survive_response_loss_and_refresh_without_resubmission(
         elif command[-1].startswith("bash -lc "):
             return subprocess.CompletedProcess(command, 0, str(remote) + "\n", "")
         elif "--capabilities" in command[-1]:
-            return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1}', "")
+            return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1, "execution_tracking": 1}', "")
         elif command[-1] == "python3 -B -":
             assert "producing-host" in command
             import contextlib, io

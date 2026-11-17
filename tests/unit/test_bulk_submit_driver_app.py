@@ -70,7 +70,7 @@ def test_bulk_submit_driver_app_reports_error(monkeypatch, capsys):
 def test_capabilities_never_reads_or_submits(monkeypatch, capsys):
     monkeypatch.setattr(app, "submit_payload", lambda *args: pytest.fail("Capability query submitted work"))
     app.main(["--capabilities"])
-    assert json.loads(capsys.readouterr().out) == {"submission_protocol": 1}
+    assert json.loads(capsys.readouterr().out) == {"submission_protocol": 1, "execution_tracking": 1}
 
 
 def test_helper_rejects_untracked_payload_before_scheduler(tmp_path, monkeypatch, capsys):
