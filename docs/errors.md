@@ -35,9 +35,8 @@ and scheduler submission by this check, not unrelated jobs or prior operations.
 Existing configured legacy path selection still needs no discovery. Optional
 diagnostic context now includes storage_root, separate from executable/path.
 
-This adopts root/helper checks and the submit terminal boundary. Filesystem
-existence, transfers and general CLI/ACP parity
-remain separately planned work. SubmissionError still owns its receipt; its
+This adopts root/helper checks and the submit terminal boundary. General CLI/ACP
+parity remains separately planned work. Filesystem/transfer adoption is described below. SubmissionError still owns its receipt; its
 acceptance/uncertainty must never be discarded into a generic readiness error.
 
 ## SSH session resources and cleanup
@@ -270,3 +269,67 @@ for supported fields, bounds, classification and integration examples. The
 [implementation coverage register](../REFACTORING_DOCS/design/MVP10_api_failure_audit.md)
 tracks the remaining adoption work. Scientific computation and output validity
 remain application responsibilities.
+
+## Paths, transfers and sync (MVP10.4c)
+
+`path_exists(relative, context=...)` or `path_exists(relative,
+bundle_path=exact_submission, job_name=...)` still returns a bool after a valid
+metadata observation. False now means ENOENT/ENOTDIR, including a broken symlink;
+True follows symlinks and permits any existing path kind. Failed permission/I/O,
+SSH, launch, timeout or malformed-response checks raise DiagnosticError instead
+of reporting missing. Retain logical_path/resolved_path/machine and the producing
+context; never switch to today's profile to reinterpret a saved run.
+
+Local checks use the same stat worker as remote checks. Remote metadata uses
+operator SSH config and python3, without importing/installing AutoSlurm or reading
+file contents. An unavailable python3 is a failed probe, with no shell fallback.
+The metadata protocol is internal version1, with exact selected path/shape and
+64-KiB accepted output; commands use a 30-second timeout. No path observation
+proves future readability or scientific success.
+
+Expected direct transfer errors use DiagnosticError, missing profile selection
+ConfigurationError, and invalid filenames/requests InvalidRequestError. Catch
+SubmissionError first for submit_jobs: its receipt remains authoritative and a
+staging error stops before helper dispatch/sbatch. Native local causes remain in
+__cause__; remote safe errno/exit facts remain in diagnostic.cause. Unexpected
+bugs/native interrupts propagate; negative process exits carry interruption facts.
+No new public exception or saved receipt/helper version is required.
+
+operation=path_observation has probe_path/read_metadata/stat_path/check_path_kind
+stages and path_observation/probe_command effects. operation=file_transfer has
+validate_source/prepare_remote_directories/prepare_local_directory/copy_files
+stages. Its source_validation or source_observation, destination_preparation and
+file_transfer effects are independent. Paths and machine/alias/source/command are
+bounded normal context; no raw SSH/SCP/rsync failure output or keys are copied.
+A missing/denied local executable proves not_started; a failed started copy is
+unknown and may have changed files. A zero exit followed by invalid/oversized
+output retains succeeded for the command's copy effect. A failed batch never
+claims particular files copied successfully. Inspect exact destinations before
+any explicit retry; never retry compute submission to repair a transfer.
+
+Managed filenames and regular local sources are validated before remote mutation;
+source metadata does not prove later read access or stop concurrent changes.
+Script batches still use one SCP call; empty batches perform no lookup or command.
+Remote mkdir/probes use 30-second timeouts, SCP/rsync 300 seconds; accepted command
+stdout is at most 64 KiB. Timed-out remote work may still have effects. Capture is
+not a streaming memory limit. No credentials, alternate host, rollback or retry.
+
+Legacy sync still mirrors only jobs/slurm/out, using ignore-existing for definitions
+and checksums for logs. It returns None/progress text; diagnostics on failure add
+sync_jobs/sync_slurm/sync_out effects for completed versus not-started/unknown
+copies. Only observed missing directories are skipped. An inaccessible or wrong-kind
+source raises, and failed source checks create no local target. Earlier/partial
+files stay in place; no final success is printed. Sync CLI renders adopted errors
+once with exit1; --debug rethrows with causes. Prefer fetch_run/asl fetch for bounded
+selected-run evidence; sync remains unbounded whole-subtree copying. General
+receipt-aware/ACP/observation adoption remains the later MVP10 tasks.
+
+Required-input/data-root/working-directory preflight uses this same metadata owner,
+with one deduplicated remote batch and no command when there are no checks.
+Observed missing required paths raise DiagnosticError/resource_missing; denied,
+wrong-kind, failed-transport and malformed batches stay distinct. This replaces
+FileNotFoundError from validate_jobs/validate_resolved_jobs. Local native causes,
+known logical/resolved paths and labels are retained; public preview/submit add
+the exact bundle reference. Batch length/order/path identity are validated within
+the same 64-KiB response bound. Failed preflight stops before staging, receipt
+creation, helper dispatch or sbatch; no blind retry or missing-input inference.

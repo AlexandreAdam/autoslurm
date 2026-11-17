@@ -70,7 +70,15 @@ def test_alias_copies_and_sync_use_ssh_config_without_identity_flags(monkeypatch
     context = resolve_execution_context("remote", {"ssh_alias": "research-gpu", "path": "/state"})
     commands = []
     monkeypatch.setattr("subprocess.run", lambda cmd, **kw: commands.append(cmd) or CompletedProcess(cmd, 0, "", ""))
+    from autoslurm.storage import slurm_dir
+    for name in ('a.sh', 'b.sh'):
+        (slurm_dir() / name).write_text('science')
     transfer_slurms_to_remote(["a.sh", "b.sh"], context=context)
+    def metadata(cmd, **kwargs):
+        commands.append(cmd)
+        data = json.dumps({'version': 1, 'path': '/state/out', 'state': 'exists', 'kind': 'directory', 'errno': None}) if cmd[0] == 'ssh' else ''
+        return CompletedProcess(cmd, 0, data, '')
+    monkeypatch.setattr('subprocess.run', metadata)
     pull_storage_directory(context, "out", tmp_path / "logs", mutable=True)
     assert [cmd[0] for cmd in commands] == ["ssh", "scp", "ssh", "rsync"]
     assert commands[0][1] == "research-gpu"

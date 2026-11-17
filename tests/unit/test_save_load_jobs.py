@@ -6,7 +6,7 @@ from autoslurm.save_load_jobs import (
     transfer_slurm_to_remote,
     nearest_bundle_filename,
 )
-from autoslurm import DATE_FORMAT, InvalidRequestError, SelectionError
+from autoslurm import DATE_FORMAT, InvalidRequestError, SelectionError, ConfigurationError
 from unittest.mock import patch
 from unittest.mock import MagicMock
 from datetime import datetime
@@ -33,7 +33,7 @@ def mock_ssh():
 def mock_job_script(tmp_path):
     # Create a temporary directory and a mock job script inside it
     os.makedirs(jobs_dir(), exist_ok=True)
-    job_script_path = jobs_dir() / "test_job.sh"
+    job_script_path = slurm_dir() / "test_job"
     job_script_path.write_text("#!/bin/bash\n# Mock job script\n")
     return job_script_path
 
@@ -439,6 +439,6 @@ def test_transfer_script_to_remote_no_machine_found_raises_error(mock_load_confi
     job_name = "job_name"
     machine_name = "non_existent_machine"
     with patch("autoslurm.load_config", return_value={}):
-        with pytest.raises(EnvironmentError) as excinfo:
+        with pytest.raises(ConfigurationError) as excinfo:
             transfer_slurm_to_remote(job_name, machine_name=machine_name)
         assert "No configuration found for machine" in str(excinfo.value)

@@ -432,6 +432,26 @@ def _ssh_session_failure(problem, stage, context, effects, cause=None):
 _SSH_SESSION_CLEANUP_NOTICE = 'SSH session cleanup issues are retained in session_cleanup_diagnostics; preserve the receipt and do not resubmit because cleanup failed.'
 
 
+def _file_operation_failure(problem, operation, stage, context, effects, cause=None):
+    """Pure file-operation diagnosis; the adapter supplies observed effects."""
+    summary = ('Path availability could not be established; a failed check does not mean the path is missing.'
+               if operation == 'path_observation' else
+               'File transfer stopped; inspect the source, destination and recorded stage before repeating it.')
+    if stage == 'validate_source':
+        summary = 'The local transfer source is missing, inaccessible or not a regular file.'
+    elif stage == 'prepare_local_directory':
+        summary = 'The local transfer destination directory could not be prepared.'
+    elif operation == 'path_observation' and problem == 'resource_missing':
+        summary = 'A required path is missing on the selected machine.'
+    elif stage == 'check_path_kind':
+        summary = 'The selected path has an unexpected file type.'
+    action = ('Verify the exact resolved path, permissions and input preparation on the selected machine. Check the producing roots/configuration without switching profiles implicitly. A metadata snapshot does not prove future readability or scientific success.'
+              if operation == 'path_observation' else
+              'Verify the identified path, permissions and selected SSH alias/executable. A failed started copy may have left partial files; no automatic retry or rollback is performed. Retain any submission receipt and known IDs. Path observations are metadata snapshots, not readiness guarantees.')
+    return Diagnostic(problem, operation, stage, context=context, effects=effects, cause=cause,
+        summary=summary, next_action=action)
+
+
 class InvalidRequestError(DiagnosticError, ValueError):
     """Known authoring validation failure; original causes remain chained.
 

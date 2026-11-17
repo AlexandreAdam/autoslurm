@@ -454,9 +454,10 @@
         "tests/unit/test_execution.py",
         "tests/unit/test_remote_fs.py",
         "tests/integration/test_execution_paths.py",
-        "tests/integration/test_preparation_diagnostics.py"
+        "tests/integration/test_preparation_diagnostics.py",
+        "tests/integration/test_file_operation_diagnostics.py"
       ],
-      "adoption": "MVP10.3b.3: InvalidRequestError for pure path roles/base/traversal/cwd/log and render guards; machine/job/field/option/logical/attempted resolved context where known. Saved context lookup uses SelectionError for absent/ambiguous/invalid evidence and validates producing roots/transport without current-profile discovery. Historical roots/transport retained. Existence/root-discovery adapters and observation-side producing_machine remain separately planned; no blanket effect inference."
+      "adoption": "MVP10.3b.3: InvalidRequestError for pure path roles/base/traversal/cwd/log and render guards; machine/job/field/option/logical/attempted resolved context where known. Saved context lookup uses SelectionError for absent/ambiguous/invalid evidence and validates producing roots/transport without current-profile discovery. Historical roots/transport retained. Existence/root-discovery adapters and observation-side producing_machine remain separately planned; no blanket effect inference. MVP10.4c: path_exists now separates metadata from path resolution; explicit unavailable/stat/process/protocol failures cannot become absence. Saved contexts retain producing paths/alias. Required data/cwd/input preflight adopts the same metadata owner in one remote batch, validates count/order/path identity and raises DiagnosticError for missing required paths instead of FileNotFoundError. Public preview/submit add bundle identity before any mutation."
     },
     "transport": {
       "implementation_task": "MVP10.4",
@@ -470,9 +471,10 @@
         "tests/integration/test_submission_boundaries.py",
         "tests/integration/test_preparation_diagnostics.py",
         "tests/integration/test_readiness_diagnostics.py",
-        "tests/integration/test_ssh_session_diagnostics.py"
+        "tests/integration/test_ssh_session_diagnostics.py",
+        "tests/integration/test_file_operation_diagnostics.py"
       ],
-      "adoption": "MVP10.4b.1: root discovery and helper capability checks adopt shared remote_readiness process/response facts and errors.py wording; typed configuration/process/protocol/compatibility failures retain alias, selected root, attempted Python, native causes and pre-submission effects. 30-second timeout and 64-KiB accepted text bound; no arbitrary SSH/startup output, retry or fallback. MVP10.4b.2 adds owned resource diagnostics and pinned cleanup, 30/10-second open/close bounds, optional probe bounds and primary/secondary failure preservation. Tracked receipts keep accepted IDs/state and workstation-owned session_cleanup_diagnostics across refresh; helpers cannot invent or replace these facts. Transfer/existence/status and general dispatch/recovery adoption remain separate."
+      "adoption": "MVP10.4b.1: root discovery and helper capability checks adopt shared remote_readiness process/response facts and errors.py wording; typed configuration/process/protocol/compatibility failures retain alias, selected root, attempted Python, native causes and pre-submission effects. 30-second timeout and 64-KiB accepted text bound; no arbitrary SSH/startup output, retry or fallback. MVP10.4b.2 adds owned resource diagnostics and pinned cleanup, 30/10-second open/close bounds, optional probe bounds and primary/secondary failure preservation. Tracked receipts keep accepted IDs/state and workstation-owned session_cleanup_diagnostics across refresh; helpers cannot invent or replace these facts. Transfer/existence/status and general dispatch/recovery adoption remain separate. MVP10.4c: path_exists shares metadata-only stat observations locally and through remote python3; only ENOENT/ENOTDIR yields False. Failed/malformed/denied probes raise with producing identity, no fallback. No remote package import required."
     },
     "transfer": {
       "implementation_task": "MVP10.4",
@@ -482,9 +484,10 @@
       "next_action": "Inspect destination/receipt before retrying staging; scientific datasets are outside log retrieval.",
       "regression_evidence": [
         "tests/unit/test_sync.py",
-        "tests/integration/test_submission_boundaries.py"
+        "tests/integration/test_submission_boundaries.py",
+        "tests/integration/test_file_operation_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.4c: shared file_commands adapter and errors.py wording adopt local regular-source validation, mkdir, SCP/rsync launch/timeout/signal/exit/encoding/response failures. Safe source/target/alias/stage and independent source/destination/copy effects retain native causes. Failed started copies stay unknown; no per-file success, rollback or retry. Batch SCP and sync policies remain. Probe/mkdir 30 s; copy 300 s; accepted stdout 64 KiB. Source checks precede remote mutation."
     },
     "submission": {
       "implementation_task": "MVP10.5",
@@ -610,9 +613,10 @@
       "desired_diagnostic": "Per-directory source/destination, missing/failed/partial states and completed copies; preserve producing paths.",
       "next_action": "Inspect local mirror and retry an explicitly selected sync only after resolving access; no submission or scientific-result interpretation.",
       "regression_evidence": [
-        "tests/unit/test_sync.py"
+        "tests/unit/test_sync.py",
+        "tests/integration/test_file_operation_diagnostics.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "MVP10.4c: sync delegates validated metadata/one-shot transfer diagnostics; absent skips, wrong-kind/unavailable fails. No target before positive source observation. Failure diagnostics include sync_jobs/slurm/out copy effects alongside current stage; prior/partial files retained, no final success or retry. CLI renders adopted failures once or rethrows with --debug; existing None/progress success interface and policies remain."
     },
     "discovery": {
       "implementation_task": "MVP10.7",
@@ -830,8 +834,8 @@
     },
     "autoslurm.apps.sync.main": {
       "contract": "sync",
-      "inputs": "Optional machine/default.",
-      "current": "Delegates sync_machine; raw failures, no structured per-directory result.",
+      "inputs": "Optional machine/default and --debug.",
+      "current": "MVP10.4c: adopted diagnostics render once/exit1 with --debug retaining original chains; parser usage stays exit2. No structured per-directory success result or new recovery policy.",
       "effects": "Empty argv starts default sync, does not just print help; partial copies possible."
     },
     "autoslurm.bulk_submit.LevelSubmitResult": {
@@ -1065,14 +1069,14 @@
     "autoslurm.execution.ExecutionContext.validate_jobs": {
       "contract": "paths",
       "inputs": "Job definitions or already-resolved execution records respectively.",
-      "current": "None or FileNotFoundError; remote ANY nonzero including SSH255 currently converted to FileNotFoundError; launch OSError propagates.",
-      "effects": "Local path tests or remote read-only SSH tests; no timeout currently."
+      "current": "MVP10.4c: None after metadata preflight; DiagnosticError/resource_missing for observed absence (replacing FileNotFoundError), resource_inaccessible for denied/wrong-kind, distinct process/protocol failures. Shared stat worker; deduplicated checks in one remote batch, empty checks no-op; native causes and logical/resolved path/label retained.",
+      "effects": "Metadata only; no staging/receipt/dispatch/scheduler. Exact batch count/order/path identity validated; selected machine/root unchanged, no fallback/retry."
     },
     "autoslurm.execution.ExecutionContext.validate_resolved_jobs": {
       "contract": "paths",
       "inputs": "Job definitions or already-resolved execution records respectively.",
-      "current": "None or FileNotFoundError; remote ANY nonzero including SSH255 currently converted to FileNotFoundError; launch OSError propagates.",
-      "effects": "Local path tests or remote read-only SSH tests; no timeout currently."
+      "current": "MVP10.4c: None after metadata preflight; DiagnosticError/resource_missing for observed absence (replacing FileNotFoundError), resource_inaccessible for denied/wrong-kind, distinct process/protocol failures. Shared stat worker; deduplicated checks in one remote batch, empty checks no-op; native causes and logical/resolved path/label retained.",
+      "effects": "Metadata only; no staging/receipt/dispatch/scheduler. Exact batch count/order/path identity validated; selected machine/root unchanged, no fallback/retry."
     },
     "autoslurm.execution.execution_context_from_snapshot": {
       "contract": "paths",
@@ -1113,19 +1117,19 @@
     "autoslurm.file_transfer.transfer_bundle_to_remote": {
       "contract": "transfer",
       "inputs": "Saved bundle filename, selected profile/context.",
-      "current": "None; mkdir/scp/config failures as script transfer.",
+      "current": "MVP10.4c: None on success; DiagnosticError for known local source, directory preparation and command failures with native causes and safe independent effects. Invalid requests use InvalidRequestError; missing profile ConfigurationError. Failed started batches report unknown copy, not invented per-file results. Empty batch remains no-op.",
       "effects": "Creates remote jobs dir and copies/overwrites bundle."
     },
     "autoslurm.file_transfer.transfer_slurm_to_remote": {
       "contract": "transfer",
       "inputs": "One saved script, selected profile/context.",
-      "current": "None; RuntimeError mkdir, ValueError scp nonzero, OSError launch/read.",
+      "current": "MVP10.4c: None on success; DiagnosticError for known local source, directory preparation and command failures with native causes and safe independent effects. Invalid requests use InvalidRequestError; missing profile ConfigurationError. Failed started batches report unknown copy, not invented per-file results. Empty batch remains no-op.",
       "effects": "Creates remote directory and copies/overwrites script; failure may leave partial file."
     },
     "autoslurm.file_transfer.transfer_slurms_to_remote": {
       "contract": "transfer",
       "inputs": "Script sequence, selected profile/context.",
-      "current": "None; empty sequence returns; mkdir/scp/config failures as single transfer.",
+      "current": "MVP10.4c: None on success; DiagnosticError for known local source, directory preparation and command failures with native causes and safe independent effects. Invalid requests use InvalidRequestError; missing profile ConfigurationError. Failed started batches report unknown copy, not invented per-file results. Empty batch remains no-op.",
       "effects": "May copy some scripts before failure; no per-file result currently."
     },
     "autoslurm.inspection.inspect_bundle": {
@@ -1167,13 +1171,13 @@
     "autoslurm.job_runner.preview_bundle": {
       "contract": "authoring",
       "inputs": "Exact bundle path, optional machine/overrides.",
-      "current": "Shared path/render InvalidRequestError retains exact bundle/machine/job/field and safe shell syntax cause; producing validation is pure, while external discovery/readiness retains existing behavior pending 10.4. MVP10.3c.2: direct-read SelectionError also enriched with exact bundle/machine.",
+      "current": "Shared path/render InvalidRequestError retains exact bundle/machine/job/field and safe shell syntax cause; producing validation is pure, while external discovery/readiness retains existing behavior pending 10.4. MVP10.3c.2: direct-read SelectionError also enriched with exact bundle/machine. MVP10.4c: metadata preflight diagnostics retain exact bundle identity and stop before staging/receipt/helper dispatch; SSH failure is not missing input.",
       "effects": "No submission or receipt; can run remote readiness/root checks and local bash -n, so not a purely offline API."
     },
     "autoslurm.job_runner.submit_jobs": {
       "contract": "submission",
       "inputs": "Bundle name, optional exact path/date/machine/overrides or context.",
-      "current": "Receipt on success; known name/context/path/render InvalidRequestError before dispatch, exact bundle/machine/job context where known. Unexpected bugs propagate. External readiness stays 10.4; SubmissionError.receipt behavior after receipt creation remains unchanged. MVP10.3c.2: direct-read SelectionError also enriched with exact bundle/machine.",
+      "current": "Receipt on success; known name/context/path/render InvalidRequestError before dispatch, exact bundle/machine/job context where known. Unexpected bugs propagate. External readiness stays 10.4; SubmissionError.receipt behavior after receipt creation remains unchanged. MVP10.3c.2: direct-read SelectionError also enriched with exact bundle/machine. MVP10.4c: metadata preflight diagnostics retain exact bundle identity and stop before staging/receipt/helper dispatch; SSH failure is not missing input.",
       "effects": "Preflight then staging and dispatch once; evidence printed after receipt return; printing failure cannot undo accepted jobs."
     },
     "autoslurm.job_to_slurm.create_slurm_script": {
@@ -1185,8 +1189,8 @@
     "autoslurm.remote_fs.path_exists": {
       "contract": "transport",
       "inputs": "Path and selected current/recorded context.",
-      "current": "Pure validation adopts InvalidRequestError and saved-context SelectionError. Probe behavior unchanged: bool returncode==0, ANY nonzero including SSH failure still becomes False; launch OSError propagates pending 10.4/6.",
-      "effects": "Local test or read-only SSH; never creates tested path."
+      "current": "MVP10.4c: bool only after metadata observation; ENOENT/ENOTDIR means False. Local stat and remote python3 worker share semantics; inaccessible, launch/timeout/SSH/invalid responses raise DiagnosticError with logical/resolved/producing identity and native or safe remote errno. Pure validation/saved selection families remain.",
+      "effects": "Metadata only, no file contents or target creation. Remote command 30 seconds/64-KiB accepted output; no shell-test/local/profile fallback or remote package import."
     },
     "autoslurm.remote_fs.resolve_results_path": {
       "contract": "paths",
@@ -1371,7 +1375,7 @@
     "autoslurm.sync.sync_machine": {
       "contract": "sync",
       "inputs": "Optional exact machine/default.",
-      "current": "None plus progress text; local no-op; missing remote directory skipped, other errors propagate.",
+      "current": "MVP10.4c: None/progress on success, local no-op, observed missing skip. Failed stat/transport/copy raises with current effects plus completed/unstarted/unknown subtree copy effects. Targets only after positive source checks; earlier/partial files retained.",
       "effects": "Creates local mirror and copies jobs/slurm/out; earlier directories remain on failure."
     },
     "autoslurm.transport.remote_storage_root_from_config": {

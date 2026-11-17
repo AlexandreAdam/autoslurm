@@ -76,12 +76,12 @@ def test_saved_remote_artifact_uses_producing_transport_without_profile(tmp_path
     calls = []
     def fake_run(command, **kwargs):
         calls.append(command)
-        return subprocess.CompletedProcess(command, 0, "", "")
+        return subprocess.CompletedProcess(command, 0, json.dumps({'version': 1, 'path': '/old/results/study/summary.json', 'state': 'exists', 'kind': 'file', 'errno': None}), "")
     monkeypatch.setattr("subprocess.run", fake_run)
     assert recorded_execution(saved)["machine"] == "old-name"
     assert resolve_results_path("study/summary.json", bundle_path=saved) == "/old/results/study/summary.json"
     assert path_exists("study/summary.json", bundle_path=saved)
-    assert calls == [["ssh", "scientist@old-host", "test -e /old/results/study/summary.json"]]
+    assert calls == [["ssh", "scientist@old-host", "python3 -B -"]]
     with pytest.raises(ValueError, match="either a saved execution"):
         resolve_results_path("study", bundle_path=saved, machine_name="new-name")
 

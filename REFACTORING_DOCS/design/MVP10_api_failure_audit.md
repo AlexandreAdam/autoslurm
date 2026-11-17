@@ -574,3 +574,32 @@ remote execution evidence cannot invent/replace local cleanup facts. No retries,
 authentication handling, scheduler inference or historical migration. 53 new cases,
 1484 offline tests and installed artifact checks pass. b is complete; 10.4c/d
 transfer/filesystem/software status and 10.5/10.8 receipt/route parity remain open.
+
+## MVP10.4c adoption amendment (2026-11-17)
+
+266 routes/138 owners/23 broad catches unchanged. file_commands owns one-shot
+process facts for metadata/mkdir/SCP/rsync, path_probe is a shared standalone
+stat worker, path_observations validates metadata and remote_fs keeps resolution.
+errors.py owns pure failure wording/actions. ENOENT/ENOTDIR alone means absent;
+failed/denied/malformed checks raise with selected producing paths and native or
+safe remote causes. Remote python3 is required, without package import/install
+or fallback. Metadata reads no contents and does not prove future readiness.
+
+Transfer sources/managed names are validated before mutation; failed started
+copies stay unknown. Independent source/destination/copy effects preserve safe
+phase facts; sync adds completed/unstarted/unknown subtree copy effects. Targets
+are created after positive source observation, partial files retained, no final
+success on failure and no retry/rollback. CLI renders once or preserves chains
+with --debug. Direct success APIs and batch/checksum/ignore-existing policies
+remain. Existing source/protocol mocks now meet the enforced contracts. 99 new
+cases, 1583 offline tests and installed artifact checks pass. Saved formats and
+helper protocols remain unchanged. Software-status adoption is 10.4d; general
+receipt/observation/ACP/CLI parity and broader sync redesign remain staged.
+
+Required-path execution preflight uses the same metadata owner with one remote
+batch; exact batch count/order/path identities are validated. validate_jobs and
+validate_resolved_jobs now raise DiagnosticError/resource_missing for observed
+missing required paths instead of FileNotFoundError. Local native causes and
+known logical/resolved paths/labels survive. Preview/submit enrich those diagnostics
+with bundle identity and stop before staging/receipt/helper dispatch. This closes
+the remaining false-missing preflight path, without extra remote queries.

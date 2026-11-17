@@ -42,6 +42,11 @@ def test_selected_root_agrees_across_submit_sync_and_results(monkeypatch, isolat
             assert "AUTOSLURM_STORAGE_ROOT=" in shell
             assert "STORAGE_ROOT_ENVIRONMENT_VARIABLE" in shell
             return CompletedProcess(command, 0, cfg["storage_root"] + "\n", "")
+        if command[0] == 'ssh' and command[-1] == 'python3 -B -':
+            directory = ('jobs', 'slurm', 'out')[len([c for c in calls if c[0] == 'rsync'])]
+            text = json.dumps({'version': 1, 'path': cfg['storage_root'] + '/' + directory,
+                               'state': 'exists', 'kind': 'directory', 'errno': None})
+            return CompletedProcess(command, 0, text, '')
         if command[0] == "ssh" and "autoslurm.apps.bulk_submit_driver" in command[-1]:
             if "--capabilities" in command[-1]:
                 return CompletedProcess(command, 0, '{"submission_protocol": 1, "execution_tracking": 1}', "")

@@ -99,8 +99,10 @@ def test_sync_remote_pulls_storage(tmp_path, monkeypatch):
         calls.append(cmd)
         if cmd[0] == "ssh" and cmd[-1].startswith("bash -lc "):
             return MagicMock(returncode=0, stdout="/remote/autoslurm\n", stderr="")
-        if cmd[0] == "ssh" and cmd[-1].startswith("test -d "):
-            return MagicMock(returncode=0, stdout="", stderr="")
+        if cmd[0] == "ssh" and cmd[-1] == "python3 -B -":
+            directory = ('jobs', 'slurm', 'out')[len([c for c in calls if c[0] == 'rsync'])]
+            payload = {'version': 1, 'path': '/remote/autoslurm/' + directory, 'state': 'exists', 'kind': 'directory', 'errno': None}
+            return MagicMock(returncode=0, stdout=json.dumps(payload), stderr="")
         if cmd[0] == "rsync":
             assert ("--checksum" if "/out/" in cmd[-2] else "--ignore-existing") in cmd
             assert cmd[cmd.index("-e") + 1] == "ssh"
@@ -146,8 +148,10 @@ def test_sync_remote_skips_missing_dirs(tmp_path, monkeypatch, capsys):
         calls.append(cmd)
         if cmd[0] == "ssh" and cmd[-1].startswith("bash -lc "):
             return MagicMock(returncode=0, stdout="/remote/autoslurm\n", stderr="")
-        if cmd[0] == "ssh" and cmd[-1].startswith("test -d "):
-            return MagicMock(returncode=1, stdout="", stderr="")
+        if cmd[0] == "ssh" and cmd[-1] == "python3 -B -":
+            directory = ('jobs', 'slurm', 'out')[len([c for c in calls if c[-1] == 'python3 -B -']) - 1]
+            payload = {'version': 1, 'path': '/remote/autoslurm/' + directory, 'state': 'missing', 'kind': None, 'errno': 2}
+            return MagicMock(returncode=0, stdout=json.dumps(payload), stderr="")
         raise AssertionError(f"Unexpected command: {cmd}")
 
     monkeypatch.setattr("subprocess.run", mock_run)

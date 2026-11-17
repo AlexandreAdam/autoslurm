@@ -3,13 +3,12 @@
 from dataclasses import dataclass, replace
 import json
 from pathlib import Path, PurePosixPath
-import shlex
-import subprocess
 
 from .storage import storage_root
 from .config import machine_config as select_machine, is_remote_machine, normalize_machine_profile, recorded_transport, absolute_machine_path as _absolute
-from .transport import remote_storage_root_from_config, ssh_command
+from .transport import remote_storage_root_from_config
 from .errors import InvalidRequestError, SelectionError, selection_failure, ConfigurationError, DiagnosticCause
+from .path_observations import validate_paths
 
 __all__ = ["ExecutionContext", "resolve_execution_context", "execution_context_from_snapshot", "recorded_execution"]
 EXECUTION_METADATA_KEY = "_autoslurm_execution"
@@ -137,29 +136,18 @@ class ExecutionContext:
 
     def validate_resolved_jobs(self, executions):
         """Preflight prepared paths without resolving the definitions again."""
-        checks = set()
+        checks = {}
         if self.project_root is not None and any(item["working_directory"] for item in executions):
-            checks.add(("-d", self.project_root, "Data root"))
+            checks[("-d", self.project_root, "Data root")] = None
         for resolved in executions:
             if resolved["working_directory"]:
-                checks.add(("-d", resolved["working_directory"], "Working directory"))
+                checks[("-d", resolved["working_directory"], "Working directory")] = resolved.get('logical_working_directory')
             for name in resolved["input_args"]:
-                checks.add(("-e", resolved["resolved_paths"][name], f"Required input {name}"))
-        if not checks:
-            return
-        if not self.is_remote:
-            for kind, path, label in sorted(checks):
-                exists = Path(path).is_dir() if kind == "-d" else Path(path).exists()
-                if not exists:
-                    raise FileNotFoundError(f"{label} is unavailable: {path}")
-            return
-        commands = [
-            f"test {kind} {shlex.quote(path)} || {{ echo {shlex.quote(label + ' is unavailable: ' + path)} >&2; exit 1; }}"
-            for kind, path, label in sorted(checks)
-        ]
-        result = subprocess.run(ssh_command(self.config, self.machine_name, "; ".join(commands)), capture_output=True, text=True)
-        if result.returncode != 0:
-            raise FileNotFoundError(f"Machine {self.machine_name!r} path preflight failed: {result.stderr.strip() or result.stdout.strip()}")
+                checks[("-e", resolved["resolved_paths"][name], f"Required input {name}")] = resolved.get('logical_paths', {}).get(name)
+        validate_paths([(path, 'directory' if kind == '-d' else None,
+                         {'resource': label, 'resolved_path': path, 'logical_path': logical})
+                        for (kind, path, label), logical in sorted(checks.items())],
+                       config=self.config, machine=self.machine_name, remote=self.is_remote)
 
 
 def resolve_execution_context(machine_name=None, machine_config=None, *, root_resolver=None):

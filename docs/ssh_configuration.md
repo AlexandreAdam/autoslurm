@@ -73,3 +73,10 @@ Saved runs retain their producing alias rather than adopting a new profile's
 alias. Editing the SSH entry itself can change its destination; the record does
 not pin the underlying server or credentials. Older recorded explicit transports
 remain readable for historical job management.
+
+Filesystem metadata checks (`path_exists` and sync directory probes) require
+python3 through the selected SSH alias; they do not import or install AutoSlurm
+on that host. A failed probe raises rather than claiming absence. Probe/mkdir
+commands use 30-second timeouts; SCP/rsync use 300 seconds. A timed-out copy may
+have left partial files; there is no automatic retry or rollback. `asl sync
+--debug` exposes original causes. See [file-operation failures](errors.md#paths-transfers-and-sync-mvp104c).

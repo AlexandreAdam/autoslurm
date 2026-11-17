@@ -13,6 +13,37 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP10.4c (2026-11-17): running checkpoint 0.2.0.dev10. Verified base import is
+`/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; runtime 0.2.0.dev10,
+editable distribution metadata remains 0.1.0 without reinstall. Metadata-only
+local stat/remote python3 observations distinguish missing from unavailable;
+transfers share process facts and pure error wording with source/mkdir/copy
+effects. Required-path preflight shares one validated remote batch and preserves
+missing versus failed checks; preview/submit add bundle identity before staging.
+Failed started copies stay unknown; sync keeps completed subtree effects,
+partial files and existing policies with no retry. Remote python3 is required for
+metadata but no AutoSlurm import/install; no record/helper capability migration.
+99 new cases; 1583 full offline tests passed in 13.92 s, 72 expected collision
+warnings, `.development/test-runs/file-operations.xml`. Inventory unchanged at
+266 routes/138 owners/23 broad catches. No-Git/no-runtime-import metadata, direct
+wheel/sdist rebuild and disposable installed version/CLI/session/receipt/path/
+absence/SSH/copy-effects/partial-retention/sync/debug/guidance checks pass:
+
+- `.development/artifacts/file-operations/autoslurm-0.2.0.dev10-py3-none-any.whl`:
+  SHA256 `c0444060eaf4b17a87a0681d36499aa3c631d94d295b01d28e25856f060c048a`.
+- `.development/artifacts/file-operations/autoslurm-0.2.0.dev10.tar.gz`:
+  SHA256 `8b71193a551acdd490749af05d54b0c57c018f0f6fe872e93029548178052d4a`.
+- `.development/artifacts/file-operations/from-sdist/autoslurm-0.2.0.dev10-py3-none-any.whl`:
+  SHA256 `ccaf741f816c5c07912074117c7d1b76cb8a6dc89c3a1f6c76ed09ad62632753`.
+
+Direct/rebuilt wheel member contents match; ZIP hashes may differ. Annotated
+v0.2.0.dev10 identifies this checkpoint. Pinned rollback remains clean at
+33bcbd34fb167fca67aa64739a013073c64167b1. No actual cluster, daily config/state,
+dependency install, scientific data, external client, historical migration or
+rollback edits. User documents/reports/software_preparations remain excluded.
+10.4d software-status observations are next; parent 10.4 stays open. No PyPI
+publication or remote deployment occurred.
+
 MVP10.4b.2 (2026-11-16): running checkpoint 0.2.0.dev9. Verified base import:
 `/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; runtime 0.2.0.dev9,
 editable distribution metadata still 0.1.0 without reinstall. Dedicated owned SSH

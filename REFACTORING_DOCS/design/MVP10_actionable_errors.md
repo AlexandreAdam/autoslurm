@@ -2,17 +2,17 @@
 
 ## Status
 
-Latest amendment, 2026-11-16: **MVP10.4b is complete locally in 0.2.0.dev9**.
-After root/helper adoption (b.1), b.2 extracts owned SSH session resources and
-adopts allocation/socket/open/close/remove diagnostics with original causes,
-independent effects and pinned cleanup. Cleanup-only failures raise; accepted
-receipt IDs/state survive and workstation-owned cleanup facts persist through
-refresh. Existing primary errors/interrupts stay primary. 53 new cases; 1484 full
-offline tests and installed artifact checks pass. Current audit: 266 routes/
-138 owners/23 reviewed broad catches. [MVP10.4b](MVP10_4b_readiness.md) records
-both slices. Next: 10.4c transfer/filesystem diagnostics; parent 10.4 remains open.
-MVP11's broader status workflow/refactor remains planned. Historical audit totals
-and adoption evidence below retain their original checkpoints.
+Latest amendment, 2026-11-17: **MVP10.4c is complete locally in 0.2.0.dev10**.
+Shared metadata-only stat observations replace false absence on failed path checks;
+remote checks require python3 without package import/install or fallback. One
+file-command adapter and errors.py wording adopt source/mkdir/SCP/rsync failures,
+native causes and independent effects. Partial copies stay unknown; sync retains
+completed subtree evidence and CLI/debug handling. 99 new cases; 1583 offline
+tests and installed artifact checks pass. Inventory remains 266 routes/138 owners/
+23 broad catches. [MVP10.4c](MVP10_4c_file_operations.md) records the contract.
+Next: 10.4d software-status observations; parent 10.4 remains open. Broader status
+refactoring stays planned in MVP11. Historical audit evidence below retains its
+original checkpoints.
 
 Scheduled after MVP9 by the user on 2026-11-13. **PLAN.2 expands PLAN.1's narrow
 scope:** review the entire public API and its possible failures, centralize error

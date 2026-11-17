@@ -8,7 +8,7 @@ from subprocess import CompletedProcess
 import pytest
 
 from autoslurm import save_bundle, schedule_job, RecordWriteError
-from autoslurm.storage import config_file_path, jobs_dir
+from autoslurm.storage import slurm_dir, config_file_path, jobs_dir
 from autoslurm.utils import save_config, update_job_metadata
 
 
@@ -62,6 +62,7 @@ def test_transfer_explicit_profile_is_not_replaced_by_discovery(monkeypatch):
     monkeypatch.setattr("autoslurm.file_transfer.load_config", lambda: pytest.fail("Explicit profile must not load configuration"))
     commands = []
     monkeypatch.setattr("subprocess.run", lambda cmd, **kw: commands.append(cmd) or CompletedProcess(cmd, 0, "", ""))
+    (slurm_dir() / 'sample.sh').write_text('science')
     transfer_slurms_to_remote(["sample.sh"], machine_name="recorded", machine_config={"hostname": "saved-host", "path": "/saved-root"})
     assert commands[-1][-1] == "saved-host:/saved-root/slurm/"
 
@@ -82,7 +83,7 @@ def test_sync_transport_failure_is_not_reported_as_missing(monkeypatch, capsys):
 
     save_config({"machines": {"remote": {"hostname": "cluster", "path": "/prepared", "env_command": "true", "slurm_account": "test"}}, "default_machine": "remote"})
     monkeypatch.setattr("subprocess.run", lambda cmd, **kw: CompletedProcess(cmd, 255, "", "connection lost"))
-    with pytest.raises(RuntimeError, match="connection lost"):
+    with pytest.raises(RuntimeError, match="Path availability"):
         sync_machine()
     assert "Synced" not in capsys.readouterr().out
 
@@ -216,7 +217,9 @@ def test_transfer_failure_is_reported_once_without_retry(monkeypatch, failure_st
         bad = command[0] == ("ssh" if failure_stage == "mkdir" else "scp")
         return CompletedProcess(command, 1 if bad else 0, "", "staging failed" if bad else "")
     monkeypatch.setattr("subprocess.run", run)
-    with pytest.raises((ValueError, RuntimeError), match="staging failed"):
+    for name in ('a.sh', 'b.sh'):
+        (slurm_dir() / name).write_text('science')
+    with pytest.raises(RuntimeError, match="File transfer stopped"):
         transfer_slurms_to_remote(["a.sh", "b.sh"], machine_config={"hostname": "cluster", "path": "/prepared"})
     assert len(commands) == (1 if failure_stage == "mkdir" else 2)
 
@@ -231,6 +234,8 @@ def test_each_transfer_prepares_directories_and_batches_scripts(monkeypatch):
     monkeypatch.setattr("autoslurm.file_transfer.load_config", lambda: pytest.fail("Saved context must not reload profiles"))
     commands = []
     monkeypatch.setattr("subprocess.run", lambda cmd, **kw: commands.append(cmd) or CompletedProcess(cmd, 0, "", ""))
+    for name in ('a.sh', 'b.sh'):
+        (slurm_dir() / name).write_text('science')
     for _ in range(2):
         transfer_slurms_to_remote(["a.sh", "b.sh"], context=context)
     assert [c[0] for c in commands] == ["ssh", "scp", "ssh", "scp"]
@@ -256,10 +261,12 @@ def test_sync_copy_failure_stops_without_success_or_retry(monkeypatch, capsys):
     commands = []
     def run(command, **kwargs):
         commands.append(command)
-        return CompletedProcess(command, 23 if command[0] == "rsync" else 0, "", "partial copy")
+        text = json.dumps({'version': 1, 'path': '/prepared/jobs', 'state': 'exists', 'kind': 'directory', 'errno': None}) if command[0] == 'ssh' else ''
+        return CompletedProcess(command, 23 if command[0] == "rsync" else 0, text, "partial copy")
     monkeypatch.setattr("subprocess.run", run)
-    with pytest.raises(RuntimeError, match="partial copy"):
+    with pytest.raises(RuntimeError, match="File transfer stopped") as stopped:
         sync_machine()
+    assert stopped.value.diagnostic.effects['file_transfer'] == 'unknown'
     assert [c[0] for c in commands] == ["ssh", "rsync"]
     assert "Synced" not in capsys.readouterr().out
 

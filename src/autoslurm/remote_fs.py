@@ -1,13 +1,12 @@
 """Path lookup through the same context used for preview and execution."""
 
-import shlex
-import subprocess
 from pathlib import PurePosixPath
 
 from .execution import resolve_execution_context, execution_context_from_snapshot, is_remote_machine
 from .config import machine_config as resolve_machine_config
-from .transport import remote_storage_root_from_config, ssh_command
+from .transport import remote_storage_root_from_config
 from .errors import InvalidRequestError
+from .path_observations import observe_path
 
 __all__ = ["resolve_results_path", "path_exists"]
 
@@ -44,9 +43,5 @@ def path_exists(path, *, machine_name=None, context=None, base="results", bundle
         selected = _context(machine_name, context, bundle_path, job_name)
         resolved, remote = selected.resolve_path(path, base), selected.is_remote
         name, config = selected.machine_name, selected.config
-    if remote:
-        command = ssh_command(config, name, f"test -e {shlex.quote(resolved)}")
-    else:
-        command = ["test", "-e", resolved]
-    result = subprocess.run(command, capture_output=True, text=True)
-    return result.returncode == 0
+    return observe_path(resolved, config=config, machine=name, remote=remote,
+                        context={'logical_path': path, 'resolved_path': resolved})

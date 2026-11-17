@@ -9,6 +9,30 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev10 — 2026-11-17
+
+- `path_exists` returns False only for observed absence (ENOENT/ENOTDIR).
+  Permission/I/O, SSH, launch, timeout and malformed-response failures now raise
+  shared DiagnosticError with logical/resolved path, selected machine and cause.
+  Local checks use stat; remote checks require python3, with no package import,
+  shell-test fallback or file-content read. Saved producing contexts stay pinned.
+- Required-input/data-root/working-directory preflight shares the metadata owner
+  and retains one remote batch. validate_jobs/validate_resolved_jobs now raise
+  DiagnosticError/resource_missing for observed missing required paths, replacing
+  FileNotFoundError. Failed SSH is distinct; public preview/submit retain the
+  bundle reference and stop before staging/receipt creation/helper dispatch.
+- Transfers validate managed filenames and existing regular local sources before
+  remote changes. Directory preparation, SCP and rsync report independent effects,
+  safe process facts and native causes; failed started copies remain unknown and
+  may have left partial files. Probe/mkdir timeout is 30 s, copy timeout 300 s;
+  accepted output is capped at 64 KiB. Raw failure output is omitted.
+- Sync creates targets only after a positive directory observation, keeps earlier
+  completed subtree evidence on failure, and retains partial files without retry.
+  `asl sync --debug` exposes original causes; ordinary failures render once.
+  Existing batching/checksum/ignore-existing policies and success interfaces stay.
+  Missing-profile transfer errors now use ConfigurationError. No scheduler retry,
+  saved-record migration, scientific-result fetching or automatic repair is added.
+
 ## 0.2.0.dev9 — 2026-11-16
 
 - Owned SSH sessions now diagnose temporary-directory/socket, command-open,

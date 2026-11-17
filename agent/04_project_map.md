@@ -131,6 +131,13 @@ keeps terminal presentation separate; connection failure cannot become a success
 sync of supposedly absent directories. Its broader immutable-copy policy remains
 unchanged. Exact inspection/receipt refresh retain their separate evidence contracts.
 
+File-operation diagnostics use one command adapter in `file_commands` and pure
+wording in `errors`. `path_probe` is the shared standalone stat worker;
+`path_observations` validates its local/remote observations, and `remote_fs`
+keeps public path resolution separate. Missing differs from inaccessible or failed
+transport; sync preserves completed subtree effects when a later copy stops.
+No parallel transfer engine or record format is introduced.
+
 The package uses explicit imports and `__all__`; intentional public functions
 remain, accidental typing/dataclass exports are removed. Receipt state transitions,
 legacy low-level dispatch, configuration alias handling and shell argument

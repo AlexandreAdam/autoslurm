@@ -254,6 +254,13 @@ def test_sync_refreshes_appended_replaced_and_truncated_logs_without_rewriting_d
     save_config({"machines": {"remote": {"hostname": "cluster", "storage_root": str(remote_root), "slurm_account": "mock", "env_command": "true"}}, "default_machine": "remote"})
     def transport(command, **kwargs):
         if command[0] == "ssh":
+            if command[-1] == 'python3 -B -':
+                import contextlib
+                import io
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    exec(kwargs['input'], {})
+                return subprocess.CompletedProcess(command, 0, output.getvalue(), '')
             return subprocess.CompletedProcess(command, 0, str(remote_root), "")
         assert command[0] == "rsync"
         source = Path(command[-2].split(":", 1)[1])

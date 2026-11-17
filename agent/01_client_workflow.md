@@ -114,8 +114,8 @@ pull/install not_started. Separate git_pull/editable_install effects retain
 completed pulls, partial installs and unknown outcomes; do not retry a lost
 response blindly. The update CLI supports --json evidence/diagnostic and --debug.
 Invalid update requests use InvalidRequestError/ConfigurationError; unexpected
-bugs propagate. General SSH/helper/transfer/software-status adoption remains
-MVP10.4b–d. See the [software recipe](13_software_preparation.md).
+bugs propagate. Root/helper/session and transfer/path adoption follow below;
+software-status adoption remains MVP10.4d. See the [software recipe](13_software_preparation.md).
 
 MVP10.4b.1 adopts remote root discovery and helper capability checks. Catch
 autoslurm.errors.DiagnosticError for expected process/protocol/compatibility
@@ -127,8 +127,8 @@ do not infer a missing path, rejected job or particular authentication problem.
 Checks run once, with a 30-second timeout and 64-KiB accepted response bound.
 Root/capability parsing is strict; no fallback, install or retry is introduced.
 The submit CLI renders the diagnosis and next action once; --debug retains the
-original cause. Session cleanup, transfers, software-status and general CLI/ACP
-adoption remain later tasks. See installed 15_diagnostics and
+original cause. Session cleanup and transfers are adopted below; software-status
+and general CLI/ACP adoption remain later tasks. See installed 15_diagnostics and
 [the human failure guide](../docs/errors.md#remote-readiness-before-submission).
 
 ## Adapt scientific software
@@ -701,6 +701,31 @@ it does not reconcile receipt state or recover submissions. Interrupted copies
 may leave partial local transfer results, so inspect the exact run's evidence.
 Never infer scheduler acceptance from a copy outcome or retry compute submission
 as a remedy for a transfer failure.
+
+From MVP10.4c, path_exists returns False only after observing ENOENT/ENOTDIR.
+Permission/I/O/SSH/timeout/bad metadata raise DiagnosticError, with logical and
+resolved paths and the selected producing context. Local stat and remote python3
+metadata probes never read file contents; remote python3 is required, with no
+fallback to shell tests. Saved roots/aliases remain authoritative.
+
+Required input/data-root/working-directory preflight shares this metadata policy,
+using one remote batch. Missing required paths now raise DiagnosticError with code
+resource_missing rather than FileNotFoundError; failed transport remains distinct.
+Public preview/submit keep the bundle reference and known logical/resolved paths,
+and stop before staging/receipt creation/helper dispatch. Correct the reported
+input/profile problem rather than treating failed inspection as absent input.
+
+Transfer diagnostics identify validate_source, directory preparation or copy_files
+with separate source/destination/copy effects. Missing local sources stop before
+remote mutation. Missing-profile errors use ConfigurationError; failed started
+copies remain unknown and may leave partial files. Sync skips only observed
+missing directories; inaccessible/wrong-kind paths raise before creating targets.
+Its diagnostics retain sync_jobs/sync_slurm/sync_out effects for completed and
+unstarted/unknown copies; earlier or partial files remain. No automatic retry or
+rollback. Probe/mkdir commands use 30-second timeouts and copies 300 seconds, with
+64-KiB accepted stdout. `asl sync --debug` retains native causes; normal failures
+render once. Prefer bounded fetch for selected-run evidence. See installed
+15_diagnostics and the [failure guide](../docs/errors.md#paths-transfers-and-sync-mvp104c).
 
 Client imports stay under `autoslurm`. Public exports are explicit; accidental
 imports of typing helpers or dataclass utilities are removed. Internal module

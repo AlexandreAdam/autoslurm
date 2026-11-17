@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import subprocess
 
 import pytest
 
+from autoslurm.errors import DiagnosticError
 from autoslurm import preview_bundle, save_bundle, submit_jobs, list_saved_bundles, load_bundle_from_path
 from autoslurm import resolve_results_path, path_exists, recorded_execution
 from autoslurm.storage import storage_root, slurm_dir
@@ -110,7 +112,7 @@ def test_invalid_project_paths_stop_before_submission(problem, tmp_path, monkeyp
         pytest.fail("Invalid paths reached an external command")
     monkeypatch.setattr("subprocess.run", no_effects)
     for operation in [lambda: preview_bundle(selected, machine="mock"), lambda: submit_jobs("invalid", machine="mock", bundle_path=selected)]:
-        with pytest.raises((ValueError, FileNotFoundError), match="unavailable|results_root|relative|traverse"):
+        with pytest.raises((ValueError, DiagnosticError), match="missing|file type|results_root|relative|traverse"):
             operation()
     assert selected.read_bytes() == before
     assert not list(slurm_dir().iterdir())
@@ -129,8 +131,18 @@ def test_remote_operation_discovers_root_once_and_batches_input_validation(tmp_p
         calls.append(command)
         if command[0] == "ssh" and command[-1].startswith("bash -lc "):
             return subprocess.CompletedProcess(command, 0, "/remote/development\n", "")
-        if command[0] == "ssh" and command[-1].startswith("test ") and missing_input:
-            return subprocess.CompletedProcess(command, 1, "", "Required input input_file is unavailable: /remote/project/data/measurements.json")
+        if command[0] == 'ssh' and command[-1] == 'python3 -B -':
+            query = ast.parse(kwargs['input']).body[-1].value.args[0].args[0]
+            requested = ast.literal_eval(query.args[0])
+            paths = requested if query.func.id == 'probe_paths' else [requested]
+            values = []
+            for path in paths:
+                missing = missing_input and path.endswith('measurements.json')
+                values.append({'version': 1, 'path': path, 'state': 'missing' if missing else 'exists',
+                               'kind': None if missing else 'file' if path.endswith('.json') else 'directory',
+                               'errno': 2 if missing else None})
+            response = {'version': 1, 'paths': values} if query.func.id == 'probe_paths' else values[0]
+            return subprocess.CompletedProcess(command, 0, json.dumps(response), '')
         if command[0] == "ssh" and "autoslurm.apps.bulk_submit_driver" in command[-1]:
             if "--capabilities" in command[-1]:
                 return subprocess.CompletedProcess(command, 0, '{"submission_protocol": 1, "execution_tracking": 1}', "")
@@ -141,18 +153,20 @@ def test_remote_operation_discovers_root_once_and_batches_input_validation(tmp_p
         return subprocess.CompletedProcess(command, 0, "", "")
     monkeypatch.setattr("subprocess.run", fake_remote)
     if missing_input:
-        with pytest.raises(FileNotFoundError, match="Required input input_file is unavailable"):
+        with pytest.raises(DiagnosticError) as stopped:
             submit_jobs("remote-study", machine="remote", bundle_path=selected)
+        assert stopped.value.diagnostic.code == 'resource_missing'
+        assert stopped.value.diagnostic.context['path'] == '/remote/project/data/measurements.json'
         assert not list(slurm_dir().glob("*.sh"))
         assert all(c[0] == "ssh" for c in calls)
         assert not any("autoslurm.apps.bulk_submit_driver" in c[-1] for c in calls)
     else:
         submit_jobs("remote-study", machine="remote", bundle_path=selected)
     probes = [c for c in calls if c[0] == "ssh" and c[-1].startswith("bash -lc ")]
-    inputs = [c for c in calls if c[0] == "ssh" and c[-1].startswith("test ")]
+    inputs = [c for c in calls if c[0] == "ssh" and c[-1] == 'python3 -B -' ]
     assert len(probes) == 1
     assert len(inputs) == 1
-    assert "/remote/project/data/measurements.json" in inputs[0][-1]
+    assert inputs[0][-1] == 'python3 -B -'
 
 
 @pytest.mark.local_processes
