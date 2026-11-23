@@ -53,6 +53,14 @@ This file is the source of truth for active scope, task order and progress.
   Cluster access/installations
   remain outside the local development scope; tests mock transport and use a
   disposable local environment. Machine-owned dependencies are not updated.
+- **Campaign design:** MULTI.1.0 completed on 2026-11-23: corrected home access
+  to laptop -> flatiron -> rusty/popeye, distinguished controller records from
+  execution-side tracking and split connectivity, campaign records/context,
+  coordinated submission and explicit retry. Implementation remains proposed;
+  [design](REFACTORING_DOCS/design/MULTI_1_two_clusters_and_remote_access.md).
+  First useful campaign delivery groups existing runs and observes both machines;
+  it does not require a new multi-machine submission engine. No later runtime
+  task was started or cluster route verified by this design session.
 - **Scope update:** local code/tests only, with temporary Git repositories and
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
@@ -848,6 +856,44 @@ Completion includes the reported graph: merge waits for shards; summary waits
 for merge when set has freshly completed. Priority/resources are distinct reasons,
 not invented new scheduler states or estimates of when a job will start.
 
+## MULTI.1 Campaigns and access from home
+
+Design: [campaigns and access](REFACTORING_DOCS/design/MULTI_1_two_clusters_and_remote_access.md).
+Requested 2026-11-23. One run still selects one machine; a proposed campaign groups
+exact per-machine runs. Gateway connectivity and controller-host record availability
+are separate concerns. Names, schema and implementation order remain proposed.
+MVP10.5 remains queued; this section records the new design without silently
+starting its implementation. No live cluster check/configuration is authorized.
+
+- [x] **MULTI.1.0 Design and responsibility map.** Correct the actual two-step home
+  login; define controller/store boundaries, immutable intent and exact member/
+  attempt/task identities, partial observations, bounded fetching and offline gates.
+  Integrate MVP11 and MVP12.4/6 overlap; separate operator facts from promises.
+- [ ] **MULTI.1a Noninteractive connectivity.** Audit/split shared bounded SSH/SCP/
+  rsync/session options and add connection-check evidence through supported routes.
+  Preserve aliases/ownership; distinguish unknown connection failure from proven
+  login need. No prompts, SSH config edits or assumptions about gateway support.
+- [ ] **MULTI.1b Campaign record and discovery.** Freeze the opt-in v1/release/
+  retention contract, then expose create/load/list for existing ordinary runs.
+  Validate exact refs/fingerprints, one-machine members and logical task mappings;
+  use this as MVP12.4's grouping owner, with no parallel registry or migration.
+- [ ] **MULTI.1c Coherent inspection/context/fetch.** Compose member inspection,
+  receipts and caches; preserve good observations when another member fails,
+  machine-scoped IDs, per-member freshness and global bounds. Deliver equivalent
+  Python/CLI/ACP evidence and version-matched human/installed agent recipes.
+- [ ] **MULTI.1d Reviewed member submission.** Compose ordinary submissions from
+  client-owned splits. Resolve software expectations; prove durable association
+  before each dispatch and preserve partial/uncertain acceptance without retry.
+  Reuse necessary MVP12.1–3 pieces, without gating on the whole milestone.
+- [ ] **MULTI.1e Explicit revision-based retry.** Share MVP12.6 planning, preserve
+  old definitions/attempts and exclude unknown outcomes until inspected. No
+  compute-node preparation, rebalancing or automatic cross-machine failover.
+
+First campaign MVP: MULTI.1b/c over existing runs. Actual laptop jump support and
+alternative controller installations require separate operator verification;
+these do not block local mocked development. Campaigns fetch execution evidence,
+not scientific datasets. Completion of design does not approve the record schema.
+
 ## MVP12 Reusable scientific workflow services
 
 Design: [reusable workflows](REFACTORING_DOCS/design/MVP12_reusable_workflows.md).
@@ -868,7 +914,9 @@ keep science/project layout in clients. Each task is a separate usable increment
 - [ ] **MVP12.4 Named run records and rediscovery.** Link exact plans, context,
   attempts/receipts, updates and warnings through public create/load/list routes.
   Reuse current outcomes; settle small record/retention/release boundaries first.
-  A new agent finds the run without reading private storage.
+  A new agent finds the run without reading private storage. MULTI.1b/c owns
+  shared campaign grouping/discovery; extend that owner rather than add a second
+  registry. This checkbox stays open until its complete adoption criteria pass.
 - [ ] **MVP12.5 Preparation evidence and dependency-change stop.** Extend the
   existing updater with declared-dependency comparison and planned/before/after
   revision evidence. Warn about known local dirty/unpushed state; stop clearly on
@@ -1103,6 +1151,8 @@ or migration decision has already been accepted.
 | 2026-11-17 | MVP10.4d Software-status diagnostics | Adopted request/profile/declaration and whole SSH/process/encoding/size/JSON/identity errors with safe shared diagnostics/native causes. Standalone Git/environment workers emit stage/errno/exit facts; host software_status_evidence validates identity and isolates malformed/unavailable projects/packages beside healthy observations. Known commits/versions survive later failures; selected interpreter verifies prefix remotely, including symlinked venvs. Mismatch/unknown remain findings with per-check diagnostics and target-marker/major-dependency scope. Status CLI adds --debug, shared JSON operation-error envelope/stderr and inline partial reasons; partial evidence JSON/nonzero retained. 86 new cases; 1669 full offline tests passed in 13.41 s, 73 expected collision warnings, `.development/test-runs/software-status-diagnostics.xml`, including the temporary local Git/venv standalone-payload/index-preservation regression. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/API/CLI/JSON/debug/partial causes/identity/mismatch/no-write/no-fallback/guidance checks pass for 0.2.0.dev11. Wheel member contents match; direct wheel SHA256 `58127115d0c453809c4f3b447f0863280a690b7aa92fc5e2fe0edfadd3214974`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 broad catches unchanged. Base imports dev11; editable metadata 0.1.0 without reinstall. No actual cluster, daily config/state, scientific imports/dependency install, external client, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev11 checkpoint; task commit: `git log --grep '^MVP10.4d:'`; push dev/tag. MVP10.4 complete; review/split 10.5 submission/recovery boundaries next. |
 
 | 2026-11-23 | FIX.CLEAN.1 Finished bundle cleanup | Added completed/terminal scopes and expanded all, fresh complete task/receipt eligibility, explicit terminal index filtering and changed-definition protection. 41 new cases; 1710 full offline tests passed in 12.43 s, 84 expected warnings, .development/test-runs/clean-scopes.xml. Local bundle JSON only; navigation loss documented, receipts/logs/scripts/scientific files retained. No cluster contact, daily cleanup/config, environment install or rollback changes. Version 0.2.0.dev12; artifact checks in installation register; commit prefix FIX.CLEAN.1; push dev and annotated checkpoint tag. Broader MVP10.7 error integration remains pending. |
+
+| 2026-11-23 | MULTI.1.0 Campaign/access design | Revised the new campaign proposal against real two-step home SSH, current transport/inspection/receipt/cache owners and existing workflow plans. Defined proposed controller/store boundary, exact definitions/members/attempts/task mappings, partial freshness, request-wide bounds and five independent implementation slices. Shared grouping with MVP12.4 and retry with MVP12.6; no duplicate engine. Documentation/link review only, no runtime changes, test rerun, cluster contact, local profile/state changes or installation. Runtime baseline remains 1710 passing offline tests at v0.2.0.dev12. No implementation/schema acceptance implied. |
 
 ## How we work
 

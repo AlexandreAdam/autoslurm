@@ -104,6 +104,16 @@ publication, name collisions, retention and compatibility with existing records.
 Use temporary fixtures; no migration of daily records or new database is implied.
 A fresh agent must rediscover a run through supported listing/load APIs.
 
+Campaign amendment, 2026-11-23: [MULTI.1](MULTI_1_two_clusters_and_remote_access.md)
+now proposes the common grouping owner for exact runs across machines. MULTI.1b/c
+should implement that record/discovery/context layer once; this task adds any
+remaining context/resource/client adoption on the same owner. One run retains
+one machine. Controller-local references are not automatically portable to a
+gateway/cluster host. Keep immutable definitions separate from attempt links and
+member observations. This remains proposed, with the v1/release boundary reviewed
+before persistence. MULTI.1e similarly consumes MVP12.6 retry planning rather than
+introducing a second retry engine.
+
 ### Explicit software preparation (MVP12.5)
 
 Compose the existing single-checkout updater and editable `--no-deps` install.
