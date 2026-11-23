@@ -9,6 +9,19 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev12 — 2026-11-23
+
+- `asl clean --scope completed` selects fully successful bundles; `terminal`
+  includes mixed finished outcomes. `all` now also includes completed/terminal
+  bundles. Preview remains the default; deletion requires `--yes`.
+- Cleanup checks fresh per-task scheduler evidence instead of an aggregate failure
+  that could hide running array tasks. Unavailable observations, incomplete arrays
+  and unsettled/unreadable receipts cannot authorize terminal cleanup. Completed
+  tracked runs can now be removed by terminal scopes; separate receipts remain.
+- Only local bundle JSON is removed. Logs, scripts, receipts and scientific files
+  remain, but deleted bundles lose normal status/index/log navigation. Explicit
+  indices with a terminal scope must satisfy that scope. Record formats unchanged.
+
 ## 0.2.0.dev11 — 2026-11-17
 
 - Software status now uses shared diagnostics for request/profile/declaration,

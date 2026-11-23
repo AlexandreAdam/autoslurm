@@ -91,7 +91,7 @@ def test_clean_removes_only_stale_snapshots(tmp_path, capsys, monkeypatch):
         },
     )
 
-    monkeypatch.setattr(clean_app, "job_status_texts", lambda jobs: {"job_b": "COMPLETED"})
+    _mock_statuses(monkeypatch, lambda jobs: {"job_b": "COMPLETED"})
 
     clean_app.main([])
     preview = capsys.readouterr().out
@@ -236,11 +236,7 @@ def test_cancelled_snapshots_are_visible_and_cleanable(tmp_path, capsys, monkeyp
         },
     )
 
-    monkeypatch.setattr(
-        clean_app,
-        "job_status_texts",
-        lambda jobs: {"job_a": "CANCELLED"},
-    )
+    _mock_statuses(monkeypatch, lambda jobs: {"job_a": "CANCELLED"})
 
     rows = bundle_snapshots()
     assert len(rows) == 1
@@ -276,11 +272,7 @@ def test_clean_scope_failed_targets_fully_failed_submissions(tmp_path, capsys, m
     _write_bundle(failed_path.name, {"job": {"name": "job", "script": "run", "id": "11"}})
     _write_bundle(ok_path.name, {"job": {"name": "job", "script": "run", "id": "12"}})
 
-    monkeypatch.setattr(
-        clean_app,
-        "job_status_texts",
-        lambda jobs: {"job": "FAILED"} if jobs[0]["id"] == "11" else {"job": "COMPLETED"},
-    )
+    _mock_statuses(monkeypatch, lambda jobs: {"job": "FAILED"} if jobs[0]["id"] == "11" else {"job": "COMPLETED"})
 
     clean_app.main(["--scope", "failed", "--yes"])
     out = capsys.readouterr().out
@@ -305,7 +297,7 @@ def test_clean_scope_unsubmitted_targets_zero_submission_snapshots(tmp_path, cap
         {"job": {"name": "job", "script": "run", "id": "42", "_autoslurm_snapshot_kind": "submission"}},
     )
 
-    monkeypatch.setattr(clean_app, "job_status_texts", lambda jobs: {"job": "COMPLETED"})
+    _mock_statuses(monkeypatch, lambda jobs: {"job": "COMPLETED"})
 
     clean_app.main(["--scope", "unsubmitted", "--yes"])
     out = capsys.readouterr().out
@@ -365,3 +357,13 @@ def test_clean_target_range_removes_multiple_snapshots(tmp_path, capsys):
     assert not c.exists()
     assert b.exists()
     assert a.exists()
+
+
+def _mock_statuses(monkeypatch, callback):
+    def observe(jobs):
+        statuses = callback(jobs)
+        return [{"name": job["name"], "state": statuses.get(job["name"], "UNKNOWN"),
+                 "errors": [], "observed_at": "2026-11-23T00:00:00+00:00",
+                 "tasks": [{"state": statuses.get(job["name"], "UNKNOWN")}]}
+                for job in jobs]
+    monkeypatch.setattr(clean_app, "observe_job_statuses", observe)

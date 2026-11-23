@@ -280,10 +280,6 @@
     "autoslurm.apps.bulk_submit_driver.main": [
       "Exception"
     ],
-    "autoslurm.apps.clean.main": [
-      "Exception",
-      "Exception"
-    ],
     "autoslurm.bulk_submit_driver.submit_payload.persist": [
       "(Exception, KeyboardInterrupt)"
     ],
@@ -603,9 +599,10 @@
       "desired_diagnostic": "Exact files retained/deleted/failed/unknown, selection evidence and errors even when other items succeed.",
       "next_action": "Review fresh preview and retained submission evidence; no automatic deletion/retry of uncertain files.",
       "regression_evidence": [
-        "tests/unit/test_filter_clean_cli.py"
+        "tests/unit/test_filter_clean_cli.py",
+        "tests/integration/test_clean_scopes.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "FIX.CLEAN.1 adds guarded terminal scope eligibility; strategic per-file diagnostics remain pending MVP10.7."
     },
     "sync": {
       "implementation_task": "MVP10.7",
@@ -1557,10 +1554,6 @@
     ],
     "autoslurm.apps.bulk_submit_driver.main": [
       "Keep protocol error response and any receipt after dispatch; preserve debug cause separately, include interrupted execution policy. Do not replace helper JSON with terminal rendering. MVP10.5/8."
-    ],
-    "autoslurm.apps.clean.main": [
-      "Selecting CANCELLED snapshots: a load failure currently skips an entry without evidence; retain per-file diagnosis and conservative selection. MVP10.7.",
-      "Selecting failed snapshots: broad load skip hides corruption/bugs; report retained/skipped entry rather than deleting on unknown. MVP10.7."
     ],
     "autoslurm.bulk_submit_driver.submit_payload.persist": [
       "RETAIN evidence-protection catch including KeyboardInterrupt. On persistence failure keep current IDs, phase and original storage cause; don't dispatch another job. MVP10.5."

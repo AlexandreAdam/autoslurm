@@ -13,6 +13,24 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FIX.CLEAN.1 (2026-11-23): checkpoint 0.2.0.dev12 adds completed/terminal
+cleanup scopes and expands all. Only temporary fixtures were cleaned. 1710 full
+offline tests passed in 12.43 s (84 expected collision warnings), report
+`.development/test-runs/clean-scopes.xml`; 41 new cases include fresh per-task
+observations, live/missing array tasks, settled/unsettled/corrupt receipts,
+explicit indices, preview and changed-definition retention. Two broad app-level
+load skips removed; inventory matches 266 routes/138 owners/21 broad catches.
+No-Git/no-runtime-import metadata, direct wheel/source archive/rebuilt wheel and
+disposable installed version/CLI/preview/deletion/live-retention/no-external-command/
+packaged-guidance checks passed. Direct/rebuilt wheels match, SHA256
+`c298ded135f1c8b67fb08022e5897c354b0dc3410225a5527faed807d30dff7a`;
+archive SHA256 `36c0b9be3aee83944b268233a1796d824975ee0d1df51fa92f43c3ea045161a0`.
+Artifacts: `.development/artifacts/clean-scopes/`; smoke runners under
+`.development/test-runs/clean-scopes-{package-smoke,installed-check}.py`.
+Base editable source follows this checkpoint; no base/test dependency install,
+daily state/config cleanup, cluster operation, remote rollout or rollback change.
+Broader destructive-operation diagnostics remain MVP10.7. User files preserved.
+
 MVP10.4d (2026-11-17): running checkpoint 0.2.0.dev11. Verified base import:
 `/Users/aadam/Projects/autoslurm/src/autoslurm/__init__.py`; runtime 0.2.0.dev11,
 editable distribution metadata still 0.1.0 without reinstall. Software status and

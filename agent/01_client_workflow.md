@@ -573,8 +573,10 @@ asl submission /absolute/local/receipt.json --refresh --json
 ACP `list_submissions` accepts an optional `bundle`; `inspect_submission` requires
 `receipt_path` and accepts explicit `refresh: true`. Both expose the same plain
 receipt. Reading a partial/uncertain receipt can succeed as an inspection; check
-its state rather than treating a successful read as accepted compute. Ordinary
-cleanup retains receipt-bearing tracking snapshots, including ones without IDs.
+its state rather than treating a successful read as accepted compute. Default inactive/unsubmitted cleanup retains receipt-bearing tracking snapshots,
+including ones without IDs. Explicit terminal cleanup scopes may remove settled
+tracked runs after fresh complete task observations; uncertain/partial dispatches
+remain protected. See the cleanup contract below.
 
 ## Inspect and hand off
 
@@ -758,3 +760,23 @@ fields remain readable for existing runs and are never rewritten implicitly.
 The saved alias refers to the current SSH config entry: editing that entry can
 change its destination. AutoSlurm does not snapshot or resolve SSH credentials or
 hostnames. Inspect connection failures rather than substituting another profile.
+
+
+## Cleanup of finished run records
+
+Use `asl clean --scope completed` to preview fully successful bundles, or
+`--scope terminal` for mixed finished outcomes. `--scope all` includes both, plus
+inactive/unsubmitted snapshots. Add `--yes` only for intended deletion. Terminal
+scopes also constrain explicit indices/ranges. Default inactive/unsubmitted
+selection performs no scheduler queries.
+
+Terminal selection reuses recorded producing-machine inspection and validates
+all task observations, not just aggregate job state. Unknown tasks, observation
+errors and unreadable/unsettled receipts cannot authorize deletion. Tracked runs
+require receipt state submitted; partial/uncertain attempts remain protected.
+No receipt refresh, remote writes, retry or cancellation is performed.
+
+Only local bundle JSON files are removed. Separate receipts/logs/scripts/caches
+and scientific data remain. Removing a definition removes normal status/index/log
+navigation; retained receipts cannot reconstruct it. Inspect needed evidence
+before cleanup. See [human cleanup guide](../docs/cleanup.md).

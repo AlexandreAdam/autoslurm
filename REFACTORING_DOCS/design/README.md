@@ -22,9 +22,11 @@ validation approach.
 | MVP10.4d Software status | [MVP10_4d_software_status.md](MVP10_4d_software_status.md) | Declaration/process/partial Git/environment/package diagnostics complete locally; parent 10.4 closed |
 | FIX.ENVIRONMENT.1 Module initialization | [FIX_ENVIRONMENT_1_module_initialization.md](FIX_ENVIRONMENT_1_module_initialization.md) | Explicit machine initializer, shared ordered setup and job failure guards |
 | FETCH.1 Selected-run evidence | [FETCH_1_execution_evidence.md](FETCH_1_execution_evidence.md) | Receipt refresh, status and bounded logs through one public workflow |
+| FIX.CLEAN.1 Finished bundle cleanup | [FIX_CLEAN_1_scopes.md](FIX_CLEAN_1_scopes.md) | Completed/terminal scopes with conservative task/receipt guards |
 | FIX.TRACKING.1 Execution-side tracking | [FIX_TRACKING_1_execution_tracking.md](FIX_TRACKING_1_execution_tracking.md) | New remote submissions publish exact cluster-local tracking views |
 | MVP11 Status refactor | [MVP11_status_explanations.md](MVP11_status_explanations.md) | Planned; run/job/task workflow, clear reasons/progress/freshness, thin presentation and shared observations |
 | MVP12 Reusable scientific workflows | [MVP12_reusable_workflows.md](MVP12_reusable_workflows.md) | Planned from the Gaia proposal; layered public services, per-slice API/docs adoption and optional task runtime |
+| MULTI.1 Two clusters and working from home | [MULTI_1_two_clusters_and_remote_access.md](MULTI_1_two_clusters_and_remote_access.md) | Proposed 2026-11-23; office/home routing in the operator's SSH config, BatchMode and connection check, campaigns over per-machine runs |
 | Command/job pattern investigation (DOCS.3) | [job_command_pattern.md](job_command_pattern.md) | Concrete walkthrough and local experiment; proposals for review, no runtime changes |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |
 

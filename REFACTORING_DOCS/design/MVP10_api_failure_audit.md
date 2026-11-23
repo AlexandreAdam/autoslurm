@@ -626,3 +626,11 @@ good data. 86 new cases, 1669 offline tests and installed artifact checks pass.
 No saved format/helper capability/history migration. Parent 10.4 is complete;
 10.5–8 submission/inspection/destructive operations and universal route parity
 remain open, as does planned MVP11 job-status work.
+
+
+2026-11-23, FIX.CLEAN.1: completed/terminal scope eligibility reuses exact run/
+receipt loading and fresh task projection. Removed the two broad app-level load
+suppression catches; 266 routes/138 owners/21 broad catches remain. Unknown task
+or receipt evidence cannot authorize terminal deletion. This is a focused scope
+addition; per-item deletion diagnostics, partial effects and general CLI parity
+remain MVP10.7/10.8. See FIX_CLEAN_1_scopes.md and test_clean_scopes.py.

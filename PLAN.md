@@ -28,23 +28,13 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1669 passed, 73 expected
+  rollback source remains unchanged. Full offline suite: 1710 passed, 84 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP10.4d software-status diagnostics in 0.2.0.dev11.
-  Typed declaration/request/profile and whole SSH/process/protocol failures retain
-  safe facts and native causes. Standalone workers emit stage/cause facts; host
-  validation/normalization preserves healthy project/package observations and
-  known commits/versions beside unavailable/malformed neighbours. Environment
-  identity is verified on its own machine, including symlinked paths; unverified
-  dirty/source metadata never becomes clean/compatible. Mismatch remains a finding
-  with diagnostic/check details. Status CLI supports shared JSON errors/stderr/
-  --debug and retains partial observation JSON/nonzero. 86 new cases; 1669 full
-  offline tests pass in 13.41 s with 73 expected warnings. No-Git metadata,
-  wheel/sdist rebuild and installed API/CLI/JSON/debug/partial-cause/identity/
-  mismatch/no-write/no-fallback/guidance checks pass. Inventory: 266 routes/
-  138 owners/23 broad catches unchanged. Main/base imports dev11; editable
-  metadata remains 0.1.0 without reinstall. No cluster, daily state/config,
-  scientific runtime/dependency install, history or rollback change.
+- **Latest completed task:** FIX.CLEAN.1 cleanup scopes in 0.2.0.dev12.
+  Added completed/terminal, expanded all and guarded terminal selection with fresh
+  per-task evidence and settled receipts. Local bundle JSON only; navigation loss
+  documented, other evidence/scientific files retained. 41 new cases; full offline
+  suite 1710 passed, 84 expected warnings. No daily cleanup or cluster contact.
 - **Next task:** MVP10.5 submission and recovery evidence, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Review and split its operation boundaries before implementation; preserve
@@ -67,7 +57,7 @@ This file is the source of truth for active scope, task order and progress.
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
   the operator coordinates update timing for jobs using it.
-- **Last updated:** 2026-11-17.
+- **Last updated:** 2026-11-23.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
   `dev`; GitHub repository settings and documentation integrations stay as they were.
@@ -668,6 +658,13 @@ named settings locally, and a human can understand the job from JSON/script.
 Repeated options, tuples, arbitrary parser integrations and broader boolean
 styles are later slices; no per-job style switches are adopted by this plan.
 
+## FIX.CLEAN.1 Finished run cleanup scopes
+
+- [x] **FIX.CLEAN.1** Add completed and mixed-terminal scopes; expand all, preserve
+  preview/yes and local-only deletion, protect unresolved dispatch/observations
+  and live array tasks. Document navigation loss and retain separate evidence.
+  [Design and verification](REFACTORING_DOCS/design/FIX_CLEAN_1_scopes.md).
+
 ## MVP10 Actionable failures with preserved evidence
 
 Design: [error handling](REFACTORING_DOCS/design/MVP10_actionable_errors.md).
@@ -1104,6 +1101,8 @@ or migration decision has already been accepted.
 | 2026-11-17 | MVP10.4c Transfer/filesystem diagnostics | Added shared standalone metadata worker and host observation validation; local stat/remote python3 distinguish ENOENT/ENOTDIR from denied/I/O/failed SSH or invalid protocol. Saved producing contexts stay pinned; no content read or remote package import/install/fallback. Required-path preflight shares one batch, replacing generic FileNotFoundError with typed missing/unavailable/process diagnostics; preview/submit retain bundle identity before staging. One file_commands adapter and pure errors.py wording adopt source/mkdir/SCP/rsync failures, native causes and independent effects; managed filenames and regular sources validated before remote mutation. Failed started copies remain unknown, partial/prior files retained, no retry/rollback. Sync preserves completed subtree effects, skips only observed absence, creates targets after positive source observation and renders once/debug retains causes. 99 new cases; 1583 full offline tests passed in 13.92 s, 72 expected collision warnings, `.development/test-runs/file-operations.xml`. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/session/receipt/path/absence/SSH/copy-effects/partial-retention/sync-CLI/debug/guidance checks pass for 0.2.0.dev10. Wheel member contents match; direct wheel SHA256 `c0444060eaf4b17a87a0681d36499aa3c631d94d295b01d28e25856f060c048a`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 broad catches unchanged. Base imports dev10; editable metadata 0.1.0 without reinstall. No actual cluster, daily config/state, dependency install, external client, scientific data, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev10 checkpoint; task commit: `git log --grep '^MVP10.4c:'`; push dev/tag. Next 10.4d software-status observations; parent 10.4 stays open. |
 
 | 2026-11-17 | MVP10.4d Software-status diagnostics | Adopted request/profile/declaration and whole SSH/process/encoding/size/JSON/identity errors with safe shared diagnostics/native causes. Standalone Git/environment workers emit stage/errno/exit facts; host software_status_evidence validates identity and isolates malformed/unavailable projects/packages beside healthy observations. Known commits/versions survive later failures; selected interpreter verifies prefix remotely, including symlinked venvs. Mismatch/unknown remain findings with per-check diagnostics and target-marker/major-dependency scope. Status CLI adds --debug, shared JSON operation-error envelope/stderr and inline partial reasons; partial evidence JSON/nonzero retained. 86 new cases; 1669 full offline tests passed in 13.41 s, 73 expected collision warnings, `.development/test-runs/software-status-diagnostics.xml`, including the temporary local Git/venv standalone-payload/index-preservation regression. No-Git/no-runtime-import metadata, direct wheel/sdist rebuild and disposable installed version/API/CLI/JSON/debug/partial causes/identity/mismatch/no-write/no-fallback/guidance checks pass for 0.2.0.dev11. Wheel member contents match; direct wheel SHA256 `58127115d0c453809c4f3b447f0863280a690b7aa92fc5e2fe0edfadd3214974`, archive/rebuilt hashes in installation register. Inventory 266 routes/138 owners/23 broad catches unchanged. Base imports dev11; editable metadata 0.1.0 without reinstall. No actual cluster, daily config/state, scientific imports/dependency install, external client, history migration or rollback edits. User documents/reports/software_preparations excluded. Annotated v0.2.0.dev11 checkpoint; task commit: `git log --grep '^MVP10.4d:'`; push dev/tag. MVP10.4 complete; review/split 10.5 submission/recovery boundaries next. |
+
+| 2026-11-23 | FIX.CLEAN.1 Finished bundle cleanup | Added completed/terminal scopes and expanded all, fresh complete task/receipt eligibility, explicit terminal index filtering and changed-definition protection. 41 new cases; 1710 full offline tests passed in 12.43 s, 84 expected warnings, .development/test-runs/clean-scopes.xml. Local bundle JSON only; navigation loss documented, receipts/logs/scripts/scientific files retained. No cluster contact, daily cleanup/config, environment install or rollback changes. Version 0.2.0.dev12; artifact checks in installation register; commit prefix FIX.CLEAN.1; push dev and annotated checkpoint tag. Broader MVP10.7 error integration remains pending. |
 
 ## How we work
 

@@ -693,3 +693,23 @@ error envelope. --debug rethrows operation errors with native chains; it does no
 turn returned partial observations into exceptions. Empty status still prints help
 without contact. Updates remain separate: no pull/install, new checkout/env,
 source reset, dependency repair, scheduler action, credential handling or retry.
+
+
+## Cleanup scopes (FIX.CLEAN.1)
+
+`asl clean --scope completed` previews fully successful bundles; `terminal`
+includes mixed finished outcomes. `all` includes these plus inactive/unsubmitted
+snapshots. `--yes` deletes selected local bundle JSON only. Terminal scopes also
+constrain explicit indices/ranges. Default inactive/unsubmitted selection makes
+no scheduler queries.
+
+Fresh complete per-task evidence is required; aggregate array failures can hide
+running tasks. Failed observations, unknown/missing tasks and unreadable or
+unsettled receipts retain the run. Tracked runs require receipt state submitted;
+partial/uncertain/submitting outcomes remain protected. Cleanup never refreshes
+remote receipts. Changed snapshots are retained after observation.
+
+Receipts, caches, logs, scripts and scientific files remain. Deleted definitions
+lose normal status/index/log navigation; a retained receipt cannot recreate them.
+Preview and inspect evidence before deleting. This does not close MVP10.7's
+broader per-file deletion/partial-failure diagnostic work.

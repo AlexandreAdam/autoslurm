@@ -286,3 +286,11 @@ autoslurm-schedule job3 --append --bundle=my-bundle --dependencies job1 job2
   topological order before submission.
   <!--- `--dependency_type` can be a list of same length as `--dependencies` or a-->
     <!--single value to be broadcasted.-->
+
+### Clean completed run records
+
+Preview with `asl clean --scope completed`, then add `--yes` to remove the
+selected local bundle records. `--scope terminal` also includes mixed finished
+outcomes; `all` includes successful runs. Logs, receipts and scientific files
+remain, but deleted bundles lose normal status/log navigation. See
+[cleanup scopes and safeguards](docs/cleanup.md).
