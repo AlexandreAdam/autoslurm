@@ -294,3 +294,13 @@ selected local bundle records. `--scope terminal` also includes mixed finished
 outcomes; `all` includes successful runs. Logs, receipts and scientific files
 remain, but deleted bundles lose normal status/log navigation. See
 [cleanup scopes and safeguards](docs/cleanup.md).
+
+
+### Follow work on two machines
+
+Campaigns group exact ordinary runs while each run keeps its selected machine.
+Use `asl campaign list`, `asl campaign inspect NAME` or `asl campaign fetch NAME`;
+`--cached` uses existing evidence without connecting and `--json` serves agents.
+One unreachable machine does not erase the other member's context. See
+[campaign creation, inspection and bounds](docs/campaigns.md) and
+[connection checks](docs/ssh_configuration.md#check-access-without-an-interactive-prompt).

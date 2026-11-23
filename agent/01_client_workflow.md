@@ -780,3 +780,21 @@ Only local bundle JSON files are removed. Separate receipts/logs/scripts/caches
 and scientific data remain. Removing a definition removes normal status/index/log
 navigation; retained receipts cannot reconstruct it. Inspect needed evidence
 before cleanup. See [human cleanup guide](../docs/cleanup.md).
+
+
+## Campaigns over exact runs
+
+Use public create_campaign/load_campaign/list_campaigns to group one/two existing
+per-machine bundles, then inspect_campaign/fetch_campaign for coherent context.
+The installed [20_campaigns recipe](../src/autoslurm/agent_resources/20_campaigns.md)
+is the current input/outcome/evidence contract; human examples are in
+[campaigns](../docs/campaigns.md). Keep exact member IDs, bundle references and
+receipt links in durable handoff; no latest/date/hostname guesses or opaque job
+configuration. Each ordinary run still belongs to one machine.
+
+Partial machine access preserves readable neighbours and separately labeled
+last-known evidence. Cached means no network, source-log read, receipt refresh or
+cache write. Scientific split/output validation/data transfer remain client-owned.
+Campaign commands do not establish a home route: use check_connections to observe
+access from this controller, and leave gateway authentication/routing to the
+operator. Moving controllers does not transfer their records automatically.

@@ -2,6 +2,7 @@
 
 from .version import __version__
 from .connections import check_connections
+from .campaigns import inspect_campaign, fetch_campaign
 from .campaign_records import create_campaign, load_campaign, list_campaigns
 
 from .definitions import (
@@ -110,7 +111,7 @@ from .errors import ConfigurationError, InvalidRequestError, SelectionError, Rec
 __all__ = [
     '__version__',
     'check_connections',
-    'create_campaign', 'load_campaign', 'list_campaigns',
+    'create_campaign', 'load_campaign', 'list_campaigns', 'inspect_campaign', 'fetch_campaign',
     'ConfigurationError',
     'InvalidRequestError',
     'SelectionError', 'RecordWriteError',

@@ -46,7 +46,8 @@ def _fresh_view(run, observations, profiles, profile_error, cache):
                 view["last_observed"] = previous["last_observed"]
             else:
                 view["last_observed"] = {"observed_at": previous["observed_at"],
-                                         "state": previous["state"], "freshness": "stale"}
+                                         "state": previous["state"], "freshness": "stale",
+                                         "jobs": previous["jobs"]}
     error = cache.save_observation(view)
     if error:
         view["errors"].append(error)

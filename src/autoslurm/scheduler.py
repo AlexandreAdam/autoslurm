@@ -5,6 +5,7 @@ import re
 import shlex
 import subprocess
 
+from .observation_deadline import remaining_timeout
 from .array_status import canonical_job_id, parent_job_id
 from .transport import ssh_command
 from .config import is_remote_machine
@@ -50,7 +51,7 @@ def query_scheduler(job_ids, config=None, machine_name=None):
             chunks = []
             for index, command in enumerate(commands):
                 chunks.append(f"printf '__AUTOSLURM_QUERY_{index}__\\n'; {shlex.join(command)} 2>&1; printf '\\n__AUTOSLURM_EXIT__%s\\n' \"$?\"")
-            result = subprocess.run(ssh_command(config, machine_name, "bash -lc " + shlex.quote("\n".join(chunks))), capture_output=True, text=True, timeout=30)
+            result = subprocess.run(ssh_command(config, machine_name, "bash -lc " + shlex.quote("\n".join(chunks))), capture_output=True, text=True, timeout=remaining_timeout(30))
             if result.returncode != 0:
                 raise RuntimeError(result.stderr.strip() or "Scheduler transport failed.")
             for index in range(2):
@@ -64,7 +65,7 @@ def query_scheduler(job_ids, config=None, machine_name=None):
     else:
         for command in commands:
             try:
-                result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+                result = subprocess.run(command, capture_output=True, text=True, timeout=remaining_timeout(30))
                 results.append((result.returncode, result.stdout, result.stderr))
             except (OSError, subprocess.TimeoutExpired) as exc:
                 results.append((None, "", str(exc)))

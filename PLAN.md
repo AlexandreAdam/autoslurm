@@ -28,35 +28,22 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1752 passed, 84 expected
+  rollback source remains unchanged. Full offline suite: 1785 passed, 84 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MULTI.1b immutable campaign records/discovery in
-  0.2.0.dev14. Public create/load/list and campaign create/list/show group exact
-  ordinary runs offline. Small opt-in v1 preserves existing bundle/receipt formats;
-  no copying, migration, scientific task mapping or submission coordination.
-- **Next task:** MULTI.1c campaign inspection/
-  fetching, explicitly requested on 2026-11-23. MVP10.5 remains queued, using the
-  [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
-  Review and split its operation boundaries before implementation; preserve
-  accepted IDs, partial/uncertain outcomes and original/secondary causes. No blind
-  retry after possibly effective dispatch. MVP10.3 and MVP10.4 are complete;
-  remaining submission/observation/destructive-operation and CLI/ACP adoption
-  stay in MVP10.5–8. Broader job-status refactoring remains planned in MVP11.
-  MVP11 and MVP12 are
-  separately scoped, unimplemented milestones; their numbers do not require a
-  single large combined release. Their API/record details remain proposals.
-  MVP9 implements readable command integration; MVP10 follows with
-  an API-wide error review and dedicated shared error module. MVP10 now starts
-  with a complete interface/failure inventory before migrating operation boundaries;
-  the stale-venv case is one regression among many. The error module is implemented;
-  service integration and public route parity remain pending.
-  Cluster access/installations
-  remain outside the local development scope; tests mock transport and use a
-  disposable local environment. Machine-owned dependencies are not updated.
+- **Latest completed task:** MULTI.1c campaign inspection/fetch in 0.2.0.dev15.
+  Python/CLI/ACP composes exact member receipts, producing-machine status and
+  bounded logs. Per-member failures preserve healthy/last-known evidence; cached
+  reads do no source/network/cache-write work. Shared command deadlines and
+  global log/response bounds; scientific results, submission and retry remain out.
+- **Next task:** MVP10.5 submission and recovery diagnostics remain queued.
+  MULTI.1a–c connection checks and existing-run campaign create/list/inspect/fetch
+  are complete locally, as requested. MULTI.1d coordinated submission and MULTI.1e
+  retry are later work; their contracts remain proposed. No gateway route was
+  configured/verified or cluster operation performed during implementation.
 - **Campaign design:** MULTI.1.0 completed on 2026-11-23: corrected home access
   to laptop -> flatiron -> rusty/popeye, distinguished controller records from
   execution-side tracking and split connectivity, campaign records/context,
-  coordinated submission and explicit retry. MULTI.1a connectivity is implemented; campaign contracts remain proposed;
+  coordinated submission and explicit retry. MULTI.1a–c connectivity and campaign observation are implemented; later submission/retry contracts remain proposed;
   [design](REFACTORING_DOCS/design/MULTI_1_two_clusters_and_remote_access.md).
   First useful campaign delivery groups existing runs and observes both machines;
   it does not require a new multi-machine submission engine. No later runtime
@@ -878,7 +865,7 @@ remains queued while MULTI.1a–c is implemented. No live cluster check/configur
   Validate exact refs/fingerprints and one-machine members; scientific task
   mapping metadata is deferred to MULTI.1d (not accepted as unused v1 fields);
   use this as MVP12.4's grouping owner, with no parallel registry or migration.
-- [ ] **MULTI.1c Coherent inspection/context/fetch.** Compose member inspection,
+- [x] **MULTI.1c Coherent inspection/context/fetch.** Compose member inspection,
   receipts and caches; preserve good observations when another member fails,
   machine-scoped IDs, per-member freshness and global bounds. Deliver equivalent
   Python/CLI/ACP evidence and version-matched human/installed agent recipes.
@@ -1158,6 +1145,8 @@ or migration decision has already been accepted.
 | 2026-11-23 | MULTI.1a Connection policy/check | Public Python/CLI/ACP bounded no-op reachability, no activation requirement, per-machine failures with safe cause/time and unknown-authentication semantics. Shared SSH/SCP/rsync BatchMode/ConnectTimeout policy; direct remote sbatch/bulk-driver timeouts 60/300 seconds preserve existing uncertain-outcome behavior. Existing transport fixtures updated to assert the added options. 15 new checks; 1725 offline tests passed in 12.77 s, 84 expected warnings; wheel/sdist/installed API/CLI/ACP checks passed, evidence in installation register. No actual cluster, SSH config, base dependencies, daily state or rollback changes. Version 0.2.0.dev13; push dev and checkpoint tag. Campaign records/context next; gateway support remains unverified. |
 
 | 2026-11-23 | MULTI.1b Campaign records | Public offline create/load/list, CLI create/list/show and ACP. Immutable opt-in v1 with exact controller-relative references, canonical definition digests retaining immutable receipt links, one/two distinct machines and bounded strict JSON. Changed definitions require a new name; no copies/history import or scientific task mapping. 27 new cases; 1752 offline tests passed in 12.09 s, 84 expected warnings, plus wheel/sdist/installed API/CLI/ACP checks. Evidence in installation register. No actual cluster, config/state migration, dependency install or rollback change. Checkpoint 0.2.0.dev14; push dev/tag; inspection/fetch follows. |
+
+| 2026-11-23 | MULTI.1c Coherent campaign observation | Added Python/CLI/ACP inspect/fetch, exact member/job/task selection, receipt refresh before status/logs, preserved per-member partial/current/last-known evidence and cached no-network/no-write behavior. Reuses inspection and existing caches with optional prior-job evidence; shared context-local deadline bounds existing read-only adapters, global log quotas and response compaction retain known IDs/counts. No dataset transfer, alternate-profile routing, schema migration, actual cluster, daily state/config or rollback change. 33 new cases; 1785 offline tests passed in 13.31 s with 84 expected warnings; installed two-machine API/CLI/ACP/cache/fetch and artifact checks passed. Evidence in installation register. Checkpoint 0.2.0.dev15; push dev/tag. Requested CLI scope complete; coordinated submission/retry remains later work. |
 
 ## How we work
 

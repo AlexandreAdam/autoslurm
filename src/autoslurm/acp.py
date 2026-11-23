@@ -12,6 +12,7 @@ from .bundle_selection import list_saved_bundles
 from .save_load_jobs import schedule_job
 from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
 from .connections import check_connections
+from .campaigns import inspect_campaign, fetch_campaign
 from .campaign_records import create_campaign, load_campaign, list_campaigns
 from .inspection import inspect_bundle, list_runs, fetch_run
 from .errors import ConfigurationError, SelectionError, RecordWriteError, DiagnosticError
@@ -88,6 +89,20 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
     if not action:
         return {"status": "error", "message": "Missing action"}
 
+    if action == "inspect_campaign":
+        try:
+            return {"status":"success", "result":inspect_campaign(acl.get('name'),refresh=acl.get('refresh',True),member=acl.get('member'),
+                job_name=acl.get('job_name'),task_index=acl.get('task_index'),timeout=acl.get('timeout',120))}
+        except DiagnosticError as error:
+            return {"status":"error","message":str(error),"diagnostic":error.diagnostic.to_dict()}
+    if action == "fetch_campaign":
+        try:
+            return {"status":"success", "result":fetch_campaign(acl.get('name'),refresh=acl.get('refresh',True),member=acl.get('member'),
+                job_name=acl.get('job_name'),task_index=acl.get('task_index'),tail=acl.get('tail',40),
+                max_log_bytes=acl.get('max_log_bytes',65536),max_logs=acl.get('max_logs',20),
+                max_total_log_bytes=acl.get('max_total_log_bytes',262144),stream=acl.get('stream','both'),timeout=acl.get('timeout',120))}
+        except DiagnosticError as error:
+            return {"status":"error","message":str(error),"diagnostic":error.diagnostic.to_dict()}
     if action == "create_campaign":
         try:
             return {"status": "success", "result": create_campaign(acl.get('name'), acl.get('members'), context=acl.get('context', ''))}

@@ -28,6 +28,9 @@ def _observation_valid(view):
     if previous is not None and (not isinstance(previous, dict)
             or not isinstance(previous.get("state"), str) or "observed_at" not in previous):
         return False
+    if previous and previous.get('jobs') is not None:
+        if not _observation_valid({**view, 'jobs': previous['jobs'], 'last_observed': None}):
+            return False
     for job in view["jobs"]:
         if not isinstance(job, dict) or not all(key in job for key in ("name", "id", "state", "machine", "is_array", "counts", "tasks", "errors")):
             return False
@@ -39,7 +42,9 @@ def _observation_valid(view):
             return False
         if not isinstance(job["tasks"], list) or not isinstance(job["counts"], dict):
             return False
-        if not all(type(job["counts"].get(key)) is int for key in ("completed", "failed", "cancelled", "running", "pending", "unknown", "not_submitted")):
+        if not all(type(job["counts"].get(key)) is int and 0 <= job['counts'][key] <= len(job['tasks']) for key in ("completed", "failed", "cancelled", "running", "pending", "unknown", "not_submitted")):
+            return False
+        if sum(job['counts'][key] for key in ('completed','failed','cancelled','running','pending','unknown','not_submitted')) != len(job['tasks']):
             return False
         for task in job["tasks"]:
             if not isinstance(task, dict) or not all(key in task for key in ("job_id", "parent_id", "task_index", "state", "scheduler_state", "source")):

@@ -188,10 +188,11 @@ def read_json(path, *, context=None, max_bytes=None):
         if max_bytes is not None:
             if type(max_bytes) is not int or max_bytes < 1:
                 raise ValueError('max_bytes must be a positive integer.')
-            text = stream.read(max_bytes + 1)
-            if len(text.encode('utf-8')) > max_bytes:
+            raw = stream.buffer.read(max_bytes + 1)
+            if len(raw) > max_bytes:
                 raise _read_error(path, code="record_invalid", stage="read_record", context=context,
                                   summary="The selected JSON record exceeds the read limit.")
+            text = raw.decode('utf-8')
             def unique(pairs):
                 result = {}
                 for key, value in pairs:

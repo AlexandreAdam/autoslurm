@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import subprocess
 
+from .observation_deadline import remaining_timeout
 from .execution import EXECUTION_METADATA_KEY, producing_machine, is_remote_machine
 from .inspection_cache import InspectionCache
 from .storage import storage_root
@@ -115,7 +116,7 @@ def _query_remote_tails(config, paths, max_bytes):
     script += '\nquery_log_paths(' + repr(paths) + ', ' + repr(max_bytes) + ')\n'
     try:
         result = subprocess.run(ssh_command(config, remote_command="python3 -B -"), input=script,
-                                capture_output=True, text=True, timeout=30)
+                                capture_output=True, text=True, timeout=remaining_timeout(30))
         if result.returncode != 0:
             raise RuntimeError("Remote log query failed; verify SSH access and python3 availability.")
         if len(result.stdout) > len(paths) * (4 * ((max_bytes + 2) // 3) + 128):

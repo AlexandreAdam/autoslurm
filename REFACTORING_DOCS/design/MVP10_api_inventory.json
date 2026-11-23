@@ -5,8 +5,10 @@
   "interfaces": {
     "acp:check_connections": "autoslurm.acp.execute_acp",
     "acp:create_campaign": "autoslurm.acp.execute_acp",
+    "acp:fetch_campaign": "autoslurm.acp.execute_acp",
     "acp:fetch_run": "autoslurm.acp.execute_acp",
     "acp:gather_context": "autoslurm.acp.execute_acp",
+    "acp:inspect_campaign": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
     "acp:inspect_run": "autoslurm.acp.execute_acp",
     "acp:inspect_submission": "autoslurm.acp.execute_acp",
@@ -23,6 +25,8 @@
     "cli-alias:kill": "autoslurm.apps.cancel.main",
     "cli-alias:stat": "autoslurm.apps.status.main",
     "cli-subaction:campaign create": "autoslurm.apps.campaign.main",
+    "cli-subaction:campaign fetch": "autoslurm.apps.campaign.main",
+    "cli-subaction:campaign inspect": "autoslurm.apps.campaign.main",
     "cli-subaction:campaign list": "autoslurm.apps.campaign.main",
     "cli-subaction:campaign show": "autoslurm.apps.campaign.main",
     "cli-subaction:connection check": "autoslurm.apps.connection.main",
@@ -125,6 +129,8 @@
     "python:autoslurm.campaign_records.create_campaign": "autoslurm.campaign_records.create_campaign",
     "python:autoslurm.campaign_records.list_campaigns": "autoslurm.campaign_records.list_campaigns",
     "python:autoslurm.campaign_records.load_campaign": "autoslurm.campaign_records.load_campaign",
+    "python:autoslurm.campaigns.fetch_campaign": "autoslurm.campaigns.fetch_campaign",
+    "python:autoslurm.campaigns.inspect_campaign": "autoslurm.campaigns.inspect_campaign",
     "python:autoslurm.check_connections": "autoslurm.connections.check_connections",
     "python:autoslurm.command_contract.CommandContract": "autoslurm.command_contract.CommandContract",
     "python:autoslurm.command_contract.CommandOption": "autoslurm.command_contract.CommandOption",
@@ -169,6 +175,7 @@
     "python:autoslurm.experiment_context.experiment_context": "autoslurm.experiment_context.experiment_context",
     "python:autoslurm.experiment_context.job_context": "autoslurm.experiment_context.job_context",
     "python:autoslurm.experiment_context.latest_log_context": "autoslurm.experiment_context.latest_log_context",
+    "python:autoslurm.fetch_campaign": "autoslurm.campaigns.fetch_campaign",
     "python:autoslurm.fetch_run": "autoslurm.inspection.fetch_run",
     "python:autoslurm.file_transfer.transfer_bundle_to_remote": "autoslurm.file_transfer.transfer_bundle_to_remote",
     "python:autoslurm.file_transfer.transfer_slurm_to_remote": "autoslurm.file_transfer.transfer_slurm_to_remote",
@@ -179,6 +186,7 @@
     "python:autoslurm.inactive_bundle_snapshots": "autoslurm.bundle_selection.inactive_bundle_snapshots",
     "python:autoslurm.inspect_bundle": "autoslurm.inspection.inspect_bundle",
     "python:autoslurm.inspect_bundles": "autoslurm.inspection.inspect_bundles",
+    "python:autoslurm.inspect_campaign": "autoslurm.campaigns.inspect_campaign",
     "python:autoslurm.inspect_logs": "autoslurm.inspection.inspect_logs",
     "python:autoslurm.inspect_software": "autoslurm.software_status.inspect_software",
     "python:autoslurm.inspection.fetch_run": "autoslurm.inspection.fetch_run",
@@ -753,6 +761,17 @@
         "tests/integration/test_campaign_records.py"
       ],
       "adoption": "implemented for opt-in campaign create/load/list."
+    },
+    "campaign_observation": {
+      "implementation_task": "MULTI.1c",
+      "failures": "Unavailable or changed member/receipt/cache, transport failure, missing source logs, bounds and deadline.",
+      "translation_owner": "campaigns composes existing inspection services; pure campaign_projection and errors own result/diagnostic wording.",
+      "desired_diagnostic": "Per-member freshness/current versus last-known counts, accepted IDs, exact selectors and bounded partial evidence.",
+      "next_action": "Inspect retained member evidence or narrow selectors; no replay, fallback or scientific-result retrieval.",
+      "regression_evidence": [
+        "tests/integration/test_campaign_observation.py"
+      ],
+      "adoption": "implemented for campaign inspect/fetch composition; underlying scheduler/log strategic diagnostic adoption remains MVP10.6."
     }
   },
   "owners": {
@@ -1619,6 +1638,18 @@
       "inputs": "Exact named campaign or one/two member mappings and readable context.",
       "current": "Opt-in immutable v1 grouping; canonical definition hashes and distinct machine/member identity.",
       "effects": "Local record read/exclusive atomic publication only; no cluster, copies, migration or submission."
+    },
+    "autoslurm.campaigns.fetch_campaign": {
+      "contract": "campaign_observation",
+      "inputs": "Exact campaign/member/job/task, refresh/cache selection and request-wide bounds.",
+      "current": "Coherent bounded observation, per-member partial/freshness and last-known evidence; no guessed routing.",
+      "effects": "Refresh reads exact receipts/scheduler/log evidence through producing transports and writes existing caches; cached is read-only/no-network."
+    },
+    "autoslurm.campaigns.inspect_campaign": {
+      "contract": "campaign_observation",
+      "inputs": "Exact campaign/member/job/task, refresh/cache selection and request-wide bounds.",
+      "current": "Coherent bounded observation, per-member partial/freshness and last-known evidence; no guessed routing.",
+      "effects": "Refresh reads exact receipts/scheduler/log evidence through producing transports and writes existing caches; cached is read-only/no-network."
     }
   },
   "catch_reviews": {
@@ -1806,6 +1837,30 @@
     },
     "cli-subaction:campaign show": {
       "contract": "campaign_records",
+      "inputs": "Exact named campaign or one/two member mappings and readable context.",
+      "current": "Opt-in immutable v1 grouping; canonical definition hashes and distinct machine/member identity.",
+      "effects": "Local record read/exclusive atomic publication only; no cluster, copies, migration or submission."
+    },
+    "acp:fetch_campaign": {
+      "contract": "campaign_observation",
+      "inputs": "Request mapping with action and action-specific fields.",
+      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending). MVP10.3c.2 retains expected shared RecordWriteError diagnostic in error envelopes; generic bug/authoring and receipt policies remain staged. MVP10.3c.3 adds adopted SubmissionError diagnostic alongside result receipt; load/list receipt SelectionError envelopes retain exact identity.",
+      "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
+    },
+    "acp:inspect_campaign": {
+      "contract": "campaign_observation",
+      "inputs": "Request mapping with action and action-specific fields.",
+      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending). MVP10.3c.2 retains expected shared RecordWriteError diagnostic in error envelopes; generic bug/authoring and receipt policies remain staged. MVP10.3c.3 adds adopted SubmissionError diagnostic alongside result receipt; load/list receipt SelectionError envelopes retain exact identity.",
+      "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
+    },
+    "cli-subaction:campaign fetch": {
+      "contract": "campaign_observation",
+      "inputs": "Exact named campaign or one/two member mappings and readable context.",
+      "current": "Opt-in immutable v1 grouping; canonical definition hashes and distinct machine/member identity.",
+      "effects": "Local record read/exclusive atomic publication only; no cluster, copies, migration or submission."
+    },
+    "cli-subaction:campaign inspect": {
+      "contract": "campaign_observation",
       "inputs": "Exact named campaign or one/two member mappings and readable context.",
       "current": "Opt-in immutable v1 grouping; canonical definition hashes and distinct machine/member identity.",
       "effects": "Local record read/exclusive atomic publication only; no cluster, copies, migration or submission."

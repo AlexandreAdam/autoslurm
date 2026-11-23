@@ -218,3 +218,10 @@ port; preserve current AutoSlurm behavior outside the chosen public boundary.
 - 2026-11-13, PLAN.3: preserved the supplied proposal, mapped overlaps and scoped
   independently deliverable services with a per-slice API/discovery/docs gate.
   No public capability, runtime, stored data or external client changed.
+
+
+2026-11-23, MULTI.1b/c adoption: the common campaign create/load/list and exact
+member inspection/fetch services are implemented in dev14/dev15. Reuse these
+owners for later named-run context/resource/review extensions. This does not
+complete all MVP12.4 criteria or introduce coordinated submission, task partition
+mapping or retry. See the implemented boundary in the MULTI.1 design/agent recipe.

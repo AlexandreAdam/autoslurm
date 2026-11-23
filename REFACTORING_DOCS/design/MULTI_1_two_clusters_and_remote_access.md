@@ -5,8 +5,9 @@
 Design revised on 2026-11-23 from Alexandre's proposal and clarification.
 **Requested:** coherent context for work spread over rusty and popeye, and support
 for the extra gateway step when working from home. **Proposed:** the contracts,
-record layout, command names and delivery slices below. MULTI.1a connection checks are now implemented in 0.2.0.dev13; campaign
-commands below remain proposed until their own slices complete. [PLAN.md](../../PLAN.md) owns progress.
+record layout, command names and delivery slices below. MULTI.1a–c connection checks, campaign grouping and observation are implemented
+in 0.2.0.dev13–15. Coordinated submission/retry and scientific task mappings remain
+proposed; the implementation log below narrows the original larger schema. [PLAN.md](../../PLAN.md) owns progress.
 
 A campaign groups ordinary runs. Each run still selects one execution machine;
 this does not introduce jobs whose execution moves between machines.
@@ -395,3 +396,38 @@ boundary in MULTI.1d rather than quietly accepting unused metadata now. This
 satisfies the minimal grouping/discovery portion of MVP12.4, not its later review
 and retry requirements. CLI create/list/show, Python and ACP use one record owner.
 Member absence after cleanup is retained as a reference for later inspection.
+
+
+### MULTI.1c implemented observation boundary (2026-11-23)
+
+Public inspect_campaign/fetch_campaign, campaign inspect/fetch and ACP share one
+coordinator over exact member validation and ordinary inspection/fetch services.
+Separate campaign_projection owns pure counts/clipping; CLI owns presentation.
+No new scheduler parser/downloader/aggregate cache. Missing/changed members and
+receipt failures do not discard neighbours. Source mutation during observation
+retains minimal unverified IDs separately, without attributing them to this campaign.
+Submitted members lacking producing metadata do not infer current-profile routing.
+
+Selectors are member ID plus exact job name/declared task index; validate before
+effects. Optional cached reads never refresh receipts, query Slurm/source logs or
+write caches. Run-cache last_observed optionally retains prior jobs; old records
+remain readable. Cached count validation rejects impossible/negative counts.
+Collection time, per-member observation time and last-known time remain distinct.
+Fresh-count totals include only fully fresh members; partial-member evidence stays
+in the individual views, never silently counted as fresh or scientific success.
+
+The command-admission deadline is at most 120 seconds with per-member allowances;
+remaining time flows through existing scheduler/receipt/log subprocess adapters via
+a context-local deadline scope that is reset even on interruption. Local OS file
+calls cannot be forcibly interrupted. Global fetch limits 20 excerpts/256 KiB of
+returned UTF-8 content, per-excerpt at most 64 KiB; existing receipt caps retained.
+Initial context limits 200 jobs/10000 declared tasks per member, bounded 32-bit
+indices, max 250 task details per member/current or prior view and compact UTF-8
+JSON at most 2 MiB. Explicit omission markers and narrowing selectors preserve
+access to detail. No application results/datasets or whole-directory mirroring.
+
+v1 still has no scientific task mappings or campaign-attempt journal; these are
+future opt-in contracts rather than silently accepted metadata. Grouping/inspection
+implements the requested first campaign MVP, not MULTI.1d/e or all of MVP12.4.
+Full fake-cluster regression and installed-package evidence is in the installation
+register. No actual SSH/Slurm, configuration edits or remote installation performed.

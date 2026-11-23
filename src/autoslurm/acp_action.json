@@ -240,5 +240,55 @@
       "campaign",
       "multi-machine"
     ]
+  },
+  {
+    "name": "inspect_campaign",
+    "description": "Coherent member evidence from exact campaign records, with partial availability and bounded context. Cached means no network or writes.",
+    "parameters": {
+      "name": "Required campaign name.",
+      "refresh": "Optional bool, false reads caches only.",
+      "member": "Optional exact member_id; required with job/task selectors.",
+      "job_name": "Optional exact job name.",
+      "task_index": "Optional declared integer array index.",
+      "timeout": "Optional positive seconds up to 120.",
+      "tail": "Fetch: optional lines 0..1000.",
+      "max_log_bytes": "Fetch: bytes per excerpt, 1..65536.",
+      "max_logs": "Fetch: campaign-wide log count, 1..20.",
+      "max_total_log_bytes": "Fetch: campaign-wide content bytes, 1..262144.",
+      "stream": "Fetch: both/stdout/stderr."
+    },
+    "context_sections": [
+      "20_campaigns.md"
+    ],
+    "keywords": [
+      "campaign",
+      "context",
+      "multi-machine"
+    ]
+  },
+  {
+    "name": "fetch_campaign",
+    "description": "Coherent member evidence from exact campaign records, with partial availability and bounded context. Cached means no network or writes.",
+    "parameters": {
+      "name": "Required campaign name.",
+      "refresh": "Optional bool, false reads caches only.",
+      "member": "Optional exact member_id; required with job/task selectors.",
+      "job_name": "Optional exact job name.",
+      "task_index": "Optional declared integer array index.",
+      "timeout": "Optional positive seconds up to 120.",
+      "tail": "Fetch: optional lines 0..1000.",
+      "max_log_bytes": "Fetch: bytes per excerpt, 1..65536.",
+      "max_logs": "Fetch: campaign-wide log count, 1..20.",
+      "max_total_log_bytes": "Fetch: campaign-wide content bytes, 1..262144.",
+      "stream": "Fetch: both/stdout/stderr."
+    },
+    "context_sections": [
+      "20_campaigns.md"
+    ],
+    "keywords": [
+      "campaign",
+      "context",
+      "multi-machine"
+    ]
   }
 ]

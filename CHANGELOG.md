@@ -9,6 +9,23 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev15 — 2026-11-23
+
+- Added public inspect_campaign/fetch_campaign, `asl campaign inspect`/`fetch`,
+  cached/JSON output, member/job/array-task drill-down and equivalent ACP evidence.
+  Reuses existing exact receipt refresh, producing-machine status, log and cache
+  owners; one unavailable/changed member does not discard its healthy neighbour.
+- Current and last-known scheduler-task counts/freshness stay separate. Failed
+  refreshes preserve prior job evidence in an optional last_observed.jobs cache
+  field; older cache records remain readable. No aggregate status database.
+- Campaign requests share a command deadline up to 120 seconds, with per-member
+  time allowances. Fetching has global caps of 20 logs/256 KiB of excerpt content;
+  task details and the returned context are explicitly bounded. Cached requests
+  do no receipt refresh, network, source-log reads or cache writes.
+- Exact member/definition/attempt routing remains pinned. Missing definitions or
+  producing metadata never trigger latest-run/current-profile fallback. Scientific
+  data retrieval, coordinated submission and retry remain separate later work.
+
 ## 0.2.0.dev14 — 2026-11-23
 
 - Added offline immutable campaign create/load/list Python and ACP operations,

@@ -4,6 +4,7 @@ import base64
 from pathlib import Path
 import subprocess
 
+from .observation_deadline import remaining_timeout
 from .errors import DiagnosticCause, DiagnosticError, _receipt_fetch_failure
 from .transport import ssh_command
 
@@ -25,7 +26,7 @@ def read_execution_receipt(receipt):
     script = Path(__file__).with_name('log_probe.py').read_text()
     script += '\nquery_log_paths(' + repr([receipt['execution_receipt_path']]) + ', ' + str(MAX_RECEIPT_BYTES) + ')\n'
     try:
-        result = subprocess.run(command, input=script, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(command, input=script, capture_output=True, text=True, timeout=remaining_timeout(30))
     except (OSError, subprocess.TimeoutExpired) as native:
         problem = 'timeout' if isinstance(native, subprocess.TimeoutExpired) else 'launch'
         raise DiagnosticError(_receipt_fetch_failure(problem, context,

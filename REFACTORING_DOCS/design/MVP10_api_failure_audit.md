@@ -634,3 +634,11 @@ suppression catches; 266 routes/138 owners/21 broad catches remain. Unknown task
 or receipt evidence cannot authorize terminal deletion. This is a focused scope
 addition; per-item deletion diagnostics, partial effects and general CLI parity
 remain MVP10.7/10.8. See FIX_CLEAN_1_scopes.md and test_clean_scopes.py.
+
+
+2026-11-23, MULTI.1a–c: 292 routes/146 owners/21 broad catches. Added connection
+observations and opt-in campaign record/inspection/fetch contracts, explicit
+per-member failures and bounds. Existing scheduler/log/receipt services remain
+the read owners; campaign composition does not claim their pending universal
+MVP10.6 diagnostic adoption. No new broad bug-flattening handlers. Full offline
+and installed fake-two-machine evidence is recorded in the installation register.

@@ -13,6 +13,28 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MULTI.1c (2026-11-23), checkpoint 0.2.0.dev15: 1785 full offline tests
+pass in 13.31 s (84 expected warnings), .development/test-runs/campaign-observation.xml.
+Thirty-three new cases cover two machines sharing Slurm IDs, actual standalone
+log/receipt readers against temporary files, receipt recovery, sparse selectors,
+partial/unreachable/changed members, preserved prior counts, strict cached
+no-source/no-network/no-write, byte/count/deadline limits, huge arrays and bounded
+responses. Underlying inspection caches gain optional prior-job evidence and
+reject impossible counts; old compatible records remain readable. Shared context-
+local deadlines cap scheduler/receipt/log commands and are reset on exit. No
+aggregate status store or scientific transfer/automatic retry is added.
+No-Git metadata, wheel/sdist rebuild and disposable installed version, connection,
+campaign create/list/inspect/fetch, two-machine partial/cache/task/CLI/ACP and
+packaged-guidance smoke pass. Inventory 292 routes/146 owners/21 broad catches.
+Artifacts .development/artifacts/campaign-observation: wheel SHA256
+5eadf1f5cfc7dfa033bf0615575aace46dbc2cf6434ca6e52236a1e71256395b;
+sdist e06c4ee7fe525255e8949ea57ee13f3dacb152e2ea36ac823e63f445d0844715;
+rebuilt wheel 4a80b8439d69c91770811c1b23f02805963c3c914c37116ce807531d6aaa76c0;
+member contents match. No actual cluster, SSH-config, daily config/state or source,
+base/test dependency install, remote rollout or pinned rollback edit. Existing
+user docs/reports/software_preparations excluded. Main editable source provides
+the commands immediately; gateway route support remains operator-unverified.
+
 MULTI.1b (2026-11-23), checkpoint 0.2.0.dev14: immutable opt-in campaign
 format v1 and public create/load/list, CLI create/list/show and ACP. Twenty-seven
 new cases; 1752 full offline tests pass in 12.09 s (84 expected warnings),
