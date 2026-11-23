@@ -538,3 +538,10 @@ def _connection_failure(code, machine, alias, *, stage='probe_connection', cause
         context={'machine': machine, 'ssh_alias': alias, 'command': 'ssh'}, cause=cause,
         summary='The selected connection could not be verified from this controller.',
         next_action='Check the selected profile and operator-owned SSH route/authentication from this host. An interactive gateway shell does not automatically provide a laptop connection. Authentication need is unknown unless separately verified.')
+
+
+def _campaign_failure(summary, *, field='campaign', path=None, member=None, code='invalid_argument', cause=None):
+    return Diagnostic(code, operation='campaign', stage='validate_campaign',
+        context={'field': field, 'path': str(path) if path is not None else None, 'resource': member},
+        cause=cause, summary=summary,
+        next_action='Inspect the exact campaign/member definition and retain its receipts. Use a new campaign name for changed definitions; never substitute a latest run or blindly resubmit.')

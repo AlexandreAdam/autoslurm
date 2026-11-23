@@ -9,6 +9,7 @@ from ..version import __version__
 from . import (
     agent_context,
     connection,
+    campaign,
     cancel,
     clean,
     config,
@@ -29,6 +30,7 @@ from . import (
 
 
 ACTION_HELP = {
+    "campaign": "Group and inspect exact runs across machines.",
     "connection": "Check configured connections without prompting.",
     "config": "Configure machines, software and data locations.",
     "schedule": "Schedule a job or append it to a bundle.",
@@ -50,6 +52,7 @@ ACTION_HELP = {
 
 ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
     "connection": connection.main,
+    "campaign": campaign.main,
     "config": config.main,
     "schedule": schedule.main,
     "submit": submit.main,

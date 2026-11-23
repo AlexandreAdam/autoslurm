@@ -169,7 +169,7 @@ def _record_metadata(path, context):
     return metadata
 
 
-def read_json(path, *, context=None):
+def read_json(path, *, context=None, max_bytes=None):
     """Read regular UTF-8 JSON without blocking on a raced-in FIFO or hiding bugs.
 
     No directory creation or fallback. Domains validate the returned data. Close
@@ -185,6 +185,22 @@ def read_json(path, *, context=None):
         if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
             raise _read_error(path, code="resource_inaccessible", context=context,
                               summary="The selected record is not a regular file.")
+        if max_bytes is not None:
+            if type(max_bytes) is not int or max_bytes < 1:
+                raise ValueError('max_bytes must be a positive integer.')
+            text = stream.read(max_bytes + 1)
+            if len(text.encode('utf-8')) > max_bytes:
+                raise _read_error(path, code="record_invalid", stage="read_record", context=context,
+                                  summary="The selected JSON record exceeds the read limit.")
+            def unique(pairs):
+                result = {}
+                for key, value in pairs:
+                    if key in result:
+                        raise _read_error(path, code="record_invalid", context=context,
+                                          summary="The selected JSON record has duplicate keys.")
+                    result[key] = value
+                return result
+            return json.loads(text, object_pairs_hook=unique)
         return json.load(stream)
     except FileNotFoundError as error:
         try:

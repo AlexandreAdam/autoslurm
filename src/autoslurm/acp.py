@@ -12,6 +12,7 @@ from .bundle_selection import list_saved_bundles
 from .save_load_jobs import schedule_job
 from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
 from .connections import check_connections
+from .campaign_records import create_campaign, load_campaign, list_campaigns
 from .inspection import inspect_bundle, list_runs, fetch_run
 from .errors import ConfigurationError, SelectionError, RecordWriteError, DiagnosticError
 
@@ -87,6 +88,21 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
     if not action:
         return {"status": "error", "message": "Missing action"}
 
+    if action == "create_campaign":
+        try:
+            return {"status": "success", "result": create_campaign(acl.get('name'), acl.get('members'), context=acl.get('context', ''))}
+        except DiagnosticError as error:
+            return {"status": "error", "message": str(error), "diagnostic": error.diagnostic.to_dict()}
+    if action == "load_campaign":
+        try:
+            return {"status": "success", "result": load_campaign(acl.get('name'))}
+        except DiagnosticError as error:
+            return {"status": "error", "message": str(error), "diagnostic": error.diagnostic.to_dict()}
+    if action == "list_campaigns":
+        try:
+            return {"status": "success", "result": list_campaigns()}
+        except DiagnosticError as error:
+            return {"status": "error", "message": str(error), "diagnostic": error.diagnostic.to_dict()}
     if action == "check_connections":
         try:
             return {"status": "success", "result": check_connections(acl.get("machine"), all_machines=acl.get("all_machines", False))}

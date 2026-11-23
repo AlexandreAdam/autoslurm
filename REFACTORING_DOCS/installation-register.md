@@ -13,6 +13,21 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MULTI.1b (2026-11-23), checkpoint 0.2.0.dev14: immutable opt-in campaign
+format v1 and public create/load/list, CLI create/list/show and ACP. Twenty-seven
+new cases; 1752 full offline tests pass in 12.09 s (84 expected warnings),
+.development/test-runs/campaign-records.xml. Strict bounded record reads, exclusive
+publication, exact definitions, machine identity, canonical hashes and immutable
+receipt links are verified. No existing record migration/copy or cluster effects.
+No-Git metadata, wheel/sdist rebuild and disposable installed version/connection/
+campaign API/CLI/ACP/guidance smoke pass. Inventory 284 routes/144 owners/21 broad
+catches. .development/artifacts/campaign-records wheel SHA256
+711054cd2b6bcc5e90d3ae0b6edb54bc58826a99235b98ba75d60508c1588368;
+sdist bb0c4aa5714fd4c0fadfe0d7875d85e19397b26ec0c564a8236031675854dc17;
+rebuilt wheel 03a825a91e403df2940b36e3bb2da172d8e5151bc8e32af7d0b0d5cd88df8e04;
+member contents match. Base/test dependencies, daily config/state, remote
+installations and pinned rollback unchanged. Inspection/fetch follows separately.
+
 MULTI.1a (2026-11-23), checkpoint 0.2.0.dev13: 1725 offline tests pass in
 12.77 s (84 expected warnings), .development/test-runs/connections.xml. Fifteen
 new connection cases plus updated transport expectations verify noninteractive

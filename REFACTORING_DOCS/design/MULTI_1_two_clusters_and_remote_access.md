@@ -371,3 +371,27 @@ No env setup or scientific imports. 12-second probe, up to 32 configured profile
 expected failures retain cause/time and neighbours. 15 new regressions plus
 updated exact transport expectations; full offline and package evidence recorded
 in the installation register. No cluster access or site-route verification.
+
+
+### MULTI.1b implemented v1 boundary (2026-11-23)
+
+The implementation request authorizes the minimal existing-run grouping slice.
+The frozen v1 fields are format_version=1, campaign_id (32 hex UUID), name,
+revision=1, created_at, context, members; each member has member_id, machine,
+bundle_ref, bundle_sha256. Public load adds campaign_path as a locator. Relative
+references resolve against that campaign's controller directory and may refer
+outside it to existing bundles. One/two distinct machine/member/path entries;
+64 KiB record, 8 MiB bundle and 8 KiB context limits. JSON duplicate keys fail.
+
+Canonical parsed-definition digests ignore whitespace. Only receipt-bearing jobs
+with exact immutable submission_id/receipt_path links exclude mutable id and
+submission state/id/error from hashing; legacy saved IDs remain fingerprinted.
+All options, graph and recorded execution metadata remain fingerprinted. Record
+publication is exclusive/atomic. No edits/migrations/overwrites: changed plans get
+a new name/identity. Unsupported versions/fields remain intact and fail visibly.
+No historical records are imported. Task mappings and attempt journals from the
+larger example above are deliberately not v1 fields; settle their opt-in record
+boundary in MULTI.1d rather than quietly accepting unused metadata now. This
+satisfies the minimal grouping/discovery portion of MVP12.4, not its later review
+and retry requirements. CLI create/list/show, Python and ACP use one record owner.
+Member absence after cleanup is retained as a reference for later inspection.

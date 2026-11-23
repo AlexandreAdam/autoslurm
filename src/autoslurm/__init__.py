@@ -2,6 +2,7 @@
 
 from .version import __version__
 from .connections import check_connections
+from .campaign_records import create_campaign, load_campaign, list_campaigns
 
 from .definitions import (
     CONFIG_FILE_PATH,
@@ -109,6 +110,7 @@ from .errors import ConfigurationError, InvalidRequestError, SelectionError, Rec
 __all__ = [
     '__version__',
     'check_connections',
+    'create_campaign', 'load_campaign', 'list_campaigns',
     'ConfigurationError',
     'InvalidRequestError',
     'SelectionError', 'RecordWriteError',

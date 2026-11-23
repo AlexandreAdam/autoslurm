@@ -198,5 +198,47 @@
       "gateway",
       "ssh"
     ]
+  },
+  {
+    "name": "create_campaign",
+    "description": "Controller-local immutable campaign grouping; no remote access or submission.",
+    "parameters": {
+      "name": "Required campaign name.",
+      "members": "Required array of member_id,machine,bundle_path mappings.",
+      "context": "Optional readable rationale."
+    },
+    "context_sections": [
+      "20_campaigns.md"
+    ],
+    "keywords": [
+      "campaign",
+      "multi-machine"
+    ]
+  },
+  {
+    "name": "load_campaign",
+    "description": "Controller-local immutable campaign grouping; no remote access or submission.",
+    "parameters": {
+      "name": "Required exact campaign name."
+    },
+    "context_sections": [
+      "20_campaigns.md"
+    ],
+    "keywords": [
+      "campaign",
+      "multi-machine"
+    ]
+  },
+  {
+    "name": "list_campaigns",
+    "description": "Controller-local immutable campaign grouping; no remote access or submission.",
+    "parameters": {},
+    "context_sections": [
+      "20_campaigns.md"
+    ],
+    "keywords": [
+      "campaign",
+      "multi-machine"
+    ]
   }
 ]

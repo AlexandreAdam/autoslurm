@@ -9,6 +9,20 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev14 — 2026-11-23
+
+- Added offline immutable campaign create/load/list Python and ACP operations,
+  with `asl campaign create`, `list` and `show`. Groups one/two existing exact
+  per-machine bundles without copying, submitting or discovering remote state.
+- New opt-in campaign format v1 stores identities, readable rationale, relative
+  controller-file references and canonical definition digests. Receipt links
+  remain fingerprinted while mutable receipt outcomes may be refreshed later.
+  Collisions never overwrite; bad/unknown records remain intact and visible.
+- Bounded strict campaign/bundle JSON reads reject duplicate keys/oversized input.
+  Existing unbounded record readers keep their previous behavior. Existing bundle
+  and receipt formats are unchanged; no history import/migration. Scientific
+  task partitioning and campaign submission/retry remain separate later work.
+
 ## 0.2.0.dev13 — 2026-11-23
 
 - Added `asl connection check --machine NAME` / `--all`, public check_connections,

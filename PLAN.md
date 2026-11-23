@@ -28,13 +28,13 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1725 passed, 84 expected
+  rollback source remains unchanged. Full offline suite: 1752 passed, 84 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MULTI.1a noninteractive connection checks in
-  0.2.0.dev13. Shared SSH/SCP/rsync options preserve recorded destinations and
-  session ownership; public Python/CLI/ACP exposes per-machine observations.
-  No activation/login/scheduler/configuration writes or actual cluster access.
-- **Next task:** MULTI.1b campaign records/discovery, then MULTI.1c inspection/
+- **Latest completed task:** MULTI.1b immutable campaign records/discovery in
+  0.2.0.dev14. Public create/load/list and campaign create/list/show group exact
+  ordinary runs offline. Small opt-in v1 preserves existing bundle/receipt formats;
+  no copying, migration, scientific task mapping or submission coordination.
+- **Next task:** MULTI.1c campaign inspection/
   fetching, explicitly requested on 2026-11-23. MVP10.5 remains queued, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Review and split its operation boundaries before implementation; preserve
@@ -873,9 +873,10 @@ remains queued while MULTI.1a–c is implemented. No live cluster check/configur
   rsync/session options and add connection-check evidence through supported routes.
   Preserve aliases/ownership; distinguish unknown connection failure from proven
   login need. No prompts, SSH config edits or assumptions about gateway support.
-- [ ] **MULTI.1b Campaign record and discovery.** Freeze the opt-in v1/release/
+- [x] **MULTI.1b Campaign record and discovery.** Freeze the opt-in v1/release/
   retention contract, then expose create/load/list for existing ordinary runs.
-  Validate exact refs/fingerprints, one-machine members and logical task mappings;
+  Validate exact refs/fingerprints and one-machine members; scientific task
+  mapping metadata is deferred to MULTI.1d (not accepted as unused v1 fields);
   use this as MVP12.4's grouping owner, with no parallel registry or migration.
 - [ ] **MULTI.1c Coherent inspection/context/fetch.** Compose member inspection,
   receipts and caches; preserve good observations when another member fails,
@@ -1155,6 +1156,8 @@ or migration decision has already been accepted.
 | 2026-11-23 | MULTI.1.0 Campaign/access design | Revised the new campaign proposal against real two-step home SSH, current transport/inspection/receipt/cache owners and existing workflow plans. Defined proposed controller/store boundary, exact definitions/members/attempts/task mappings, partial freshness, request-wide bounds and five independent implementation slices. Shared grouping with MVP12.4 and retry with MVP12.6; no duplicate engine. Documentation/link review only, no runtime changes, test rerun, cluster contact, local profile/state changes or installation. Runtime baseline remains 1710 passing offline tests at v0.2.0.dev12. No implementation/schema acceptance implied. |
 
 | 2026-11-23 | MULTI.1a Connection policy/check | Public Python/CLI/ACP bounded no-op reachability, no activation requirement, per-machine failures with safe cause/time and unknown-authentication semantics. Shared SSH/SCP/rsync BatchMode/ConnectTimeout policy; direct remote sbatch/bulk-driver timeouts 60/300 seconds preserve existing uncertain-outcome behavior. Existing transport fixtures updated to assert the added options. 15 new checks; 1725 offline tests passed in 12.77 s, 84 expected warnings; wheel/sdist/installed API/CLI/ACP checks passed, evidence in installation register. No actual cluster, SSH config, base dependencies, daily state or rollback changes. Version 0.2.0.dev13; push dev and checkpoint tag. Campaign records/context next; gateway support remains unverified. |
+
+| 2026-11-23 | MULTI.1b Campaign records | Public offline create/load/list, CLI create/list/show and ACP. Immutable opt-in v1 with exact controller-relative references, canonical definition digests retaining immutable receipt links, one/two distinct machines and bounded strict JSON. Changed definitions require a new name; no copies/history import or scientific task mapping. 27 new cases; 1752 offline tests passed in 12.09 s, 84 expected warnings, plus wheel/sdist/installed API/CLI/ACP checks. Evidence in installation register. No actual cluster, config/state migration, dependency install or rollback change. Checkpoint 0.2.0.dev14; push dev/tag; inspection/fetch follows. |
 
 ## How we work
 
