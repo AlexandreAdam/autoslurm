@@ -9,6 +9,9 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+- Recorded flatiron as jump-only: no AutoSlurm/controller/helper installation
+  or campaign storage on the gateway. Laptop/login-node access remains unverified.
+
 - Clarified campaign agent guidance: dependencies stay inside single-machine
   bundles; campaign-wide status/logs use `campaign inspect` / `campaign fetch`.
   Cross-machine dependency orchestration is unsupported.

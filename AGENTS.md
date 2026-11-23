@@ -126,6 +126,10 @@ operate from the workstation; compute nodes use already-prepared environments.
   on hostname. Record logical and resolved paths per attempt. Each application
   run/bundle uses one selected machine; multi-machine routing is outside scope.
 - Remote profiles use only `ssh_alias`, referencing operator-owned SSH config.
+  Alexandre's `flatiron` host is a jump point only: never propose running or
+  installing AutoSlurm, agents, helpers or campaign storage there. Controller
+  choices are the laptop through a site-permitted verified SSH route, or a
+  permitted cluster login node with explicit access to the required records.
   Do not manage HostName, User, IdentityFile or keys in AutoSlurm profiles. New
   run transports store the alias alone; historical recorded transports remain
   readable. Never silently fall back to local execution or another profile.

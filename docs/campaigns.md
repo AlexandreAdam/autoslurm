@@ -40,6 +40,10 @@ current route is ssh flatiron, then ssh rusty/popeye from there. An interactive
 gateway shell does not give laptop commands this route or move their records.
 See [connection checks](ssh_configuration.md#check-access-without-an-interactive-prompt).
 No gateway configuration or authentication is automated.
+`flatiron` is strictly a jump point: AutoSlurm, helpers and campaign storage must
+not be placed there. A controller may run on the laptop through a verified,
+site-permitted SSH route, or on a permitted cluster login node with its required
+records. Access from that node to the other cluster is not assumed.
 
 Cleaning a member bundle removes its usual navigation; its campaign reference
 remains. Campaigns never reconstruct deleted definitions from a receipt or silently

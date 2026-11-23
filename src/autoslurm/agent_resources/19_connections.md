@@ -24,5 +24,8 @@ No keys/passwords/codes, SSH config edits, retry or fallback are managed here.
 Alexandre's current home route is laptop ssh flatiron, then ssh rusty or ssh
 popeye from the gateway. A gateway shell does not give subsequent laptop commands
 that route. A permitted working jump configuration or an explicitly selected
-controller inside the network is still needed. A failed SSH command (including
+controller on a permitted cluster login node is still needed. `flatiron` is
+strictly a jump point: never run/install AutoSlurm, agents or helpers there or
+store campaign records there. Cross-cluster reachability from a login-node
+controller also needs verification. A failed SSH command (including
 exit 255) does not prove authentication is the cause. Preserve that uncertainty.

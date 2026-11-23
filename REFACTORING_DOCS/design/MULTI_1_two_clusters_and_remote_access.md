@@ -26,7 +26,8 @@ gateway: ssh rusty       OR       ssh popeye
 `ssh rusty` from the home laptop does **not** currently work. A shell on flatiron
 does not by itself make later laptop SSH/SCP/rsync commands use that shell. Do not
 present a transparent same-alias setup or one-login-per-day routine as existing
-behavior. flatiron is an access host, not a third Slurm execution machine.
+behavior. User clarification (2026-11-23, MULTI.1a.docs): flatiron is strictly a
+jump point. It cannot host AutoSlurm, agents, helpers or campaign storage.
 
 ### Controller location and the access boundary
 
@@ -36,7 +37,7 @@ tracking store. Execution machines run Slurm jobs. There are two candidate modes
 | Mode | Requirements and consequences |
 |---|---|
 | Laptop controller through the gateway | Operator/site must confirm that an SSH jump connection is permitted and supports this authentication. Operator supplies working SSH aliases on the laptop. AutoSlurm then uses those aliases through its ordinary adapters. This is unverified. |
-| Controller inside the accessible network | Gateway or login host must permit the required software, outbound cluster commands and durable storage. Authentication into that host stays interactive. This does not automatically carry laptop tracking records or discover campaigns on other clusters. |
+| Controller on a cluster login node | A permitted cluster login node must support the required software, outbound cluster commands and durable storage. flatiron is excluded. Authentication into the login node stays operator-managed. This does not automatically carry laptop tracking records or establish access to the other cluster. |
 
 Prefer one controller and its authoritative campaign store for the first release.
 Changing controller hosts is explicit: a campaign file alone is insufficient if
@@ -350,7 +351,7 @@ commands stay out of current capability/help claims until implemented.
 - Whether Flatiron permits/supports the relevant jump/authentication/sharing
   setup; no access attempts or SSH config edits are authorized by this design.
 - Which controller Alexandre wants for daily campaigns. Laptop-first depends on
-  an approved working route; gateway/login-host operation depends on site software,
+  an approved working route; cluster login-node operation depends on site software,
   storage and access policies. No automatic campaign portability is promised.
 - Popeye's actual partitions/accounts/limits/modules and environment; paths and
   shared filesystem assumptions must be independently verified by the operator.

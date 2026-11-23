@@ -106,6 +106,9 @@ both hops checked; an outer BatchMode flag alone is not proof of that behavior.
 At home Alexandre currently uses ssh flatiron, authenticates there, then runs ssh
 rusty or ssh popeye inside the gateway. This does not make ssh rusty on the laptop
 work. AutoSlurm does not automate that interactive session or enter passwords/2FA.
-A permitted jump route or a suitable controller inside the network still needs
-operator verification; moving controllers also needs access to the run records.
+`flatiron` is a jump point only; do not install or run AutoSlurm, agents or
+helpers there, or use it for campaign storage. A permitted laptop jump route or
+a controller on a permitted cluster login node still needs operator verification;
+moving controllers also needs access to the run records. A cluster login node's
+access to the other cluster is not assumed.
 An SSH failure alone does not establish that authentication is the problem.

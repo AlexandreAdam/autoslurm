@@ -37,6 +37,8 @@ This file is the source of truth for active scope, task order and progress.
   global log/response bounds; scientific results, submission and retry remain out.
   MULTI.1c.docs clarifies the user-confirmed prohibition on cross-machine
   dependencies and the campaign inspect/fetch versus individual-run CLI boundary.
+  MULTI.1a.docs records that flatiron is jump-only and cannot host AutoSlurm,
+  helpers or campaign state; laptop/login-node route verification stays open.
 - **Next task:** MVP10.5 submission and recovery diagnostics remain queued.
   MULTI.1a–c connection checks and existing-run campaign create/list/inspect/fetch
   are complete locally, as requested. MULTI.1d coordinated submission and MULTI.1e
@@ -862,6 +864,9 @@ remains queued while MULTI.1a–c is implemented. No live cluster check/configur
   rsync/session options and add connection-check evidence through supported routes.
   Preserve aliases/ownership; distinguish unknown connection failure from proven
   login need. No prompts, SSH config edits or assumptions about gateway support.
+- [x] **MULTI.1a.docs Jump-only gateway clarification.** Exclude flatiron from
+  controller/helper/storage locations. Keep laptop route or permitted cluster
+  login-node controller as unverified choices; no SSH configuration changes.
 - [x] **MULTI.1b Campaign record and discovery.** Freeze the opt-in v1/release/
   retention contract, then expose create/load/list for existing ordinary runs.
   Validate exact refs/fingerprints and one-machine members; scientific task
@@ -1155,6 +1160,8 @@ or migration decision has already been accepted.
 | 2026-11-23 | MULTI.1c Coherent campaign observation | Added Python/CLI/ACP inspect/fetch, exact member/job/task selection, receipt refresh before status/logs, preserved per-member partial/current/last-known evidence and cached no-network/no-write behavior. Reuses inspection and existing caches with optional prior-job evidence; shared context-local deadline bounds existing read-only adapters, global log quotas and response compaction retain known IDs/counts. No dataset transfer, alternate-profile routing, schema migration, actual cluster, daily state/config or rollback change. 33 new cases; 1785 offline tests passed in 13.31 s with 84 expected warnings; installed two-machine API/CLI/ACP/cache/fetch and artifact checks passed. Evidence in installation register. Checkpoint 0.2.0.dev15; push dev/tag. Requested CLI scope complete; coordinated submission/retry remains later work. |
 
 | 2026-11-23 | MULTI.1c.docs Campaign boundaries | Clarified in root/installed agent guidance, human docs and design that dependencies stay inside each single-machine member bundle, with no cross-machine gating. Documented campaign inspect/fetch versus individual-run status/log commands and confirmed SSH route remains operator-owned. Documentation only; diff/link checks, no runtime or cluster changes. |
+
+| 2026-11-23 | MULTI.1a.docs Jump-only gateway | Recorded the user's clarification in root/installed agent guidance, SSH/campaign docs and design: flatiron cannot run AutoSlurm, helpers or agents or hold campaign state. Controller candidates are laptop through an approved route or a permitted cluster login node; record availability and cross-cluster access require verification. Documentation diff reviewed; no new links, runtime tests or SSH/configuration changes. |
 
 ## How we work
 

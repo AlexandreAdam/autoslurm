@@ -51,6 +51,9 @@ entries retain diagnostics beside healthy neighbours. Loading the group does
 not require that all member files remain readable; inspection diagnoses them.
 Removing a bundle with clean does not delete/rebuild its campaign reference.
 Records remain on their controller; a gateway login does not transfer them.
+Alexandre's `flatiron` gateway is a jump point only, never a controller, helper
+or campaign-storage host. Use a verified laptop route or a permitted cluster
+login node with explicit record access; do not assume cross-cluster connectivity.
 
 No global scientific task mapping is stored in this first schema: report member/
 job/task observations, not a fabricated global science-progress count. Task
