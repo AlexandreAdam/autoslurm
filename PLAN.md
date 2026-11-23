@@ -28,14 +28,14 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1710 passed, 84 expected
+  rollback source remains unchanged. Full offline suite: 1725 passed, 84 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.CLEAN.1 cleanup scopes in 0.2.0.dev12.
-  Added completed/terminal, expanded all and guarded terminal selection with fresh
-  per-task evidence and settled receipts. Local bundle JSON only; navigation loss
-  documented, other evidence/scientific files retained. 41 new cases; full offline
-  suite 1710 passed, 84 expected warnings. No daily cleanup or cluster contact.
-- **Next task:** MVP10.5 submission and recovery evidence, using the
+- **Latest completed task:** MULTI.1a noninteractive connection checks in
+  0.2.0.dev13. Shared SSH/SCP/rsync options preserve recorded destinations and
+  session ownership; public Python/CLI/ACP exposes per-machine observations.
+  No activation/login/scheduler/configuration writes or actual cluster access.
+- **Next task:** MULTI.1b campaign records/discovery, then MULTI.1c inspection/
+  fetching, explicitly requested on 2026-11-23. MVP10.5 remains queued, using the
   [completed audit](REFACTORING_DOCS/design/MVP10_api_failure_audit.md).
   Review and split its operation boundaries before implementation; preserve
   accepted IDs, partial/uncertain outcomes and original/secondary causes. No blind
@@ -56,7 +56,7 @@ This file is the source of truth for active scope, task order and progress.
 - **Campaign design:** MULTI.1.0 completed on 2026-11-23: corrected home access
   to laptop -> flatiron -> rusty/popeye, distinguished controller records from
   execution-side tracking and split connectivity, campaign records/context,
-  coordinated submission and explicit retry. Implementation remains proposed;
+  coordinated submission and explicit retry. MULTI.1a connectivity is implemented; campaign contracts remain proposed;
   [design](REFACTORING_DOCS/design/MULTI_1_two_clusters_and_remote_access.md).
   First useful campaign delivery groups existing runs and observes both machines;
   it does not require a new multi-machine submission engine. No later runtime
@@ -862,14 +862,14 @@ Design: [campaigns and access](REFACTORING_DOCS/design/MULTI_1_two_clusters_and_
 Requested 2026-11-23. One run still selects one machine; a proposed campaign groups
 exact per-machine runs. Gateway connectivity and controller-host record availability
 are separate concerns. Names, schema and implementation order remain proposed.
-MVP10.5 remains queued; this section records the new design without silently
-starting its implementation. No live cluster check/configuration is authorized.
+Implementation authorized 2026-11-23; complete one slice at a time. MVP10.5
+remains queued while MULTI.1a–c is implemented. No live cluster check/configuration is authorized.
 
 - [x] **MULTI.1.0 Design and responsibility map.** Correct the actual two-step home
   login; define controller/store boundaries, immutable intent and exact member/
   attempt/task identities, partial observations, bounded fetching and offline gates.
   Integrate MVP11 and MVP12.4/6 overlap; separate operator facts from promises.
-- [ ] **MULTI.1a Noninteractive connectivity.** Audit/split shared bounded SSH/SCP/
+- [x] **MULTI.1a Noninteractive connectivity.** Audit/split shared bounded SSH/SCP/
   rsync/session options and add connection-check evidence through supported routes.
   Preserve aliases/ownership; distinguish unknown connection failure from proven
   login need. No prompts, SSH config edits or assumptions about gateway support.
@@ -1153,6 +1153,8 @@ or migration decision has already been accepted.
 | 2026-11-23 | FIX.CLEAN.1 Finished bundle cleanup | Added completed/terminal scopes and expanded all, fresh complete task/receipt eligibility, explicit terminal index filtering and changed-definition protection. 41 new cases; 1710 full offline tests passed in 12.43 s, 84 expected warnings, .development/test-runs/clean-scopes.xml. Local bundle JSON only; navigation loss documented, receipts/logs/scripts/scientific files retained. No cluster contact, daily cleanup/config, environment install or rollback changes. Version 0.2.0.dev12; artifact checks in installation register; commit prefix FIX.CLEAN.1; push dev and annotated checkpoint tag. Broader MVP10.7 error integration remains pending. |
 
 | 2026-11-23 | MULTI.1.0 Campaign/access design | Revised the new campaign proposal against real two-step home SSH, current transport/inspection/receipt/cache owners and existing workflow plans. Defined proposed controller/store boundary, exact definitions/members/attempts/task mappings, partial freshness, request-wide bounds and five independent implementation slices. Shared grouping with MVP12.4 and retry with MVP12.6; no duplicate engine. Documentation/link review only, no runtime changes, test rerun, cluster contact, local profile/state changes or installation. Runtime baseline remains 1710 passing offline tests at v0.2.0.dev12. No implementation/schema acceptance implied. |
+
+| 2026-11-23 | MULTI.1a Connection policy/check | Public Python/CLI/ACP bounded no-op reachability, no activation requirement, per-machine failures with safe cause/time and unknown-authentication semantics. Shared SSH/SCP/rsync BatchMode/ConnectTimeout policy; direct remote sbatch/bulk-driver timeouts 60/300 seconds preserve existing uncertain-outcome behavior. Existing transport fixtures updated to assert the added options. 15 new checks; 1725 offline tests passed in 12.77 s, 84 expected warnings; wheel/sdist/installed API/CLI/ACP checks passed, evidence in installation register. No actual cluster, SSH config, base dependencies, daily state or rollback changes. Version 0.2.0.dev13; push dev and checkpoint tag. Campaign records/context next; gateway support remains unverified. |
 
 ## How we work
 

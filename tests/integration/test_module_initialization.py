@@ -171,7 +171,7 @@ def test_remote_detection_saves_one_path_using_alias_without_activation(monkeypa
     candidate = discovery.MODULE_INITIALIZERS[1]
     def probe(command, **kwargs):
         commands.append(command)
-        assert command[:2] == ['ssh', 'research'] and 'bash -c ' in command[2]
+        assert command[:6] == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research'] and 'bash -c ' in command[-1]
         assert 'source ' not in command[2] and 'module load' not in command[2] and '/venv' not in command[2]
         assert kwargs['timeout'] == 30
         return subprocess.CompletedProcess(command, 0, candidate + '\n', '')

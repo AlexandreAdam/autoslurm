@@ -81,7 +81,7 @@ def test_saved_remote_artifact_uses_producing_transport_without_profile(tmp_path
     assert recorded_execution(saved)["machine"] == "old-name"
     assert resolve_results_path("study/summary.json", bundle_path=saved) == "/old/results/study/summary.json"
     assert path_exists("study/summary.json", bundle_path=saved)
-    assert calls == [["ssh", "scientist@old-host", "python3 -B -"]]
+    assert calls == [["ssh", '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', "scientist@old-host", "python3 -B -"]]
     with pytest.raises(ValueError, match="either a saved execution"):
         resolve_results_path("study", bundle_path=saved, machine_name="new-name")
 

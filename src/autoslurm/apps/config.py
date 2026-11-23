@@ -34,7 +34,7 @@ def _validation_shell_command(machine: Dict) -> str:
 def _validate_machine(machine: Dict, name: str) -> bool:
     if is_remote_machine(machine):
         ssh_probe = ssh_command(machine, name, "true")
-        result = subprocess.run(ssh_probe, capture_output=True, text=True)
+        result = subprocess.run(ssh_probe, capture_output=True, text=True, timeout=30)
         if result.returncode != 0:
             print(f"[{name}] SSH connectivity check: failed")
             message = result.stderr.strip() or result.stdout.strip()
@@ -50,6 +50,7 @@ def _validate_machine(machine: Dict, name: str) -> bool:
             ),
             capture_output=True,
             text=True,
+            timeout=30,
         )
         if result.returncode != 0:
             print(f"[{name}] Python environment check: failed")

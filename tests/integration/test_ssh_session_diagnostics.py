@@ -305,7 +305,7 @@ def test_real_submission_retains_primary_state_and_cleanup_after_refresh(install
         if '-O' in command:
             return subprocess.CompletedProcess(command, 255, 'retained-secret', 'retained-secret')
         if command[0] == 'ssh' and '-o' in command:
-            command = ['ssh', 'laptop-only-alias', command[-1]]
+            command = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'laptop-only-alias', command[-1]]
         return original(command, **kwargs)
     monkeypatch.setattr(subprocess, 'run', run)
     with pytest.raises(SubmissionError) as stopped:

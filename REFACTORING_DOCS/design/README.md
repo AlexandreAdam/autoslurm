@@ -26,7 +26,7 @@ validation approach.
 | FIX.TRACKING.1 Execution-side tracking | [FIX_TRACKING_1_execution_tracking.md](FIX_TRACKING_1_execution_tracking.md) | New remote submissions publish exact cluster-local tracking views |
 | MVP11 Status refactor | [MVP11_status_explanations.md](MVP11_status_explanations.md) | Planned; run/job/task workflow, clear reasons/progress/freshness, thin presentation and shared observations |
 | MVP12 Reusable scientific workflows | [MVP12_reusable_workflows.md](MVP12_reusable_workflows.md) | Planned from the Gaia proposal; layered public services, per-slice API/docs adoption and optional task runtime |
-| MULTI.1 Two clusters and working from home | [MULTI_1_two_clusters_and_remote_access.md](MULTI_1_two_clusters_and_remote_access.md) | Design revised 2026-11-23; actual gateway workflow, controller/store boundary, proposed connectivity and exact campaign context slices |
+| MULTI.1 Two clusters and working from home | [MULTI_1_two_clusters_and_remote_access.md](MULTI_1_two_clusters_and_remote_access.md) | Connection check/policy implemented; campaign record/context slices follow; actual gateway route remains unverified |
 | Command/job pattern investigation (DOCS.3) | [job_command_pattern.md](job_command_pattern.md) | Concrete walkthrough and local experiment; proposals for review, no runtime changes |
 | Original M0 Interaction mapping and regression coverage | [M0_baseline.md](M0_baseline.md) | Superseded by MVP0; historical proposal |
 

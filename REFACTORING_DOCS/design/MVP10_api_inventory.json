@@ -3,6 +3,7 @@
   "audited_date": "2026-11-13",
   "scope": "MVP10.1 source inventory, amended through MVP10.3b.2 snapshot/filter selection. Configuration, authoring and selection adoption is recorded per owner/contract; paths/rendering, generic record publication/reads, external operations and universal route parity remain pending. Aliases share canonical owners; source coverage is not diagnostic completion.",
   "interfaces": {
+    "acp:check_connections": "autoslurm.acp.execute_acp",
     "acp:fetch_run": "autoslurm.acp.execute_acp",
     "acp:gather_context": "autoslurm.acp.execute_acp",
     "acp:inspect_experiments": "autoslurm.acp.execute_acp",
@@ -18,12 +19,14 @@
     "cli-alias:experiment-context": "autoslurm.apps.inspect.main",
     "cli-alias:kill": "autoslurm.apps.cancel.main",
     "cli-alias:stat": "autoslurm.apps.status.main",
+    "cli-subaction:connection check": "autoslurm.apps.connection.main",
     "cli-subaction:software status": "autoslurm.apps.software.main",
     "cli-subaction:software update": "autoslurm.apps.software.main",
     "cli:agent": "autoslurm.apps.agent_context.main",
     "cli:cancel": "autoslurm.apps.cancel.main",
     "cli:clean": "autoslurm.apps.clean.main",
     "cli:config": "autoslurm.apps.config.main",
+    "cli:connection": "autoslurm.apps.connection.main",
     "cli:fetch": "autoslurm.apps.fetch.main",
     "cli:filter": "autoslurm.apps.filter.main",
     "cli:initialize": "autoslurm.apps.initialize.main",
@@ -112,6 +115,7 @@
     "python:autoslurm.bundle_snapshot_state": "autoslurm.bundle_selection.bundle_snapshot_state",
     "python:autoslurm.bundle_snapshots": "autoslurm.bundle_selection.bundle_snapshots",
     "python:autoslurm.bundle_software_manifest": "autoslurm.software_manifest.bundle_software_manifest",
+    "python:autoslurm.check_connections": "autoslurm.connections.check_connections",
     "python:autoslurm.command_contract.CommandContract": "autoslurm.command_contract.CommandContract",
     "python:autoslurm.command_contract.CommandOption": "autoslurm.command_contract.CommandOption",
     "python:autoslurm.config.activation_command_from_config": "autoslurm.config.activation_command_from_config",
@@ -122,6 +126,7 @@
     "python:autoslurm.configuration.load_config": "autoslurm.config.load_config",
     "python:autoslurm.configuration.machine_config": "autoslurm.config.machine_config",
     "python:autoslurm.configuration.save_config": "autoslurm.config.save_config",
+    "python:autoslurm.connections.check_connections": "autoslurm.connections.check_connections",
     "python:autoslurm.context.agent_context": "autoslurm.context.agent_context",
     "python:autoslurm.context.agent_context_paths": "autoslurm.context.agent_context_paths",
     "python:autoslurm.definitions.CONFIG_FILE_PATH": "autoslurm.definitions.CONFIG_FILE_PATH",
@@ -280,6 +285,9 @@
     "autoslurm.apps.bulk_submit_driver.main": [
       "Exception"
     ],
+    "autoslurm.bulk_submit_driver.submit_payload": [
+      "(Exception, KeyboardInterrupt)"
+    ],
     "autoslurm.bulk_submit_driver.submit_payload.persist": [
       "(Exception, KeyboardInterrupt)"
     ],
@@ -304,6 +312,10 @@
     "autoslurm.scheduler.query_scheduler": [
       "Exception"
     ],
+    "autoslurm.ssh_session_resources.OwnedSSHSession.cleanup": [
+      "BaseException",
+      "BaseException"
+    ],
     "autoslurm.submission.refresh_submission": [
       "Exception",
       "Exception"
@@ -312,13 +324,6 @@
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)",
       "(Exception, KeyboardInterrupt)"
-    ],
-    "autoslurm.bulk_submit_driver.submit_payload": [
-      "(Exception, KeyboardInterrupt)"
-    ],
-    "autoslurm.ssh_session_resources.OwnedSSHSession.cleanup": [
-      "BaseException",
-      "BaseException"
     ]
   },
   "contracts": {
@@ -713,6 +718,17 @@
         "tests/integration/test_submission_safety.py",
         "tests/unit/test_log_retrieval.py"
       ]
+    },
+    "connections": {
+      "implementation_task": "MULTI.1a",
+      "failures": "Invalid selection/config; missing SSH, timeout and nonzero or invalid exit.",
+      "translation_owner": "connections over transport; errors.py supplies pure diagnostics.",
+      "desired_diagnostic": "Per-machine availability with exact alias/time/stage and safe cause; preserve healthy neighbours.",
+      "next_action": "Verify operator SSH access from this controller; no assumption that login alone fixes routing.",
+      "regression_evidence": [
+        "tests/integration/test_connections.py"
+      ],
+      "adoption": "implemented for connection check; general transport operation diagnostics remain at their existing owners."
     }
   },
   "owners": {
@@ -1543,6 +1559,18 @@
       "inputs": "Status/log-compatible run/index/history/range/exact selectors, job/task/array/stream/bounds, cached and JSON.",
       "current": "Delegates to existing logs selector/parser/presentation with receipt refresh enabled for fresh fetch. Bare help; partial text/JSON retained with exit1 for collection errors.",
       "effects": "Same selected fresh/cache behavior as fetch_run; no new transfer engine or standalone console installation."
+    },
+    "autoslurm.apps.connection.main": {
+      "contract": "connections",
+      "inputs": "Explicit configured machine or all_machines; no passwords, activation or discovery.",
+      "current": "Public observation/CLI shared connection check, expected failures retain cause facts.",
+      "effects": "Bounded no-op SSH; no scheduler, activation, login, install or tracking writes."
+    },
+    "autoslurm.connections.check_connections": {
+      "contract": "connections",
+      "inputs": "Explicit configured machine or all_machines; no passwords, activation or discovery.",
+      "current": "Public observation/CLI shared connection check, expected failures retain cause facts.",
+      "effects": "Bounded no-op SSH; no scheduler, activation, login, install or tracking writes."
     }
   },
   "catch_reviews": {
@@ -1685,6 +1713,18 @@
       "inputs": "Existing status/log selectors and limits.",
       "current": "Shared logs parser/presentation, linked receipt refresh and partial text/JSON/exit1.",
       "effects": "Fresh local evidence writes and bounded remote reads; cached reads only."
+    },
+    "acp:check_connections": {
+      "contract": "connections",
+      "inputs": "Request mapping with action and action-specific fields.",
+      "current": "success/result or error/message; expected SelectionError/ConfigurationError add diagnostic. Per-entry failed discovery remains in successful listings. SubmissionError result retains receipt. Other Exception still becomes a string and nonmapping input can fail before catch (MVP10.8 pending). MVP10.3c.2 retains expected shared RecordWriteError diagnostic in error envelopes; generic bug/authoring and receipt policies remain staged. MVP10.3c.3 adds adopted SubmissionError diagnostic alongside result receipt; load/list receipt SelectionError envelopes retain exact identity.",
+      "effects": "Action-dependent reads, local scheduling or receipt/cache refresh writes; no submit action."
+    },
+    "cli-subaction:connection check": {
+      "contract": "connections",
+      "inputs": "Explicit configured machine or all_machines; no passwords, activation or discovery.",
+      "current": "Public observation/CLI shared connection check, expected failures retain cause facts.",
+      "effects": "Bounded no-op SSH; no scheduler, activation, login, install or tracking writes."
     }
   },
   "amendments": [

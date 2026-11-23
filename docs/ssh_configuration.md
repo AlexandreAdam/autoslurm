@@ -80,3 +80,32 @@ on that host. A failed probe raises rather than claiming absence. Probe/mkdir
 commands use 30-second timeouts; SCP/rsync use 300 seconds. A timed-out copy may
 have left partial files; there is no automatic retry or rollback. `asl sync
 --debug` exposes original causes. See [file-operation failures](errors.md#paths-transfers-and-sync-mvp104c).
+
+## Check access without an interactive prompt
+
+```sh
+asl connection check --machine rusty
+asl connection check --all --json
+```
+
+The check runs a bounded no-op from the host where AutoSlurm is running. Each
+profile reports ready, local (no SSH needed), or unavailable with timestamp and
+diagnostic; it checks neither Slurm nor your scientific environment. A failed
+member does not discard the other results. JSON is available and partial checks
+exit 1. The Python equivalent is check_connections; agents can use ACP action
+check_connections or request the installed 19_connections recipe.
+
+Ordinary SSH/SCP/rsync commands now use noninteractive authentication and a
+10-second connection timeout; probes have a 12-second process deadline. Direct
+remote sbatch has a 60-second deadline, the bulk driver 300 seconds. A submission
+timeout is an uncertain outcome: preserve its receipt and inspect before retrying.
+Configured connection-sharing ownership remains unchanged. SSH itself may create
+operator-configured connection state. Arbitrary jump/proxy configurations need
+both hops checked; an outer BatchMode flag alone is not proof of that behavior.
+
+At home Alexandre currently uses ssh flatiron, authenticates there, then runs ssh
+rusty or ssh popeye inside the gateway. This does not make ssh rusty on the laptop
+work. AutoSlurm does not automate that interactive session or enter passwords/2FA.
+A permitted jump route or a suitable controller inside the network still needs
+operator verification; moving controllers also needs access to the run records.
+An SSH failure alone does not establish that authentication is the problem.

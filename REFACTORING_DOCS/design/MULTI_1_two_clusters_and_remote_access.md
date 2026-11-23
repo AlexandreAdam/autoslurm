@@ -5,8 +5,8 @@
 Design revised on 2026-11-23 from Alexandre's proposal and clarification.
 **Requested:** coherent context for work spread over rusty and popeye, and support
 for the extra gateway step when working from home. **Proposed:** the contracts,
-record layout, command names and delivery slices below. No campaign or connection
-command is implemented by this document. [PLAN.md](../../PLAN.md) owns progress.
+record layout, command names and delivery slices below. MULTI.1a connection checks are now implemented in 0.2.0.dev13; campaign
+commands below remain proposed until their own slices complete. [PLAN.md](../../PLAN.md) owns progress.
 
 A campaign groups ordinary runs. Each run still selects one execution machine;
 this does not introduce jobs whose execution moves between machines.
@@ -360,3 +360,14 @@ sharing and cluster-local resubmit assumptions. Defined exact grouping, partial
 context, global bounds, controller-store limitation and five implementation
 slices. Consolidated overlap with MVP11 and MVP12.4/6. Documentation only;
 implementation contracts remain proposed, no cluster access, tests or deployment.
+
+
+2026-11-23, MULTI.1a implemented: shared SSH/SCP/rsync BatchMode=yes and
+ConnectTimeout=10, direct remote sbatch/bulk-driver 60/300-second bounds, public
+check_connections / connection check / ACP with per-machine no-op observations.
+The first implementation deliberately omits the optional master-status probe:
+ready does not require sharing, and no master does not prove authentication need.
+No env setup or scientific imports. 12-second probe, up to 32 configured profiles;
+expected failures retain cause/time and neighbours. 15 new regressions plus
+updated exact transport expectations; full offline and package evidence recorded
+in the installation register. No cluster access or site-route verification.

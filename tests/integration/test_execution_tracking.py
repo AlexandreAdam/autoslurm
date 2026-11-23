@@ -63,13 +63,13 @@ def installations(tmp_path, monkeypatch):
                 return result('102')
             return result('101')
         if command[0] == 'scp':
-            for source in command[1:-1]:
+            for source in command[5:-1]:
                 shutil.copyfile(source, cluster / 'slurm' / Path(source).name)
             return result()
         if '-G' in command:
-            assert command == ['ssh', '-G', 'laptop-only-alias']
+            assert command == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-G', 'laptop-only-alias']
             return result('controlmaster auto\ncontrolpath /user/socket\n')
-        assert command[:2] == ['ssh', 'laptop-only-alias'], command
+        assert command[:6] == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'laptop-only-alias'], command
         if command[-1].startswith('bash -lc '):
             return result(str(cluster) + '\n')
         if command[-1] == 'python3 -B -':
@@ -186,7 +186,7 @@ def test_execution_tracking_survives_lost_response_and_partial_submission(instal
     # Workstation recovery learns the extra exact execution view without losing its own identity.
     set_storage_root(laptop)
     def read_receipt(command, **kwargs):
-        assert command == ['ssh', 'laptop-only-alias', 'python3 -B -']
+        assert command == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'laptop-only-alias', 'python3 -B -']
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             exec(kwargs['input'], {})

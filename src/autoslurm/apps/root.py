@@ -8,6 +8,7 @@ from ..version import __version__
 
 from . import (
     agent_context,
+    connection,
     cancel,
     clean,
     config,
@@ -28,6 +29,7 @@ from . import (
 
 
 ACTION_HELP = {
+    "connection": "Check configured connections without prompting.",
     "config": "Configure machines, software and data locations.",
     "schedule": "Schedule a job or append it to a bundle.",
     "submit": "Submit an existing bundle.",
@@ -47,6 +49,7 @@ ACTION_HELP = {
 }
 
 ACTION_HANDLERS: dict[str, Callable[[list[str] | None], None]] = {
+    "connection": connection.main,
     "config": config.main,
     "schedule": schedule.main,
     "submit": submit.main,

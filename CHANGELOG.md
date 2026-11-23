@@ -9,6 +9,19 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev13 — 2026-11-23
+
+- Added `asl connection check --machine NAME` / `--all`, public check_connections,
+  JSON and ACP evidence for bounded noninteractive reachability from this host.
+  Expected failures remain per-machine observations; SSH255 is not proof of an
+  authentication problem. Local profiles need no SSH or activated environment.
+- Shared SSH/SCP/rsync options now disable interactive authentication and bound
+  connection setup to 10 seconds. Existing aliases, historical transports and
+  owned/borrowed session lifecycle remain. Direct remote sbatch and bulk-driver
+  processes now have 60/300-second limits; lost outcomes still require inspection.
+- No gateway login automation, SSH configuration edits, fallback or retries.
+  Operator jump configuration must independently keep both hops noninteractive.
+
 ## 0.2.0.dev12 — 2026-11-23
 
 - `asl clean --scope completed` selects fully successful bundles; `terminal`

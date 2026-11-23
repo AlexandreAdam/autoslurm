@@ -42,7 +42,7 @@ def test_process_failures_retain_attempted_context_and_no_submission_effects(mon
     calls = []
     def run(command, **kwargs):
         calls.append(command)
-        assert command[:2] == ['ssh', 'research-gpu'] and kwargs['timeout'] == 30
+        assert command[:6] == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research-gpu'] and kwargs['timeout'] == 30
         if native is not None:
             raise native
         code = {'ssh255': 255, 'remote127': 127, 'signal': -15, 'bad-returncode': True}.get(fault, 0)
@@ -178,7 +178,7 @@ def test_submit_cli_readiness_errors_render_once_before_effects(monkeypatch, cap
         calls.append(command)
         if command[0] == 'bash':
             return subprocess.CompletedProcess(command, 0, '', '')
-        assert command[:2] == ['ssh', 'research-gpu']
+        assert command[:6] == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research-gpu']
         raise native
     monkeypatch.setattr(subprocess, 'run', run)
     args = ['study', '--bundle-file', str(path), *(['--debug'] if debug else [])]

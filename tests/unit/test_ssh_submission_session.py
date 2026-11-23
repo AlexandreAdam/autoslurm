@@ -55,10 +55,10 @@ def test_configured_connection_used_by_both_submit_callers(monkeypatch, sharing)
         assert run_slurm.run_bulk_submit_driver_remotely(
             {"slurm_dir": "/state/slurm"}, ssh_options=options, context=context,
         ) == {"job": "124"}
-    assert calls[0] == ["ssh", "-G", "research-gpu"]
+    assert calls[0] == ["ssh", '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', "-G", "research-gpu"]
     assert len(calls) == 3
-    assert all("-MNf" not in cmd and "-O" not in cmd and "-o" not in cmd for cmd in calls)
-    assert all(cmd[1] == "research-gpu" for cmd in calls[1:])
+    assert all("-MNf" not in cmd and "-O" not in cmd and not any(value.startswith("Control") for value in cmd) for cmd in calls)
+    assert all(cmd[5] == "research-gpu" for cmd in calls[1:])
 
 
 @pytest.mark.parametrize("probe", [
@@ -96,7 +96,7 @@ def test_owned_session_short_even_with_long_tmpdir(monkeypatch, tmp_path, probe)
         assert "-MNf" in calls[1]
     assert not folder.exists()
     assert len(calls) == 3  # One config observation, one open, one close; no retries.
-    assert calls[-1][-3:] == ["-O", "exit", "research-gpu"]
+    assert calls[-1][-7:] == ["-O", "exit", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "research-gpu"]
 
 
 def test_missing_tmp_uses_default_directory_and_cleanup_preserves_body_error(monkeypatch, short_session_directory):

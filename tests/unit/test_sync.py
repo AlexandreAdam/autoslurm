@@ -105,7 +105,7 @@ def test_sync_remote_pulls_storage(tmp_path, monkeypatch):
             return MagicMock(returncode=0, stdout=json.dumps(payload), stderr="")
         if cmd[0] == "rsync":
             assert ("--checksum" if "/out/" in cmd[-2] else "--ignore-existing") in cmd
-            assert cmd[cmd.index("-e") + 1] == "ssh"
+            assert cmd[cmd.index("-e") + 1] == "ssh -o BatchMode=yes -o ConnectTimeout=10"
             assert cmd[-2] in {
                 "research-cluster:/remote/autoslurm/jobs/",
                 "research-cluster:/remote/autoslurm/slurm/",

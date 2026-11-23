@@ -11,8 +11,9 @@ from .experiment_context import experiment_context
 from .bundle_selection import list_saved_bundles
 from .save_load_jobs import schedule_job
 from .submission import load_submission, list_submissions, refresh_submission, SubmissionError
+from .connections import check_connections
 from .inspection import inspect_bundle, list_runs, fetch_run
-from .errors import ConfigurationError, SelectionError, RecordWriteError
+from .errors import ConfigurationError, SelectionError, RecordWriteError, DiagnosticError
 
 ACTION_FILE = Path(__file__).resolve().parent / "acp_action.json"
 
@@ -86,6 +87,11 @@ def execute_acp(acl: Dict[str, Any]) -> Dict[str, Any]:
     if not action:
         return {"status": "error", "message": "Missing action"}
 
+    if action == "check_connections":
+        try:
+            return {"status": "success", "result": check_connections(acl.get("machine"), all_machines=acl.get("all_machines", False))}
+        except DiagnosticError as error:
+            return {"status": "error", "message": str(error), "diagnostic": error.diagnostic.to_dict()}
     try:
         if action == "list_submissions":
             return {"status": "success", "result": list_submissions(acl.get("bundle"))}

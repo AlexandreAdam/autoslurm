@@ -83,7 +83,7 @@ def test_remote_metadata_has_explicit_absence(selected, monkeypatch, state, kind
         return subprocess.CompletedProcess(command, 0, metadata('/selected/results/data', state, kind, number), '')
     monkeypatch.setattr(subprocess, 'run', run)
     assert path_exists('data', context=selected) is expected
-    assert calls[0][0] == ['ssh', 'research-cluster', 'python3 -B -']
+    assert calls[0][0] == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research-cluster', 'python3 -B -']
     assert calls[0][1]['timeout'] == 30 and len(calls) == 1
 
 
@@ -119,7 +119,7 @@ def test_same_worker_runs_locally_and_remotely_without_reading_contents(tmp_path
     path.write_text('science')
     ctx = resolve_execution_context('cluster', {**PROFILE, 'results_root': str(tmp_path)})
     def run(command, **kwargs):
-        assert command == ['ssh', 'research-cluster', 'python3 -B -']
+        assert command == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research-cluster', 'python3 -B -']
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             exec(kwargs['input'], {})
@@ -384,7 +384,7 @@ def test_required_paths_share_one_strict_batched_observation(selected, monkeypat
         assert 'retained-secret' not in json.dumps(stopped.value.diagnostic.to_dict())
         if mode in ('missing', 'denied'):
             assert stopped.value.diagnostic.context['path'] == '/selected/results/input.dat'
-    assert calls == [['ssh', 'research-cluster', 'python3 -B -']]
+    assert calls == [['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research-cluster', 'python3 -B -']]
 
 
 def test_required_local_missing_retains_native_cause_and_empty_checks_do_nothing(tmp_path, monkeypatch):
@@ -416,5 +416,5 @@ def test_preflight_transport_failure_stops_public_workflow_before_any_staging(mo
     assert stopped.value.diagnostic.code == 'transport_failed'
     assert not isinstance(stopped.value, SubmissionError)
     assert stopped.value.diagnostic.context['bundle_path'] == str(selected)
-    assert calls == [['ssh', 'research-cluster', 'python3 -B -']]
+    assert calls == [['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'research-cluster', 'python3 -B -']]
     assert not list(slurm_dir().glob('*')) and not list((storage_root() / 'submissions').glob('*'))

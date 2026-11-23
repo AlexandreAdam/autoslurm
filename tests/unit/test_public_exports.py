@@ -39,5 +39,5 @@ def test_ssh_construction_is_pure_and_does_not_mutate_profile(monkeypatch):
     monkeypatch.setattr("builtins.open", lambda *a, **k: (_ for _ in ()).throw(AssertionError("No configuration or file read")))
     monkeypatch.setattr("subprocess.run", lambda *a, **k: (_ for _ in ()).throw(AssertionError("No process")))
     command = ssh_command(machine, "recorded", "cat -- '/results/part 1'", options=["-o", "BatchMode=yes"])
-    assert command == ["ssh", "-o", "BatchMode=yes", "-i", "/keys/science key", "scientist@cluster", "cat -- '/results/part 1'"]
+    assert command == ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "BatchMode=yes", "-i", "/keys/science key", "scientist@cluster", "cat -- '/results/part 1'"]
     assert machine == before

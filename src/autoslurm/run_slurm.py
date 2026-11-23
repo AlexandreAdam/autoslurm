@@ -64,7 +64,7 @@ def run_slurm_remotely(
     command = ssh_command(machine_config, machine, f"sbatch {shlex.quote(script_path)}", options=ssh_options)
 
     # Run the sbatch command on the remote machine
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, timeout=60)
 
     # Check for errors
     if result.returncode != 0:
@@ -197,6 +197,7 @@ def run_bulk_submit_driver_remotely(
     result = subprocess.run(
         command,
         input=json.dumps(payload),
+        timeout=300,
         capture_output=True,
         text=True,
     )

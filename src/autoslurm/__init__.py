@@ -1,6 +1,7 @@
 """Supported Python entry points; backend helpers are not exported implicitly."""
 
 from .version import __version__
+from .connections import check_connections
 
 from .definitions import (
     CONFIG_FILE_PATH,
@@ -107,6 +108,7 @@ from .errors import ConfigurationError, InvalidRequestError, SelectionError, Rec
 
 __all__ = [
     '__version__',
+    'check_connections',
     'ConfigurationError',
     'InvalidRequestError',
     'SelectionError', 'RecordWriteError',

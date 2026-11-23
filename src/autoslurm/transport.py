@@ -36,12 +36,17 @@ def ssh_host_from_config(machine_config: dict, machine_name: Optional[str] = Non
     return f"{options} {host}" if options else host
 
 
+def noninteractive_ssh_options():
+    """One command-line policy; never prompts or changes the selected destination."""
+    return ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10']
+
+
 def ssh_command(machine_config: dict, machine_name: Optional[str] = None,
                 remote_command: Optional[str] = None, *, options=None) -> list[str]:
     """Construct one SSH argument vector without discovering configuration or I/O."""
     destination = ([validate_ssh_alias(machine_config["ssh_alias"])] if "ssh_alias" in machine_config
                    else shlex.split(ssh_host_from_config(machine_config, machine_name)))
-    command = ["ssh", *(options or []), *destination]
+    command = ["ssh", *noninteractive_ssh_options(), *(options or []), *destination]
     if remote_command is not None:
         command.append(remote_command)
     return command

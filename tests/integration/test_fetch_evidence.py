@@ -55,7 +55,7 @@ def run_fixture(tmp_path, *, known=False, array=False):
 def transport(monkeypatch, observed, *, receipt_response=None, scheduler_failed=False, observed_tasks=False):
     calls = []
     def run(command, **kwargs):
-        assert command[:2] == ['ssh', 'producing-alias'], command
+        assert command[:6] == ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'producing-alias'], command
         calls.append((command, kwargs))
         if command[-1] == 'python3 -B -':
             assert kwargs['timeout'] == 30

@@ -15,7 +15,7 @@ from autoslurm.transport import ssh_command
 def test_ssh_alias_is_a_single_argument_and_saved_transport_has_no_credentials(tmp_path):
     context = resolve_execution_context("cluster", {"ssh_alias": "research-gpu", "path": "/state"})
     assert context.is_remote
-    assert ssh_command(context.config, remote_command="true") == ["ssh", "research-gpu", "true"]
+    assert ssh_command(context.config, remote_command="true") == ["ssh", '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', "research-gpu", "true"]
     assert context.resolve_job({})["transport"] == {"ssh_alias": "research-gpu"}
 
 
@@ -81,11 +81,11 @@ def test_alias_copies_and_sync_use_ssh_config_without_identity_flags(monkeypatch
     monkeypatch.setattr('subprocess.run', metadata)
     pull_storage_directory(context, "out", tmp_path / "logs", mutable=True)
     assert [cmd[0] for cmd in commands] == ["ssh", "scp", "ssh", "rsync"]
-    assert commands[0][1] == "research-gpu"
+    assert commands[0][5] == "research-gpu"
     assert commands[1][-1] == "research-gpu:/state/slurm/"
     assert commands[-1][-2] == "research-gpu:/state/out/"
     assert all("-i" not in cmd for cmd in commands)
-    assert commands[-1][commands[-1].index("-e") + 1] == "ssh"
+    assert commands[-1][commands[-1].index("-e") + 1] == "ssh -o BatchMode=yes -o ConnectTimeout=10"
 
 
 def test_alias_saved_run_is_not_redirected_by_profile_edits(tmp_path):
@@ -94,7 +94,7 @@ def test_alias_saved_run_is_not_redirected_by_profile_edits(tmp_path):
     path.write_text(json.dumps({"sample": {"name": "sample", "script": "science", EXECUTION_METADATA_KEY: evidence}}))
     save_config({"machines": {"remote": {"ssh_alias": "replacement"}}, "default_machine": "remote"})
     context = execution_context_from_snapshot(path)
-    assert ssh_command(context.config, remote_command="true") == ["ssh", "original", "true"]
+    assert ssh_command(context.config, remote_command="true") == ["ssh", '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', "original", "true"]
 
 
 def test_historical_explicit_transport_keeps_original_user_and_key(tmp_path):
@@ -102,7 +102,7 @@ def test_historical_explicit_transport_keeps_original_user_and_key(tmp_path):
                 "is_remote": True, "transport": {"username": "old-user", "hosturl": "old-host", "key_path": "/keys/old key"}}
     path = tmp_path / "run_20260101000000.json"
     path.write_text(json.dumps({"sample": {"name": "sample", "script": "science", EXECUTION_METADATA_KEY: evidence}}))
-    assert ssh_command(execution_context_from_snapshot(path).config, remote_command="true") == ["ssh", "-i", "/keys/old key", "old-user@old-host", "true"]
+    assert ssh_command(execution_context_from_snapshot(path).config, remote_command="true") == ["ssh", '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', "-i", "/keys/old key", "old-user@old-host", "true"]
 
 
 @pytest.mark.parametrize("flag", ["--hostname", "--hosturl", "--username", "--key_path", "--key-path"])

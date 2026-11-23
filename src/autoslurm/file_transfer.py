@@ -10,7 +10,7 @@ from .config import load_config
 from .definitions import DATE_FORMAT
 from .execution import resolve_execution_context
 from .storage import jobs_dir, slurm_dir
-from .transport import scp_host_and_keypath_from_config, remote_storage_root_from_config, ssh_command
+from .transport import scp_host_and_keypath_from_config, remote_storage_root_from_config, ssh_command, noninteractive_ssh_options
 from .errors import (ConfigurationError, DiagnosticError, DiagnosticCause, InvalidRequestError,
                      _file_operation_failure)
 from .file_commands import run_file_command
@@ -84,7 +84,7 @@ def _push_files(paths, directory, machine_name, machine_config, context, *, batc
                           'mkdir -p ' + ' '.join(shlex.quote(path) for path in directories))
     run_file_command(command, operation='file_transfer', stage='prepare_remote_directories',
         context={**facts, 'command': 'ssh'}, effects=effects, effect='destination_preparation')
-    command = ['scp', *shlex.split(key), *map(str, paths), f'{host}:{target}']
+    command = ['scp', *noninteractive_ssh_options(), *shlex.split(key), *map(str, paths), f'{host}:{target}']
     run_file_command(command, operation='file_transfer', stage='copy_files', context={**facts, 'command': 'scp'},
                      effects=effects, effect='file_transfer', timeout=300)
 
@@ -138,6 +138,6 @@ def pull_storage_directory(context, directory: str, local_target: Path, *, mutab
             facts, effects, DiagnosticCause.from_exception(native, detail='Local sync directory preparation failed.'))) from native
     effects['destination_preparation'] = 'succeeded'
     command = ['rsync', '-a', '--checksum' if mutable else '--ignore-existing',
-               '-e', shlex.join(['ssh', *shlex.split(key)]), f'{host}:{source}/', f'{local_target}/']
+               '-e', shlex.join(['ssh', *noninteractive_ssh_options(), *shlex.split(key)]), f'{host}:{source}/', f'{local_target}/']
     return run_file_command(command, operation='file_transfer', stage='copy_files',
         context={**facts, 'command': 'rsync'}, effects=effects, effect='file_transfer', timeout=300).strip()

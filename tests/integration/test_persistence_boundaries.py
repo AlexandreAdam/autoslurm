@@ -239,10 +239,10 @@ def test_each_transfer_prepares_directories_and_batches_scripts(monkeypatch):
     for _ in range(2):
         transfer_slurms_to_remote(["a.sh", "b.sh"], context=context)
     assert [c[0] for c in commands] == ["ssh", "scp", "ssh", "scp"]
-    assert commands[0][1] == "research-cluster"
+    assert commands[0][5] == "research-cluster"
     assert shlex.split(commands[0][-1]) == ["mkdir", "-p", "/prepared state/slurm", "/prepared state/out"]
     assert commands[1][0] == "scp"
-    assert [Path(value).name for value in commands[1][1:3]] == ["a.sh", "b.sh"]
+    assert [Path(value).name for value in commands[1][5:7]] == ["a.sh", "b.sh"]
     assert commands[1][-1] == "research-cluster:/prepared state/slurm/"
 
 

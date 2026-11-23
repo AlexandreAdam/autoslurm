@@ -61,7 +61,7 @@ def test_selected_root_agrees_across_submit_sync_and_results(monkeypatch, isolat
             if target.name == "out":
                 (target / "prepare-101.out").write_text("mock computation finished")
         elif command[0] == "scp":
-            for local in command[1:-1]:
+            for local in command[5:-1]:
                 assert Path(local).is_relative_to(isolate_storage)
         elif command[0] != "ssh":
             raise AssertionError(command)

@@ -13,6 +13,22 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MULTI.1a (2026-11-23), checkpoint 0.2.0.dev13: 1725 offline tests pass in
+12.77 s (84 expected warnings), .development/test-runs/connections.xml. Fifteen
+new connection cases plus updated transport expectations verify noninteractive
+SSH/SCP/rsync policy, preserving aliases and owned/borrowed lifecycle. Direct
+remote sbatch/bulk driver now time out after 60/300 seconds; uncertain outcomes
+are not replayed. No-Git metadata, wheel/sdist rebuild and disposable installed
+version/API/CLI/ACP/options/guidance checks pass. Inventory 271 routes/140 owners/
+21 broad catches. Artifact directory .development/artifacts/connections:
+wheel SHA256 7469d3cb2bc75ee9e8b14260ade22a90da5b654da3ea0bee287b38560829b4c1;
+sdist af133f1601057d87bcedf00aceb8589c3cb7bf2da0a92a56012e44d81523e173;
+rebuilt wheel 3e91bb3b67eabc17e1cd8efc3064c6e41be25a7750e4b204a52c09ceb365eb6d.
+Wheel member contents match. Main editable source remains active; no base/test
+dependency installation, actual cluster, SSH-config, daily state or rollback edit.
+Gateway jump support remains unverified; probe readiness is not scheduler/science
+readiness. Campaign records/context follow as separate tasks.
+
 FIX.CLEAN.1 (2026-11-23): checkpoint 0.2.0.dev12 adds completed/terminal
 cleanup scopes and expands all. Only temporary fixtures were cleaned. 1710 full
 offline tests passed in 12.43 s (84 expected collision warnings), report

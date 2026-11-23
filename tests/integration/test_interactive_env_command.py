@@ -45,7 +45,7 @@ def test_interactive_setup_edit_is_saved_validated_and_used_in_job(monkeypatch, 
     commands = []
 
     def remote(command, **kwargs):
-        assert command[:2] == ["ssh", "cluster"]
+        assert command[:6] == ["ssh", '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', "cluster"]
         commands.append(command)
         output = "/state\n" if "STORAGE_ROOT_ENVIRONMENT_VARIABLE" in command[-1] else ""
         return CompletedProcess(command, 0, output, "")

@@ -182,5 +182,21 @@
       "logs",
       "offline"
     ]
+  },
+  {
+    "name": "check_connections",
+    "description": "Observe noninteractive connection reachability from this controller; per-machine failures remain evidence, not proof that login is required.",
+    "parameters": {
+      "machine": "Optional configured machine; excludes all_machines.",
+      "all_machines": "Optional bool; check all configured profiles, at most 32."
+    },
+    "context_sections": [
+      "19_connections.md"
+    ],
+    "keywords": [
+      "connection",
+      "gateway",
+      "ssh"
+    ]
   }
 ]

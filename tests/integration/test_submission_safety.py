@@ -99,7 +99,7 @@ def test_remote_receipts_survive_response_loss_and_refresh_without_resubmission(
     def transport(command, **kwargs):
         commands.append(command)
         if command[0] == "scp":
-            for source in command[1:-1]:
+            for source in command[5:-1]:
                 (remote / "slurm" / Path(source).name).write_bytes(Path(source).read_bytes())
         elif command[-1].startswith("bash -lc "):
             return subprocess.CompletedProcess(command, 0, str(remote) + "\n", "")

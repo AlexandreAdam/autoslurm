@@ -531,3 +531,10 @@ def _context_with(context, **facts):
 def _required_text(value, name):
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"Diagnostic {name} must be a nonempty string.")
+
+
+def _connection_failure(code, machine, alias, *, stage='probe_connection', cause=None):
+    return Diagnostic(code, operation='connection_check', stage=stage,
+        context={'machine': machine, 'ssh_alias': alias, 'command': 'ssh'}, cause=cause,
+        summary='The selected connection could not be verified from this controller.',
+        next_action='Check the selected profile and operator-owned SSH route/authentication from this host. An interactive gateway shell does not automatically provide a laptop connection. Authentication need is unknown unless separately verified.')
