@@ -135,6 +135,13 @@ operate from the workstation; compute nodes use already-prepared environments.
   Slurm options and must also be omitted when the cluster needs no account.
 - Tests use temporary storage and fake external commands. Real cluster tests
   are separate and must not be triggered by the default test suite.
+- Campaigns group ordinary single-machine bundles; dependencies stay inside
+  each member bundle. Never encode a dependency on a job on another machine or
+  pass its scheduler ID to the local scheduler. Cross-machine dependency
+  orchestration is unsupported. Clients own scientific splitting, output
+  validation and data movement. Use `asl campaign inspect NAME` for campaign-wide
+  status and `asl campaign fetch NAME` for bounded logs; `asl status` and
+  `asl logs` remain individual-run interfaces.
 - Retrieval covers AutoSlurm execution evidence only: recorded stdout/stderr,
   Slurm output and status/reason/exit codes. Use `inspect_logs` / `asl logs` with
   exact run selectors and bounded excerpts; cached means no scheduler/source-log

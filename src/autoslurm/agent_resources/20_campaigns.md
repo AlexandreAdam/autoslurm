@@ -4,6 +4,16 @@ Implemented: public create_campaign(name, members, context=''), load_campaign(na
 list_campaigns(); CLI campaign create/list/show; ACP actions with the same names.
 Inspection/fetch are implemented through the public operations described below.
 
+**No cross-machine dependencies.** Build an ordinary single-machine bundle for
+each member. Job dependencies must stay inside that bundle; never reference a
+different member's job or pass its Slurm ID to another machine. Campaigns do not
+gate or submit downstream work. The client/operator verifies prerequisite
+completion, scientific outputs and data availability before explicitly submitting
+any downstream bundle. Scientific splitting and data movement remain client-owned.
+
+Whole-campaign status: `asl campaign inspect NAME`; bounded logs across members:
+`asl campaign fetch NAME`. `asl status` / `asl logs` remain individual-run tools.
+
 ```python
 from autoslurm import create_campaign
 campaign = create_campaign('grid-refinement', [

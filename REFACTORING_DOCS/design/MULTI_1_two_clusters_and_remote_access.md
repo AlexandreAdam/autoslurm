@@ -103,6 +103,14 @@ A campaign is an AutoSlurm grouping over exact ordinary runs. The client owns
 scientific task generation, split/cost model, output validation and data movement.
 AutoSlurm owns references, validation, observation provenance and bounded context.
 
+Confirmed user boundary (2026-11-23, MULTI.1c.docs): no cross-machine
+dependencies. Dependencies stay inside ordinary single-machine member bundles.
+Campaign submission coordination must not introduce cross-member prerequisite
+gating. Clients/operators own prerequisite/output/data checks before explicitly
+submitting downstream work; cross-machine orchestration is outside MULTI.1.
+Campaign status/log entry points are campaign inspect/fetch; individual-run
+status/log interfaces do not select campaigns. No operator SSH route was changed.
+
 First useful slice: group already saved runs on two machines, without requiring
 new planning/submission orchestration. One initial member per machine. Later
 attempts remain under that member; no rebalancing in the initial release.

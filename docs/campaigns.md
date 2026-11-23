@@ -4,6 +4,14 @@ A campaign groups exact ordinary runs while each run still belongs to one machin
 Your application decides how to split the science; no scientific script changes
 are required just to group runs.
 
+**Dependencies remain inside each single-machine bundle. Cross-machine
+dependencies are unsupported.** Build one ordinary bundle per machine and group
+them in a campaign. Never reference another member's job or scheduler ID as a
+dependency. A campaign neither waits for remote prerequisites nor submits
+downstream jobs automatically. The application/operator must verify prerequisite
+completion, validate outputs and arrange any data movement before explicitly
+submitting downstream work.
+
 ```sh
 asl campaign create grid-refinement \
   --member rusty-share rusty /path/to/exact-rusty-bundle.json \
@@ -40,10 +48,14 @@ substitute a newer bundle. Scientific files remain application-owned.
 
 ## Inspect and fetch across machines
 
+For a whole campaign, use `asl campaign inspect`, not `asl status`; for its logs,
+use `asl campaign fetch`. `asl status` and `asl logs` still select individual runs.
+
 ```sh
 asl campaign inspect grid-refinement
 asl campaign inspect grid-refinement --cached
 asl campaign inspect grid-refinement --json
+asl campaign fetch grid-refinement
 asl campaign fetch grid-refinement --member rusty-share --job shards --task 17
 ```
 

@@ -35,6 +35,8 @@ This file is the source of truth for active scope, task order and progress.
   bounded logs. Per-member failures preserve healthy/last-known evidence; cached
   reads do no source/network/cache-write work. Shared command deadlines and
   global log/response bounds; scientific results, submission and retry remain out.
+  MULTI.1c.docs clarifies the user-confirmed prohibition on cross-machine
+  dependencies and the campaign inspect/fetch versus individual-run CLI boundary.
 - **Next task:** MVP10.5 submission and recovery diagnostics remain queued.
   MULTI.1a–c connection checks and existing-run campaign create/list/inspect/fetch
   are complete locally, as requested. MULTI.1d coordinated submission and MULTI.1e
@@ -869,10 +871,14 @@ remains queued while MULTI.1a–c is implemented. No live cluster check/configur
   receipts and caches; preserve good observations when another member fails,
   machine-scoped IDs, per-member freshness and global bounds. Deliver equivalent
   Python/CLI/ACP evidence and version-matched human/installed agent recipes.
+- [x] **MULTI.1c.docs Explicit dependency and navigation guidance.** State that
+  dependencies remain inside each single-machine bundle; campaigns do not gate
+  downstream work. Document whole-campaign inspect/fetch and unchanged SSH routes.
 - [ ] **MULTI.1d Reviewed member submission.** Compose ordinary submissions from
   client-owned splits. Resolve software expectations; prove durable association
   before each dispatch and preserve partial/uncertain acceptance without retry.
   Reuse necessary MVP12.1–3 pieces, without gating on the whole milestone.
+  Members have no cross-machine dependencies or prerequisite orchestration.
 - [ ] **MULTI.1e Explicit revision-based retry.** Share MVP12.6 planning, preserve
   old definitions/attempts and exclude unknown outcomes until inspected. No
   compute-node preparation, rebalancing or automatic cross-machine failover.
@@ -1147,6 +1153,8 @@ or migration decision has already been accepted.
 | 2026-11-23 | MULTI.1b Campaign records | Public offline create/load/list, CLI create/list/show and ACP. Immutable opt-in v1 with exact controller-relative references, canonical definition digests retaining immutable receipt links, one/two distinct machines and bounded strict JSON. Changed definitions require a new name; no copies/history import or scientific task mapping. 27 new cases; 1752 offline tests passed in 12.09 s, 84 expected warnings, plus wheel/sdist/installed API/CLI/ACP checks. Evidence in installation register. No actual cluster, config/state migration, dependency install or rollback change. Checkpoint 0.2.0.dev14; push dev/tag; inspection/fetch follows. |
 
 | 2026-11-23 | MULTI.1c Coherent campaign observation | Added Python/CLI/ACP inspect/fetch, exact member/job/task selection, receipt refresh before status/logs, preserved per-member partial/current/last-known evidence and cached no-network/no-write behavior. Reuses inspection and existing caches with optional prior-job evidence; shared context-local deadline bounds existing read-only adapters, global log quotas and response compaction retain known IDs/counts. No dataset transfer, alternate-profile routing, schema migration, actual cluster, daily state/config or rollback change. 33 new cases; 1785 offline tests passed in 13.31 s with 84 expected warnings; installed two-machine API/CLI/ACP/cache/fetch and artifact checks passed. Evidence in installation register. Checkpoint 0.2.0.dev15; push dev/tag. Requested CLI scope complete; coordinated submission/retry remains later work. |
+
+| 2026-11-23 | MULTI.1c.docs Campaign boundaries | Clarified in root/installed agent guidance, human docs and design that dependencies stay inside each single-machine member bundle, with no cross-machine gating. Documented campaign inspect/fetch versus individual-run status/log commands and confirmed SSH route remains operator-owned. Documentation only; diff/link checks, no runtime or cluster changes. |
 
 ## How we work
 

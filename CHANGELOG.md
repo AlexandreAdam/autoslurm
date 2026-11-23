@@ -9,6 +9,10 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+- Clarified campaign agent guidance: dependencies stay inside single-machine
+  bundles; campaign-wide status/logs use `campaign inspect` / `campaign fetch`.
+  Cross-machine dependency orchestration is unsupported.
+
 ## 0.2.0.dev15 — 2026-11-23
 
 - Added public inspect_campaign/fetch_campaign, `asl campaign inspect`/`fetch`,
