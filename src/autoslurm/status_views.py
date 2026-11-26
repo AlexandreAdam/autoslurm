@@ -6,6 +6,7 @@ from typing import Callable, Optional
 
 from .save_load_jobs import load_bundle
 from . import status as status_core
+from .execution import EXECUTION_METADATA_KEY
 
 
 TERMINAL_STATES = {"COMPLETED", "CANCELLED", *status_core.FAILED_STATES}
@@ -98,6 +99,8 @@ def rows_from_resolved(jobs, resolved, *, name_contains=None, name_regex=None, i
                          "status": status_core._colorize_state_text(status_core.display_state(state)),
                          "machine_name": view["machine"], "machine": str(view["machine"] or "local"),
                          "reason": task.get("reason") if show_array_tasks and view["is_array"] else view.get("reason"), "exit_code": task.get("exit_code") if show_array_tasks and view["is_array"] else view.get("exit_code")})
+            if EXECUTION_METADATA_KEY in original:
+                rows[-1][EXECUTION_METADATA_KEY] = original[EXECUTION_METADATA_KEY]
     return rows
 
 

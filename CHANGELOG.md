@@ -9,6 +9,15 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev16 — 2026-11-26
+
+- Fixed `asl cancel` routing for named local profiles such as `rusty-local`:
+  cancellation uses local `scancel`, without requiring SSH credentials.
+- Cancellation retains recorded producing transport despite profile changes,
+  groups distinct destinations separately and resolves all targets before any
+  cancellation. Legacy bundles use their explicitly selected current profile;
+  missing/inconsistent targets never silently fall back to local execution.
+
 - Recorded flatiron as jump-only: no AutoSlurm/controller/helper installation
   or campaign storage on the gateway. Laptop/login-node access remains unverified.
 

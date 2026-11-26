@@ -15,7 +15,8 @@ from ..status_views import (
     bundle_job_rows_from_jobs,
     bundle_jobs_context_from_rows,
 )
-from ..config import load_config
+from ..config import load_config, is_remote_machine
+from ..execution import EXECUTION_METADATA_KEY, producing_machine
 from ..transport import ssh_command
 
 DATE_FORMATS = (
@@ -190,7 +191,7 @@ def main(argv: list[str] | None = None) -> None:
     if status_text:
         print(status_text)
     candidates = [
-        {"id": row["job_id_raw"], "machine_name": row["machine_name"]}
+        row
         for row in raw_rows
         if row.get("job_id_raw") is not None
     ]
@@ -202,20 +203,26 @@ def main(argv: list[str] | None = None) -> None:
         print("Preview only. Re-run with --yes to cancel these jobs.")
         return
 
-    by_machine: dict[Optional[str], list[str]] = {}
+    # Resolve every destination before any cancellation. Saved producing
+    # transport wins over today's profile, just as it does for inspection.
+    profiles = {}
+    if any(EXECUTION_METADATA_KEY not in item and item["machine_name"] is not None
+           for item in candidates):
+        profiles = load_config()["machines"]
+    groups = {}
     for item in candidates:
-        by_machine.setdefault(item["machine_name"], []).append(str(item["id"]))
+        target = {"machine": item["machine_name"]}
+        if EXECUTION_METADATA_KEY in item:
+            target[EXECUTION_METADATA_KEY] = item[EXECUTION_METADATA_KEY]
+        key, machine_cfg = producing_machine(target, profiles)
+        group = groups.setdefault(key, {"machine": item["machine_name"],
+                                        "config": machine_cfg, "ids": []})
+        group["ids"].append(str(item["job_id_raw"]))
 
-    config = None
-    for machine_name, job_ids in by_machine.items():
-        if machine_name is None:
-            _cancel_local(job_ids)
-            continue
-        if config is None:
-            config = load_config()
-        machine_cfg = config["machines"].get(machine_name) or config.get(machine_name)
-        if machine_cfg is None:
-            raise RuntimeError(f"Machine '{machine_name}' not found in config.")
-        _cancel_remote(machine_name, machine_cfg, job_ids)
+    for group in groups.values():
+        if is_remote_machine(group["config"]):
+            _cancel_remote(group["machine"], group["config"], group["ids"])
+        else:
+            _cancel_local(group["ids"])
 
     print(f"\nCancelled {len(candidates)} job(s).")

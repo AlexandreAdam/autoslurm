@@ -614,9 +614,10 @@
       "desired_diagnostic": "Exact producing machine/IDs, preview versus request acceptance versus observed terminal cancellation; retain successful and unknown targets.",
       "next_action": "Inspect affected IDs before any further cancellation; unavailable state must not become safe-to-delete evidence.",
       "regression_evidence": [
-        "tests/unit/test_cancel_cli.py"
+        "tests/unit/test_cancel_cli.py",
+        "tests/integration/test_cancellation_routing.py"
       ],
-      "adoption": "pending; referenced suites cover existing behavior, not the future diagnostic contract"
+      "adoption": "FIX.CANCEL.1 fixes producing/local transport routing and pre-resolves targets. Full cancellation diagnostics remain MVP10.7."
     },
     "clean": {
       "implementation_task": "MVP10.7",
@@ -809,7 +810,7 @@
       "contract": "cancel",
       "inputs": "Bundle, filters/ranges, machine and --yes.",
       "current": "Default preview; raw selection/command errors; successful scancel prints Cancelled though only request acceptance known.",
-      "effects": "Queries during preview; --yes scancel per group, earlier groups may succeed before later failure. Current named profile is used for dispatch."
+      "effects": "Queries during preview; --yes scancel per group, earlier groups may succeed before later failure. Saved producing transport is authoritative; legacy runs use the explicit current named profile. All targets resolve before dispatch; named local profiles use local scancel."
     },
     "autoslurm.apps.clean.main": {
       "contract": "clean",

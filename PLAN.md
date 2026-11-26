@@ -28,9 +28,14 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1785 passed, 84 expected
+  rollback source remains unchanged. Full offline suite: 1799 passed, 83 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MULTI.1c campaign inspection/fetch in 0.2.0.dev15.
+- **Latest completed task:** FIX.CANCEL.1 in 0.2.0.dev16: cancellation uses
+  shared producing/local transport policy. Named local profiles use local scancel;
+  saved destinations survive profile changes, distinct transports stay separate,
+  and all targets resolve before mutation. Fourteen new regression cases; full
+  offline suite and installed artifact smoke passed. No cluster/config changes.
+- **Previous campaign delivery:** MULTI.1c inspection/fetch in 0.2.0.dev15.
   Python/CLI/ACP composes exact member receipts, producing-machine status and
   bounded logs. Per-member failures preserve healthy/last-known evidence; cached
   reads do no source/network/cache-write work. Shared command deadlines and
@@ -56,7 +61,7 @@ This file is the source of truth for active scope, task order and progress.
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
   the operator coordinates update timing for jobs using it.
-- **Last updated:** 2026-11-23.
+- **Last updated:** 2026-11-26.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
   `dev`; GitHub repository settings and documentation integrations stay as they were.
@@ -664,6 +669,14 @@ styles are later slices; no per-job style switches are adopted by this plan.
   and live array tasks. Document navigation loss and retain separate evidence.
   [Design and verification](REFACTORING_DOCS/design/FIX_CLEAN_1_scopes.md).
 
+## FIX.CANCEL.1 Named local cancellation routing
+
+- [x] **FIX.CANCEL.1 Named local and recorded cancellation routing.** Reuse
+  producing-machine policy for cancellation; preserve recorded transport over
+  current profiles, resolve all selected destinations before mutation and cover
+  named local/remote, legacy, preview and invalid-target cases offline. Full
+  cancellation diagnostics remain MVP10.7. Released as 0.2.0.dev16.
+
 ## MVP10 Actionable failures with preserved evidence
 
 Design: [error handling](REFACTORING_DOCS/design/MVP10_actionable_errors.md).
@@ -1162,6 +1175,8 @@ or migration decision has already been accepted.
 | 2026-11-23 | MULTI.1c.docs Campaign boundaries | Clarified in root/installed agent guidance, human docs and design that dependencies stay inside each single-machine member bundle, with no cross-machine gating. Documented campaign inspect/fetch versus individual-run status/log commands and confirmed SSH route remains operator-owned. Documentation only; diff/link checks, no runtime or cluster changes. |
 
 | 2026-11-23 | MULTI.1a.docs Jump-only gateway | Recorded the user's clarification in root/installed agent guidance, SSH/campaign docs and design: flatiron cannot run AutoSlurm, helpers or agents or hold campaign state. Controller candidates are laptop through an approved route or a permitted cluster login node; record availability and cross-cluster access require verification. Documentation diff reviewed; no new links, runtime tests or SSH/configuration changes. |
+
+| 2026-11-26 | FIX.CANCEL.1 Named local cancellation | Fixed local scancel dispatch for named local profiles and preserved saved producing transport over changed current profiles. Reuses producing_machine/is_remote_machine, carries execution evidence through status rows, groups by full producing identity and resolves targets before any mutation. Fourteen new integration cases, 1799 full offline tests passed in 12.37 s with 83 expected collision warnings; installed version/local/remote/recorded cancellation and existing campaign smoke passed, wheel/sdist/no-Git rebuild verified. Inventory 292/146/21 unchanged. Checkpoint 0.2.0.dev16; no cluster, config/state, base dependency or rollback change. Full cancellation diagnostics remain MVP10.7. |
 
 ## How we work
 

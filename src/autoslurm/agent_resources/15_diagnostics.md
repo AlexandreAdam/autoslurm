@@ -15,6 +15,14 @@ MVP10.4d adopts read-only software/project/environment observations below.
 Do not promise universal diagnostics based only on the existence of this module.
 Retrieve this installed recipe with `asl agent --sections 15_diagnostics`.
 
+FIX.CANCEL.1 corrects routing, not the full MVP10.7 diagnostic contract:
+`asl cancel TARGET` previews; `--yes` dispatches. Named local profiles use local
+scancel. Saved producing transport wins over current profiles; legacy runs use
+the explicit named profile. All selected destinations resolve before mutation;
+missing/inconsistent metadata never triggers a local/remote fallback. A successful
+scancel request is not observed terminal cancellation; inspect status afterwards.
+Mixed command failures/per-target effect reporting remain MVP10.7.
+
 ## Public contract
 
 ```python

@@ -13,6 +13,24 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FIX.CANCEL.1 (2026-11-26), checkpoint 0.2.0.dev16: named local cancellation
+uses local scancel, saved producing transport wins over changed current profiles,
+and all targets resolve before dispatch. Fourteen new integration cases cover
+index/name/file selection, legacy and recorded local/remote routing, preview,
+invalid destinations before mutation and distinct destinations under one name.
+1799 offline tests passed in 12.37 s, 83 expected collision warnings;
+.development/test-runs/cancellation-routing.xml. Inventory coverage unchanged:
+292 routes/146 owners/21 broad catches. No-Git/no-runtime-import metadata,
+wheel/sdist-to-wheel rebuild, installed runtime/distribution/CLI identity and
+mocked local/remote/recorded cancellation plus existing campaign smoke passed.
+Artifacts in .development/artifacts/cancellation-routing: wheel/rebuilt wheel
+SHA256 e67f5c1b2e1d60e1431eab9e5d698b43260f84c556dcd1421f366b0d57cba7db;
+sdist SHA256 f077efea05a58a09f364891f240317ccaf60ef971a7c6df22b9049f7353b331d.
+Direct/rebuilt wheel contents match. No actual cluster, SSH config, daily state,
+base/test dependency install, remote rollout or pinned rollback changes. Main
+editable source follows dev; Rusty's installed checkout must be updated separately.
+Full cancellation diagnostics/effect reporting remain MVP10.7.
+
 MULTI.1c (2026-11-23), checkpoint 0.2.0.dev15: 1785 full offline tests
 pass in 13.31 s (84 expected warnings), .development/test-runs/campaign-observation.xml.
 Thirty-three new cases cover two machines sharing Slurm IDs, actual standalone

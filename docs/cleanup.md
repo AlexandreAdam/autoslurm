@@ -1,5 +1,20 @@
 # Cleaning saved bundles
 
+## Cancelling active jobs
+
+`asl cancel 3` previews cancellable jobs in the selected saved run;
+`asl cancel 3 --yes` sends the cancellation requests. Named local profiles such
+as `rusty-local` use local `scancel`. Runs with saved execution metadata use
+their recorded producing transport even if today's profile changed. Legacy
+runs without that metadata use the named current profile. Missing profiles or
+inconsistent recorded transports stop dispatch before any cancellation; there
+is no local/remote fallback. A later command failure can still follow an earlier
+accepted request when multiple targets are selected.
+Inspect status afterwards to confirm the scheduler's final state. Cancellation
+does not delete bundle records or scientific results.
+
+## Removing saved records
+
 Use cleanup to prune local saved bundle records after runs finish:
 
 ```sh

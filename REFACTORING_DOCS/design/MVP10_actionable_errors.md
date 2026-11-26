@@ -2,6 +2,15 @@
 
 ## Status
 
+FIX.CANCEL.1 (2026-11-26): narrow cancellation routing repair uses the existing
+producing_machine/is_remote_machine policy. Status rows retain recorded execution
+metadata for cancellation, so named local profiles run scancel locally and saved
+destinations survive current-profile changes. Resolve all selected destinations
+before dispatch, group by producing transport identity, and reject invalid
+targets without fallback. Legacy runs still use explicit current profiles.
+This does not close MVP10.7: per-target command-effect diagnostics, timeouts and
+accepted-request versus observed-cancellation presentation remain later work.
+
 Latest amendment, 2026-11-17: **MVP10.4d and parent MVP10.4 are complete locally
 in 0.2.0.dev11**. Software status adopts typed request/declaration/transport/protocol
 failures and per-project/environment/package/check diagnostics. Healthy evidence
