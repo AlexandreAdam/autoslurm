@@ -21,7 +21,7 @@ def test_inspect_default_table_uses_shared_status(run, capsys, selector):
     cli.main([str(run) if value == "PATH" else value for value in selector])
     text = capsys.readouterr().out
     assert "FAILED" in text and "array" in text
-    assert "Observation:" in text
+    assert "Checked:" in text
 
 
 @pytest.mark.parametrize("flag", ["--log", "--logs", "--list-files"])

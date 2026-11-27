@@ -28,9 +28,15 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1799 passed, 83 expected
+  rollback source remains unchanged. Full offline suite: 1848 passed, 84 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** FIX.CANCEL.1 in 0.2.0.dev16: cancellation uses
+- **Latest completed task:** MVP11.1a status clarity in 0.2.0.dev17: corrected
+  failure/cancellation aggregates, simplified colored overview, explicit checked/
+  cached labels, --head with pre-query selection, bounded job reason columns,
+  default-afterok dependency names and full --details/JSON evidence. Derived
+  explanations/cached aggregate corrections add no schema or writes. 1848 offline
+  tests passed; installed fake-cluster/package checks recorded in the register.
+- **Previous fix:** FIX.CANCEL.1 in 0.2.0.dev16: cancellation uses
   shared producing/local transport policy. Named local profiles use local scancel;
   saved destinations survive profile changes, distinct transports stay separate,
   and all targets resolve before mutation. Fourteen new regression cases; full
@@ -44,8 +50,8 @@ This file is the source of truth for active scope, task order and progress.
   dependencies and the campaign inspect/fetch versus individual-run CLI boundary.
   MULTI.1a.docs records that flatiron is jump-only and cannot host AutoSlurm,
   helpers or campaign state; laptop/login-node route verification stays open.
-- **Next task:** MVP11.1a first usable status explanations, as requested
-  2026-11-27 after MVP11.0 mapping. MVP10.5 diagnostics remain queued.
+- **Next task:** remaining MVP11.1–4 hardening/consolidation gates stay open
+  after the user-requested first status delivery. MVP10.5 diagnostics remain queued.
   MULTI.1a–c connection checks and existing-run campaign create/list/inspect/fetch
   are complete locally, as requested. MULTI.1d coordinated submission and MULTI.1e
   retry are later work; their contracts remain proposed. No gateway route was
@@ -62,7 +68,7 @@ This file is the source of truth for active scope, task order and progress.
   mocked SSH/Slurm. No actual cluster pull, install or cleanup is performed.
   Source is intentionally shared/mutable under the single-copy requirement;
   the operator coordinates update timing for jobs using it.
-- **Last updated:** 2026-11-26.
+- **Last updated:** 2026-11-27.
 - **Working agreement:** [WORKFLOW.md](WORKFLOW.md).
 - **Repository workflows:** removed the two GitHub Actions workflow files on
   `dev`; GitHub repository settings and documentation integrations stay as they were.
@@ -818,7 +824,8 @@ tracking database, automatic recovery or resubmission is included.
 ## MVP11 Readable dependency-aware status
 
 Design: [status explanations](REFACTORING_DOCS/design/MVP11_status_explanations.md).
-Requested after MVP9.1; this section plans behavior, not an implemented command.
+MVP11.0 and first vertical slice MVP11.1a are implemented; broader gates below
+remain separately tracked.
 
 Expanded by Alexandre on 2026-11-16 into a broader status refactor. Provide a
 clear run overview, job details and array/task drill-down with consistent
@@ -835,9 +842,11 @@ refactoring steps separate from behavior changes.
   necessary extractions from semantic changes, preserving established selectors
   and caches instead of creating another status engine.
 
-- [ ] **MVP11.1a First usable status explanations.** One vertical slice:
+- [x] **MVP11.1a First usable status explanations.** One vertical slice:
   pure runtime-derived categories/default-afterok dependency names, mixed-array
   pending summaries, bounded reason-column tables and explicit raw details.
+  User-approved 2026-11-27 amendment includes corrected failure/cancellation
+  aggregates, simpler overview, colors, checked/cached labels and --head.
   Share Python/CLI/ACP/member evidence; no extra queries or persistent schema
   changes. Broader MVP11.1–4 hardening/consolidation remains separately gated.
 
@@ -1186,6 +1195,8 @@ or migration decision has already been accepted.
 | 2026-11-26 | FIX.CANCEL.1 Named local cancellation | Fixed local scancel dispatch for named local profiles and preserved saved producing transport over changed current profiles. Reuses producing_machine/is_remote_machine, carries execution evidence through status rows, groups by full producing identity and resolves targets before any mutation. Fourteen new integration cases, 1799 full offline tests passed in 12.37 s with 83 expected collision warnings; installed version/local/remote/recorded cancellation and existing campaign smoke passed, wheel/sdist/no-Git rebuild verified. Inventory 292/146/21 unchanged. Checkpoint 0.2.0.dev16; no cluster, config/state, base dependency or rollback change. Full cancellation diagnostics remain MVP10.7. |
 
 | 2026-11-27 | MVP11.0 Status interaction map | Traced overview/detail/arrays, Python/ACP/context, cached/log/fetch/campaign and cancellation previews. Recorded owners, batched query costs, source/selection boundaries, no-persistence explanation strategy and first vertical slice MVP11.1a. Documentation only; reviewed diff, existing design/plan links retained. No cluster or runtime changes. |
+
+| 2026-11-27 | MVP11.1a Status clarity | Corrected failure/cancellation aggregation and retained active/unknown task counts; old compatible cached aggregate labels corrected in memory. Added simplified colored overview, checked/cached qualifications, --head (10 or N) before queries, bounded job tables, conservative dependency names and mixed-array explanations, raw --details/JSON and NO_COLOR/color/width controls. 49 new regression cases; 1848 offline tests passed in 18.84 s, 84 expected warnings. Installed artifact/head/failed-and-cancelled/colors/cache/agent and prior campaign/cancel smoke passed; inventory unchanged at 292/146/21. Checkpoint 0.2.0.dev17. No cluster/config/state/dependency/rollback change; full MVP11 and MVP10.6 remain open. |
 
 ## How we work
 

@@ -35,13 +35,13 @@ def test_status_for_job_id_array_failure_wins():
     assert status_for_job_id("123", raw) == "FAILED"
 
 
-def test_status_for_job_id_array_cancelled_wins_over_completion():
+def test_status_for_job_id_array_pending_tasks_remain_active_after_cancellation():
     raw = {
         "123_1": "COMPLETED",
         "123_2": "CANCELLED",
         "123_3": "PENDING",
     }
-    assert status_for_job_id("123", raw) == "CANCELLED"
+    assert status_for_job_id("123", raw) == "PENDING"
 
 
 def test_status_for_job_id_array_running_when_active_tasks_exist():

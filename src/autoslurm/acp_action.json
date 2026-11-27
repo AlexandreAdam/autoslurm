@@ -149,7 +149,8 @@
       "00_operating_rules.md",
       "01_client_workflow.md",
       "09_task_inspect.md",
-      "12_task_acp_reference.md"
+      "12_task_acp_reference.md",
+      "21_status.md"
     ],
     "keywords": [
       "observe",
@@ -173,7 +174,8 @@
     "context_sections": [
       "18_fetching.md",
       "01_client_workflow.md",
-      "09_task_inspect.md"
+      "09_task_inspect.md",
+      "21_status.md"
     ],
     "keywords": [
       "fetch",
@@ -258,7 +260,8 @@
       "stream": "Fetch: both/stdout/stderr."
     },
     "context_sections": [
-      "20_campaigns.md"
+      "20_campaigns.md",
+      "21_status.md"
     ],
     "keywords": [
       "campaign",
@@ -283,7 +286,8 @@
       "stream": "Fetch: both/stdout/stderr."
     },
     "context_sections": [
-      "20_campaigns.md"
+      "20_campaigns.md",
+      "21_status.md"
     ],
     "keywords": [
       "campaign",

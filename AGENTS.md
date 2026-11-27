@@ -157,6 +157,15 @@ operate from the workstation; compute nodes use already-prepared environments.
   sync is a whole-directory mirror, not bounded evidence fetching. See packaged
   `18_fetching`; do not add another downloader or guess receipts by bundle name.
 - Update human and agent documentation when public behavior changes.
+- Status uses one shared scheduler/task projection: known failures take priority
+  over cancellations, while active/unknown counts remain visible. `asl status
+  --head` selects the latest 10 visible runs before queries; --head N changes the
+  count. Human UNSUBMITTED is structured ready_to_go, not proof of readiness.
+  Checked/cached/partially checked/unavailable describe evidence, not scientific
+  success. Use supported inspection JSON and the packaged
+  [status recipe](src/autoslurm/agent_resources/21_status.md), not colored-table
+  parsing. Explanations are derived after cache I/O; cached reads do no commands
+  or cache writes. Custom/cross-machine dependencies are never inferred.
 - Package checkpoints follow [the versioning policy](docs/versioning.md).
   `src/autoslurm/version.py::__version__` is the only version source. Complete
   behavior-changing tasks with a version bump and dated CHANGELOG.md entry;

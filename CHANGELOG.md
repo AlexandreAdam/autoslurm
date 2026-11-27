@@ -9,6 +9,24 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev17 — 2026-11-27
+
+- Fixed failed arrays being labelled cancelled when a downstream job was
+  cancelled. Aggregate failures take priority; active/unknown task counts stay
+  visible. Compatible cached aggregates are corrected in memory without writes.
+- Simplified the overview to run/status/task summary and an explicit checked
+  timestamp. Qualifies cached/partial/unavailable data, labels drafts unsubmitted,
+  and adds terminal colors, NO_COLOR and --color auto/always/never.
+- Added `asl status --head` (latest 10 visible runs), or --head N, selecting
+  runs before scheduler queries. Existing indices/order and detail selectors stay.
+- Added shared runtime status explanations for pending causes, conservative
+  named dependency waits and mixed-array pending counts. Raw scheduler evidence
+  remains unchanged; cached explanations are explicitly last-observed.
+- Job tables put readable reasons in a bounded column. `asl status --details`
+  retains raw reasons/exit codes; --width controls compact layouts. Requested
+  walltime is a limit, not pending time remaining or a start estimate.
+- No extra scheduler calls, persisted explanation schema or cache migration.
+
 ## 0.2.0.dev16 — 2026-11-26
 
 - Fixed `asl cancel` routing for named local profiles such as `rusty-local`:

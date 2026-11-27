@@ -43,6 +43,8 @@ def status_for_job_id(
     exact = raw_statuses.get(job_id)
     tasks = {_array_task_index(job_id, key): state for key, state in raw_statuses.items()
              if _array_task_index(job_id, key) is not None}
+    if any(state in FAILED_STATES - {"CANCELLED"} for state in tasks.values()):
+        return "FAILED"
     if (tasks or declared_total is not None) and exact in FAILED_STATES:
         return "CANCELLED" if exact == "CANCELLED" else "FAILED"
     states = list(tasks.values())
@@ -61,14 +63,16 @@ def status_for_job_id(
 def aggregate_states(states):
     """Conservative common state: completion requires every expected observation."""
     upper = [str(state).upper() for state in states]
-    if "CANCELLED" in upper:
-        return "CANCELLED"
-    if any(state in FAILED_STATES for state in upper):
+    if any(state in FAILED_STATES - {"CANCELLED"} for state in upper):
         return "FAILED"
     if any(state in RUNNING_LIKE_STATES for state in upper):
         return "RUNNING"
     if "PENDING" in upper:
         return "PENDING"
+    if any(state not in {"COMPLETED", "CANCELLED"} for state in upper):
+        return "UNKNOWN"
+    if "CANCELLED" in upper:
+        return "CANCELLED"
     if upper and all(state == "COMPLETED" for state in upper):
         return "COMPLETED"
     return "UNKNOWN"

@@ -3,7 +3,8 @@
 ## Status
 
 Requested by Alexandre on 2026-11-13; MVP11.0 interaction map complete on
-2026-11-27; runtime changes below remain planned until their task gates pass. The requested
+2026-11-27. MVP11.1a is implemented in 0.2.0.dev17; remaining broader gates
+stay planned. The requested
 outcome is a reason column in the normal job table, with understandable waiting
 categories and dependency job names. Contracts and module names below are
 proposed. [PLAN.md](../../PLAN.md#mvp11-readable-dependency-aware-status) owns
@@ -204,5 +205,49 @@ Selectors remain name/index/range, exact bundle file and original array indices.
 Default discovery/history visibility stays unchanged. --details will retain raw
 text evidence; --json is the complete structured route. Cached explanations are
 explicitly last-observed. Requested walltime is a limit, never a pending start ETA.
-Summary navigation, definition-load extraction and additional filters belong to
-MVP11.4 after this first useful slice.
+User amendment on 2026-11-27 brings the simplified overview, colors, failure
+classification and --head into MVP11.1a. Definition-load extraction and further
+filters/consolidation remain MVP11.4.
+
+## MVP11.1a delivered contract — 2026-11-27
+
+The user approved the simpler overview/job layout and requested --head. Existing
+array_status owns corrected aggregates: failures beat cancellations; active work
+beats cancellation elsewhere, and missing states prevent declaring completion.
+Explicit array-parent cancellation cannot hide known failed tasks. Raw Slurm
+parent/task facts remain unchanged. Compatible older cached aggregates and prior
+jobs are recalculated in memory by inspection_state, without migration or writes.
+
+status_explanations is the pure owner of disposable job/task explanation fields.
+inspection applies it after cache I/O; supplied-data convenience callers share it.
+Default bundle afterok dependencies name direct parents only, qualify unverified
+parents and omit freshly completed parents only with complete task evidence and
+a completed aggregate. Custom Slurm conditions stay generic. Failed arrays retain
+attention even with pending tasks. No new query path or persisted explanation
+fields. Mixed-array task reasons remain individually available.
+
+status_views owns summaries/rows; status_table owns terminal-safe bounded layout.
+Overview is idx/run/status/tasks, plus a data qualification when needed, and a
+checked timestamp. Human labels include UNSUBMITTED/QUEUED while JSON retains
+existing states. Counts include supporting jobs, not unique scientific outputs.
+Job rows are idx/id/job/status/tasks/reason; completed historical reasons and
+routine zero exits move to details. Resource/walltime limits remain in details,
+not mislabelled as pending remaining time. NO_COLOR and --color auto/always/never
+control text colors; JSON remains plain. --width bounds tables and signals
+abbreviation. --details exposes full evidence and overview saved/exact references.
+
+--head defaults to 10 or accepts N, over the newest currently visible runs before
+inspection; no extra scheduler calls for excluded runs. It is overview-only,
+compatible with --cached/--json, and preserves normal ordering/indices. Invalid
+counts and array selectors fail before observation. No default history/filter
+change, cross-machine prerequisites, watch, queue ETA or scientific inference.
+
+Verification: 49 new regression cases; 1848 full offline tests passed in 18.84 s,
+84 expected collision warnings. Tests cover the reported 50-failed/1-cancelled
+case, cached old aggregates, defaults/custom dependencies, mixed arrays, pure
+no-I/O explanation, raw preservation, CLI/ACP parity, colors/NO_COLOR/JSON,
+wide/narrow Unicode tables, cached no-write/no-query, stable selectors and
+pre-query --head limits. Installed package/metadata/build evidence is recorded
+in the installation register. Broader MVP11.1–4 closure stays open; in particular,
+legacy convenience loading and the status CLI's repeated definition read are
+not claimed removed. MVP10.6 diagnostic adoption remains separate.

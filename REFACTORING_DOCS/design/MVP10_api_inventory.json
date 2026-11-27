@@ -551,6 +551,7 @@
         "tests/unit/test_inspection_state.py",
         "tests/integration/test_inspection_boundaries.py",
         "tests/integration/test_shared_inspection.py",
+        "tests/integration/test_status_clarity.py",
         "tests/integration/test_evidence_record_diagnostics.py"
       ],
       "adoption": "MVP10.3c.3: cache JSON reads share regular-file/UTF-8 reader and explicit schema guards; missing cache quiet, malformed/inaccessible adds diagnostic. Cache writes retain publication facts without dropping live scheduler/log evidence. Failed receipt overlay retains diagnostic and existing snapshot IDs. Other observation/query/log policy remains MVP10.6."

@@ -13,6 +13,27 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+MVP11.1a (2026-11-27), checkpoint 0.2.0.dev17: simplified colored status
+summaries with checked/cached qualifications, --head selection before queries,
+corrected failure/cancellation aggregation, bounded job reason tables and pure
+runtime-derived explanations. Old compatible sidecar aggregates are corrected in
+memory, not migrated/written; raw scheduler fields remain. No additional query
+engine or record format. Forty-nine new regression cases; full offline suite:
+1848 passed in 18.84 s, 84 expected collision warnings;
+.development/test-runs/status-clarity.xml. Inventory 292 routes/146 owners/21 broad
+catches. Installed package CLI/Python/ACP/head/failed-and-cancelled/colors/JSON/
+cache/agent checks and existing campaign/cancellation checks passed. No-Git/
+no-runtime-import metadata, direct wheel/sdist/rebuilt wheel and installed
+runtime/distribution/CLI identity passed; direct/rebuilt member contents match.
+Artifacts .development/artifacts/status-clarity: wheel SHA256
+57d0d3271ecf881d7ace2c0373a5cb24ccb2918bac3cd75da67121e21cacbf31;
+sdist SHA256 4e93f4f85065d576768eb1c3c6e230675ac4a76a6045c180f7a020c539874dd9;
+rebuilt wheel SHA256 c9352f236fecbfc6b8abbe29cd840bdd74a8b6ccf90758d746201a6c40b51e89.
+Human status docs, packaged 21_status and ACP context discovery updated. Main
+editable source follows dev; remote installation remains unchanged. No actual
+cluster, SSH-config, daily state, base/test dependency installation or pinned
+rollback change. Broader MVP11 consolidation and MVP10.6 diagnostics remain open.
+
 FIX.CANCEL.1 (2026-11-26), checkpoint 0.2.0.dev16: named local cancellation
 uses local scancel, saved producing transport wins over changed current profiles,
 and all targets resolve before dispatch. Fourteen new integration cases cover

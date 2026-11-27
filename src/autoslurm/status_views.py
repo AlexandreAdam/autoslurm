@@ -7,6 +7,8 @@ from typing import Callable, Optional
 from .save_load_jobs import load_bundle
 from . import status as status_core
 from .execution import EXECUTION_METADATA_KEY
+from .status_explanations import explain_jobs
+from .status_table import table, plain
 
 
 TERMINAL_STATES = {"COMPLETED", "CANCELLED", *status_core.FAILED_STATES}
@@ -74,6 +76,10 @@ def bundle_job_rows(
 
 def rows_from_resolved(jobs, resolved, *, name_contains=None, name_regex=None, ignore_case=False,
                        status_predicate=None, show_array_tasks=False, array_tasks=None):
+    # Compatibility paths can supply raw projections. Public inspection already
+    # supplies explanations carrying the correct cached/failed freshness.
+    if any("explanation" not in job for job in resolved):
+        explain_jobs(jobs, resolved)
     by_name = {job["name"]: job for job in jobs}
     compiled = re.compile(name_regex, re.I if ignore_case else 0) if name_regex else None
     rows = []
@@ -94,7 +100,12 @@ def rows_from_resolved(jobs, resolved, *, name_contains=None, name_regex=None, i
             rows.append({"index": str(len(rows) + 1), "job_id": task["job_id"] or "-", "job_id_raw": task["job_id"],
                          "name": name, "task_index": task["task_index"], "array": f"{view['counts']['completed']}/{len(view['tasks'])}" if view["is_array"] else "-",
                          "gpus": _requested_gpus(original), "dependencies": _dependencies_text(original),
-                         "time_remaining": task.get("time_remaining") or (_requested_time(original) if state == "PENDING" else "-"),
+                         "time_remaining": (task.get("time_remaining") or "-") if state != "PENDING" else "-",
+                         "walltime_limit": _requested_time(original),
+                         "progress": (f"{view['counts']['completed']}/{len(view['tasks'])} done" +
+                             "".join(f" · {count} {key}" for key, count in view["counts"].items()
+                                     if count and key != "completed")) if view["is_array"] else "-",
+                         "explanation": (task if show_array_tasks and view["is_array"] else view).get("explanation", {}),
                          "raw_status": state, "status_key": state.upper(),
                          "status": status_core._colorize_state_text(status_core.display_state(state)),
                          "machine_name": view["machine"], "machine": str(view["machine"] or "local"),
@@ -164,110 +175,107 @@ def bundle_jobs_context(
 
 
 def bundle_jobs_context_from_rows(
-    bundle_name: str,
-    bundle_date: datetime,
-    rows: list[dict],
-    *,
-    show_array_tasks: bool = False,
+    bundle_name: str, bundle_date: datetime, rows: list[dict], *,
+    show_array_tasks: bool = False, details: bool = False, width: int | None = None, color="auto",
 ) -> str:
-    lines = [f"{bundle_name} {bundle_date.isoformat()}"]
+    lines = [f"{plain(bundle_name)} {bundle_date.isoformat()}"]
     if not rows:
-        lines.append("No jobs matched filters.")
-        return "\n".join(lines)
-
-    idx_width = max(len("idx"), max(len(row["index"]) for row in rows))
-    id_width = max(len("id"), max(len(row["job_id"]) for row in rows))
-    name_width = max(len("name"), max(len(row["name"]) for row in rows))
-    time_remaining_width = max(len("time remaining"), max(len(row["time_remaining"]) for row in rows))
-    gpus_width = max(len("gpus"), max(len(row["gpus"]) for row in rows))
-    deps_width = max(len("dependencies"), max(len(row["dependencies"]) for row in rows))
-    status_width = max(len("status"), max(status_core._visible_len(row["status"]) for row in rows))
-    if show_array_tasks:
-        lines.append(
-            f"{'idx'.center(idx_width)}  "
-            f"{'id'.center(id_width)}  "
-            f"{'name'.center(name_width)}  "
-            f"{'gpus'.center(gpus_width)}  "
-            f"{'dependencies'.center(deps_width)}  "
-            f"{'time remaining'.center(time_remaining_width)}  "
-            f"{'status'.center(status_width)}"
-        )
-    else:
-        array_width = max(len("array"), max(len(row["array"]) for row in rows))
-        lines.append(
-            f"{'idx'.center(idx_width)}  "
-            f"{'id'.center(id_width)}  "
-            f"{'name'.center(name_width)}  "
-            f"{'array'.center(array_width)}  "
-            f"{'gpus'.center(gpus_width)}  "
-            f"{'dependencies'.center(deps_width)}  "
-            f"{'time remaining'.center(time_remaining_width)}  "
-            f"{'status'.center(status_width)}"
-        )
+        return "\n".join([*lines, "No jobs matched filters."])
+    headers = ["idx", "id", "job", "status", "tasks", "reason"]
+    values = []
     for row in rows:
-        deps_rendered = (
-            row["dependencies"].center(deps_width)
-            if row["dependencies"] == "-"
-            else row["dependencies"].ljust(deps_width)
-        )
-        time_remaining_rendered = (
-            row["time_remaining"].center(time_remaining_width)
-            if row["time_remaining"] == "-"
-            else row["time_remaining"].ljust(time_remaining_width)
-        )
-        if show_array_tasks:
-            row_text = (
-                f"{row['index'].ljust(idx_width)}  "
-                f"{row['job_id'].ljust(id_width)}  "
-                f"{row['name'].ljust(name_width)}  "
-                f"{row['gpus'].ljust(gpus_width)}  "
-                f"{deps_rendered}  "
-                f"{time_remaining_rendered}  "
-                f"{_center_visible(row['status'], status_width)}"
-            )
-        else:
-            row_text = (
-                f"{row['index'].ljust(idx_width)}  "
-                f"{row['job_id'].ljust(id_width)}  "
-                f"{row['name'].ljust(name_width)}  "
-                f"{row['array'].ljust(array_width)}  "
-                f"{row['gpus'].ljust(gpus_width)}  "
-                f"{deps_rendered}  "
-                f"{time_remaining_rendered}  "
-                f"{_center_visible(row['status'], status_width)}"
-            )
-        if row["status_key"] == "RUNNING":
-            row_text = f"{status_core.ANSI_YELLOW}{row_text}{status_core.ANSI_RESET}"
-        elif row["status_key"] == "COMPLETED":
-            row_text = f"{status_core.ANSI_GREEN}{row_text}{status_core.ANSI_RESET}"
-        elif row["status_key"] == "CANCELLED" or row["status_key"] in status_core.FAILED_STATES:
-            row_text = f"{status_core.ANSI_RED}{row_text}{status_core.ANSI_RESET}"
-        lines.append(row_text)
-        if row.get("reason") or row.get("exit_code"):
-            lines.append(f"  {row['job_id']} reason={row.get('reason') or '-'} exit={row.get('exit_code') or '-'}")
+        values.append({"idx": row["index"], "id": row["job_id"], "job": row["name"],
+            "status": _state_label(row["raw_status"]),
+            "tasks": row.get("progress", "-") if not show_array_tasks else "-",
+            "reason": row.get("explanation", {}).get("message") or "-"})
+    lines.append(table(headers, values, width=width, optional=("id",),
+        maximums={"job": 32, "reason": 70, "tasks": 70}, color=color))
+    if details:
+        for row in rows:
+            lines.append(f"{plain(row['name'])} [{plain(row['job_id'])}] "
+                f"reason={plain(row.get('reason') or '-')} exit={plain(row.get('exit_code') or '-')} "
+                f"limit={plain(row.get('walltime_limit', '-'))} "
+                f"gpus={plain(row['gpus'])} dependencies={plain(row['dependencies'])} "
+                f"time remaining={plain(row['time_remaining'])} array={plain(row.get('array', '-'))}")
+            if row.get("explanation", {}).get("message"):
+                lines.append("  " + plain(row["explanation"]["message"]))
     return "\n".join(lines)
 
 
-def summary_text(entries, views):
+def _task_summary(counts):
+    labels = {"failed": "failed", "unknown": "unknown", "running": "running", "pending": "waiting",
+              "completed": "done", "cancelled": "cancelled", "not_submitted": "not submitted"}
+    return " · ".join(f"{counts.get(key, 0)} {label}" for key, label in labels.items() if counts.get(key)) or "No task data"
+
+
+def _state_label(state):
+    return {"READY_TO_GO": "UNSUBMITTED", "NOT_SUBMITTED": "UNSUBMITTED"}.get(state.upper(), state.upper())
+
+
+def _run_label(view):
+    return "QUEUED" if view["state"] == "pending" else _state_label(view["state"])
+
+
+def _data_label(view):
+    return {"fresh": "checked", "stale": "cached", "partial": "partially checked",
+            "failed": "unavailable", "never": "not checked"}[view["freshness"]]
+
+
+def _check_text(views):
+    def timestamp(value):
+        try:
+            return datetime.fromisoformat(value).isoformat(sep=" ", timespec="seconds").replace("+00:00", " UTC")
+        except ValueError:
+            return plain(value)
+    fresh = [timestamp(view["observed_at"]) for view in views if view["freshness"] == "fresh" and view.get("observed_at")]
+    previous = [timestamp(view["observed_at"]) for view in views if view["freshness"] != "fresh" and view.get("observed_at")]
+    if fresh:
+        # Keep recorded timezone; timestamps describe data collection, not job start.
+        span = sorted(set(fresh))
+        return "Checked: " + (span[0] if len(span) == 1 else span[0] + " to " + span[-1])
+    if any(view["freshness"] == "partial" for view in views):
+        return "Partially checked: " + (max(previous) if previous else "time unavailable")
+    if any(view["freshness"] == "failed" for view in views):
+        return "Status check failed: " + (max(previous) if previous else "time unavailable")
+    if previous:
+        return "Last saved check: " + max(previous) + " (not refreshed)"
+    return "Not checked: no successful scheduler check is available."
+
+
+def summary_text(entries, views, *, details=False, width=None, color="auto"):
     if not views:
         return "No saved bundles found."
-    headers = ["idx", "bundle", "status", "saved", "jobs", "array", "pending", "running", "completed", "failed", "cancelled", "unknown", "observation"]
+    headers = ["idx", "run", "status", "tasks"]
+    if any(view["freshness"] != "fresh" for view in views):
+        headers.append("data")
     rows = []
     for index, (entry, view) in enumerate(zip(entries, views), 1):
-        counts = {key: sum(job["counts"][key] for job in view["jobs"]) for key in ("pending", "running", "completed", "failed", "cancelled", "unknown")}
-        rows.append([str(index), str(entry["bundle"]), view["state"], view["saved_at"].replace("T", " "), str(len(view["jobs"])),
-                     str(sum(len(job["tasks"]) for job in view["jobs"] if job["is_array"])),
-                     *[str(counts[key]) for key in ("pending", "running", "completed", "failed", "cancelled", "unknown")], view["freshness"]])
-    widths = [max(len(header), *(len(row[index]) for row in rows)) for index, header in enumerate(headers)]
-    text = "\n".join("  ".join(value.ljust(width) for value, width in zip(row, widths)) for row in [headers, *rows])
-    errors = [f"{entry['bundle']}: {error['source']}: {error['message']}" for entry, view in zip(entries, views) for error in view["errors"]]
-    return "\n".join([text, *errors])
+        counts = {key: sum(job["counts"][key] for job in view["jobs"])
+                  for key in ("pending", "running", "completed", "failed", "cancelled", "unknown", "not_submitted")}
+        rows.append({"idx": str(index), "run": str(entry["bundle"]), "status": _run_label(view),
+                     "tasks": _task_summary(counts), "data": _data_label(view)})
+    lines = [table(headers, rows, width=width, color=color, maximums={"run": 42, "tasks": 100}), _check_text(views),
+             "Tasks include supporting jobs; done means scheduler completion."]
+    if "data" in headers:
+        lines.append("cached = last saved data; partially checked = incomplete refresh; unavailable = check failed.")
+    if details:
+        for index, (entry, view) in enumerate(zip(entries, views), 1):
+            lines.append(f"{index}. {plain(entry['bundle'])} saved={plain(view['saved_at'])} "
+                         f"data={_data_label(view)} checked={plain(view.get('observed_at') or 'never')}")
+            lines.append("   " + rows[index - 1]["tasks"])
+            lines.append("   " + plain(view["bundle_path"]))
+    lines.extend(f"{plain(entry['bundle'])}: {plain(error['source'])}: {plain(error['message'])}"
+                 for entry, view in zip(entries, views) for error in view["errors"])
+    return "\n".join(lines)
 
 
-def observation_text(view):
-    lines = [f"Run: {view['state']}", f"Observation: {view['freshness']} at {view['observed_at']}"]
+def observation_text(view, *, details=False):
+    lines = [f"Run: {_run_label(view)}", _check_text([view])]
+    if view["freshness"] != "fresh":
+        lines.append("Status data: " + _data_label(view))
     for job in view["jobs"]:
-        if job["is_array"] and (job.get("reason") or job.get("exit_code")):
-            lines.append(f"Parent {job['id']}: {job['scheduler_state']} reason={job.get('reason') or '-'} exit={job.get('exit_code') or '-'}")
-    lines.extend(f"Observation error: {error['source']}: {error['message']}" for error in view["errors"])
+        if details and job["is_array"] and (job.get("reason") or job.get("exit_code")):
+            lines.append(f"Parent {plain(job['id'])}: {plain(job['scheduler_state'])} "
+                         f"reason={plain(job.get('reason') or '-')} exit={plain(job.get('exit_code') or '-')}")
+    lines.extend(f"Status check error: {plain(error['source'])}: {plain(error['message'])}" for error in view["errors"])
     return "\n".join(lines)

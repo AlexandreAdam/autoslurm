@@ -19,8 +19,8 @@ def test_summary_keeps_two_snapshots_and_batches_queries(runs, capsys):
     status.main([])
     text = capsys.readouterr().out
     assert text.count("study") == 2
-    assert "unknown" in text.splitlines()[0]
-    assert "running" in text and "completed" in text
+    assert "tasks" in text.splitlines()[0] and "status" in text.splitlines()[0]
+    assert "1 running" in text and "1 done" in text
     assert len(runs[2]) == 2
 
 
@@ -36,7 +36,7 @@ def test_multiple_indices_and_ranges_keep_requested_order(runs, capsys):
     status.main(["2", "1-2"])
     text = capsys.readouterr().out
     assert text.index("2025-01-01") < text.index("2025-01-02")
-    assert text.count("Observation:") == 2
+    assert text.count("Checked:") == 2
     assert len(runs[2]) == 2
 
 

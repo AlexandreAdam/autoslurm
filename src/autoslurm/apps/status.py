@@ -155,9 +155,21 @@ def _main(argv=None):
     parser.add_argument("--json", action="store_true", help="Return the shared structured observation.")
     parser.add_argument("--cached", action="store_true", help="Read last observations without scheduler queries; marked stale.")
     parser.add_argument('--debug', action='store_true', help='Show original selection/configuration errors.')
+    parser.add_argument('--details', action='store_true', help='Show full job reasons and exit evidence below the table.')
+    parser.add_argument('--width', type=int, help='Table width (at least 40 columns); non-TTY default is 120.')
+    parser.add_argument('--color', choices=('auto', 'always', 'never'), default='auto', help='Color terminal output; auto respects NO_COLOR.')
+    parser.add_argument('--head', nargs='?', const=10, type=int, metavar='N',
+                        help='Show only the latest N saved runs (default: 10); overview only.')
     args = parser.parse_args(argv)
+    if args.width is not None and args.width < 40:
+        parser.error('width must be at least 40 columns.')
+    if args.head is not None and (args.head < 1 or args.target or args.bundle_file):
+        parser.error('--head requires a positive count and an overview without run selectors.')
+    array_tasks = _parse_array_task_filter(args.array, parser)
     reference = _build_reference_date(args.date, args.year, args.month, args.day, args.hour, args.minute, args.second)
     entries = _status_rows(reference)
+    if args.head is not None:
+        entries = entries[:args.head]
     if args.bundle_file and args.target:
         parser.error("Use bundle-file or name/index selectors.")
     paths = [args.bundle_file] if args.bundle_file else _selected_paths(args.target, entries, parser, reference) if args.target else [entry["path"] for entry in entries]
@@ -166,9 +178,8 @@ def _main(argv=None):
         print(json.dumps(views, indent=2))
         return
     if not args.target and args.bundle_file is None:
-        print(summary_text(entries, views))
+        print(summary_text(entries, views, details=args.details, width=args.width, color=args.color))
     else:
-        array_tasks = _parse_array_task_filter(args.array, parser)
         for path, view in zip(paths, views):
             if view["state"] == "broken":
                 print(f"Run: broken ({path})")
@@ -177,8 +188,8 @@ def _main(argv=None):
                 continue
             jobs, _, date = load_bundle_from_path(path)
             rows = rows_from_resolved(jobs, view["jobs"], show_array_tasks=args.array is not None, array_tasks=array_tasks)
-            print(bundle_jobs_context_from_rows(Path(path).stem.rsplit("_", 1)[0], date, rows, show_array_tasks=args.array is not None))
-            print(observation_text(view))
+            print(bundle_jobs_context_from_rows(Path(path).stem.rsplit("_", 1)[0], date, rows, show_array_tasks=args.array is not None, details=args.details, width=args.width, color=args.color))
+            print(observation_text(view, details=args.details))
 
 
 def main(argv=None):

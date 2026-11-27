@@ -75,7 +75,7 @@ def test_context_list_mode_accepts_partial_date_components(tmp_path, capsys):
     output = capsys.readouterr().out
 
     lines = output.splitlines()
-    assert "bundle" in lines[0]
+    assert "run" in lines[0]
     assert all("path=" not in line for line in lines)
 
 
@@ -101,13 +101,12 @@ def test_context_view_lists_saved_bundles(tmp_path, capsys):
     output = capsys.readouterr().out
 
     lines = output.splitlines()
-    assert "bundle" in lines[0]
-    assert "saved" in lines[0]
-    assert "jobs" in lines[0]
+    assert "run" in lines[0]
+    assert "status" in lines[0] and "tasks" in lines[0]
+    assert "UNSUBMITTED" in output and "not submitted" in output
     assert "path=" not in output
-    assert "2025-01-02 00:00" in lines[1] or "2025-01-03 00:00" in lines[1]
-    assert lines[0].index("jobs") != lines[1].index(lines[1].split()[-1])
-    assert "1" in lines[1]
+    assert lines[1].split()[0] == "1"
+    assert "job_a" in output and "job_b" in output
 
 
 def test_context_job_status_is_compact(tmp_path, monkeypatch, capsys):
@@ -198,7 +197,7 @@ def test_context_job_status_batches_remote_queries(tmp_path, monkeypatch, capsys
     assert seen["ssh"] == 1
     assert "analysis" in output
     assert "cleanup" in output
-    assert "time remaining" in output
+    assert "Waiting for resources" in output
     assert "RUNNING" in output
     assert "status" in output
     assert "PENDING" in output
@@ -257,14 +256,16 @@ def test_bundle_jobs_context_colors_success_and_cancelled(tmp_path, monkeypatch)
 
     module = importlib.import_module("autoslurm.status")
     text = module.bundle_jobs_context("experiment")
+    # Plain output when redirected; a terminal receives explicit status colors.
+    assert "\x1b[" not in text
+    import sys
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    text = module.bundle_jobs_context("experiment")
     assert "\x1b[38;2;0;200;0mCOMPLETED\x1b[0m" in text
-    assert "\x1b[38;2;220;180;0mRUNNING\x1b[0m" in text
-    assert "\x1b[38;2;220;0;0mCANCELLED\x1b[0m" in text
+    assert "\x1b[38;2;80;160;255mRUNNING\x1b[0m" in text
+    assert "\x1b[38;2;220;180;0mCANCELLED\x1b[0m" in text
     assert "\x1b[38;2;220;0;0mFAILED\x1b[0m" in text
-    assert any(line.startswith("\x1b[38;2;220;180;0m") and "busy" in line for line in text.splitlines())
-    assert any(line.startswith("\x1b[38;2;0;200;0m") and "done" in line for line in text.splitlines())
-    assert any(line.startswith("\x1b[38;2;220;0;0m") and "killed" in line for line in text.splitlines())
-    assert any(line.startswith("\x1b[38;2;220;0;0m") and "crashed" in line for line in text.splitlines())
 
 
 def test_bundle_jobs_context_expands_array_tasks_when_requested(tmp_path, monkeypatch):
@@ -373,7 +374,7 @@ def test_context_job_script_view_is_compact(tmp_path, capsys):
     assert "path=" not in output
 
 
-def test_context_list_includes_resources_and_dependencies_topological_order(tmp_path, monkeypatch, capsys):
+def test_context_list_compact_preserves_topological_order(tmp_path, monkeypatch, capsys):
     set_storage_root(tmp_path / "storage")
     ensure_storage_dirs()
 
@@ -407,15 +408,14 @@ def test_context_list_includes_resources_and_dependencies_topological_order(tmp_
     experiment_context.main(["experiment", "--list"])
     lines = capsys.readouterr().out.splitlines()
 
-    assert any("time remaining" in line and "gpus" in line and "dependencies" in line for line in lines)
+    assert any("status" in line and "tasks" in line and "reason" in line for line in lines)
     train_row = next(line for line in lines if " train " in f" {line} ")
     eval_row = next(line for line in lines if " eval " in f" {line} ")
     assert " - " in f" {train_row} "
-    assert "2" in train_row
+    assert "COMPLETED" in train_row
     assert "-" in train_row
-    assert "00:30:00" in eval_row
-    assert "0" in eval_row
-    assert "train" in eval_row
+    assert "Pending; reason unavailable" in eval_row
+    assert "00:30:00" not in eval_row  # A pending walltime limit is not time remaining.
     assert lines.index(train_row) < lines.index(eval_row)
 
 

@@ -5,12 +5,13 @@ from datetime import datetime, timezone
 from .inspection_artifacts import ArtifactRequest, attach_artifacts
 from .inspection_cache import InspectionCache
 from .inspection_collection import load_run, load_machine_profiles, collect_observations
-from .inspection_state import resolve_jobs, project_run
+from .inspection_state import resolve_jobs, project_run, reproject_cached_states
 from .bundle_selection import list_saved_bundles
 from .storage import storage_root
 from .inspection_receipts import refresh_run_receipts
 from .errors import InvalidRequestError
 from .execution_tracking import tracking_path_from_receipt
+from .status_explanations import explain_jobs, explain_view
 
 __all__ = ["inspect_bundle", "inspect_bundles", "inspect_logs", "fetch_run", "list_runs"]
 
@@ -19,7 +20,7 @@ def observe_job_statuses(jobs):
     """Explicit observation for status callers that already loaded definitions."""
     profiles, error = load_machine_profiles(jobs)
     observations = collect_observations(jobs, profiles)
-    return resolve_jobs(jobs, observations, profiles=profiles, profile_error=error)
+    return explain_jobs(jobs, resolve_jobs(jobs, observations, profiles=profiles, profile_error=error))
 
 
 def _cached_view(run, profiles, profile_error, cache):
@@ -84,6 +85,8 @@ def inspect_bundles(bundle_paths, *, refresh=True, include_logs=False, job_name=
     for run in runs:
         view = (_fresh_view(run, observations, profiles, profile_error, cache) if refresh
                 else _cached_view(run, profiles, profile_error, cache))
+        reproject_cached_states(view)
+        explain_view(view, run.jobs)
         views.append(attach_artifacts(view, run, request, profiles=profiles, root=root, cache=cache))
     return views
 

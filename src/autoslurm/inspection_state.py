@@ -127,3 +127,20 @@ def project_run(run, observations, *, profiles, profile_error=None, observed_at=
         "jobs": resolved, "submissions": copy.deepcopy(run.submissions), "errors": errors,
         "logs": [], "definition_sha256": run.fingerprint,
     }
+
+
+def reproject_cached_states(view):
+    """Recompute derived aggregates without rewriting retained scheduler facts."""
+    for job in view["jobs"]:
+        if job["is_array"] and job["id"]:
+            states = {task["job_id"]: task["state"] for task in job["tasks"]}
+            if job.get("scheduler_state"):
+                states[job["id"]] = job["scheduler_state"]
+            job["state"] = status_for_job_id(job["id"], states, declared_total=len(job["tasks"]))
+    if view["state"] != "broken":
+        view["state"] = bundle_state(view["jobs"])
+    if (view.get("last_observed") or {}).get("jobs"):
+        previous = view["last_observed"]
+        prior_view = {"jobs": previous["jobs"], "state": previous["state"]}
+        reproject_cached_states(prior_view)
+        previous["state"] = prior_view["state"]

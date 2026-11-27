@@ -27,6 +27,9 @@ ANSI_RESET = "\033[0m"
 ANSI_GREEN = "\033[38;2;0;200;0m"
 ANSI_RED = "\033[38;2;220;0;0m"
 ANSI_YELLOW = "\033[38;2;220;180;0m"
+ANSI_BLUE = "\033[38;2;80;160;255m"
+ANSI_MAGENTA = "\033[38;2;200;100;220m"
+ANSI_DIM = "\033[2m"
 def display_state(state: str) -> str:
     return state
 
@@ -35,10 +38,16 @@ def _colorize_state_text(state_text: str) -> str:
     upper = state_text.upper()
     if upper == "COMPLETED":
         return f"{ANSI_GREEN}{state_text}{ANSI_RESET}"
-    if upper == "RUNNING":
+    if upper in {"RUNNING", "COMPLETING", "CONFIGURING"}:
+        return f"{ANSI_BLUE}{state_text}{ANSI_RESET}"
+    if upper in {"PENDING", "QUEUED", "CANCELLED"}:
         return f"{ANSI_YELLOW}{state_text}{ANSI_RESET}"
-    if upper == "CANCELLED" or upper in FAILED_STATES:
+    if upper in FAILED_STATES or upper in {"REJECTED", "BLOCKED"}:
         return f"{ANSI_RED}{state_text}{ANSI_RESET}"
+    if upper in {"UNKNOWN", "UNAVAILABLE", "UNCERTAIN", "BROKEN", "PARTIAL"}:
+        return f"{ANSI_MAGENTA}{state_text}{ANSI_RESET}"
+    if upper in {"UNSUBMITTED", "NOT_SUBMITTED", "READY_TO_GO"}:
+        return f"{ANSI_DIM}{state_text}{ANSI_RESET}"
     return state_text
 
 

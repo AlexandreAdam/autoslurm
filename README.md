@@ -192,6 +192,7 @@ the same indices used by status:
 
 ```sh
 asl status
+asl status --head             # Latest 10 saved runs; --head N selects a count
 asl fetch 1
 asl fetch 1 --job 2 --task 7
 asl fetch 1 --cached
@@ -200,6 +201,9 @@ asl fetch 1 --cached
 Fetching saves excerpts in AutoSlurm's existing local caches. It preserves
 available evidence on partial failures and never downloads scientific datasets
 or full log directories. See [fetching and logs](docs/logs.md).
+
+The [status guide](docs/status.md) explains the colored overview, task counts,
+checked/cached data, dependency reasons and `--details`/`--json` drill-down.
 
 Read execution logs with scheduler status, failure reasons and exit codes for
 one exact saved run:
