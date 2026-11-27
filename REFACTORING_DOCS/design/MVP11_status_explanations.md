@@ -2,7 +2,8 @@
 
 ## Status
 
-Requested by Alexandre on 2026-11-13; **planned, not implemented**. The requested
+Requested by Alexandre on 2026-11-13; MVP11.0 interaction map complete on
+2026-11-27; runtime changes below remain planned until their task gates pass. The requested
 outcome is a reason column in the normal job table, with understandable waiting
 categories and dependency job names. Contracts and module names below are
 proposed. [PLAN.md](../../PLAN.md#mvp11-readable-dependency-aware-status) owns
@@ -173,3 +174,35 @@ cluster calls; full offline regressions when shared inspection projection change
 - 2026-11-16: user requested a larger status refactor. Added interface/responsibility
   mapping and consolidated workflow/performance gates around existing reason
   tasks. All remain planned; runtime implementation continues with MVP10.4b.1.
+
+## MVP11.0 implementation map — 2026-11-27
+
+| Interaction | Current owner and cost | Refactor boundary |
+|---|---|---|
+| `asl status` overview | apps/status selects visible bundle snapshots, inspect_bundles reads each exact run and batches scheduler requests across producing identities | Keep selectors/order; summary_text renders supplied views only |
+| `asl status NAME/INDEX --array` | Same batch collector, then reloads each definition for row resources/dependencies | Keep exact array indices; remove repeat loading in a later mechanical extraction |
+| Python inspect_bundle(s), ACP inspect_run | inspection coordinates load/receipt overlay, profiles, scheduler, pure projection, caches and optional artifacts | One explanation owner applied to returned evidence; no second query path |
+| inspect/list/context/cancel previews | status_views convenience wrappers or rows_from_resolved; some load/query explicitly | Keep routing and selectors, share explanations/layout; preserve cancellation producing metadata |
+| Logs/fetch | inspection_artifacts, log_files and existing bounded caches | Same job/task identities; no scientific-result fetch |
+| Campaigns | campaigns composes ordinary views; campaign_projection bounds output | Inherit member explanations; never cross-machine dependency inference |
+| Cached inspection | validated fingerprinted sidecars, no scheduler/source-log access or cache writes | Derive explanations on read; old caches remain valid |
+
+One scheduler observation consists of queue + accounting queries; remote mode
+combines them in one SSH command per producing identity. inspect_bundles shares
+that observation across selected runs. It reads definitions/receipt evidence and
+validates sidecars; explanation/layout must add zero external calls. Source-log
+reads happen only when explicitly requested by log/fetch operations.
+
+First vertical runtime slice MVP11.1a delivers reason classification, conservative
+named default-afterok dependency explanations, mixed-array pending summaries and
+bounded job tables together so the result is usable immediately. This draws from
+MVP11.1–3, whose broader gates remain separate; it creates no parallel status
+engine. Runtime-derived explanation fields are not persisted, so no record/cache
+version change or migration is needed. Raw scheduler state/reason/exit stay intact.
+
+Selectors remain name/index/range, exact bundle file and original array indices.
+Default discovery/history visibility stays unchanged. --details will retain raw
+text evidence; --json is the complete structured route. Cached explanations are
+explicitly last-observed. Requested walltime is a limit, never a pending start ETA.
+Summary navigation, definition-load extraction and additional filters belong to
+MVP11.4 after this first useful slice.
