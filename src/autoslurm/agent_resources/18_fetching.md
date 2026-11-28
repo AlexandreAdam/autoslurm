@@ -76,8 +76,9 @@ adoption of old drafts, receipt guessing by name or synchronization is required.
 
 Scientific results/datasets remain application-owned. No recursive output scan,
 full-log download, job mutation, submission retry or environment setup runs.
-Legacy asl sync copies whole jobs/slurm/out directories, including full logs,
-and omits receipts; it is not bounded fetching. Mirror policy and historical
-receipt discovery are separate work. Regressions use mocked SSH/Slurm and exact
+asl sync validates native tracking and exact linked receipts into a controller
+view, and retains bulk scripts/out transfers including full logs. It is not
+bounded fetching; installed 22_sync documents differing profile names, validated
+raw-copy repair, retained conflicts and receipt refresh. Regressions use mocked SSH/Slurm and exact
 standalone workers against temporary records, covering recovery, partial
 failures, bounds/identity, sparse arrays and public/cached parity.

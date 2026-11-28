@@ -5,7 +5,9 @@ bounded stdout/stderr, using the same run/job/array selectors as `asl logs`.
 Use `asl fetch 1 --job 2 --task 7`, `--json` for structured partial evidence and
 `--cached` for local cache-only reads without source access/writes. Collection
 errors retain useful evidence and exit 1. It does not copy full logs or scientific
-results. Legacy `asl sync` remains a whole-directory mirror, not bounded fetching.
+results. `asl sync` imports validated native tracking/receipts and still transfers
+scripts/out in bulk; use bounded fetch for selected evidence. See installed
+`22_sync` for differing profile names and verified raw-copy repair.
 See installed section `18_fetching` and the public `fetch_run` API/ACP action.
 
 Bundle/config record failures in config/configuration, filter, initialize, schedule

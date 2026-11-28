@@ -153,9 +153,11 @@ operate from the workstation; compute nodes use already-prepared environments.
   `fetch_run` / `asl fetch` / ACP fetch_run refresh exact linked receipts first,
   then use the same status/log pipeline and caches. Receipts are capped at 1 MiB
   and 30 seconds; failed fetching preserves known IDs/readable logs and errors.
-  Cached fetching performs no receipt refresh/projection or cache write. Legacy
-  sync is a whole-directory mirror, not bounded evidence fetching. See packaged
-  `18_fetching`; do not add another downloader or guess receipts by bundle name.
+  Cached fetching performs no receipt refresh/projection or cache write. Sync validates native tracking and exact receipts into the selected controller
+  profile; local and cluster names may differ. Verified old raw copies are backed
+  up and repaired by explicit sync, never by renaming profiles. Scripts/out still
+  mirror in bulk, so sync is not bounded fetching. See packaged `18_fetching` and
+  `22_sync`; do not add another downloader or guess receipts by bundle name.
 - Update human and agent documentation when public behavior changes.
 - Status uses one shared scheduler/task projection: known failures take priority
   over cancellations, while active/unknown counts remain visible. `asl status

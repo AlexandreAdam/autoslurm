@@ -9,6 +9,24 @@ remains in [PLAN.md](PLAN.md). A checkpoint entry does not imply PyPI publicatio
 
 Changes after the latest versioned checkpoint belong here until the next bump.
 
+## 0.2.0.dev18 — 2026-11-27
+
+- Fixed `asl sync MACHINE` importing cluster-local tracking as laptop-local jobs.
+  Validated submissions now use the selected SSH profile while preserving source
+  paths, submission identities, Slurm IDs and scientific settings. Different
+  laptop/cluster profile names are expected and need no config changes.
+- Reuses an existing controller run/receipt by submission ID; repeated syncs do
+  not create additional runs. Repairs verified raw copies, backs up changed local
+  records and retires verified duplicate views outside normal discovery.
+- Imports exact linked receipts through the existing 1 MiB/30-second reader.
+  Additive protocol-1 sync_origin provenance supports later receipt refresh and
+  log/fetch/cancel operations without altering cluster records. Use this version
+  on the controller to refresh imports; no remote helper upgrade is required.
+- Missing/corrupt/conflicting source records retain local evidence and report
+  partial failure. Drafts/untracked legacy definitions are skipped rather than
+  copied unmodified. Bulk slurm/out mirroring remains; fetch is still the bounded
+  execution-evidence interface. No submission retry or scientific-result transfer.
+
 ## 0.2.0.dev17 — 2026-11-27
 
 - Fixed failed arrays being labelled cancelled when a downstream job was

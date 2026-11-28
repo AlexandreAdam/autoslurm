@@ -243,7 +243,7 @@ def test_receipt_overlay_preserves_partial_submission_outcome(monkeypatch):
     assert Path(receipt["receipt_path"]).read_bytes() == receipt_before
 
 
-def test_sync_refreshes_appended_replaced_and_truncated_logs_without_rewriting_definitions(tmp_path, monkeypatch):
+def test_sync_refreshes_logs_without_importing_untracked_or_rewriting_local_definitions(tmp_path, monkeypatch):
     import shutil
     from autoslurm.sync import sync_machine
     remote_root = tmp_path / "remote"
@@ -271,15 +271,16 @@ def test_sync_refreshes_appended_replaced_and_truncated_logs_without_rewriting_d
                 shutil.copyfile(file, destination)
         return subprocess.CompletedProcess(command, 0, "", "")
     monkeypatch.setattr("subprocess.run", transport)
-    sync_machine("remote")
     local_definition = storage_root() / "jobs/run.json"
-    assert local_definition.read_text() == "remote definition"
+    local_definition.write_text("local definition")
+    sync_machine("remote")
+    assert local_definition.read_text() == "local definition"
     for text in ("first plus appended detail", "same sized replacement!!!!", "short"):
         (remote_root / "out/task.out").write_text(text)
         (remote_root / "jobs/run.json").write_text("must not overwrite")
         sync_machine("remote")
         assert (out_dir() / "task.out").read_text() == text
-        assert local_definition.read_text() == "remote definition"
+        assert local_definition.read_text() == "local definition"
 
 
 def test_cached_refresh_never_fetches_remote_logs_even_with_override(tmp_path, monkeypatch):

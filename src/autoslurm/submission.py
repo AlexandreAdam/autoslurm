@@ -1,6 +1,7 @@
 """Durable submission evidence and exact, read-only recovery inspection."""
 
 from datetime import datetime, timezone
+import copy
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,8 @@ from .execution_tracking import validate_execution_bundle_path, is_execution_rec
 __all__ = ["SubmissionError", "load_submission", "list_submissions", "refresh_submission"]
 SUBMISSION_METADATA_KEY = "_autoslurm_submission"
 SUBMISSION_PROTOCOL = 1
+RECEIPT_IDENTITY_FIELDS = ("bundle", "bundle_path", "planned_path", "receipt_path",
+                           "execution_receipt_path", "machine", "execution")
 
 
 class SubmissionError(DiagnosticError):
@@ -60,10 +63,21 @@ def validate_receipt(receipt, expected=None):
     if receipt.get("state") == "submitted" and (not receipt.get("execution_finished") or any(job["state"] != "accepted" for job in receipt["jobs"].values())):
         raise ValueError("Submitted receipt must contain final accepted IDs for every job.")
     validate_execution_bundle_path(receipt)
+    origin = receipt.get("sync_origin")
+    if origin is not None:
+        if (not isinstance(origin, dict) or set(origin) != {*RECEIPT_IDENTITY_FIELDS, "execution_bundle_path"}
+                or any(not isinstance(origin.get(key), str) or not origin[key]
+                       for key in RECEIPT_IDENTITY_FIELDS if key != "execution")
+                or not isinstance(origin.get("execution"), dict)
+                or type(origin["execution"].get("is_remote")) is not bool):
+            raise ValueError("Invalid synchronized receipt origin.")
+        original = {**receipt, **origin}
+        original.pop("sync_origin", None)
+        validate_execution_bundle_path(original)
     if expected:
         if receipt["submission_id"] != expected["submission_id"] or set(receipt["jobs"]) != set(expected["jobs"]):
             raise ValueError("Receipt does not match the selected submission.")
-        for key in ("bundle", "bundle_path", "planned_path", "receipt_path", "execution_receipt_path", "machine", "execution"):
+        for key in RECEIPT_IDENTITY_FIELDS:
             if receipt.get(key) != expected.get(key):
                 raise ValueError(f"Receipt changed the selected submission's {key}.")
         for name, job in expected["jobs"].items():
@@ -72,6 +86,24 @@ def validate_receipt(receipt, expected=None):
         if expected.get('execution_bundle_path') is not None and receipt.get('execution_bundle_path') != expected['execution_bundle_path']:
             raise ValueError('Receipt changed the selected execution tracking path.')
     return receipt
+
+
+def merge_submission_observation(current, observed):
+    """Validate source identity/known IDs, then retain the selected local view."""
+    origin = current.get("sync_origin")
+    validate_receipt(observed, {**current, **origin} if origin else current)
+    result = copy.deepcopy(observed)
+    for key in RECEIPT_IDENTITY_FIELDS:
+        result[key] = copy.deepcopy(current[key])
+    if origin:
+        result["sync_origin"] = {**copy.deepcopy(origin),
+                                 "execution_bundle_path": observed.get("execution_bundle_path")}
+    result.pop("session_cleanup_diagnostics", None)
+    if current.get("session_cleanup_diagnostics"):
+        result["session_cleanup_diagnostics"] = copy.deepcopy(current["session_cleanup_diagnostics"])
+    if not result["execution_finished"]:
+        mark_unobserved(result, "Helper has not recorded a final submission outcome.")
+    return validate_receipt(result)
 
 
 def load_submission(receipt_path):
@@ -136,6 +168,18 @@ def project_receipt(receipt):
     path = Path(receipt["bundle_path"])
     facts = {**_receipt_context(receipt["receipt_path"], receipt), "resource": "tracking_snapshot", "source": "project_receipt"}
     bundle = read_json(path, context=facts)
+    _project_receipt_data(bundle, receipt)
+    try:
+        atomic_json(path, bundle)
+    except RecordWriteError as error:
+        error.diagnostic = error.diagnostic.with_context(**facts)
+        raise
+
+
+def _project_receipt_data(bundle, receipt):
+    """Apply validated outcome facts in memory; persistence stays in the caller."""
+    path = Path(receipt["bundle_path"])
+    facts = {**_receipt_context(receipt["receipt_path"], receipt), "resource": "tracking_snapshot", "source": "project_receipt"}
     if not isinstance(bundle, dict) or any(not isinstance(bundle.get(name), dict) for name in receipt["jobs"]):
         raise _read_error(path, code="record_invalid", stage="project_receipt", context=facts,
                           summary="Tracking snapshot is missing the selected submission's jobs.")
@@ -154,11 +198,7 @@ def project_receipt(receipt):
                 raise _read_error(path, code="record_invalid", stage="project_receipt", context={**facts, "job": name},
                                   summary="Refusing to replace a known scheduler ID.")
             job["id"] = outcome["id"]
-    try:
-        atomic_json(path, bundle)
-    except RecordWriteError as error:
-        error.diagnostic = error.diagnostic.with_context(**facts)
-        raise
+    return bundle
 
 
 def refresh_submission(receipt_path):
@@ -175,22 +215,12 @@ def refresh_submission(receipt_path):
             return current
         text = read_execution_receipt(current)
         try:
-            observed = validate_receipt(json.loads(text), current)
+            observed = merge_submission_observation(current, json.loads(text))
         except ValueError as native:
             facts = {key: current[key] for key in ('machine', 'submission_id', 'receipt_path')}
             facts.update(path=current['execution_receipt_path'], resource='execution_receipt')
             raise DiagnosticError(_receipt_fetch_failure('protocol', facts,
                 DiagnosticCause(type(native).__name__, 'Receipt JSON or selected submission identity was invalid.'))) from native
-        # Retain workstation identity/paths even if a helper receives stale data.
-        for key in ("bundle", "bundle_path", "planned_path", "receipt_path", "execution_receipt_path", "machine", "execution"):
-            observed[key] = current[key]
-        observed.pop('session_cleanup_diagnostics', None)
-        if current.get('session_cleanup_diagnostics'):
-            # These are workstation-owned observations, absent from the remote
-            # execution receipt. Recovering IDs must not erase them.
-            observed['session_cleanup_diagnostics'] = current['session_cleanup_diagnostics']
-        if not observed["execution_finished"]:
-            mark_unobserved(observed, "Helper has not recorded a final submission outcome.")
         current = observed
         current.pop("observation_error", None)
         write_receipt(receipt_path, observed)

@@ -24,6 +24,7 @@ validation approach.
 | FETCH.1 Selected-run evidence | [FETCH_1_execution_evidence.md](FETCH_1_execution_evidence.md) | Receipt refresh, status and bounded logs through one public workflow |
 | FIX.CLEAN.1 Finished bundle cleanup | [FIX_CLEAN_1_scopes.md](FIX_CLEAN_1_scopes.md) | Completed/terminal scopes with conservative task/receipt guards |
 | FIX.TRACKING.1 Execution-side tracking | [FIX_TRACKING_1_execution_tracking.md](FIX_TRACKING_1_execution_tracking.md) | New remote submissions publish exact cluster-local tracking views |
+| FIX.SYNC.1 Linked controller/cluster views | [FIX_SYNC_1_tracking_views.md](FIX_SYNC_1_tracking_views.md) | Complete locally; staged native tracking/receipt import, differing profile names and backed-up raw-copy repair |
 | MVP11 Status refactor | [MVP11_status_explanations.md](MVP11_status_explanations.md) | Planned; run/job/task workflow, clear reasons/progress/freshness, thin presentation and shared observations |
 | MVP12 Reusable scientific workflows | [MVP12_reusable_workflows.md](MVP12_reusable_workflows.md) | Planned from the Gaia proposal; layered public services, per-slice API/docs adoption and optional task runtime |
 | MULTI.1 Two clusters and working from home | [MULTI_1_two_clusters_and_remote_access.md](MULTI_1_two_clusters_and_remote_access.md) | Connection checks and exact campaign create/list/inspect/fetch implemented locally; actual gateway route remains unverified |

@@ -111,11 +111,13 @@ def test_sync_remote_pulls_storage(tmp_path, monkeypatch):
                 "research-cluster:/remote/autoslurm/slurm/",
                 "research-cluster:/remote/autoslurm/out/",
             }
-            assert cmd[-1] in {
-                f"{storage_root()}/jobs/",
-                f"{storage_root()}/slurm/",
-                f"{storage_root()}/out/",
-            }
+            from pathlib import Path
+            target = Path(cmd[-1])
+            assert target.is_relative_to(storage_root())
+            if "/jobs/" in cmd[-2]:
+                assert target.name == "jobs" and target.parent.name.startswith(".sync-")
+            else:
+                assert target in {storage_root() / "slurm", storage_root() / "out"}
             return MagicMock(returncode=0, stdout="", stderr="")
         raise AssertionError(f"Unexpected command: {cmd}")
 

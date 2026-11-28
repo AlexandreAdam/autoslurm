@@ -360,6 +360,12 @@ def _environment_setup_failure_message(field):
     return f"AutoSlurm {messages[field]}; application not started."
 
 
+def _tracking_sync_failure(context, summary):
+    return Diagnostic('record_invalid', 'sync', 'import_tracking', context=context,
+        summary=summary, effects={'remote_mutation': 'not_started'},
+        next_action='Retain the identified records and known Slurm IDs. Correct the missing/conflicting source or controller evidence, then explicitly sync the selected machine again. Never resubmit because tracking import failed.')
+
+
 def _receipt_fetch_failure(problem, context, cause=None):
     facts = {
         'identity': ('record_invalid', 'The execution receipt has no valid recorded transport; no host fallback was attempted.'),

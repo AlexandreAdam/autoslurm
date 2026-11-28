@@ -13,6 +13,26 @@ amendment with `git log --grep '^MVP7.2f:'`.
 No cluster installation or live
 job was changed.
 
+FIX.SYNC.1 (2026-11-27), checkpoint 0.2.0.dev18: staged native tracking and
+exact bounded receipt import into pinned controller views with differing profile
+names. Shared receipt merge/projection retains source provenance and known IDs;
+verified raw copies/duplicates are backed up before repair/retirement. No daily
+record migration was performed. Twenty-one new regression cases; 1869 offline
+tests passed in 21.51 s, 105 expected collision warnings; .development/test-runs/tracking-sync.xml.
+Inventory unchanged at 292 routes/146 owners/21 broad catches. Installed native
+sync/raw repair/backup/remote status/log/fetch/refresh/repeat/agent recipe smoke,
+and prior campaign/cancellation/status checks passed outside the checkout.
+No-Git/no-runtime-import metadata, wheel/sdist/rebuilt wheel and runtime/
+distribution/CLI identity passed; direct/rebuilt wheel members match.
+Artifacts in .development/artifacts/tracking-sync: wheel SHA256
+`db113eb1c93b2a853163d6ceef459ce45af3acde21fd5dc7b67613fdd9f731dc`;
+sdist SHA256 `1d07a15f2515b7c05f25dc0700cb008c6cd58b77d2b8ba6e7b111f8b00170435`;
+rebuilt wheel SHA256 `ce13032164da07a1210dabd61158fcccc848f77479a1b0826678438dea04425d`.
+Main editable source follows dev. No actual cluster or daily record/config change,
+base/test dependency installation, remote helper rollout or pinned rollback edit.
+The controller must use this checkpoint to refresh imports; no remote helper
+upgrade is required for this fix. Bulk scripts/out transfer remains unbounded.
+
 MVP11.1a (2026-11-27), checkpoint 0.2.0.dev17: simplified colored status
 summaries with checked/cached qualifications, --head selection before queries,
 corrected failure/cancellation aggregation, bounded job reason tables and pure

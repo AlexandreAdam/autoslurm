@@ -6,6 +6,7 @@ chapters:
   - file: configuration
   - file: status
   - file: logs
+  - file: sync
   - file: software
   - file: errors
   - file: versioning

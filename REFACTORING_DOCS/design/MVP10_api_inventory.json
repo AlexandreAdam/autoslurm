@@ -640,9 +640,10 @@
       "next_action": "Inspect local mirror and retry an explicitly selected sync only after resolving access; no submission or scientific-result interpretation.",
       "regression_evidence": [
         "tests/unit/test_sync.py",
-        "tests/integration/test_file_operation_diagnostics.py"
+        "tests/integration/test_file_operation_diagnostics.py",
+        "tests/integration/test_tracking_sync.py"
       ],
-      "adoption": "MVP10.4c: sync delegates validated metadata/one-shot transfer diagnostics; absent skips, wrong-kind/unavailable fails. No target before positive source observation. Failure diagnostics include sync_jobs/slurm/out copy effects alongside current stage; prior/partial files retained, no final success or retry. CLI renders adopted failures once or rethrows with --debug; existing None/progress success interface and policies remain."
+      "adoption": "MVP10.4c: sync delegates validated metadata/one-shot transfer diagnostics; absent skips, wrong-kind/unavailable fails. No target before positive source observation. Failure diagnostics include sync_jobs/slurm/out copy effects alongside current stage; prior/partial files retained, no final success or retry. CLI renders adopted failures once or rethrows with --debug; existing None/progress success interface and policies remain. FIX.SYNC.1 stages native tracking and exact bounded receipts, validates identity/definitions/known IDs, publishes pinned controller views and retains per-item errors/partial effects. Verified raw copies/duplicates have backups; differing profile names are expected. Receipt refresh shares the projection/merge owner; bulk script/log policy remains."
     },
     "discovery": {
       "implementation_task": "MVP10.7",

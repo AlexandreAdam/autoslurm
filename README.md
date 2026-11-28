@@ -52,8 +52,10 @@ each machine keeps its own paths and display indices. See
 MVP3 adds `inspect_bundle` and `list_runs`, with ACP `inspect_run`/`list_runs`
 and exact terminal selectors. They share task identity, scheduler evidence and
 bounded logs, retain query errors and unknown tasks, and label cached evidence
-stale. Remote log refresh uses recorded producing paths; broader sync refreshes
-growing/replaced logs while preserving existing definitions.
+stale. Remote log refresh uses recorded producing paths. [`asl sync rusty`](docs/sync.md)
+imports native cluster tracking and exact receipts into the laptop profile by
+submission ID, even when profile names differ. It repairs verified old raw copies
+with backups and also refreshes full growing/replaced logs in bulk.
 
 MVP4 makes preview and submission share one preparation path and separates
 submission records, script staging, dispatch and evidence persistence. Validated

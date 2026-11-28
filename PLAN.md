@@ -28,9 +28,16 @@ This file is the source of truth for active scope, task order and progress.
   limits require one existing checkout per project.
 - **Stage:** main checkout remains active on `dev` through base Conda's editable
   install; tests use `.development/python` and separate temporary state. Pinned
-  rollback source remains unchanged. Full offline suite: 1848 passed, 84 expected
+  rollback source remains unchanged. Full offline suite: 1869 passed in 21.51 s, 105 expected
   collision warnings. Historical MVP7.2 test evidence describes the removed design.
-- **Latest completed task:** MVP11.1a status clarity in 0.2.0.dev17: corrected
+- **Latest completed task:** FIX.SYNC.1 in 0.2.0.dev18: explicit sync validates
+  native tracking/exact receipts and publishes the laptop's remote controller
+  view by submission ID. Differing profile names are expected; producing paths,
+  known IDs and existing controller paths remain pinned. Verified old raw copies
+  are backed up and repaired; duplicates leave discovery with backups retained.
+  Conflicting/missing evidence stays visible through partial errors. No live
+  cluster or daily record changes; no remote helper upgrade is required.
+- **Previous status delivery:** MVP11.1a status clarity in 0.2.0.dev17: corrected
   failure/cancellation aggregates, simplified colored overview, explicit checked/
   cached labels, --head with pre-query selection, bounded job reason columns,
   default-afterok dependency names and full --details/JSON evidence. Derived
@@ -684,6 +691,17 @@ styles are later slices; no per-job style switches are adopted by this plan.
   named local/remote, legacy, preview and invalid-target cases offline. Full
   cancellation diagnostics remain MVP10.7. Released as 0.2.0.dev16.
 
+## FIX.SYNC.1 Linked controller/cluster tracking views
+
+- [x] **FIX.SYNC.1 Linked controller/cluster tracking views.** Stage and validate
+  tracked remote submissions, retain receipt/source provenance, publish or update
+  the selected controller view by submission identity, and safely repair verified
+  raw copies without duplicate runs or lost IDs. Different profile names are
+  expected. Reuse receipt validation/projection; mock every cluster operation.
+  [Design](REFACTORING_DOCS/design/FIX_SYNC_1_tracking_views.md).
+  Released as 0.2.0.dev18; 21 new offline integration cases and installed
+  native-sync/raw-repair/status/log/fetch/refresh/repeat checks passed.
+
 ## MVP10 Actionable failures with preserved evidence
 
 Design: [error handling](REFACTORING_DOCS/design/MVP10_actionable_errors.md).
@@ -1197,6 +1215,8 @@ or migration decision has already been accepted.
 | 2026-11-27 | MVP11.0 Status interaction map | Traced overview/detail/arrays, Python/ACP/context, cached/log/fetch/campaign and cancellation previews. Recorded owners, batched query costs, source/selection boundaries, no-persistence explanation strategy and first vertical slice MVP11.1a. Documentation only; reviewed diff, existing design/plan links retained. No cluster or runtime changes. |
 
 | 2026-11-27 | MVP11.1a Status clarity | Corrected failure/cancellation aggregation and retained active/unknown task counts; old compatible cached aggregate labels corrected in memory. Added simplified colored overview, checked/cached qualifications, --head (10 or N) before queries, bounded job tables, conservative dependency names and mixed-array explanations, raw --details/JSON and NO_COLOR/color/width controls. 49 new regression cases; 1848 offline tests passed in 18.84 s, 84 expected warnings. Installed artifact/head/failed-and-cancelled/colors/cache/agent and prior campaign/cancel smoke passed; inventory unchanged at 292/146/21. Checkpoint 0.2.0.dev17. No cluster/config/state/dependency/rollback change; full MVP11 and MVP10.6 remain open. |
+
+| 2026-11-27 | FIX.SYNC.1 Linked tracking views | Replaced raw job mirroring with staged validation of native snapshots and exact bounded receipts; selected controller transport may have a different profile name. Reuses matching controller paths by submission ID, retains producing paths/known IDs/provenance and shares receipt merge/projection with refresh. Verified raw copies/duplicates backed up before repair/retirement; unchanged repeat sync creates no new runs/backups. Missing/conflicting/changed records retain evidence; healthy neighbours import and interrupted pairs reconcile on explicit sync. 21 new cases; 1869 offline tests passed in 21.51 s, 105 expected warnings. Installed fake-cluster sync/repair/backup/status/log/fetch/refresh/repeat, prior campaign/cancel/status checks, no-Git metadata and wheel/sdist/rebuild identity passed; inventory 292/146/21 unchanged. Version 0.2.0.dev18. Bulk scripts/out scope retained. No cluster, daily record/config, base dependency, helper rollout or pinned rollback change. |
 
 ## How we work
 

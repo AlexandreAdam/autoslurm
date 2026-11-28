@@ -62,10 +62,10 @@ reads source logs. It reads local saved records/caches, marks excerpts stale and
 reports `not_cached` when absent. Fetching saves bounded excerpts, not complete
 `.out` files or an exported directory. Limits below apply to both commands.
 
-`asl sync` remains the older whole-directory mirror of jobs/scripts/out. It can
-transfer full large logs and does not include submission receipts. Use `asl fetch`
-for selected, bounded execution evidence; sync is not an equivalent bounded
-fetch. Changing that legacy mirror is separate work.
+[`asl sync`](sync.md) imports validated native tracking and its exact receipts
+into a remote controller view, even when laptop and cluster profile names differ.
+It still mirrors scripts/out in bulk and can transfer complete large logs. Use
+`asl fetch` for selected, bounded execution evidence.
 
 ## Inspect on the cluster
 
@@ -101,7 +101,7 @@ cluster view. Cluster receipt refresh reads the helper-owned local record
 without rewriting it or connecting back through the laptop's alias. Clients
 should retain returned references instead of reconstructing filenames.
 
-This is submission-time tracking, independent of the legacy `asl sync` mirror.
+This is submission-time tracking, independent of the reverse tracking import performed by `asl sync`.
 It transfers execution definitions/evidence, without copying scientific results.
 
 ## Select a run and read

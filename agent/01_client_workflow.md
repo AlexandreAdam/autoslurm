@@ -169,8 +169,9 @@ seconds; log defaults remain 40 lines, 64 KiB/file, 20 files/run. Check errors a
 freshness; retain known IDs and readable logs on partial failure. Persistence
 failure may leave new IDs only in returned evidence. Never resubmit because
 fetching failed. ACP `fetch_run` exposes the same result and per-item errors;
-installed section `18_fetching` documents the recipe. Legacy `asl sync` mirrors
-whole jobs/scripts/out directories and is not equivalent to bounded fetching.
+installed section `18_fetching` documents the recipe. `asl sync` reconciles native
+tracking/receipts and still mirrors scripts/out in bulk; it is not bounded fetching.
+See installed `22_sync` for the controller/cluster mapping and repair contract.
 
 ## Explicit named job arguments
 
@@ -679,11 +680,15 @@ refresh for a newer excerpt. Read only regular files, never scan directories or
 fetch scientific datasets/results. Cache errors retain live text with errors;
 inspect partial evidence before any diagnosis. Log text never authorizes retry.
 
-`sync_machine` / `asl sync` remain broader profile-based storage operations:
-immutable existing job/script files are retained; logs refresh with checksum
-comparison, including append/replacement/truncation. Use exact run inspection
-for producing-run identity and custom logs. Sync does not fetch submission
-receipts or arbitrary application results.
+`sync_machine` / `asl sync` select the workstation profile and remote root.
+Cluster-local profile names may differ. Submitted native snapshots and exact
+linked receipts are validated, then mapped to the selected remote transport by
+submission ID. Existing controller paths/known IDs/producing paths stay pinned;
+verified raw copies and duplicates are backed up before repair/retirement.
+Untracked drafts are skipped and conflicts/missing receipts retain evidence.
+Scripts stay ignore-existing; full logs refresh with checksums, including append,
+replacement and truncation. See [sync guidance](../docs/sync.md) and installed
+`22_sync`. Use exact inspection/fetch for bounded evidence and custom logs.
 
 A fresh agent needs lane/interpreter/import/revision, machine/root, exact receipt
 path/submission ID and last recorded submission outcome, client input
@@ -706,11 +711,11 @@ Reading local profiles, saving/selecting definitions and cached inspection do no
 contact a cluster. Remote root discovery and transfers are explicit operations;
 a supplied execution context keeps its recorded profile and roots.
 
-`sync` raises on a connection/probe/copy failure. A reported missing remote
-directory is distinct from a transport failure. It copies jobs/scripts using the
-existing ignore-existing policy and refreshes mutable logs using checksums;
-it does not reconcile receipt state or recover submissions. Interrupted copies
-may leave partial local transfer results, so inspect the exact run's evidence.
+`sync` raises on connection/probe/copy or tracking-validation/publication failure.
+A reported missing remote directory is distinct from a transport failure.
+Healthy imports and earlier transfers can survive a failed sync. Interrupted
+receipt/snapshot publication is reconciled by another explicit sync after diagnosis;
+no scheduler mutation occurs. Inspect exact run evidence and retained errors.
 Never infer scheduler acceptance from a copy outcome or retry compute submission
 as a remedy for a transfer failure.
 

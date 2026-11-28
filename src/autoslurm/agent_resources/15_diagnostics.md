@@ -617,15 +617,23 @@ Remote mkdir/probes use 30-second timeouts, SCP/rsync 300 seconds; accepted comm
 stdout is at most 64 KiB. Timed-out remote work may still have effects. Capture is
 not a streaming memory limit. No credentials, alternate host, rollback or retry.
 
-Legacy sync still mirrors only jobs/slurm/out, using ignore-existing for definitions
-and checksums for logs. It returns None/progress text; diagnostics on failure add
-sync_jobs/sync_slurm/sync_out effects for completed versus not-started/unknown
-copies. Only observed missing directories are skipped. An inaccessible or wrong-kind
-source raises, and failed source checks create no local target. Earlier/partial
-files stay in place; no final success is printed. Sync CLI renders adopted errors
-once with exit1; --debug rethrows with causes. Prefer fetch_run/asl fetch for bounded
-selected-run evidence; sync remains unbounded whole-subtree copying. General
-receipt-aware/ACP/observation adoption remains the later MVP10 tasks.
+Sync (see installed 22_sync) stages native tracking and validates exact linked receipts before
+publishing controller views by submission identity. Missing/corrupt/conflicting
+records retain local evidence; healthy neighbours can import. Verified raw copies
+are backed up before repair. Failed imports report partial tracking effects and
+raise; interrupted receipt/snapshot publication can be reconciled by explicit sync
+after diagnosis. No submission is retried. Scripts/out still transfer in bulk,
+with ignore-existing scripts and checksum-refreshed logs.
+
+Success returns None/progress text. Diagnostics retain sync_jobs/sync_slurm/sync_out
+effects for completed versus not-started/unknown copies and tracking_import=partial
+when item failures remain. Only observed missing directories are skipped. An
+inaccessible or wrong-kind source raises, and failed source checks create no local
+target. Earlier/partial files remain; no final success is printed on failure.
+The CLI renders adopted errors once with exit1; --debug rethrows with causes.
+Prefer fetch_run/asl fetch for bounded selected-run evidence. Broader observation/
+ACP diagnostic adoption remains in later MVP10 tasks.
+
 
 Required-input/data-root/working-directory preflight uses this same metadata owner,
 with one deduplicated remote batch and no command when there are no checks.
